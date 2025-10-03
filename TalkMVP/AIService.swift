@@ -5,6 +5,10 @@
 
 import Foundation
 
+#if canImport(FoundationModels)
+import FoundationModels
+#endif
+
 actor AIService {
     static let shared = AIService()
 
@@ -32,22 +36,66 @@ actor AIService {
 
     // Very lightweight mock translation: prepend a label and simulate delay
     func translate(_ text: String, autoDetect: Bool, target: String) async -> String {
-        // Simulate network/processing latency
-        try? await Task.sleep(nanoseconds: 250_000_000)
-        let targetName: String
-        switch target.lowercased() {
-        case "auto": targetName = "자동"
-        case "en": targetName = "영어"
-        case "ja": targetName = "일본어"
-        case "ko": targetName = "한국어"
-        case "zh-hans": targetName = "중국어(간체)"
-        case "zh-hant": targetName = "중국어(번체)"
-        case "es": targetName = "스페인어"
-        case "fr": targetName = "프랑스어"
-        case "de": targetName = "독일어"
-        default: targetName = target.uppercased()
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+
+        let targetCode = target.lowercased()
+        let targetName = languageName(for: targetCode)
+
+        // Prefer on-device Apple Intelligence when available (iOS 18+ and supported devices)
+        #if canImport(FoundationModels)
+        if #available(iOS 18.0, *) {
+            let model = SystemLanguageModel.default
+            switch model.availability {
+            case .available:
+                do {
+                    let instructions = """
+                    You are a professional translation engine.
+                    - Translate any input to \(targetName).
+                    - Return only the translated text with no quotes or extra commentary.
+                    - Preserve emojis and basic punctuation.
+                    - Keep the tone natural and concise.
+                    """
+                    let session = LanguageModelSession(instructions: instructions)
+                    let prompt: String
+                    if autoDetect {
+                        prompt = """
+                        Translate the following text to \(targetName). Detect the source language automatically. Return only the translation.\n\n\(trimmed)
+                        """
+                    } else {
+                        prompt = """
+                        Translate to \(targetName). Return only the translation.\n\n\(trimmed)
+                        """
+                    }
+
+                    let response = try await session.respond(to: prompt)
+                    let output = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !output.isEmpty { return output }
+                } catch {
+                    // Fall through to fallback
+                }
+            default:
+                break
+            }
         }
-        let detected = autoDetect ? "(감지됨) " : ""
-        return "[\(detected)→ \(targetName)] \(text)"
+        #endif
+
+        // Fallback: lightweight label with original text (ensures UI still shows something)
+        return "[→ \(targetName)] \(text)"
+    }
+
+    private func languageName(for code: String) -> String {
+        switch code {
+        case "en": return "English"
+        case "ko": return "Korean"
+        case "ja": return "Japanese"
+        case "zh-hans", "zh_cn", "zh": return "Chinese (Simplified)"
+        case "zh-hant", "zh_tw": return "Chinese (Traditional)"
+        case "es": return "Spanish"
+        case "fr": return "French"
+        case "de": return "German"
+        case "auto": return "English" // default target if auto
+        default: return code.uppercased()
+        }
     }
 }

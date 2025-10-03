@@ -15,6 +15,7 @@ import CoreLocation
 import LinkPresentation
 import UIKit
 import Contacts
+import NaturalLanguage
 
 struct ChatView: View {
     @Environment(\.modelContext) private var modelContext
@@ -22,6 +23,7 @@ struct ChatView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.openURL) private var openURL
+    @EnvironmentObject private var languageManager: LanguageManager
     
     let chatRoom: ChatRoom
     @State private var viewModel: ChatViewModel?
@@ -38,6 +40,7 @@ struct ChatView: View {
     @State private var editingMessage: Message?
     @State private var showingEditAlert = false
     @State private var editingText: String = ""
+    @State private var inputText: String = ""
     
     // 필살기 기능 상태들
     @State private var emergencyButtonPressed = false
@@ -157,6 +160,61 @@ struct ChatView: View {
         }
     }
     
+    private func handlePhotoSelectionChange(_ newValue: PhotosPickerItem?) {
+        guard let item = newValue else { return }
+        Task {
+            do {
+                // Attempt to load the selected media as raw Data (works for images/videos via Transferable)
+                if let data = try await item.loadTransferable(type: Data.self) {
+                    // TODO: Integrate with your sending pipeline (e.g., via viewModel or chatService)
+                    // Example: viewModel?.sendAttachment(data: data, fileName: "attachment")
+                    print("Loaded selected photo/video, size: \(data.count) bytes")
+                } else {
+                    print("No transferable data found for selected item.")
+                }
+            } catch {
+                print("Failed to load selected photo: \(error)")
+            }
+            await MainActor.run {
+                // Clear selection so the same item can be picked again later
+                selectedPhoto = nil
+            }
+        }
+    }
+    
+    private func handleDocumentSelection(_ url: URL) {
+        // Securely access the file selected via UIDocumentPicker (security-scoped URL)
+        let didStartAccessing = url.startAccessingSecurityScopedResource()
+        defer {
+            if didStartAccessing { url.stopAccessingSecurityScopedResource() }
+            // Dismiss the picker
+            showingDocumentPicker = false
+        }
+
+        do {
+            let resourceValues = try url.resourceValues(forKeys: [.fileSizeKey, .nameKey, .contentTypeKey])
+            let fileName = resourceValues.name ?? url.lastPathComponent
+            let fileSize = resourceValues.fileSize ?? 0
+            let typeDescription = resourceValues.contentType?.description ?? "unknown"
+            print("Picked document: \(fileName) (\(fileSize) bytes), type: \(typeDescription)")
+
+            // TODO: Integrate with your sending pipeline if available.
+            // Example:
+            // try viewModel?.sendFile(at: url, fileName: fileName, contentType: resourceValues.contentType)
+
+            // If you need to manage your own copy, uncomment and adjust:
+            // let tempURL = FileManager.default.temporaryDirectory
+            //     .appendingPathComponent(UUID().uuidString)
+            //     .appendingPathExtension(url.pathExtension)
+            // if FileManager.default.fileExists(atPath: tempURL.path) {
+            //     try? FileManager.default.removeItem(at: tempURL)
+            // }
+            // try FileManager.default.copyItem(at: url, to: tempURL)
+        } catch {
+            print("Failed to read picked document: \(error)")
+        }
+    }
+    
     private var baseScaffold: some View {
         VStack(spacing: 0) {
             ConnectionStatusView(chatService: chatService)
@@ -169,7 +227,21 @@ struct ChatView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                toolbarContent
+                HStack(spacing: 12) {
+                    Button {
+                        openPhotosAttachment()
+                    } label: {
+                        Image(systemName: "paperclip")
+                    }
+                    .accessibilityLabel("첨부")
+
+                    Button {
+                        showingFriendProfile = true
+                    } label: {
+                        Image(systemName: "person.crop.circle")
+                    }
+                    .accessibilityLabel("프로필 보기")
+                }
             }
         }
         .background(Color(UIColor.systemGroupedBackground))
@@ -184,7 +256,7 @@ struct ChatView: View {
         }
         .sheet(isPresented: $showingDocumentPicker) {
             DocumentPicker { url in
-                handleDocumentSelection(url)
+                self.handleDocumentSelection(url)
             }
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
@@ -200,7 +272,7 @@ struct ChatView: View {
             .presentationDragIndicator(.visible)
         }
     }
-
+    
     var body: some View {
         baseScaffold
             .modifier(EditMessageAlertModifier(
@@ -437,11 +509,11 @@ struct ChatView: View {
                     .frame(maxWidth: .infinity, alignment: message.isFromCurrentUser ? Alignment.trailing : Alignment.leading)
                     .padding(.horizontal, 2)
             }
-            if translationEnabled && !message.isFromCurrentUser && message.messageType == .text {
+            if !message.isFromCurrentUser && message.messageType == .text && shouldShowTranslation(for: message.text) {
                 TranslatedTextView(
                     text: message.text,
                     autoDetect: translationAutoDetect,
-                    target: translationTargetLanguage,
+                    target: effectiveTargetLanguage(for: message.text),
                     showOriginal: translationShowOriginal
                 )
                 .frame(maxWidth: .infinity, alignment: message.isFromCurrentUser ? .trailing : .leading)
@@ -450,463 +522,49 @@ struct ChatView: View {
         }
     }
     
-    @ViewBuilder
-    private var toolbarContent: some View {
-        HStack(spacing: 12) {
-            if aiSummaryEnabled, let viewModel = viewModel {
-                Button("요약") {
-                    Task {
-                        summaryText = await AIService.shared.summarize(messages: viewModel.messages)
-                        showingSummarySheet = true
-                    }
-                }
-                .font(.subheadline)
-                .foregroundColor(.blue)
-                .accessibilityLabel("대화 요약")
-                .accessibilityHint("최근 대화를 요약해서 보여줍니다")
-                .accessibilityIdentifier("summaryButton")
-            }
-            
-            Button("연락처") {
-                Task { await handleContactsSyncTapped() }
-            }
-            .font(.subheadline)
-            .foregroundColor(.blue)
-            .accessibilityLabel("연락처 동기화")
-            .accessibilityHint("연락처를 서버와 매칭합니다")
-            .accessibilityIdentifier("contactsSyncButton")
+    private func containsHangul(_ text: String) -> Bool {
+        return text.unicodeScalars.contains { scalar in
+            let v = scalar.value
+            return (0xAC00...0xD7A3).contains(v) // Hangul Syllables
         }
     }
-    
-    private var mediaMenuButton: some View {
-        Menu {
-            Button(action: {
-                openPhotosAttachment()
-            }) {
-                Label("사진/영상", systemImage: "photo")
-                    .foregroundColor(.primary)
-            }
-            .accessibilityIdentifier("photoPickerOption")
-            
-            Button(action: {
-                showingDocumentPicker = true
-            }) {
-                Label("파일", systemImage: "doc")
-                    .foregroundColor(.primary)
-            }
-            .accessibilityIdentifier("documentPickerOption")
-        } label: {
-            Image(systemName: "plus.circle")
-                .font(.title2)
-                .foregroundColor(.secondary)
-        }
-        .accessibilityLabel("미디어 첨부")
-        .accessibilityHint("사진, 파일 또는 음성 메시지를 첨부할 수 있습니다")
-        .accessibilityIdentifier("mediaMenuButton")
-    }
-    
-    private func setupViewModelIfNeeded() {
-        if viewModel == nil {
-            chatService.modelContext = modelContext
-            viewModel = ChatViewModel(modelContext: modelContext, chatRoom: chatRoom, chatService: chatService)
-            // Removed line: viewModel?.checkOnlineStatus()
-        }
-    }
-    
-    private func handlePhotoSelectionChange(_ newValue: PhotosPickerItem?) {
-        if let newValue {
-            Task {
-                await handlePhotoSelection(newValue)
-            }
-        }
-    }
-    
 
-    private func messageInputView(viewModel: ChatViewModel) -> some View {
-        // 조직방/근무시간 상태 계산
-        let isOrg = chatRoom.isOrganizationRoom
-        let within = isWithinWorkingHours(for: chatRoom)
-        let userId = "currentUser" // TODO: AuthManager에서 실제 사용자 ID 연동
-        let userRole = chatRoom.role(for: userId)
-        let emergencyAllowed = chatRoom.emergencyAllowedRoles.contains(userRole.rawValue)
-        let canSendNow = !isOrg || within || (isEmergencyMessage && emergencyAllowed)
-
-        return VStack(spacing: 8) {
-            // 근무 시간 외 배너
-            if isOrg && !within {
-                Text("퇴근 시간 – 읽기 전용 (채널 타임존: \(chatRoom.timeZoneIdentifier))")
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-                    .padding(.vertical, 6)
-                    .frame(maxWidth: .infinity)
-                    .background(Color(UIColor.systemGray6))
-                    .accessibilityLabel("퇴근 시간. 읽기 전용")
-            }
-
-            // 답장 중일 때 표시되는 영역
-            if let replyMessage = replyingToMessage {
-                replyPreviewView(message: replyMessage)
-            }
-
-            // 근무 시간 외 긴급 토글 (권한 있는 역할만 활성화)
-            if isOrg && !within {
-                HStack {
-                    Toggle("긴급", isOn: $isEmergencyMessage)
-                        .disabled(!emergencyAllowed)
-                    if !emergencyAllowed {
-                        Text("관리자/온콜만 가능")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-            }
-
-            HStack(spacing: 12) {
-                // 미디어 메뉴 버튼
-                mediaMenuButton
-
-                // 텍스트 입력 필드 (권한/시간에 따라 비활성화)
-                textInputField(viewModel: viewModel, isEnabled: canSendNow)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(
-                Color(UIColor.systemBackground)
-                    .shadow(color: .black.opacity(0.05), radius: 1, x: 0, y: -1)
-            )
-            .animation(.easeInOut(duration: 0.2), value: viewModel.newMessageText.isEmpty)
-        }
-        .accessibilityAction(.magicTap) {
-            sendCurrentMessage(with: viewModel)
-        }
-    }
-    
-    // 공통 전송 로직 추출
-    private func sendCurrentMessage(with viewModel: ChatViewModel) {
-        let trimmed = viewModel.newMessageText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-
-        // 조직방/근무시간 검사 및 긴급 권한 확인
-        let isOrg = chatRoom.isOrganizationRoom
-        let within = isWithinWorkingHours(for: chatRoom)
-        let userId = "currentUser" // TODO: AuthManager 연동
-        let userRole = chatRoom.role(for: userId)
-        let emergencyAllowed = chatRoom.emergencyAllowedRoles.contains(userRole.rawValue)
-        let canSendNow = !isOrg || within || (isEmergencyMessage && emergencyAllowed)
-        guard canSendNow else {
-            let impactFeedback = UINotificationFeedbackGenerator()
-            impactFeedback.notificationOccurred(.warning)
-            UIAccessibility.post(notification: .announcement, argument: "근무 시간 외에는 읽기 전용입니다")
-            return
-        }
-
-        if let replyMessage = replyingToMessage {
-            viewModel.setReplyMessage(replyMessage)
-        }
-        viewModel.sendMessage()
-        replyingToMessage = nil
-        isEmergencyMessage = false // 전송 후 긴급 토글 초기화
-        UIAccessibility.post(notification: .announcement, argument: "메시지가 전송되었습니다")
-    }
-    
-    @ViewBuilder
-    private func replyPreviewView(message: Message) -> some View {
-        HStack {
-            Rectangle()
-                .fill(Color.blue)
-                .frame(width: 4)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(message.isFromCurrentUser ? "나" : chatRoom.name)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.blue)
-                
-                Text(message.text)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-            }
-            
-            Spacer()
-            
-            Button(action: {
-                replyingToMessage = nil
-            }) {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundColor(.secondary)
-                    .font(.title3)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
-        .padding(.horizontal, 16)
-        .transition(.asymmetric(
-            insertion: .opacity.combined(with: .move(edge: .top)),
-            removal: .opacity.combined(with: .move(edge: .top))
-        ))
-    }
-    
-
-    private func textInputField(viewModel: ChatViewModel, isEnabled: Bool) -> some View {
-        let textBinding = Binding(
-            get: { viewModel.newMessageText },
-            set: { newValue in 
-                viewModel.newMessageText = newValue
-                if !newValue.isEmpty {
-                    viewModel.startTyping()
-                } else {
-                    viewModel.stopTyping()
-                }
-            }
-        )
-        
-        return HStack {
-            TextField("메시지를 입력하세요", text: textBinding)
-                .submitLabel(.send)
-                .focused($isTextFieldFocused)
-                .onSubmit {
-                    sendCurrentMessage(with: viewModel)
-                }
-                .onChange(of: isTextFieldFocused) { _, isFocused in
-                    if !isFocused {
-                        viewModel.stopTyping()
-                    }
-                }
-                .accessibilityLabel("메시지 입력")
-                .accessibilityHint("메시지를 입력한 후 전송 버튼을 누르거나 Enter 키를 누르면 전송됩니다")
-                .accessibilityIdentifier("messageTextField")
-                // 다이나믹 타입 지원
-                .font(.body)
-                .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 0.8 : 1.0)
-            
-            if !viewModel.newMessageText.isEmpty {
-                Button(action: {
-                    sendCurrentMessage(with: viewModel)
-                }) {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(.white)
-                        .scaleEffect(1.0)
-                        .animation(
-                            reduceMotion ? .none : .spring(response: 0.3, dampingFraction: 0.8), 
-                            value: !viewModel.newMessageText.isEmpty
-                        )
-                }
-                .glassEffect(.regular.tint(.blue).interactive())
-                .accessibilityLabel("메시지 전송")
-                .accessibilityHint("현재 입력된 메시지를 전송합니다")
-                .accessibilityIdentifier("sendButton")
-                .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 20))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(
-                    isTextFieldFocused ? Color.blue.opacity(0.5) : Color.clear,
-                    lineWidth: 2
-                )
-        )
-        .animation(
-            reduceMotion ? .none : .easeInOut(duration: 0.2), 
-            value: isTextFieldFocused
-        )
-        .disabled(!isEnabled)
-    }
-    
-    private func handlePhotoSelection(_ item: PhotosPickerItem) async {
-        guard let viewModel = viewModel else { return }
-        // Try to load a file URL first (videos are best handled as files)
-        if let url = try? await item.loadTransferable(type: URL.self) {
-            do {
-                let fileName = url.deletingPathExtension().lastPathComponent
-                let fileExtension = url.pathExtension
-                let resourceValues = try url.resourceValues(forKeys: [.fileSizeKey])
-                let fileSize = resourceValues.fileSize ?? 0
-                await MainActor.run {
-                    viewModel.sendFile(fileName: fileName, fileExtension: fileExtension, fileSize: fileSize)
-                    selectedPhoto = nil
-                }
-                return
-            } catch {
-                // Fallback to trying data below
-            }
-        }
-        // If not a file URL, try loading as image data
-        if let data = try? await item.loadTransferable(type: Data.self) {
-            await MainActor.run {
-                viewModel.sendImage(data)
-                selectedPhoto = nil
-            }
-        }
-    }
-    
-    private func handleDocumentSelection(_ url: URL) {
-        guard let viewModel = viewModel else { return }
-        let needsAccess = url.startAccessingSecurityScopedResource()
-        defer { if needsAccess { url.stopAccessingSecurityScopedResource() } }
-
-        let fileName = url.deletingPathExtension().lastPathComponent
-        let fileExtension = url.pathExtension
-
-        do {
-            let resourceValues = try url.resourceValues(forKeys: [.fileSizeKey])
-            let fileSize = resourceValues.fileSize ?? 0
-            
-            viewModel.sendFile(fileName: fileName, fileExtension: fileExtension, fileSize: fileSize)
-        } catch {
-            print("파일 정보를 읽을 수 없습니다: \(error)")
-        }
-    }
-    
-    @MainActor
-    private func handleContactsSyncTapped() async {
-        switch contactsSync.checkAuthorizationStatus() {
-        case .notDetermined:
-            let granted = await contactsSync.requestAccess()
-            if !granted {
-                showingContactsPermissionAlert = true
-                return
-            }
-        case .denied:
-            showingContactsPermissionAlert = true
-            return
-        case .authorized:
-            break
-        }
-        do {
-            let matched = try await contactsSync.syncAndMatch()
-            self.matchedUsers = matched
-            self.showingContactsResult = true
-        } catch {
-            // Present a lightweight error as an announcement; could be improved to an alert if desired
-            UIAccessibility.post(notification: .announcement, argument: "연락처 동기화에 실패했습니다")
-        }
-    }
-    
-    private func openFriendProfile() {
-        let targetName = chatRoom.name
-        let descriptor = FetchDescriptor<Friendship>(
-            predicate: #Predicate<Friendship> { f in
-                f.friendName == targetName
-            },
-            sortBy: [SortDescriptor(\.createdAt)]
-        )
-        if let results = try? modelContext.fetch(descriptor),
-           let fs = results.first(where: { $0.status == .accepted }) {
-            profileFriendship = fs
-        } else {
-            profileFriendship = nil
-        }
-        showingFriendProfile = true
-    }
-    
-    // MARK: - 접근성 헬퍼 함수들
-    
-    /// 첫 번째 URL 추출 헬퍼
-    private func firstURL(in text: String) -> URL? {
-        if let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) {
-            let range = NSRange(text.startIndex..<text.endIndex, in: text)
-            if let match = detector.firstMatch(in: text, options: [], range: range), let url = match.url {
-                return url
-            }
+    private func detectLanguageCode(for text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(trimmed)
+        if let lang = recognizer.dominantLanguage {
+            return normalizeLanguageCode(lang.rawValue.lowercased())
         }
         return nil
     }
-    
-    /// 반응 선택기 표시
-    private func showReactionPicker(for message: Message) {
-        reactionToMessage = message
-        showingReactionPicker = true
-        
-        // 햅틱 피드백
-        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-        impactFeedback.impactOccurred()
-    }
-    
-    /// 메시지에 반응 추가
-    private func addReaction(emoji: String, to message: Message) {
-        viewModel?.toggleReaction(emoji, for: message)
-        
-        // 접근성 공지
-        UIAccessibility.post(notification: .announcement, argument: "메시지에 \(emoji) 반응을 추가했습니다")
-    }
-    
-    /// 메시지 편집 시작
-    private func startEditingMessage(_ message: Message) {
-        editingMessage = message
-        editingText = message.text
-        showingEditAlert = true
-    }
-    
-    /// 메시지 삭제
-    private func deleteMessage(_ message: Message) {
-        viewModel?.deleteMessage(message)
-        
-        // 햅틱 피드백
-        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-        impactFeedback.impactOccurred()
-        
-        // 접근성 공지
-        UIAccessibility.post(notification: .announcement, argument: "메시지를 삭제했습니다")
-    }
-    
-    /// 메시지별 접근성 레이블 생성
-    private func accessibilityLabelForMessage(_ message: Message) -> String {
-        let senderInfo = message.isFromCurrentUser ? "내가 보낸 메시지" : "\(chatRoom.name)이 보낸 메시지"
-        let timeInfo = formatMessageTime(message.timestamp)
-        
-        switch message.messageType {
-        case .text:
-            return "\(senderInfo), \(timeInfo), \(message.text)"
-        case .image:
-            return "\(senderInfo), \(timeInfo), 이미지 메시지"
-        case .file:
-            return "\(senderInfo), \(timeInfo), 파일 메시지: \(message.text)"
-        case .audio:
-            return "\(senderInfo), \(timeInfo), 음성 메시지"
-        case .deleted:
-            return "\(senderInfo), \(timeInfo), 삭제된 메시지"
+
+    private func normalizeLanguageCode(_ code: String) -> String {
+        switch code {
+        case "zh-hans", "zh_cn", "zh": return "zh-Hans"
+        case "zh-hant", "zh_tw": return "zh-Hant"
+        default: return code
         }
     }
-    
-    /// 메시지 시간 포맷팅
-    private func formatMessageTime(_ timestamp: Date) -> String {
-        let calendar = Calendar.current
-        if calendar.isDate(timestamp, inSameDayAs: Date()) {
-            return "오늘 \(ChatView.timeFormatter.string(from: timestamp))"
-        } else if let yesterday = calendar.date(byAdding: .day, value: -1, to: Date()),
-                  calendar.isDate(timestamp, inSameDayAs: yesterday) {
-            return "어제 \(ChatView.timeFormatter.string(from: timestamp))"
+
+    private func appLanguageCode() -> String {
+        return languageManager.currentLanguage == .korean ? "ko" : "en"
+    }
+
+    private func shouldShowTranslation(for text: String) -> Bool {
+        // Always show if user explicitly enabled translation
+        if translationEnabled { return true }
+        // Compare detected source language with target
+        let source = detectLanguageCode(for: text) ?? ""
+        let target = effectiveTargetLanguage(for: text).lowercased()
+        if !source.isEmpty {
+            return source != target
         } else {
-            return ChatView.dateTimeFormatter.string(from: timestamp)
+            // Fallback heuristic when detection is unavailable
+            if languageManager.currentLanguage != .korean && containsHangul(text) { return true }
+            return false
         }
-    }
-    
-    private func detectSuspiciousLinkInLastMessage(viewModel: ChatViewModel) {
-        guard let last = viewModel.messages.last, last.messageType == .text else { return }
-        let text = last.text
-        if let url = firstURL(in: text), let host = url.host?.lowercased() {
-            if ChatView.safeDomains.contains(where: { host.hasSuffix($0) }) { return }
-            if ignoredDomains.contains(where: { host.hasSuffix($0) }) { return }
-            linkToVerify = url.absoluteString
-            suspiciousLinkDetected = true
-        }
-    }
-    
-    private func callGuardianAndShareLocation() {
-        if locationManager.authorizationStatus == .denied || locationManager.authorizationStatus == .restricted {
-            showingLocationPermissionAlert = true
-            return
-        }
-        locationManager.requestLocation()
-        // 이후 위치 전달 및 긴급 호출 기능 구현
     }
     
     private func filteredMessages(viewModel: ChatViewModel) -> [Message] {
@@ -926,6 +584,13 @@ struct ChatView: View {
         }
     }
     
+    private func effectiveTargetLanguage(for text: String) -> String {
+        let t = translationTargetLanguage.lowercased()
+        if t != "auto" { return t }
+        // Auto: use app language code as the target language
+        return appLanguageCode()
+    }
+    
     // MARK: - 타임락(근무시간) 헬퍼
     private func isWithinWorkingHours(for room: ChatRoom, now: Date = Date()) -> Bool {
         // 조직방이 아니면 항상 가능
@@ -942,6 +607,133 @@ struct ChatView: View {
         let end = room.workEndHour * 60 + room.workEndMinute
         let current = hour * 60 + minute
         return current >= start && current < end
+    }
+    
+    private func setupViewModelIfNeeded() {
+        // Bind ChatService to the real ModelContext so its connection can start.
+        // ChatService starts its connection the first time a proper modelContext is set (via didSet).
+        chatService.modelContext = modelContext
+
+        // Initialize the ViewModel once and reuse it.
+        if viewModel == nil {
+            let vm = ChatViewModel(modelContext: modelContext, chatRoom: chatRoom, chatService: chatService)
+            self.viewModel = vm
+            // Optionally kick off online status checks.
+            vm.checkOnlineStatus()
+        } else {
+            // Ensure messages are up to date if returning to this view.
+            viewModel?.loadMessages()
+        }
+    }
+    
+    // MARK: - Message Input View
+    @ViewBuilder
+    private func messageInputView(viewModel: ChatViewModel) -> some View {
+        VStack(spacing: 0) {
+            if let replyingTo = replyingToMessage {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("\(replyingTo.isFromCurrentUser ? "나" : chatRoom.name)에게 답장")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(replyingTo.text)
+                            .font(.caption)
+                            .foregroundColor(.primary)
+                            .lineLimit(2)
+                    }
+                    Spacer()
+                    Button("취소") {
+                        replyingToMessage = nil
+                    }
+                    .font(.caption)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(UIColor.secondarySystemGroupedBackground))
+            }
+            
+            HStack(spacing: 12) {
+                TextField("메시지 입력", text: $inputText)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .focused($isTextFieldFocused)
+                    .onSubmit {
+                        sendMessage(viewModel: viewModel)
+                    }
+                
+                Button {
+                    sendMessage(viewModel: viewModel)
+                } label: {
+                    Image(systemName: "paperplane.fill")
+                        .foregroundColor(.white)
+                        .frame(width: 32, height: 32)
+                        .background(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray : Color.blue)
+                        .clipShape(Circle())
+                }
+                .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
+        .background(Color(UIColor.systemGroupedBackground))
+    }
+    
+    private func sendMessage(viewModel: ChatViewModel) {
+        let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+
+        // Pass the text and reply state to the ViewModel, then send
+        viewModel.newMessageText = text
+        if let replying = replyingToMessage {
+            viewModel.setReplyMessage(replying)
+        }
+        viewModel.sendMessage()
+
+        // Clear local UI states
+        inputText = ""
+        replyingToMessage = nil
+        isTextFieldFocused = false
+    }
+    
+    // MARK: - Helper Functions
+    private func openFriendProfile() {
+        showingFriendProfile = true
+    }
+    
+    private func accessibilityLabelForMessage(_ message: Message) -> String {
+        let sender = message.isFromCurrentUser ? "나" : chatRoom.name
+        let time = Self.timeFormatter.string(from: message.timestamp)
+        return "\(sender): \(message.text), \(time)"
+    }
+    
+    private func showReactionPicker(for message: Message) {
+        reactionToMessage = message
+        showingReactionPicker = true
+    }
+    
+    private func startEditingMessage(_ message: Message) {
+        editingMessage = message
+        editingText = message.text
+        showingEditAlert = true
+    }
+    
+    private func deleteMessage(_ message: Message) {
+        viewModel?.deleteMessage(message)
+    }
+    
+    private func firstURL(in text: String) -> URL? {
+        let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+        let range = NSRange(location: 0, length: text.utf16.count)
+        let matches = detector?.matches(in: text, options: [], range: range)
+        return matches?.first?.url
+    }
+    
+    // MARK: - Reactions
+    private func addReaction(emoji: String, to message: Message) {
+        // TODO: Integrate with ChatViewModel/ChatService to persist reactions
+        print("Add reaction \(emoji) to message \(message.id)")
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+        UIAccessibility.post(notification: .announcement, argument: "반응 \(emoji)를 추가했습니다")
     }
 }
 
@@ -1312,6 +1104,7 @@ struct MiniProfileSheet: View {
     
     NavigationStack {
         ChatView(chatRoom: chatRoom)
+            .environmentObject(LanguageManager())
     }
     .modelContainer(container)
 }
