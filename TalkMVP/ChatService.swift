@@ -15,7 +15,16 @@ class ChatService: ObservableObject, ChatServiceProtocol {
     @Published var connectionStatus: ConnectionStatus = .disconnected
     
     private var timer: Timer?
-    var modelContext: ModelContext
+    private var randomMessageTimer: Timer?
+    private var hasStartedConnection = false
+    var modelContext: ModelContext {
+        didSet {
+            if !hasStartedConnection {
+                startConnection()
+                hasStartedConnection = true
+            }
+        }
+    }
     private var cancellables = Set<AnyCancellable>()
     
     enum ConnectionStatus {
@@ -45,12 +54,14 @@ class ChatService: ObservableObject, ChatServiceProtocol {
     
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
-        startConnection()
+        // Connection will start when a proper modelContext is attached by the view.
     }
     
     deinit {
         // Only perform non-actor-isolated cleanup in deinit
         timer?.invalidate()
+        randomMessageTimer?.invalidate()
+        randomMessageTimer = nil
     }
     
     func startConnection() {
@@ -70,6 +81,8 @@ class ChatService: ObservableObject, ChatServiceProtocol {
         isConnected = false
         timer?.invalidate()
         timer = nil
+        randomMessageTimer?.invalidate()
+        randomMessageTimer = nil
     }
     
     func reconnect() {
@@ -90,11 +103,14 @@ class ChatService: ObservableObject, ChatServiceProtocol {
     
     // 실시간 메시지 시뮬레이션
     private func startRandomMessageSimulation() {
-        Timer.scheduledTimer(withTimeInterval: Double.random(in: 15...45), repeats: true) { _ in
-            Task { @MainActor in
-                self.simulateIncomingMessage()
-            }
-        }
+        randomMessageTimer?.invalidate()
+        let interval = Double.random(in: 15...45)
+        randomMessageTimer = Timer.scheduledTimer(timeInterval: interval, target: self, selector: #selector(randomMessageTimerFired(_:)), userInfo: nil, repeats: true)
+    }
+    
+    @objc private func randomMessageTimerFired(_ timer: Timer) {
+        // As ChatService is @MainActor and the timer runs on the main run loop, this is safe.
+        simulateIncomingMessage()
     }
     
     private func simulateIncomingMessage() {
@@ -128,11 +144,17 @@ class ChatService: ObservableObject, ChatServiceProtocol {
         modelContext.insert(message)
         
         // 채팅방 정보 업데이트
-        randomChatRoom.lastMessage = randomMessage
-        randomChatRoom.timestamp = Date()
-        randomChatRoom.unreadCount += 1
-        
-        try? modelContext.save()
+        Task { @MainActor in
+            randomChatRoom.lastMessage = randomMessage
+            randomChatRoom.timestamp = Date()
+            randomChatRoom.unreadCount += 1
+            
+            do {
+                try modelContext.save()
+            } catch {
+                print("❌ simulateIncomingMessage 저장 실패: \(error)")
+            }
+        }
         
         // 알림 시뮬레이션
         NotificationCenter.default.post(
@@ -154,8 +176,21 @@ class ChatService: ObservableObject, ChatServiceProtocol {
     }
     
     func markAsRead(chatRoom: ChatRoom) {
-        chatRoom.unreadCount = 0
-        try? modelContext.save()
+        // 이 서비스의 modelContext에 바인딩된 인스턴스로 다시 가져와서 업데이트합니다.
+        // 서로 다른 ModelContext 간의 객체를 저장하려고 하면 Core Data/SwiftData 예외가 발생할 수 있습니다.
+        let roomID = chatRoom.id
+        do {
+            let descriptor = FetchDescriptor<ChatRoom>(predicate: #Predicate { $0.id == roomID })
+            if let room = try modelContext.fetch(descriptor).first {
+                room.unreadCount = 0
+                try modelContext.save()
+            } else {
+                // Refetch 실패 시, 최소한의 폴백 처리
+                print("⚠️ markAsRead: 해당 채팅방을 현재 컨텍스트에서 찾지 못했습니다.")
+            }
+        } catch {
+            print("❌ markAsRead 저장 실패: \(error)")
+        }
     }
     
     func sendReaction(_ emoji: String, to message: Message, in chatRoom: ChatRoom) {

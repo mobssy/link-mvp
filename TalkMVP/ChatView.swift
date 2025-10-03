@@ -871,6 +871,8 @@ struct ChatView: View {
             return "\(senderInfo), \(timeInfo), 파일 메시지: \(message.text)"
         case .audio:
             return "\(senderInfo), \(timeInfo), 음성 메시지"
+        case .deleted:
+            return "\(senderInfo), \(timeInfo), 삭제된 메시지"
         }
     }
     
@@ -917,6 +919,8 @@ struct ChatView: View {
             case .text, .file:
                 return msg.text.lowercased().contains(query)
             case .image, .audio:
+                return false
+            case .deleted:
                 return false
             }
         }

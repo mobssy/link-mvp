@@ -13,6 +13,7 @@ enum MessageType: String, Codable {
     case image
     case file
     case audio
+    case deleted // 자폭 메시지로 삭제된 메시지
 }
 
 @Model
@@ -34,6 +35,11 @@ class Message {
     var replyToMessageId: UUID? // 답장하는 메시지의 ID
     var isEdited: Bool = false // 편집 여부
     var editedAt: Date? // 편집 시간
+    
+    // 자폭 메시지 관련 필드들
+    var isDisappearing: Bool = false // 자폭 메시지 여부
+    var disappearAfterSeconds: Int = 0 // 몇 초 후 사라질지
+    var attachmentURL: String? // 첨부 파일 URL (삭제용)
     
     init(text: String, isFromCurrentUser: Bool, sender: String = "나", chatRoomId: String = "default", messageType: MessageType = .text, replyToMessageId: UUID? = nil) {
         self.id = UUID()

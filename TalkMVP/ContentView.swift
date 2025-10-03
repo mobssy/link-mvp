@@ -11,6 +11,7 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var authManager: AuthManager
+    @EnvironmentObject private var languageManager: LanguageManager
     @State private var selectedTab = 0
     @State private var showTestModeAlert = false
     
@@ -26,11 +27,11 @@ struct ContentView: View {
         .onAppear {
             authManager.modelContext = modelContext
         }
-        .alert("테스트 모드", isPresented: $showTestModeAlert) {
-            Button("취소", role: .cancel) { }
-            Button("테스트 시작") { enterTestMode() }
+        .alert(localizedText("test_mode_title"), isPresented: $showTestModeAlert) {
+            Button(localizedText("cancel"), role: .cancel) { }
+            Button(localizedText("start_test")) { enterTestMode() }
         } message: {
-            Text("로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?")
+            Text(localizedText("test_mode_message"))
         }
     }
     
@@ -52,9 +53,9 @@ struct ContentView: View {
         // 테스트용 사용자 생성
         let testUser = User(
             username: "tester",
-            displayName: "테스터",
+            displayName: languageManager.currentLanguage == .korean ? "테스터" : "Tester",
             email: "test@example.com",
-            statusMessage: "테스트 모드로 체험 중입니다",
+            statusMessage: languageManager.currentLanguage == .korean ? "테스트 모드로 체험 중입니다" : "Experiencing in test mode",
             isCurrentUser: true
         )
         
@@ -112,10 +113,28 @@ struct ContentView: View {
         
         try? modelContext.save()
     }
+    
+    private func localizedText(_ key: String) -> String {
+        switch key {
+        case "test_mode_title":
+            return languageManager.currentLanguage == .korean ? "테스트 모드" : "Test Mode"
+        case "cancel":
+            return languageManager.currentLanguage == .korean ? "취소" : "Cancel"
+        case "start_test":
+            return languageManager.currentLanguage == .korean ? "테스트 시작" : "Start Test"
+        case "test_mode_message":
+            return languageManager.currentLanguage == .korean ? 
+                "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" : 
+                "You can experience all app features without logging in.\nWould you like to enter test mode?"
+        default:
+            return key
+        }
+    }
 }
 
 struct AuthenticatedTabsView: View {
     @EnvironmentObject private var authManager: AuthManager
+    @EnvironmentObject private var languageManager: LanguageManager
     @Binding var selectedTab: Int
     let showTestModeIndicator: Bool
 
@@ -124,19 +143,19 @@ struct AuthenticatedTabsView: View {
             TabView(selection: $selectedTab) {
                 FriendsTab()
                     .tabItem { 
-                        Label("친구", systemImage: "person.fill") 
+                        Label(localizedText("friends"), systemImage: "person.fill") 
                     }
                     .tag(0)
 
                 ChatTab()
                     .tabItem { 
-                        Label("채팅", systemImage: "message.fill") 
+                        Label(localizedText("chat"), systemImage: "message.fill") 
                     }
                     .tag(1)
 
                 SettingsTab()
                     .tabItem { 
-                        Label("설정", systemImage: "gearshape.fill") 
+                        Label(localizedText("settings"), systemImage: "gearshape.fill") 
                     }
                     .tag(2)
             }
@@ -147,12 +166,25 @@ struct AuthenticatedTabsView: View {
                 if showTestModeIndicator {
                     VStack {
                         Spacer()
-                        TestModeIndicatorView()
+                        TestModeIndicatorView(languageManager: languageManager)
                             .padding(.bottom, 100) // 탭바 위쪽에 위치
                             .padding(.horizontal, 16)
                     }
                 }
             }
+        }
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        switch key {
+        case "friends":
+            return languageManager.currentLanguage == .korean ? "친구" : "Friends"
+        case "chat":
+            return languageManager.currentLanguage == .korean ? "채팅" : "Chat"
+        case "settings":
+            return languageManager.currentLanguage == .korean ? "설정" : "Settings"
+        default:
+            return key
         }
     }
 }
@@ -191,13 +223,14 @@ struct UnauthenticatedView: View {
 }
 
 struct TestModeButtonView: View {
+    @EnvironmentObject private var languageManager: LanguageManager
     @Binding var showTestModeAlert: Bool
 
     var body: some View {
         Button(action: { showTestModeAlert = true }) {
             HStack {
                 Image(systemName: "wrench.and.screwdriver")
-                Text("테스트 모드로 체험하기")
+                Text(localizedText("test_experience"))
             }
             .font(.headline)
             .foregroundColor(.white)
@@ -214,14 +247,25 @@ struct TestModeButtonView: View {
             .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
         }
     }
+    
+    private func localizedText(_ key: String) -> String {
+        switch key {
+        case "test_experience":
+            return languageManager.currentLanguage == .korean ? "테스트 모드로 체험하기" : "Try Test Mode"
+        default:
+            return key
+        }
+    }
 }
 
 struct TestModeIndicatorView: View {
+    let languageManager: LanguageManager
+
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "wrench.and.screwdriver")
                 .font(.caption)
-            Text("테스트 모드")
+            Text(localizedText("test_mode"))
                 .font(.caption)
                 .fontWeight(.semibold)
         }
@@ -235,6 +279,15 @@ struct TestModeIndicatorView: View {
         )
         .frame(maxWidth: .infinity)
         .multilineTextAlignment(.center)
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        switch key {
+        case "test_mode":
+            return languageManager.currentLanguage == .korean ? "테스트 모드" : "Test Mode"
+        default:
+            return key
+        }
     }
 }
 

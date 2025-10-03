@@ -11,6 +11,7 @@ import SwiftData
 
 struct ProfileEditView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var languageManager: LanguageManager
     @ObservedObject var authManager: AuthManager
     
     @State private var displayName: String
@@ -59,58 +60,58 @@ struct ProfileEditView: View {
                     }
                     .padding(.vertical, 20)
                 } header: {
-                    Text("프로필 사진")
+                    Text(localizedText("profile_photo"))
                 }
                 
                 Section {
                     HStack {
-                        Text("사용자명")
+                        Text(localizedText("username"))
                         Spacer()
                         Text(authManager.currentUser?.username ?? "")
                             .foregroundColor(.secondary)
                     }
                     
                     HStack {
-                        Text("표시 이름")
-                        TextField("표시 이름", text: $displayName)
+                        Text(localizedText("display_name"))
+                        TextField(localizedText("display_name"), text: $displayName)
                             .multilineTextAlignment(.trailing)
                     }
                     
                     HStack {
-                        Text("이메일")
+                        Text(localizedText("email"))
                         Spacer()
                         Text(authManager.currentUser?.email ?? "")
                             .foregroundColor(.secondary)
                     }
                 } header: {
-                    Text("계정 정보")
+                    Text(localizedText("account_info"))
                 }
                 
                 Section {
-                    TextField("상태메시지", text: $statusMessage, axis: .vertical)
+                    TextField(localizedText("status_message"), text: $statusMessage, axis: .vertical)
                         .lineLimit(1...3)
                 } header: {
-                    Text("상태메시지")
+                    Text(localizedText("status_message"))
                 }
                 
                 Section {
-                    Button("로그아웃") {
+                    Button(localizedText("logout")) {
                         authManager.signOut()
                     }
                     .foregroundColor(.red)
                 }
             }
-            .navigationTitle("프로필 편집")
+            .navigationTitle(localizedText("edit_profile"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("취소") {
+                    Button(localizedText("cancel")) {
                         dismiss()
                     }
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("저장") {
+                    Button(localizedText("save")) {
                         saveProfile()
                         dismiss()
                     }
@@ -135,6 +136,33 @@ struct ProfileEditView: View {
     private func saveProfile() {
         let imageData = profileImage?.jpegData(compressionQuality: 0.7) ?? authManager.currentUser?.profileImageData
         authManager.updateProfile(displayName: displayName, statusMessage: statusMessage, profileImageData: imageData)
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        switch key {
+        case "profile_photo":
+            return languageManager.currentLanguage == .korean ? "프로필 사진" : "Profile Photo"
+        case "username":
+            return languageManager.currentLanguage == .korean ? "사용자명" : "Username"
+        case "display_name":
+            return languageManager.currentLanguage == .korean ? "표시 이름" : "Display Name"
+        case "email":
+            return languageManager.currentLanguage == .korean ? "이메일" : "Email"
+        case "account_info":
+            return languageManager.currentLanguage == .korean ? "계정 정보" : "Account Information"
+        case "status_message":
+            return languageManager.currentLanguage == .korean ? "상태메시지" : "Status Message"
+        case "logout":
+            return languageManager.currentLanguage == .korean ? "로그아웃" : "Sign Out"
+        case "edit_profile":
+            return languageManager.currentLanguage == .korean ? "프로필 편집" : "Edit Profile"
+        case "cancel":
+            return languageManager.currentLanguage == .korean ? "취소" : "Cancel"
+        case "save":
+            return languageManager.currentLanguage == .korean ? "저장" : "Save"
+        default:
+            return key
+        }
     }
 }
 

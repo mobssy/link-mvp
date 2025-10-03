@@ -10,6 +10,7 @@ import SwiftData
 
 struct AuthView: View {
     @EnvironmentObject private var authManager: AuthManager
+    @EnvironmentObject private var languageManager: LanguageManager
     @State private var isSignUp = false
     @State private var username = ""
     @State private var displayName = ""
@@ -58,7 +59,7 @@ struct AuthView: View {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         } else {
-                            Text(isSignUp ? "회원가입" : "로그인")
+                            Text(localizedText(isSignUp ? "signup" : "signin"))
                                 .fontWeight(.semibold)
                         }
                     }
@@ -76,7 +77,7 @@ struct AuthView: View {
                             clearForm()
                         }
                     }) {
-                        Text(isSignUp ? "이미 계정이 있나요? 로그인" : "계정이 없나요? 회원가입")
+                        Text(localizedText(isSignUp ? "have_account" : "no_account"))
                             .foregroundColor(.blue)
                     }
                 }
@@ -94,18 +95,49 @@ struct AuthView: View {
     
     private var signInForm: some View {
         VStack(spacing: 16) {
-            CustomTextField(text: $username, placeholder: "사용자명 또는 이메일", icon: "person.fill")
-            CustomTextField(text: $password, placeholder: "비밀번호", icon: "lock.fill", isSecure: true)
+            CustomTextField(
+                text: $username, 
+                placeholder: localizedText("username_or_email"), 
+                icon: "person.fill"
+            )
+            CustomTextField(
+                text: $password, 
+                placeholder: localizedText("password"), 
+                icon: "lock.fill", 
+                isSecure: true
+            )
         }
     }
     
     private var signUpForm: some View {
         VStack(spacing: 16) {
-            CustomTextField(text: $username, placeholder: "사용자명", icon: "person.fill")
-            CustomTextField(text: $displayName, placeholder: "표시 이름", icon: "person.crop.circle.fill")
-            CustomTextField(text: $email, placeholder: "이메일", icon: "envelope.fill")
-            CustomTextField(text: $password, placeholder: "비밀번호", icon: "lock.fill", isSecure: true)
-            CustomTextField(text: $confirmPassword, placeholder: "비밀번호 확인", icon: "lock.fill", isSecure: true)
+            CustomTextField(
+                text: $username, 
+                placeholder: localizedText("username"), 
+                icon: "person.fill"
+            )
+            CustomTextField(
+                text: $displayName, 
+                placeholder: localizedText("display_name"), 
+                icon: "person.crop.circle.fill"
+            )
+            CustomTextField(
+                text: $email, 
+                placeholder: localizedText("email"), 
+                icon: "envelope.fill"
+            )
+            CustomTextField(
+                text: $password, 
+                placeholder: localizedText("password"), 
+                icon: "lock.fill", 
+                isSecure: true
+            )
+            CustomTextField(
+                text: $confirmPassword, 
+                placeholder: localizedText("confirm_password"), 
+                icon: "lock.fill", 
+                isSecure: true
+            )
         }
     }
     
@@ -135,6 +167,37 @@ struct AuthView: View {
         password = ""
         confirmPassword = ""
         authManager.errorMessage = nil
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        switch key {
+        // 인증 관련
+        case "signin":
+            return languageManager.currentLanguage == .korean ? "로그인" : "Sign In"
+        case "signup":
+            return languageManager.currentLanguage == .korean ? "회원가입" : "Sign Up"
+        case "have_account":
+            return languageManager.currentLanguage == .korean ? "이미 계정이 있나요? 로그인" : "Already have an account? Sign In"
+        case "no_account":
+            return languageManager.currentLanguage == .korean ? "계정이 없나요? 회원가입" : "Don't have an account? Sign Up"
+        
+        // 폼 필드
+        case "username":
+            return languageManager.currentLanguage == .korean ? "사용자명" : "Username"
+        case "username_or_email":
+            return languageManager.currentLanguage == .korean ? "사용자명 또는 이메일" : "Username or Email"
+        case "display_name":
+            return languageManager.currentLanguage == .korean ? "표시 이름" : "Display Name"
+        case "email":
+            return languageManager.currentLanguage == .korean ? "이메일" : "Email"
+        case "password":
+            return languageManager.currentLanguage == .korean ? "비밀번호" : "Password"
+        case "confirm_password":
+            return languageManager.currentLanguage == .korean ? "비밀번호 확인" : "Confirm Password"
+        
+        default:
+            return key
+        }
     }
 }
 
@@ -170,4 +233,5 @@ struct CustomTextField: View {
     let auth = AuthManager(modelContext: context)
     return AuthView()
         .environmentObject(auth)
+        .environmentObject(LanguageManager())
 }

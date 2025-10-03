@@ -401,6 +401,7 @@
 				DEVELOPMENT_TEAM = J2H9W2R9WX;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSContactsUsageDescription = "We need access to your contacts so you can easily find friends and start conversations.";
 				INFOPLIST_KEY_UILaunchScreen_ColorName = "";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_ImageName = "";
@@ -437,6 +438,7 @@
 				DEVELOPMENT_TEAM = J2H9W2R9WX;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSContactsUsageDescription = "We need access to your contacts so you can easily find friends and start conversations.";
 				INFOPLIST_KEY_UILaunchScreen_ColorName = "";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_ImageName = "";

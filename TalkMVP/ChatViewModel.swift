@@ -88,7 +88,11 @@ class ChatViewModel: ObservableObject {
         chatRoom.lastMessage = newMessageText
         chatRoom.timestamp = Date()
         
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            print("❌ sendMessage 저장 실패: \(error)")
+        }
         
         // 실시간 서비스로 메시지 전송
         chatService?.sendMessage(message, to: chatRoom)
@@ -115,7 +119,11 @@ class ChatViewModel: ObservableObject {
         chatRoom.lastMessage = "사진을 보냈습니다"
         chatRoom.timestamp = Date()
         
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            print("❌ sendImage 저장 실패: \(error)")
+        }
         
         // 실시간 서비스로 이미지 전송
         chatService?.sendMessage(message, to: chatRoom)
@@ -151,19 +159,19 @@ class ChatViewModel: ObservableObject {
     
     // 타이핑 상태 관리
     func startTyping() {
-        guard !isTyping else { return }
+        // 항상 타이핑 상태로 전환하고 타이머를 리셋합니다.
         isTyping = true
         
         // 실제 앱에서는 서버로 타이핑 시작 이벤트 전송
         print("User started typing in chat: \(chatRoom.name)")
         
-        // 타이핑 타이머 리셋
+        // 타이핑 타이머 리셋 (selector 기반으로 @Sendable 캡처 회피)
         typingTimer?.invalidate()
-        typingTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: false) { _ in
-            Task { @MainActor in
-                self.stopTyping()
-            }
-        }
+        typingTimer = Timer.scheduledTimer(timeInterval: 3.0, target: self, selector: #selector(typingTimerFired(_:)), userInfo: nil, repeats: false)
+    }
+    
+    @objc private func typingTimerFired(_ timer: Timer) {
+        stopTyping()
     }
     
     func stopTyping() {
@@ -328,3 +336,4 @@ class ChatViewModel: ObservableObject {
         chatService?.deleteMessage(message, in: chatRoom)
     }
 }
+

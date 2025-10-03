@@ -132,6 +132,15 @@ struct MessageBubbleView: View {
                 }
             }
             .frame(minWidth: 150)
+            
+        case .deleted:
+            HStack {
+                Image(systemName: "trash")
+                    .foregroundColor(.secondary)
+                Text("메시지가 삭제되었습니다")
+                    .foregroundColor(.secondary)
+                    .italic()
+            }
         }
     }
     
@@ -166,7 +175,7 @@ struct MessageBubbleView: View {
     let container = try! ModelContainer(for: Message.self, ChatRoom.self)
     
     VStack {
-        MessageBubbleView(message: Message(text: "안녕하세요!", isFromCurrentUser: false, sender: "친구"), avatarSymbolName: "person.circle.fill")
+        MessageBubbleView(message: Message(text: "안녕하세요!", isFromCurrentUser: false, sender: "친구"))
         MessageBubbleView(message: Message(text: "안녕하세요! 반갑습니다 😊", isFromCurrentUser: true))
     }
     .padding()

@@ -12,6 +12,7 @@ import SwiftData
 struct TalkMVPApp: App {
     @StateObject private var appLock = AppLockManager()
     @StateObject private var authManager: AuthManager
+    @StateObject private var languageManager = LanguageManager()
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -25,6 +26,9 @@ struct TalkMVPApp: App {
             ChatRoom.self,
             User.self,
             Friendship.self,
+            Poll.self,
+            PollOption.self,
+            PollVote.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -40,6 +44,7 @@ struct TalkMVPApp: App {
             ContentView()
                 .environmentObject(authManager)
                 .environmentObject(appLock)
+                .environmentObject(languageManager)
                 .ignoresSafeArea(.all, edges: .all)
                 .fullScreenCover(isPresented: Binding(get: { appLock.isLocked }, set: { _ in })) {
                     AppLockView()

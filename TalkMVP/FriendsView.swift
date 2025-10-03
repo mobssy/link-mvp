@@ -12,6 +12,7 @@ import UserNotifications
 // 간소화된 친구 목록 뷰
 struct FriendsView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var languageManager: LanguageManager
     @StateObject private var authManager: AuthManager
     @StateObject private var notificationManager = NotificationManager()
     
@@ -90,7 +91,7 @@ struct FriendsView: View {
                 
                 // 받은 친구 요청
                 if !receivedRequests.isEmpty {
-                    Section("📬 받은 친구 요청 \(receivedRequests.count)") {
+                    Section(localizedText("received_requests", count: receivedRequests.count)) {
                         ForEach(receivedRequests, id: \.id) { friendship in
                             ReceivedRequestRow(
                                 friendship: friendship, 
@@ -104,7 +105,7 @@ struct FriendsView: View {
                 
                 // 보낸 친구 요청
                 if !pendingRequests.isEmpty {
-                    Section("📤 보낸 친구 요청 \(pendingRequests.count)") {
+                    Section(localizedText("sent_requests", count: pendingRequests.count)) {
                         ForEach(pendingRequests, id: \.id) { friendship in
                             PendingRequestRow(friendship: friendship)
                         }
@@ -114,12 +115,12 @@ struct FriendsView: View {
                 }
                 
                 // 친구 목록
-                Section("친구 목록 \(acceptedFriends.count)") {
+                Section(localizedText("friends_list", count: acceptedFriends.count)) {
                     if acceptedFriends.isEmpty && !searchText.isEmpty {
                         ContentUnavailableView(
-                            "검색 결과 없음",
+                            localizedText("no_search_results"),
                             systemImage: "magnifyingglass",
-                            description: Text("'\(searchText)'와 일치하는 친구가 없습니다")
+                            description: Text(localizedText("no_match_for", searchTerm: searchText))
                         )
                     } else if acceptedFriends.isEmpty {
                         VStack(spacing: 20) {
@@ -127,12 +128,12 @@ struct FriendsView: View {
                                 .font(.system(size: 60))
                                 .foregroundColor(.gray)
                             
-                            Text("아직 친구가 없어요")
+                            Text(localizedText("no_friends_yet"))
                                 .font(.title2)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.primary)
                             
-                            Text("친구를 추가해보세요!")
+                            Text(localizedText("add_friends_suggestion"))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
@@ -141,7 +142,7 @@ struct FriendsView: View {
                             }) {
                                 HStack {
                                     Image(systemName: "person.badge.plus")
-                                    Text("이메일로 친구 추가")
+                                    Text(localizedText("add_friend_by_email"))
                                 }
                                 .font(.headline)
                                 .foregroundColor(.white)
@@ -163,8 +164,8 @@ struct FriendsView: View {
                 .headerProminence(.increased)
             }
             .listStyle(.insetGrouped)
-            .navigationTitle("연락처")
-            .searchable(text: $searchText, prompt: "친구 이름 검색...")
+            .navigationTitle(localizedText("contacts"))
+            .searchable(text: $searchText, prompt: localizedText("search_friends_placeholder"))
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -172,7 +173,7 @@ struct FriendsView: View {
                     } label: {
                         Image(systemName: "gearshape")
                     }
-                    .accessibilityLabel("설정")
+                    .accessibilityLabel(localizedText("settings"))
                 }
             }
         }
@@ -193,6 +194,39 @@ struct FriendsView: View {
         }
         .onAppear {
             loadFriendships()
+        }
+    }
+    
+    private func localizedText(_ key: String, count: Int = 0, searchTerm: String = "") -> String {
+        switch key {
+        case "received_requests":
+            return languageManager.currentLanguage == .korean ? 
+                "📬 받은 친구 요청 \(count)" : "📬 Received Friend Requests \(count)"
+        case "sent_requests":
+            return languageManager.currentLanguage == .korean ? 
+                "📤 보낸 친구 요청 \(count)" : "📤 Sent Friend Requests \(count)"
+        case "friends_list":
+            return languageManager.currentLanguage == .korean ? 
+                "친구 목록 \(count)" : "Friends List \(count)"
+        case "no_search_results":
+            return languageManager.currentLanguage == .korean ? "검색 결과 없음" : "No Search Results"
+        case "no_match_for":
+            return languageManager.currentLanguage == .korean ? 
+                "'\(searchTerm)'와 일치하는 친구가 없습니다" : "No friends match '\(searchTerm)'"
+        case "no_friends_yet":
+            return languageManager.currentLanguage == .korean ? "아직 친구가 없어요" : "No Friends Yet"
+        case "add_friends_suggestion":
+            return languageManager.currentLanguage == .korean ? "친구를 추가해보세요!" : "Try adding some friends!"
+        case "add_friend_by_email":
+            return languageManager.currentLanguage == .korean ? "이메일로 친구 추가" : "Add Friend by Email"
+        case "contacts":
+            return languageManager.currentLanguage == .korean ? "연락처" : "Contacts"
+        case "search_friends_placeholder":
+            return languageManager.currentLanguage == .korean ? "친구 이름 검색..." : "Search friend names..."
+        case "settings":
+            return languageManager.currentLanguage == .korean ? "설정" : "Settings"
+        default:
+            return key
         }
     }
     
@@ -225,6 +259,7 @@ struct FriendsView: View {
 // 간소화된 내 프로필 행
 struct MyProfileRow: View {
     @ObservedObject var authManager: AuthManager
+    @EnvironmentObject private var languageManager: LanguageManager
     @State private var showingProfileEdit = false
     
     var body: some View {
@@ -237,12 +272,12 @@ struct MyProfileRow: View {
                     .foregroundColor(.blue)
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(authManager.currentUser?.displayName ?? "사용자")
+                    Text(authManager.currentUser?.displayName ?? localizedText("user"))
                         .font(.title2)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
                     
-                    Text(authManager.currentUser?.statusMessage ?? "상태 메시지")
+                    Text(authManager.currentUser?.statusMessage ?? localizedText("status_message"))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -260,6 +295,17 @@ struct MyProfileRow: View {
             ProfileEditView(authManager: authManager)
         }
     }
+    
+    private func localizedText(_ key: String) -> String {
+        switch key {
+        case "user":
+            return languageManager.currentLanguage == .korean ? "사용자" : "User"
+        case "status_message":
+            return languageManager.currentLanguage == .korean ? "상태 메시지" : "Status Message"
+        default:
+            return key
+        }
+    }
 }
 
 // 간소화된 친구 행
@@ -267,6 +313,7 @@ struct FriendRow: View {
     let friendship: Friendship
     let onDataChanged: () -> Void
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var languageManager: LanguageManager
     @State private var showingProfileView = false
     
     var body: some View {
@@ -284,7 +331,7 @@ struct FriendRow: View {
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
                     
-                    Text("온라인")
+                    Text(localizedText("online"))
                         .font(.subheadline)
                         .foregroundColor(.green)
                 }
@@ -300,6 +347,15 @@ struct FriendRow: View {
         .buttonStyle(PlainButtonStyle())
         .sheet(isPresented: $showingProfileView) {
             FriendProfileView(friendship: friendship)
+        }
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        switch key {
+        case "online":
+            return languageManager.currentLanguage == .korean ? "온라인" : "Online"
+        default:
+            return key
         }
     }
 }

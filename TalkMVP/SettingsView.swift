@@ -15,6 +15,7 @@ import LocalAuthentication
 // 실제 설정 뷰
 struct SettingsView: View {
     @StateObject private var authManager: AuthManager
+    @EnvironmentObject private var languageManager: LanguageManager
     // 설정값들
     @AppStorage("notificationsEnabled") private var notificationsEnabled = true
     @AppStorage("pushNotificationsEnabled") private var pushNotificationsEnabled = true
@@ -47,24 +48,28 @@ struct SettingsView: View {
         case profileEdit
         case notifications
         // case theme // removed
+        case language
         case appInfo
         case privacy
         case storage
         case appIcon
         case aiFeatures
         case translation
+        case disappearingMessages
         
         var id: String {
             switch self {
             case .profileEdit: return "profileEdit"
             case .notifications: return "notifications"
             // case .theme: return "theme" // removed
+            case .language: return "language"
             case .appInfo: return "appInfo"
             case .privacy: return "privacy"
             case .storage: return "storage"
             case .appIcon: return "appIcon"
             case .aiFeatures: return "aiFeatures"
             case .translation: return "translation"
+            case .disappearingMessages: return "disappearingMessages"
             }
         }
     }
@@ -92,100 +97,14 @@ struct SettingsView: View {
     
     var body: some View {
         NavigationStack {
-                List {
-                    Section("계정") {
-                        profileCard
-                    }
-                
-                Section("설정") {
-                    // 알림 설정 - 토글과 상세 설정
-                    HStack {
-                        settingsRowContent(title: "알림", icon: "bell")
-                        Spacer()
-                        Toggle("", isOn: $notificationsEnabled)
-                            .labelsHidden()
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        activeSheet = .notifications
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel(Text("알림"))
-                    .accessibilityHint(Text("알림 옵션을 설정합니다"))
-                    
-                    settingsRow(title: "개인정보", icon: "lock") {
-                        activeSheet = .privacy
-                    }
-                    // Removed theme row
-//                    settingsRow(title: "테마", icon: "paintbrush") {
-//                        activeSheet = .theme
-//                    }
-                    settingsRow(title: "앱 아이콘", icon: "app") {
-                        activeSheet = .appIcon
-                    }
-                    settingsRow(title: "데이터 및 저장공간", icon: "internaldrive") {
-                        activeSheet = .storage
-                    }
-                    settingsRow(title: "AI 요약/검색", icon: "sparkles") {
-                        activeSheet = .aiFeatures
-                    }
-                    settingsRow(title: "번역 채팅", icon: "globe") {
-                        activeSheet = .translation
-                    }
-                    HStack {
-                        settingsRowContent(title: "마지막 활동 표시", icon: "circle.fill")
-                        Spacer()
-                        Toggle("", isOn: $lastActivityEnabled)
-                            .labelsHidden()
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel(Text("마지막 활동 표시"))
-                    .accessibilityHint(Text("친구 프로필에 마지막 활동 정보를 표시합니다"))
-                }
-                
-                Section("보안") {
-                    HStack {
-                        settingsRowContent(title: biometryTitle, icon: "lock.circle")
-                        Spacer()
-                        Toggle("", isOn: $appLockEnabled)
-                            .labelsHidden()
-                            .accessibilityLabel(Text(biometryTitle))
-                            .accessibilityHint(Text("Face ID 또는 Touch ID로 앱을 보호합니다"))
-                    }
-                }
-                
-                Section("정보") {
-                    settingsRow(title: "도움말", icon: "questionmark.circle", action: {})
-                    settingsRow(title: "앱 정보", icon: "info.circle") {
-                        activeSheet = .appInfo
-                    }
-                    settingsRow(title: "약관 및 정책", icon: "doc.text", action: {})
-                }
-                
-                Section {
-                    Button("계정 삭제", role: .destructive) {
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                        impactFeedback.impactOccurred()
-                        showingDeleteAlert = true
-                    }
-                    .frame(maxWidth: .infinity)
-                    .font(.headline)
-                    .accessibilityLabel(Text("계정 삭제"))
-                    .accessibilityHint(Text("모든 데이터가 삭제됩니다"))
-
-                    Button("로그아웃") {
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                        impactFeedback.impactOccurred()
-                        showingLogoutAlert = true
-                    }
-                    .foregroundColor(.red)
-                    .frame(maxWidth: .infinity)
-                    .font(.headline)
-                    .accessibilityLabel(Text("로그아웃"))
-                    .accessibilityHint(Text("현재 계정에서 로그아웃합니다"))
-                }
+            List {
+                accountSection
+                settingsSection
+                securitySection
+                informationSection
+                destructiveSection
             }
-            .navigationTitle("설정")
+            .navigationTitle(localizedText("settings"))
             .background(Color(UIColor.systemGroupedBackground))
         }
         .sheet(item: $activeSheet) { sheet in
@@ -206,6 +125,9 @@ struct SettingsView: View {
                     quietEndHour: $quietEndHour,
                     quietEndMinute: $quietEndMinute
                 )
+            case .language:
+                LanguageSettingsView()
+                    .environmentObject(languageManager)
             /*
             case .theme:
                 ThemeSettingsView(selectedTheme: $appTheme)
@@ -231,6 +153,9 @@ struct SettingsView: View {
                     translationTargetLanguage: $translationTargetLanguage,
                     translationShowOriginal: $translationShowOriginal
                 )
+            case .disappearingMessages:
+                DisappearingMessageDemoView()
+                    .environmentObject(languageManager)
             }
         }
         .onChange(of: notificationsEnabled) { oldValue, newValue in
@@ -253,24 +178,24 @@ struct SettingsView: View {
                 // 앱 잠금 해제 시 추가 동작이 필요하면 여기에 구현
             }
         }
-        .alert("인증 실패", isPresented: $showingAppLockError) {
-            Button("확인", role: .cancel) { }
+        .alert(localizedText("auth_failed"), isPresented: $showingAppLockError) {
+            Button(localizedText("ok"), role: .cancel) { }
         } message: {
             Text(appLockErrorMessage)
         }
-        .alert("로그아웃", isPresented: $showingLogoutAlert) {
-            Button("취소", role: .cancel) { }
-            Button("로그아웃", role: .destructive) {
+        .alert(localizedText("logout"), isPresented: $showingLogoutAlert) {
+            Button(localizedText("cancel"), role: .cancel) { }
+            Button(localizedText("logout"), role: .destructive) {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     authManager.signOut()
                 }
             }
         } message: {
-            Text("현재 계정에서 로그아웃하시겠습니까?")
+            Text(localizedText("logout_message"))
         }
-        .alert("계정 삭제", isPresented: $showingDeleteAlert) {
-            Button("취소", role: .cancel) { }
-            Button("삭제", role: .destructive) {
+        .alert(localizedText("delete_account"), isPresented: $showingDeleteAlert) {
+            Button(localizedText("cancel"), role: .cancel) { }
+            Button(localizedText("delete"), role: .destructive) {
                 Task {
                     isDeletingAccount = true
                     await authManager.deleteAccount()
@@ -278,13 +203,13 @@ struct SettingsView: View {
                 }
             }
         } message: {
-            Text("정말로 계정을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")
+            Text(localizedText("delete_account_message"))
         }
         .overlay {
             if isDeletingAccount {
                 ZStack {
                     Color.black.opacity(0.2).ignoresSafeArea()
-                    ProgressView("계정 삭제 중…")
+                    ProgressView(localizedText("deleting_account"))
                         .padding()
                         .background(Color(UIColor.systemBackground))
                         .cornerRadius(12)
@@ -295,6 +220,113 @@ struct SettingsView: View {
         .preferredColorScheme(colorScheme)
         .id(appTheme)
         */
+    }
+    
+    // MARK: - Extracted Sections to help the compiler
+    private var accountSection: some View {
+        Section(localizedText("account")) {
+            profileCard
+        }
+    }
+
+    private var settingsSection: some View {
+        Section(localizedText("settings")) {
+            // 알림 설정 - 토글과 상세 설정
+            HStack {
+                settingsRowContent(title: localizedText("notifications"), icon: "bell")
+                Spacer()
+                Toggle("", isOn: $notificationsEnabled)
+                    .labelsHidden()
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                activeSheet = .notifications
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(Text(localizedText("notifications")))
+            .accessibilityHint(Text(localizedText("notifications_hint")))
+            
+            settingsRow(title: localizedText("language"), icon: "globe") {
+                activeSheet = .language
+            }
+            
+            settingsRow(title: localizedText("privacy"), icon: "lock") {
+                activeSheet = .privacy
+            }
+            
+            settingsRow(title: localizedText("app_icon"), icon: "app") {
+                activeSheet = .appIcon
+            }
+            settingsRow(title: localizedText("storage"), icon: "internaldrive") {
+                activeSheet = .storage
+            }
+            settingsRow(title: localizedText("ai_features"), icon: "sparkles") {
+                activeSheet = .aiFeatures
+            }
+            settingsRow(title: localizedText("translation"), icon: "globe") {
+                activeSheet = .translation
+            }
+            settingsRow(title: localizedText("disappearing_messages"), icon: "timer") {
+                activeSheet = .disappearingMessages
+            }
+            HStack {
+                settingsRowContent(title: localizedText("last_activity"), icon: "circle.fill")
+                Spacer()
+                Toggle("", isOn: $lastActivityEnabled)
+                    .labelsHidden()
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(Text(localizedText("last_activity")))
+            .accessibilityHint(Text(localizedText("last_activity_hint")))
+        }
+    }
+
+    private var securitySection: some View {
+        Section(localizedText("security")) {
+            HStack {
+                settingsRowContent(title: biometryTitle, icon: "lock.circle")
+                Spacer()
+                Toggle("", isOn: $appLockEnabled)
+                    .labelsHidden()
+                    .accessibilityLabel(Text(biometryTitle))
+                    .accessibilityHint(Text("Face ID 또는 Touch ID로 앱을 보호합니다"))
+            }
+        }
+    }
+
+    private var informationSection: some View {
+        Section(localizedText("information")) {
+            settingsRow(title: localizedText("help"), icon: "questionmark.circle", action: {})
+            settingsRow(title: localizedText("app_info"), icon: "info.circle") {
+                activeSheet = .appInfo
+            }
+            settingsRow(title: localizedText("terms_policy"), icon: "doc.text", action: {})
+        }
+    }
+
+    private var destructiveSection: some View {
+        Section {
+            Button(localizedText("delete_account"), role: .destructive) {
+                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                impactFeedback.impactOccurred()
+                showingDeleteAlert = true
+            }
+            .frame(maxWidth: .infinity)
+            .font(.headline)
+            .accessibilityLabel(Text(localizedText("delete_account")))
+            .accessibilityHint(Text(localizedText("delete_account_hint")))
+
+            Button(localizedText("logout")) {
+                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                impactFeedback.impactOccurred()
+                showingLogoutAlert = true
+            }
+            .foregroundColor(.red)
+            .frame(maxWidth: .infinity)
+            .font(.headline)
+            .accessibilityLabel(Text(localizedText("logout")))
+            .accessibilityHint(Text(localizedText("logout_hint")))
+        }
     }
     
     // MARK: - 프로필 카드
@@ -310,12 +342,12 @@ struct SettingsView: View {
                 
                 // 사용자 정보
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(authManager.currentUser?.displayName ?? "사용자")
+                    Text(authManager.currentUser?.displayName ?? localizedText("user"))
                         .font(.headline)
                         .foregroundColor(.primary)
                         .multilineTextAlignment(.leading)
                     
-                    Text(authManager.currentUser?.statusMessage ?? "상태메시지를 입력하세요")
+                    Text(authManager.currentUser?.statusMessage ?? localizedText("status_placeholder"))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .lineLimit(2)
@@ -336,8 +368,8 @@ struct SettingsView: View {
             .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isProfilePressed)
         }
         .buttonStyle(PlainButtonStyle())
-        .accessibilityLabel(Text("프로필 편집"))
-        .accessibilityHint(Text("프로필 사진과 정보를 수정합니다"))
+        .accessibilityLabel(Text(localizedText("edit_profile")))
+        .accessibilityHint(Text(localizedText("edit_profile_hint")))
         .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
             withAnimation {
                 isProfilePressed = pressing
@@ -375,12 +407,12 @@ struct SettingsView: View {
         var error: NSError?
         if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
             switch context.biometryType {
-            case .faceID: return "앱 잠금 (Face ID)"
-            case .touchID: return "앱 잠금 (Touch ID)"
-            default: return "앱 잠금"
+            case .faceID: return localizedText("app_lock_faceid")
+            case .touchID: return localizedText("app_lock_touchid")
+            default: return localizedText("app_lock")
             }
         } else {
-            return "앱 잠금"
+            return localizedText("app_lock")
         }
     }
 
@@ -461,16 +493,62 @@ struct SettingsView: View {
     }
     
     private func hintForSetting(_ title: String) -> String {
-        switch title {
-        case "개인정보": return "개인정보 및 정책을 확인합니다"
-        // Removed "테마" case
-        // case "테마": return "라이트, 다크 또는 시스템 테마를 선택합니다"
-        case "앱 아이콘": return "앱 아이콘을 변경합니다"
-        case "데이터 및 저장공간": return "캐시 용량 확인 및 정리를 할 수 있습니다"
-        case "도움말": return "도움말 정보를 확인합니다"
-        case "앱 정보": return "앱 버전 및 정보를 확인합니다"
-        case "약관 및 정책": return "약관과 정책을 확인합니다"
-        default: return "자세한 설정을 확인합니다"
+        return localizedText("setting_hint_\(title.lowercased())")
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        switch key {
+        // 섹션 헤더
+        case "account": return languageManager.currentLanguage == .korean ? "계정" : "Account"
+        case "settings": return languageManager.currentLanguage == .korean ? "설정" : "Settings"
+        case "security": return languageManager.currentLanguage == .korean ? "보안" : "Security"
+        case "information": return languageManager.currentLanguage == .korean ? "정보" : "Information"
+        
+        // 설정 항목들
+        case "notifications": return languageManager.currentLanguage == .korean ? "알림" : "Notifications"
+        case "language": return languageManager.currentLanguage == .korean ? "언어" : "Language"
+        case "privacy": return languageManager.currentLanguage == .korean ? "개인정보" : "Privacy"
+        case "app_icon": return languageManager.currentLanguage == .korean ? "앱 아이콘" : "App Icon"
+        case "storage": return languageManager.currentLanguage == .korean ? "데이터 및 저장공간" : "Data & Storage"
+        case "ai_features": return languageManager.currentLanguage == .korean ? "AI 요약/검색" : "AI Summary/Search"
+        case "translation": return languageManager.currentLanguage == .korean ? "번역 채팅" : "Translation Chat"
+        case "disappearing_messages": return languageManager.currentLanguage == .korean ? "자폭 메시지" : "Disappearing Messages"
+        case "last_activity": return languageManager.currentLanguage == .korean ? "마지막 활동 표시" : "Show Last Activity"
+        case "help": return languageManager.currentLanguage == .korean ? "도움말" : "Help"
+        case "app_info": return languageManager.currentLanguage == .korean ? "앱 정보" : "App Info"
+        case "terms_policy": return languageManager.currentLanguage == .korean ? "약관 및 정책" : "Terms & Policy"
+        
+        // 앱 잠금 관련
+        case "app_lock": return languageManager.currentLanguage == .korean ? "앱 잠금" : "App Lock"
+        case "app_lock_faceid": return languageManager.currentLanguage == .korean ? "앱 잠금 (Face ID)" : "App Lock (Face ID)"
+        case "app_lock_touchid": return languageManager.currentLanguage == .korean ? "앱 잠금 (Touch ID)" : "App Lock (Touch ID)"
+        
+        // 버튼들
+        case "delete_account": return languageManager.currentLanguage == .korean ? "계정 삭제" : "Delete Account"
+        case "logout": return languageManager.currentLanguage == .korean ? "로그아웃" : "Sign Out"
+        case "cancel": return languageManager.currentLanguage == .korean ? "취소" : "Cancel"
+        case "ok": return languageManager.currentLanguage == .korean ? "확인" : "OK"
+        case "delete": return languageManager.currentLanguage == .korean ? "삭제" : "Delete"
+        
+        // 프로필 관련
+        case "user": return languageManager.currentLanguage == .korean ? "사용자" : "User"
+        case "status_placeholder": return languageManager.currentLanguage == .korean ? "상태메시지를 입력하세요" : "Enter status message"
+        case "edit_profile": return languageManager.currentLanguage == .korean ? "프로필 편집" : "Edit Profile"
+        case "edit_profile_hint": return languageManager.currentLanguage == .korean ? "프로필 사진과 정보를 수정합니다" : "Edit profile photo and information"
+        
+        // 알림 및 메시지들
+        case "auth_failed": return languageManager.currentLanguage == .korean ? "인증 실패" : "Authentication Failed"
+        case "logout_message": return languageManager.currentLanguage == .korean ? "현재 계정에서 로그아웃하시겠습니까?" : "Are you sure you want to sign out?"
+        case "delete_account_message": return languageManager.currentLanguage == .korean ? "정말로 계정을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다." : "Are you sure you want to delete your account? This action cannot be undone."
+        case "deleting_account": return languageManager.currentLanguage == .korean ? "계정 삭제 중…" : "Deleting Account…"
+        
+        // 힌트들
+        case "notifications_hint": return languageManager.currentLanguage == .korean ? "알림 옵션을 설정합니다" : "Configure notification options"
+        case "last_activity_hint": return languageManager.currentLanguage == .korean ? "친구 프로필에 마지막 활동 정보를 표시합니다" : "Show last activity information on friend profiles"
+        case "delete_account_hint": return languageManager.currentLanguage == .korean ? "모든 데이터가 삭제됩니다" : "All data will be deleted"
+        case "logout_hint": return languageManager.currentLanguage == .korean ? "현재 계정에서 로그아웃합니다" : "Sign out from current account"
+        
+        default: return key
         }
     }
 }
@@ -487,6 +565,7 @@ struct NotificationSettingsView: View {
     @Binding var quietEndHour: Int
     @Binding var quietEndMinute: Int
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var languageManager: LanguageManager
     
     @State private var startTime: Date = Date()
     @State private var endTime: Date = Date()
@@ -526,32 +605,32 @@ struct NotificationSettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section(header: Text("알림 설정")) {
-                    Toggle("알림 허용", isOn: $notificationsEnabled)
+                Section(header: Text(localizedText("notification_settings"))) {
+                    Toggle(localizedText("allow_notifications"), isOn: $notificationsEnabled)
                     
                     if notificationsEnabled {
-                        Toggle("푸시 알림", isOn: $pushNotificationsEnabled)
-                        Toggle("사운드", isOn: $soundEnabled)
-                        Toggle("진동", isOn: $vibrationEnabled)
+                        Toggle(localizedText("push_notifications"), isOn: $pushNotificationsEnabled)
+                        Toggle(localizedText("sound"), isOn: $soundEnabled)
+                        Toggle(localizedText("vibration"), isOn: $vibrationEnabled)
                     }
                 }
                 
                 if notificationsEnabled {
-                    Section(header: Text("알림 시간"), footer: Text("방해 금지 시간대를 설정하세요")) {
-                        Toggle("조용한 시간대", isOn: $quietHoursEnabled)
+                    Section(header: Text(localizedText("notification_time")), footer: Text(localizedText("do_not_disturb_footer"))) {
+                        Toggle(localizedText("quiet_hours"), isOn: $quietHoursEnabled)
 
                         if quietHoursEnabled {
-                            DatePicker("시작", selection: $startTime, displayedComponents: .hourAndMinute)
-                            DatePicker("종료", selection: $endTime, displayedComponents: .hourAndMinute)
+                            DatePicker(localizedText("start"), selection: $startTime, displayedComponents: .hourAndMinute)
+                            DatePicker(localizedText("end"), selection: $endTime, displayedComponents: .hourAndMinute)
                         }
                     }
                 }
             }
-            .navigationTitle("알림 설정")
+            .navigationTitle(localizedText("notification_settings"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("완료") {
+                    Button(localizedText("done")) {
                         dismiss()
                     }
                 }
@@ -570,12 +649,42 @@ struct NotificationSettingsView: View {
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
+    
+    private func localizedText(_ key: String) -> String {
+        switch key {
+        case "notification_settings":
+            return languageManager.currentLanguage == .korean ? "알림 설정" : "Notification Settings"
+        case "allow_notifications":
+            return languageManager.currentLanguage == .korean ? "알림 허용" : "Allow Notifications"
+        case "push_notifications":
+            return languageManager.currentLanguage == .korean ? "푸시 알림" : "Push Notifications"
+        case "sound":
+            return languageManager.currentLanguage == .korean ? "사운드" : "Sound"
+        case "vibration":
+            return languageManager.currentLanguage == .korean ? "진동" : "Vibration"
+        case "notification_time":
+            return languageManager.currentLanguage == .korean ? "알림 시간" : "Notification Time"
+        case "do_not_disturb_footer":
+            return languageManager.currentLanguage == .korean ? "방해 금지 시간대를 설정하세요" : "Set Do Not Disturb hours"
+        case "quiet_hours":
+            return languageManager.currentLanguage == .korean ? "조용한 시간대" : "Quiet Hours"
+        case "start":
+            return languageManager.currentLanguage == .korean ? "시작" : "Start"
+        case "end":
+            return languageManager.currentLanguage == .korean ? "종료" : "End"
+        case "done":
+            return languageManager.currentLanguage == .korean ? "완료" : "Done"
+        default:
+            return key
+        }
+    }
 }
 
 // MARK: - 앱 정보 뷰
 struct AppInfoView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @EnvironmentObject private var languageManager: LanguageManager
     @State private var showingMailComposer = false
     
     private var appVersion: String {
@@ -606,7 +715,7 @@ struct AppInfoView: View {
                                 .font(.title2)
                                 .fontWeight(.semibold)
                             
-                            Text("버전 \(appVersion) (\(buildNumber))")
+                            Text(localizedText("version", version: appVersion, build: buildNumber))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
@@ -615,16 +724,16 @@ struct AppInfoView: View {
                     .padding(.vertical)
                 }
                 
-                Section("정보") {
-                    InfoRow(title: "개발자", value: "David Song")
-                    InfoRow(title: "카테고리", value: "소셜 네트워킹")
-                    InfoRow(title: "크기", value: "12.3 MB")
-                    InfoRow(title: "호환성", value: "iOS 17.0 이상")
+                Section(localizedText("information")) {
+                    InfoRow(title: localizedText("developer"), value: "David Song")
+                    InfoRow(title: localizedText("category"), value: localizedText("social_networking"))
+                    InfoRow(title: localizedText("size"), value: "12.3 MB")
+                    InfoRow(title: localizedText("compatibility"), value: localizedText("ios_compatibility"))
                 }
                 
-                Section("지원") {
+                Section(localizedText("support")) {
                     HStack {
-                        Text("피드백 보내기")
+                        Text(localizedText("send_feedback"))
                         Spacer()
                         Image(systemName: "envelope")
                             .foregroundColor(.secondary)
@@ -639,7 +748,7 @@ struct AppInfoView: View {
                     }
                     
                     HStack {
-                        Text("평가하기")
+                        Text(localizedText("rate_app"))
                         Spacer()
                         Image(systemName: "star")
                             .foregroundColor(.secondary)
@@ -656,25 +765,62 @@ struct AppInfoView: View {
                     }
                 }
             }
-            .navigationTitle("앱 정보")
+            .navigationTitle(localizedText("app_info"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("완료") {
+                    Button(localizedText("done")) {
                         dismiss()
                     }
                 }
             }
             .sheet(isPresented: $showingMailComposer) {
                 MailView(
-                    subject: "TalkMVP 피드백",
+                    subject: localizedText("talkmvp_feedback"),
                     recipients: ["support@talkmvp.app"],
-                    body: "앱에 대한 의견을 보내주세요."
+                    body: localizedText("feedback_body")
                 )
             }
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+    }
+    
+    private func localizedText(_ key: String, version: String = "", build: String = "") -> String {
+        switch key {
+        case "version":
+            return languageManager.currentLanguage == .korean ? "버전 \(version) (\(build))" : "Version \(version) (\(build))"
+        case "information":
+            return languageManager.currentLanguage == .korean ? "정보" : "Information"
+        case "developer":
+            return languageManager.currentLanguage == .korean ? "개발자" : "Developer"
+        case "category":
+            return languageManager.currentLanguage == .korean ? "카테고리" : "Category"
+        case "social_networking":
+            return languageManager.currentLanguage == .korean ? "소셜 네트워킹" : "Social Networking"
+        case "size":
+            return languageManager.currentLanguage == .korean ? "크기" : "Size"
+        case "compatibility":
+            return languageManager.currentLanguage == .korean ? "호환성" : "Compatibility"
+        case "ios_compatibility":
+            return languageManager.currentLanguage == .korean ? "iOS 17.0 이상" : "iOS 17.0 or later"
+        case "support":
+            return languageManager.currentLanguage == .korean ? "지원" : "Support"
+        case "send_feedback":
+            return languageManager.currentLanguage == .korean ? "피드백 보내기" : "Send Feedback"
+        case "rate_app":
+            return languageManager.currentLanguage == .korean ? "평가하기" : "Rate App"
+        case "app_info":
+            return languageManager.currentLanguage == .korean ? "앱 정보" : "App Information"
+        case "done":
+            return languageManager.currentLanguage == .korean ? "완료" : "Done"
+        case "talkmvp_feedback":
+            return languageManager.currentLanguage == .korean ? "TalkMVP 피드백" : "TalkMVP Feedback"
+        case "feedback_body":
+            return languageManager.currentLanguage == .korean ? "앱에 대한 의견을 보내주세요." : "Please send us your feedback about the app."
+        default:
+            return key
+        }
     }
 }
 
@@ -822,29 +968,30 @@ struct AppIconSettingsView: View {
 // MARK: - 데이터 및 저장공간 뷰
 struct StorageSettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var cacheSize: String = "계산 중…"
+    @EnvironmentObject private var languageManager: LanguageManager
+    @State private var cacheSize: String = ""
 
     var body: some View {
         NavigationStack {
             List {
-                Section("저장공간") {
+                Section(localizedText("storage")) {
                     HStack {
-                        Text("캐시 용량")
+                        Text(localizedText("cache_size"))
                         Spacer()
-                        Text(cacheSize)
+                        Text(cacheSize.isEmpty ? localizedText("calculating") : cacheSize)
                             .foregroundColor(.secondary)
                     }
 
-                    Button("캐시 삭제", role: .destructive) {
+                    Button(localizedText("clear_cache"), role: .destructive) {
                         clearCache()
                     }
                 }
             }
-            .navigationTitle("데이터 및 저장공간")
+            .navigationTitle(localizedText("data_storage"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("완료") {
+                    Button(localizedText("done")) {
                         dismiss()
                     }
                 }
@@ -907,6 +1054,25 @@ struct StorageSettingsView: View {
         formatter.countStyle = .file
         return formatter.string(fromByteCount: bytes)
     }
+    
+    private func localizedText(_ key: String) -> String {
+        switch key {
+        case "storage":
+            return languageManager.currentLanguage == .korean ? "저장공간" : "Storage"
+        case "cache_size":
+            return languageManager.currentLanguage == .korean ? "캐시 용량" : "Cache Size"
+        case "calculating":
+            return languageManager.currentLanguage == .korean ? "계산 중…" : "Calculating…"
+        case "clear_cache":
+            return languageManager.currentLanguage == .korean ? "캐시 삭제" : "Clear Cache"
+        case "data_storage":
+            return languageManager.currentLanguage == .korean ? "데이터 및 저장공간" : "Data & Storage"
+        case "done":
+            return languageManager.currentLanguage == .korean ? "완료" : "Done"
+        default:
+            return key
+        }
+    }
 }
 
 // MARK: - AI 요약/검색 설정 뷰
@@ -915,31 +1081,59 @@ struct AISummarySettingsView: View {
     @Binding var aiSearchEnabled: Bool
     @Binding var aiAutoMeetingNotesEnabled: Bool
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var languageManager: LanguageManager
 
     var body: some View {
         NavigationStack {
             List {
-                Section(header: Text("AI 요약"), footer: Text("요약 및 검색 기능은 기기 성능과 네트워크 상태에 따라 달라질 수 있습니다.")) {
-                    Toggle("요약 활성화", isOn: $aiSummaryEnabled)
+                Section(header: Text(localizedText("ai_summary")), footer: Text(localizedText("ai_footer"))) {
+                    Toggle(localizedText("enable_summary"), isOn: $aiSummaryEnabled)
                 }
 
                 if aiSummaryEnabled {
-                    Section(header: Text("옵션")) {
-                        Toggle("과거 대화 검색 인덱싱", isOn: $aiSearchEnabled)
-                        Toggle("그룹 회의록 자동 생성", isOn: $aiAutoMeetingNotesEnabled)
+                    Section(header: Text(localizedText("options"))) {
+                        Toggle(localizedText("search_indexing"), isOn: $aiSearchEnabled)
+                        Toggle(localizedText("auto_meeting_notes"), isOn: $aiAutoMeetingNotesEnabled)
                     }
                 }
             }
-            .navigationTitle("AI 요약/검색")
+            .navigationTitle(localizedText("ai_summary_search"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("완료") { dismiss() }
+                    Button(localizedText("done")) { 
+                        dismiss() 
+                    }
                 }
             }
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        switch key {
+        case "ai_summary":
+            return languageManager.currentLanguage == .korean ? "AI 요약" : "AI Summary"
+        case "ai_footer":
+            return languageManager.currentLanguage == .korean ? 
+                "요약 및 검색 기능은 기기 성능과 네트워크 상태에 따라 달라질 수 있습니다." : 
+                "Summary and search features may vary depending on device performance and network conditions."
+        case "enable_summary":
+            return languageManager.currentLanguage == .korean ? "요약 활성화" : "Enable Summary"
+        case "options":
+            return languageManager.currentLanguage == .korean ? "옵션" : "Options"
+        case "search_indexing":
+            return languageManager.currentLanguage == .korean ? "과거 대화 검색 인덱싱" : "Search Indexing for Past Conversations"
+        case "auto_meeting_notes":
+            return languageManager.currentLanguage == .korean ? "그룹 회의록 자동 생성" : "Auto-Generate Group Meeting Notes"
+        case "ai_summary_search":
+            return languageManager.currentLanguage == .korean ? "AI 요약/검색" : "AI Summary/Search"
+        case "done":
+            return languageManager.currentLanguage == .korean ? "완료" : "Done"
+        default:
+            return key
+        }
     }
 }
 
@@ -950,33 +1144,36 @@ struct TranslationSettingsView: View {
     @Binding var translationTargetLanguage: String
     @Binding var translationShowOriginal: Bool
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var languageManager: LanguageManager
 
-    private let languages: [(code: String, name: String)] = [
-        ("auto", "자동 감지"),
-        ("en", "영어"),
-        ("ja", "일본어"),
-        ("ko", "한국어"),
-        ("zh-Hans", "중국어(간체)"),
-        ("zh-Hant", "중국어(번체)"),
-        ("es", "스페인어"),
-        ("fr", "프랑스어"),
-        ("de", "독일어")
-    ]
+    private var languages: [(code: String, name: String)] {
+        [
+            ("auto", localizedText("auto_detect")),
+            ("en", localizedText("english")),
+            ("ja", localizedText("japanese")),
+            ("ko", localizedText("korean")),
+            ("zh-Hans", localizedText("chinese_simplified")),
+            ("zh-Hant", localizedText("chinese_traditional")),
+            ("es", localizedText("spanish")),
+            ("fr", localizedText("french")),
+            ("de", localizedText("german"))
+        ]
+    }
 
     var body: some View {
         NavigationStack {
             List {
-                Section(header: Text("번역")) {
-                    Toggle("번역 활성화", isOn: $translationEnabled)
+                Section(header: Text(localizedText("translation"))) {
+                    Toggle(localizedText("enable_translation"), isOn: $translationEnabled)
                 }
 
                 if translationEnabled {
-                    Section(header: Text("옵션")) {
-                        Toggle("자동 언어 감지", isOn: $translationAutoDetect)
-                        Toggle("원문 함께 표시", isOn: $translationShowOriginal)
+                    Section(header: Text(localizedText("options"))) {
+                        Toggle(localizedText("auto_language_detect"), isOn: $translationAutoDetect)
+                        Toggle(localizedText("show_original"), isOn: $translationShowOriginal)
                     }
 
-                    Section(header: Text("기본 대상 언어"), footer: Text("채팅별로 다른 언어를 설정할 수 있도록 별도 옵션을 제공할 수 있습니다.")) {
+                    Section(header: Text(localizedText("default_target_language")), footer: Text(localizedText("language_footer"))) {
                         ForEach(languages, id: \.code) { lang in
                             HStack {
                                 Text(lang.name)
@@ -996,16 +1193,148 @@ struct TranslationSettingsView: View {
                     }
                 }
             }
-            .navigationTitle("번역 채팅")
+            .navigationTitle(localizedText("translation_chat"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("완료") { dismiss() }
+                    Button(localizedText("done")) { dismiss() }
                 }
             }
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        switch key {
+        case "translation":
+            return languageManager.currentLanguage == .korean ? "번역" : "Translation"
+        case "enable_translation":
+            return languageManager.currentLanguage == .korean ? "번역 활성화" : "Enable Translation"
+        case "options":
+            return languageManager.currentLanguage == .korean ? "옵션" : "Options"
+        case "auto_language_detect":
+            return languageManager.currentLanguage == .korean ? "자동 언어 감지" : "Auto Language Detection"
+        case "show_original":
+            return languageManager.currentLanguage == .korean ? "원문 함께 표시" : "Show Original Text"
+        case "default_target_language":
+            return languageManager.currentLanguage == .korean ? "기본 대상 언어" : "Default Target Language"
+        case "language_footer":
+            return languageManager.currentLanguage == .korean ? 
+                "채팅별로 다른 언어를 설정할 수 있도록 별도 옵션을 제공할 수 있습니다." : 
+                "You can provide separate options to set different languages for each chat."
+        case "translation_chat":
+            return languageManager.currentLanguage == .korean ? "번역 채팅" : "Translation Chat"
+        case "done":
+            return languageManager.currentLanguage == .korean ? "완료" : "Done"
+        
+        // 언어 이름들
+        case "auto_detect":
+            return languageManager.currentLanguage == .korean ? "자동 감지" : "Auto Detect"
+        case "english":
+            return languageManager.currentLanguage == .korean ? "영어" : "English"
+        case "japanese":
+            return languageManager.currentLanguage == .korean ? "일본어" : "Japanese"
+        case "korean":
+            return languageManager.currentLanguage == .korean ? "한국어" : "Korean"
+        case "chinese_simplified":
+            return languageManager.currentLanguage == .korean ? "중국어(간체)" : "Chinese (Simplified)"
+        case "chinese_traditional":
+            return languageManager.currentLanguage == .korean ? "중국어(번체)" : "Chinese (Traditional)"
+        case "spanish":
+            return languageManager.currentLanguage == .korean ? "스페인어" : "Spanish"
+        case "french":
+            return languageManager.currentLanguage == .korean ? "프랑스어" : "French"
+        case "german":
+            return languageManager.currentLanguage == .korean ? "독일어" : "German"
+        
+        default:
+            return key
+        }
+    }
+}
+
+// MARK: - 자폭 메시지 데모 뷰
+struct DisappearingMessageDemoView: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var languageManager: LanguageManager
+    @State private var enabled: Bool = false
+    @State private var seconds: Int = 10
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section(header: Text(localizedText("feature"))) {
+                    Toggle(localizedText("enable"), isOn: $enabled)
+                }
+
+                if enabled {
+                    Section(header: Text(localizedText("duration")), footer: Text(localizedText("footer"))) {
+                        Stepper(value: $seconds, in: 5...300, step: 5) {
+                            HStack {
+                                Text(localizedText("auto_delete_after"))
+                                Spacer()
+                                Text(localizedText("seconds_value", seconds: seconds))
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                }
+
+                Section(header: Text(localizedText("preview_header"))) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(localizedText("preview_title"))
+                            .font(.headline)
+                        Text(localizedText("preview_desc", seconds: seconds))
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+            .navigationTitle(localizedText("title"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(localizedText("done")) { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func localizedText(_ key: String, seconds: Int = 0) -> String {
+        switch key {
+        case "title":
+            return languageManager.currentLanguage == .korean ? "자폭 메시지" : "Disappearing Messages"
+        case "feature":
+            return languageManager.currentLanguage == .korean ? "기능" : "Feature"
+        case "enable":
+            return languageManager.currentLanguage == .korean ? "자폭 메시지 활성화" : "Enable Disappearing Messages"
+        case "duration":
+            return languageManager.currentLanguage == .korean ? "자동 삭제 시간" : "Auto-Delete Time"
+        case "auto_delete_after":
+            return languageManager.currentLanguage == .korean ? "보낸 후 자동 삭제" : "Auto delete after sending"
+        case "seconds_value":
+            return languageManager.currentLanguage == .korean ? "\(seconds)초" : "\(seconds) sec"
+        case "footer":
+            return languageManager.currentLanguage == .korean ?
+                "이 설정은 새로 보내는 메시지에만 적용됩니다. 저장소 절약 및 프라이버시 보호에 도움이 됩니다." :
+                "This applies to newly sent messages only. Helps save storage and protect privacy."
+        case "preview_header":
+            return languageManager.currentLanguage == .korean ? "미리보기" : "Preview"
+        case "preview_title":
+            return languageManager.currentLanguage == .korean ? "샘플 메시지" : "Sample Message"
+        case "preview_desc":
+            return languageManager.currentLanguage == .korean ?
+                "이 메시지는 전송 후 \(seconds)초 뒤 자동으로 삭제됩니다." :
+                "This message will disappear \(seconds) seconds after it is sent."
+        case "done":
+            return languageManager.currentLanguage == .korean ? "완료" : "Done"
+        default:
+            return key
+        }
     }
 }
 
@@ -1057,4 +1386,6 @@ struct InfoRow: View {
     let container = try! ModelContainer(for: User.self)
     let context = ModelContext(container)
     return SettingsView(authManager: AuthManager(modelContext: context))
+        .environmentObject(LanguageManager())
 }
+
