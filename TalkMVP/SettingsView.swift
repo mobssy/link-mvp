@@ -52,10 +52,9 @@ struct SettingsView: View {
         case appInfo
         case privacy
         case storage
-        case appIcon
+        // case appIcon // removed
         case aiFeatures
         case translation
-        case disappearingMessages
         
         var id: String {
             switch self {
@@ -66,10 +65,9 @@ struct SettingsView: View {
             case .appInfo: return "appInfo"
             case .privacy: return "privacy"
             case .storage: return "storage"
-            case .appIcon: return "appIcon"
+            // case .appIcon: return "appIcon" // removed
             case .aiFeatures: return "aiFeatures"
             case .translation: return "translation"
-            case .disappearingMessages: return "disappearingMessages"
             }
         }
     }
@@ -136,10 +134,13 @@ struct SettingsView: View {
                 AppInfoView()
             case .privacy:
                 PrivacySettingsView()
+                    .environmentObject(languageManager)
             case .storage:
                 StorageSettingsView()
+            /*
             case .appIcon:
                 AppIconSettingsView()
+            */
             case .aiFeatures:
                 AISummarySettingsView(
                     aiSummaryEnabled: $aiSummaryEnabled,
@@ -153,9 +154,6 @@ struct SettingsView: View {
                     translationTargetLanguage: $translationTargetLanguage,
                     translationShowOriginal: $translationShowOriginal
                 )
-            case .disappearingMessages:
-                DisappearingMessageDemoView()
-                    .environmentObject(languageManager)
             }
         }
         .onChange(of: notificationsEnabled) { oldValue, newValue in
@@ -254,9 +252,11 @@ struct SettingsView: View {
                 activeSheet = .privacy
             }
             
+            /*
             settingsRow(title: localizedText("app_icon"), icon: "app") {
                 activeSheet = .appIcon
             }
+            */
             settingsRow(title: localizedText("storage"), icon: "internaldrive") {
                 activeSheet = .storage
             }
@@ -265,9 +265,6 @@ struct SettingsView: View {
             }
             settingsRow(title: localizedText("translation"), icon: "globe") {
                 activeSheet = .translation
-            }
-            settingsRow(title: localizedText("disappearing_messages"), icon: "timer") {
-                activeSheet = .disappearingMessages
             }
             HStack {
                 settingsRowContent(title: localizedText("last_activity"), icon: "circle.fill")
@@ -289,7 +286,7 @@ struct SettingsView: View {
                 Toggle("", isOn: $appLockEnabled)
                     .labelsHidden()
                     .accessibilityLabel(Text(biometryTitle))
-                    .accessibilityHint(Text("Face ID 또는 Touch ID로 앱을 보호합니다"))
+                    .accessibilityHint(Text(localizedText("app_lock_accessibility_hint")))
             }
         }
     }
@@ -418,7 +415,7 @@ struct SettingsView: View {
 
     private func authenticateForAppLock() {
         let context = LAContext()
-        context.localizedFallbackTitle = "암호 사용"
+        context.localizedFallbackTitle = localizedText("use_passcode")
         var authError: NSError?
 
         // Prefer biometrics only if available AND Face ID usage description key exists (avoids crash when key is missing)
@@ -426,7 +423,7 @@ struct SettingsView: View {
         let biometricsAvailable = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &authError)
         let policy: LAPolicy = (biometricsAvailable && hasFaceIDUsageDescription) ? .deviceOwnerAuthenticationWithBiometrics : .deviceOwnerAuthentication
 
-        let reason = "앱 잠금을 활성화하려면 인증이 필요합니다."
+        let reason = localizedText("app_lock_reason")
 
         if context.canEvaluatePolicy(policy, error: &authError) {
             context.evaluatePolicy(policy, localizedReason: reason) { success, error in
@@ -435,7 +432,7 @@ struct SettingsView: View {
                         appLockEnabled = true
                     } else {
                         appLockEnabled = false
-                        appLockErrorMessage = (error as NSError?)?.localizedDescription ?? "인증에 실패했습니다."
+                        appLockErrorMessage = (error as NSError?)?.localizedDescription ?? localizedText("auth_failed_default")
                         showingAppLockError = true
                     }
                 }
@@ -443,7 +440,7 @@ struct SettingsView: View {
         } else {
             DispatchQueue.main.async {
                 appLockEnabled = false
-                appLockErrorMessage = authError?.localizedDescription ?? "이 기기에서는 생체 인증 또는 기기 암호 인증을 사용할 수 없습니다."
+                appLockErrorMessage = authError?.localizedDescription ?? localizedText("auth_unavailable_default")
                 showingAppLockError = true
             }
         }
@@ -508,11 +505,10 @@ struct SettingsView: View {
         case "notifications": return languageManager.currentLanguage == .korean ? "알림" : "Notifications"
         case "language": return languageManager.currentLanguage == .korean ? "언어" : "Language"
         case "privacy": return languageManager.currentLanguage == .korean ? "개인정보" : "Privacy"
-        case "app_icon": return languageManager.currentLanguage == .korean ? "앱 아이콘" : "App Icon"
+        // case "app_icon": return languageManager.currentLanguage == .korean ? "앱 아이콘" : "App Icon" // removed
         case "storage": return languageManager.currentLanguage == .korean ? "데이터 및 저장공간" : "Data & Storage"
         case "ai_features": return languageManager.currentLanguage == .korean ? "AI 요약/검색" : "AI Summary/Search"
         case "translation": return languageManager.currentLanguage == .korean ? "번역 채팅" : "Translation Chat"
-        case "disappearing_messages": return languageManager.currentLanguage == .korean ? "자폭 메시지" : "Disappearing Messages"
         case "last_activity": return languageManager.currentLanguage == .korean ? "마지막 활동 표시" : "Show Last Activity"
         case "help": return languageManager.currentLanguage == .korean ? "도움말" : "Help"
         case "app_info": return languageManager.currentLanguage == .korean ? "앱 정보" : "App Info"
@@ -522,6 +518,11 @@ struct SettingsView: View {
         case "app_lock": return languageManager.currentLanguage == .korean ? "앱 잠금" : "App Lock"
         case "app_lock_faceid": return languageManager.currentLanguage == .korean ? "앱 잠금 (Face ID)" : "App Lock (Face ID)"
         case "app_lock_touchid": return languageManager.currentLanguage == .korean ? "앱 잠금 (Touch ID)" : "App Lock (Touch ID)"
+        case "app_lock_accessibility_hint": return languageManager.currentLanguage == .korean ? "Face ID 또는 Touch ID로 앱을 보호합니다" : "Protect the app with Face ID or Touch ID"
+        case "use_passcode": return languageManager.currentLanguage == .korean ? "암호 사용" : "Use Passcode"
+        case "app_lock_reason": return languageManager.currentLanguage == .korean ? "앱 잠금을 활성화하려면 인증이 필요합니다." : "Authentication is required to enable App Lock."
+        case "auth_failed_default": return languageManager.currentLanguage == .korean ? "인증에 실패했습니다." : "Authentication failed."
+        case "auth_unavailable_default": return languageManager.currentLanguage == .korean ? "이 기기에서는 생체 인증 또는 기기 암호 인증을 사용할 수 없습니다." : "Biometric or device passcode authentication is unavailable on this device."
         
         // 버튼들
         case "delete_account": return languageManager.currentLanguage == .korean ? "계정 삭제" : "Delete Account"
@@ -828,6 +829,7 @@ struct AppInfoView: View {
 struct PrivacySettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @EnvironmentObject private var languageManager: LanguageManager
     @State private var dataCollectionEnabled = false
     @State private var analyticsEnabled = true
     @State private var crashReportEnabled = true
@@ -835,15 +837,15 @@ struct PrivacySettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section(header: Text("데이터 수집"), footer: Text("앱 개선을 위해 익명화된 데이터를 수집합니다.")) {
-                    Toggle("사용 데이터 수집", isOn: $dataCollectionEnabled)
-                    Toggle("분석 데이터", isOn: $analyticsEnabled)
-                    Toggle("크래시 리포트", isOn: $crashReportEnabled)
+                Section(header: Text(localizedText("data_collection")), footer: Text(localizedText("data_collection_footer"))) {
+                    Toggle(localizedText("usage_data_collection"), isOn: $dataCollectionEnabled)
+                    Toggle(localizedText("analytics_data"), isOn: $analyticsEnabled)
+                    Toggle(localizedText("crash_reports"), isOn: $crashReportEnabled)
                 }
                 
-                Section(header: Text("개인정보 보호")) {
+                Section(header: Text(localizedText("privacy_protection"))) {
                     HStack {
-                        Text("개인정보 처리방침")
+                        Text(localizedText("privacy_policy"))
                         Spacer()
                         Image(systemName: "arrow.up.right.square")
                             .foregroundColor(.secondary)
@@ -856,7 +858,7 @@ struct PrivacySettingsView: View {
                     }
                     
                     HStack {
-                        Text("서비스 이용약관")
+                        Text(localizedText("terms_of_service"))
                         Spacer()
                         Image(systemName: "arrow.up.right.square")
                             .foregroundColor(.secondary)
@@ -870,17 +872,17 @@ struct PrivacySettingsView: View {
                 }
                 
                 Section {
-                    Button("모든 데이터 삭제") {
+                    Button(localizedText("delete_all_data")) {
                         // 데이터 삭제 로직
                     }
                     .foregroundColor(.red)
                 }
             }
-            .navigationTitle("개인정보")
+            .navigationTitle(localizedText("privacy"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("완료") {
+                    Button(localizedText("done")) {
                         dismiss()
                     }
                 }
@@ -889,78 +891,33 @@ struct PrivacySettingsView: View {
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
-}
-
-// MARK: - 앱 아이콘 설정 뷰
-struct AppIconSettingsView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedIconName: String? = UIApplication.shared.alternateIconName
-    @State private var showingIconError = false
-    @State private var iconErrorMessage = ""
-
-    // 프로젝트에 구성된 대체 아이콘 이름을 여기에 나열하세요. (Assets 및 Info.plist에 설정 필요)
-    private let icons: [(name: String?, title: String, symbol: String)] = [
-        (nil, "기본 아이콘", "app.fill"),
-        ("AltIcon", "대체 아이콘", "app.badge.fill")
-    ]
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section(header: Text("앱 아이콘 선택"), footer: Text("대체 아이콘을 사용하려면 프로젝트의 Assets 및 Info.plist에 Alternate App Icons가 구성되어 있어야 합니다.")) {
-                    ForEach(icons, id: \.name) { item in
-                        HStack(spacing: 12) {
-                            Image(systemName: item.symbol)
-                                .font(.system(size: 20))
-                                .foregroundColor(.blue)
-                                .frame(width: 28)
-
-                            Text(item.title)
-
-                            Spacer()
-
-                            if selectedIconName == item.name {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.blue)
-                            }
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture { setAppIcon(item.name) }
-                    }
-                }
-            }
-            .navigationTitle("앱 아이콘")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("완료") { dismiss() }
-                }
-            }
-            .alert("아이콘 변경 실패", isPresented: $showingIconError) {
-                Button("확인", role: .cancel) { }
-            } message: {
-                Text(iconErrorMessage)
-            }
-        }
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.visible)
-    }
-
-    private func setAppIcon(_ name: String?) {
-        // 이미 선택된 경우 무시
-        if selectedIconName == name { return }
-
-        UIApplication.shared.setAlternateIconName(name) { error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    iconErrorMessage = error.localizedDescription
-                    showingIconError = true
-                } else {
-                    selectedIconName = name
-                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                    impactFeedback.impactOccurred()
-                }
-            }
+    
+    private func localizedText(_ key: String) -> String {
+        switch key {
+        case "data_collection":
+            return languageManager.currentLanguage == .korean ? "데이터 수집" : "Data Collection"
+        case "data_collection_footer":
+            return languageManager.currentLanguage == .korean ? "앱 개선을 위해 익명화된 데이터를 수집합니다." : "We collect anonymized data to improve the app."
+        case "usage_data_collection":
+            return languageManager.currentLanguage == .korean ? "사용 데이터 수집" : "Usage Data Collection"
+        case "analytics_data":
+            return languageManager.currentLanguage == .korean ? "분석 데이터" : "Analytics"
+        case "crash_reports":
+            return languageManager.currentLanguage == .korean ? "크래시 리포트" : "Crash Reports"
+        case "privacy_protection":
+            return languageManager.currentLanguage == .korean ? "개인정보 보호" : "Privacy"
+        case "privacy_policy":
+            return languageManager.currentLanguage == .korean ? "개인정보 처리방침" : "Privacy Policy"
+        case "terms_of_service":
+            return languageManager.currentLanguage == .korean ? "서비스 이용약관" : "Terms of Service"
+        case "delete_all_data":
+            return languageManager.currentLanguage == .korean ? "모든 데이터 삭제" : "Delete All Data"
+        case "privacy":
+            return languageManager.currentLanguage == .korean ? "개인정보" : "Privacy"
+        case "done":
+            return languageManager.currentLanguage == .korean ? "완료" : "Done"
+        default:
+            return key
         }
     }
 }
@@ -1248,90 +1205,6 @@ struct TranslationSettingsView: View {
         case "german":
             return languageManager.currentLanguage == .korean ? "독일어" : "German"
         
-        default:
-            return key
-        }
-    }
-}
-
-// MARK: - 자폭 메시지 데모 뷰
-struct DisappearingMessageDemoView: View {
-    @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var languageManager: LanguageManager
-    @State private var enabled: Bool = false
-    @State private var seconds: Int = 10
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section(header: Text(localizedText("feature"))) {
-                    Toggle(localizedText("enable"), isOn: $enabled)
-                }
-
-                if enabled {
-                    Section(header: Text(localizedText("duration")), footer: Text(localizedText("footer"))) {
-                        Stepper(value: $seconds, in: 5...300, step: 5) {
-                            HStack {
-                                Text(localizedText("auto_delete_after"))
-                                Spacer()
-                                Text(localizedText("seconds_value", seconds: seconds))
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                    }
-                }
-
-                Section(header: Text(localizedText("preview_header"))) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(localizedText("preview_title"))
-                            .font(.headline)
-                        Text(localizedText("preview_desc", seconds: seconds))
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.vertical, 4)
-                }
-            }
-            .navigationTitle(localizedText("title"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(localizedText("done")) { dismiss() }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
-    }
-
-    private func localizedText(_ key: String, seconds: Int = 0) -> String {
-        switch key {
-        case "title":
-            return languageManager.currentLanguage == .korean ? "자폭 메시지" : "Disappearing Messages"
-        case "feature":
-            return languageManager.currentLanguage == .korean ? "기능" : "Feature"
-        case "enable":
-            return languageManager.currentLanguage == .korean ? "자폭 메시지 활성화" : "Enable Disappearing Messages"
-        case "duration":
-            return languageManager.currentLanguage == .korean ? "자동 삭제 시간" : "Auto-Delete Time"
-        case "auto_delete_after":
-            return languageManager.currentLanguage == .korean ? "보낸 후 자동 삭제" : "Auto delete after sending"
-        case "seconds_value":
-            return languageManager.currentLanguage == .korean ? "\(seconds)초" : "\(seconds) sec"
-        case "footer":
-            return languageManager.currentLanguage == .korean ?
-                "이 설정은 새로 보내는 메시지에만 적용됩니다. 저장소 절약 및 프라이버시 보호에 도움이 됩니다." :
-                "This applies to newly sent messages only. Helps save storage and protect privacy."
-        case "preview_header":
-            return languageManager.currentLanguage == .korean ? "미리보기" : "Preview"
-        case "preview_title":
-            return languageManager.currentLanguage == .korean ? "샘플 메시지" : "Sample Message"
-        case "preview_desc":
-            return languageManager.currentLanguage == .korean ?
-                "이 메시지는 전송 후 \(seconds)초 뒤 자동으로 삭제됩니다." :
-                "This message will disappear \(seconds) seconds after it is sent."
-        case "done":
-            return languageManager.currentLanguage == .korean ? "완료" : "Done"
         default:
             return key
         }

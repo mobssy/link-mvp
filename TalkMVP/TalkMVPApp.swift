@@ -25,10 +25,7 @@ struct TalkMVPApp: App {
             Message.self,
             ChatRoom.self,
             User.self,
-            Friendship.self,
-            Poll.self,
-            PollOption.self,
-            PollVote.self,
+            Friendship.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

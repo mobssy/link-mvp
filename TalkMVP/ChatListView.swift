@@ -18,7 +18,7 @@ struct ChatListView: View {
     
     init() {
         // 임시 컨텍스트로 초기화, onAppear에서 실제 컨텍스트로 재설정
-        let tempContainer = try! ModelContainer(for: Message.self, ChatRoom.self, User.self, Friendship.self, Poll.self, PollOption.self, PollVote.self)
+        let tempContainer = try! ModelContainer(for: Message.self, ChatRoom.self, User.self, Friendship.self)
         self._chatService = StateObject(wrappedValue: ChatService(modelContext: tempContainer.mainContext))
     }
     
