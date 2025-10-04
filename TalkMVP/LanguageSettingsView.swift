@@ -89,25 +89,25 @@ struct LanguageSettingsView: View {
         // 현재 언어 설정에 따른 지역화된 텍스트 반환
         switch key {
         case "language.settings.title":
-            return languageManager.currentLanguage == .korean ? "언어 선택" : "Language Selection"
+            return languageManager.isKorean ? "언어 선택" : "Language Selection"
         case "language.settings.footer":
-            return languageManager.currentLanguage == .korean ? 
+            return languageManager.isKorean ? 
                 "언어를 변경하면 앱이 다시 시작됩니다." : 
                 "The app will restart when you change the language."
         case "language.title":
-            return languageManager.currentLanguage == .korean ? "언어" : "Language"
+            return languageManager.isKorean ? "언어" : "Language"
         case "common.done":
-            return languageManager.currentLanguage == .korean ? "완료" : "Done"
+            return languageManager.isKorean ? "완료" : "Done"
         case "common.cancel":
-            return languageManager.currentLanguage == .korean ? "취소" : "Cancel"
+            return languageManager.isKorean ? "취소" : "Cancel"
         case "language.restart.title":
-            return languageManager.currentLanguage == .korean ? "언어 변경" : "Change Language"
+            return languageManager.isKorean ? "언어 변경" : "Change Language"
         case "language.restart.message":
-            return languageManager.currentLanguage == .korean ? 
+            return languageManager.isKorean ? 
                 "언어를 변경하면 앱이 다시 시작됩니다. 계속하시겠습니까?" : 
                 "Changing the language will restart the app. Do you want to continue?"
         case "language.restart.confirm":
-            return languageManager.currentLanguage == .korean ? "변경" : "Change"
+            return languageManager.isKorean ? "변경" : "Change"
         default:
             return key
         }
@@ -163,3 +163,4 @@ struct LanguageRow: View {
     LanguageSettingsView()
         .environmentObject(LanguageManager())
 }
+

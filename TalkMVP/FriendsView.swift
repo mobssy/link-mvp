@@ -198,7 +198,7 @@ struct FriendsView: View {
     }
     
     private func localizedText(_ key: String, count: Int = 0, searchTerm: String = "") -> String {
-        let isKorean = languageManager.currentLanguage == .korean
+        let isKorean = languageManager.isKorean
         
         var text: String
         switch key {
@@ -311,7 +311,7 @@ struct MyProfileRow: View {
     }
     
     private func localizedDisplayName() -> String {
-        let isKorean = languageManager.currentLanguage == .korean
+        let isKorean = languageManager.isKorean
         let raw = (authManager.currentUser?.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if raw.isEmpty {
             return isKorean ? "사용자" : "User"
@@ -324,7 +324,7 @@ struct MyProfileRow: View {
     }
 
     private func localizedStatusMessage() -> String {
-        let isKorean = languageManager.currentLanguage == .korean
+        let isKorean = languageManager.isKorean
         let raw = (authManager.currentUser?.statusMessage ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if raw.isEmpty {
             return isKorean ? "상태 메시지를 설정해보세요" : "Set your status message"
@@ -337,7 +337,7 @@ struct MyProfileRow: View {
     }
     
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
+        let isKorean = languageManager.isKorean
         
         switch key {
         case "friends": return isKorean ? "친구" : "Friends"
@@ -417,7 +417,7 @@ struct FriendRow: View {
     }
     
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
+        let isKorean = languageManager.isKorean
         
         switch key {
         case "friends": return isKorean ? "친구" : "Friends"
@@ -500,7 +500,7 @@ struct ReceivedRequestRow: View {
     }
     
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
+        let isKorean = languageManager.isKorean
         
         switch key {
         case "friends": return isKorean ? "친구" : "Friends"
@@ -568,7 +568,7 @@ struct PendingRequestRow: View {
     }
     
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
+        let isKorean = languageManager.isKorean
         
         switch key {
         case "friends": return isKorean ? "친구" : "Friends"
@@ -735,7 +735,7 @@ struct AddFriendView: View {
     }
     
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
+        let isKorean = languageManager.isKorean
         
         switch key {
         case "friends": return isKorean ? "친구" : "Friends"
@@ -838,7 +838,7 @@ struct UserSearchResultRow: View {
     }
     
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
+        let isKorean = languageManager.isKorean
         
         switch key {
         case "friends": return isKorean ? "친구" : "Friends"
@@ -910,7 +910,7 @@ struct BlockedFriendsView: View {
     }
     
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
+        let isKorean = languageManager.isKorean
         
         switch key {
         case "friends": return isKorean ? "친구" : "Friends"
@@ -995,7 +995,7 @@ struct BlockedFriendRow: View {
     }
     
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
+        let isKorean = languageManager.isKorean
         
         switch key {
         case "friends": return isKorean ? "친구" : "Friends"
@@ -1073,3 +1073,4 @@ struct UserSearchResult: Identifiable {
     let displayName: String
     let email: String
 }
+

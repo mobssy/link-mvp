@@ -139,7 +139,7 @@ struct ProfileEditView: View {
     }
     
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
+        let isKorean = languageManager.isKorean
         
         switch key {
         case "profile_photo": return isKorean ? "프로필 사진" : "Profile Photo"

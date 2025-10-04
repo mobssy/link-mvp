@@ -18,6 +18,7 @@ struct AuthView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
+    @State private var appIcon: UIImage? = nil
     
     var body: some View {
         GeometryReader { geometry in
@@ -25,7 +26,7 @@ struct AuthView: View {
                 VStack(spacing: 30) {
                 // 로고 영역
                 VStack(spacing: 16) {
-                    if let icon = appIconUIImage() {
+                    if let icon = appIcon {
                         Image(uiImage: icon)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
@@ -49,11 +50,7 @@ struct AuthView: View {
                 
                 // 폼 영역
                 VStack(spacing: 20) {
-                    if isSignUp {
-                        signUpForm
-                    } else {
-                        signInForm
-                    }
+                    authForm
                     
                     // 오류 메시지
                     if let errorMessage = authManager.errorMessage {
@@ -101,54 +98,51 @@ struct AuthView: View {
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             .ignoresSafeArea(.all, edges: .all)
+            .onAppear {
+                if appIcon == nil {
+                    appIcon = appIconUIImage()
+                }
+            }
         }
     }
     
-    private var signInForm: some View {
+    private var authForm: some View {
         VStack(spacing: 16) {
             CustomTextField(
-                text: $username, 
-                placeholder: localizedText("username_or_email"), 
+                text: $username,
+                placeholder: localizedText(isSignUp ? "username" : "username_or_email"),
                 icon: "person.fill"
             )
+
+            if isSignUp {
+                CustomTextField(
+                    text: $displayName,
+                    placeholder: localizedText("display_name"),
+                    icon: "person.crop.circle.fill"
+                )
+                CustomTextField(
+                    text: $email,
+                    placeholder: localizedText("email"),
+                    icon: "envelope.fill",
+                    keyboardType: .emailAddress
+                )
+            }
+
             CustomTextField(
-                text: $password, 
-                placeholder: localizedText("password"), 
-                icon: "lock.fill", 
+                text: $password,
+                placeholder: localizedText("password"),
+                icon: "lock.fill",
                 isSecure: true
             )
-        }
-    }
-    
-    private var signUpForm: some View {
-        VStack(spacing: 16) {
-            CustomTextField(
-                text: $username, 
-                placeholder: localizedText("username"), 
-                icon: "person.fill"
-            )
-            CustomTextField(
-                text: $displayName, 
-                placeholder: localizedText("display_name"), 
-                icon: "person.crop.circle.fill"
-            )
-            CustomTextField(
-                text: $email, 
-                placeholder: localizedText("email"), 
-                icon: "envelope.fill"
-            )
-            CustomTextField(
-                text: $password, 
-                placeholder: localizedText("password"), 
-                icon: "lock.fill", 
-                isSecure: true
-            )
-            CustomTextField(
-                text: $confirmPassword, 
-                placeholder: localizedText("confirm_password"), 
-                icon: "lock.fill", 
-                isSecure: true
-            )
+
+            if isSignUp {
+                CustomTextField(
+                    text: $confirmPassword,
+                    placeholder: localizedText("confirm_password"),
+                    icon: "lock.fill",
+                    isSecure: true
+                )
+            }
         }
     }
     
@@ -181,7 +175,7 @@ struct AuthView: View {
     }
     
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
+        let isKorean = (languageManager.currentLanguage == .korean)
         
         switch key {
         case "signin": return isKorean ? "로그인" : "Sign In"
@@ -216,6 +210,7 @@ struct CustomTextField: View {
     let placeholder: String
     let icon: String
     var isSecure: Bool = false
+    var keyboardType: UIKeyboardType = .default
     
     var body: some View {
         HStack {
@@ -228,6 +223,8 @@ struct CustomTextField: View {
             } else {
                 TextField(placeholder, text: $text)
                     .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
+                    .keyboardType(keyboardType)
             }
         }
         .padding()

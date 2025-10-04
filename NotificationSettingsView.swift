@@ -37,7 +37,7 @@ struct NotificationSettingsView: View {
     }
 
     private func localizedText(_ key: String) -> String {
-        let isKorean = (languageManager.currentLanguage == .korean)
+        let isKorean = languageManager.isKorean
         switch key {
         case "notifications": return isKorean ? "알림" : "Notifications"
         case "push_permission": return isKorean ? "푸시 권한" : "Push Permission"
@@ -49,7 +49,7 @@ struct NotificationSettingsView: View {
     }
 
     private func notificationFooterText() -> String {
-        return languageManager.currentLanguage == .korean ?
+        return languageManager.isKorean ?
             "알림 권한은 기기 설정에서 변경할 수 있습니다" :
             "You can change notification permissions in the device Settings"
     }

@@ -180,7 +180,7 @@ struct SettingsView: View {
 
     // Must be accessible from the extension file, so use internal access (default).
     func localizedText(_ key: String) -> String {
-        let isKorean = (languageManager.currentLanguage == .korean)
+        let isKorean = languageManager.isKorean
         switch key {
         // Common
         case "settings": return isKorean ? "설정" : "Settings"

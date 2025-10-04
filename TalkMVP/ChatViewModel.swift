@@ -71,9 +71,15 @@ class ChatViewModel: ObservableObject {
         guard translationEnabled else { return }
         let trimmed = message.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        guard translations[message.id] == nil, !translating.contains(message.id) else { return }
-
-        translating.insert(message.id)
+        guard translations[message.id] == nil else { return }
+        
+        let isKorean: Bool = {
+            if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") { return saved.hasPrefix("ko") }
+            if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first.hasPrefix("ko") }
+            return false
+        }()
+        // Show a user-friendly placeholder while translating
+        self.translations[message.id] = isKorean ? "번역중..." : "Translating..."
 
         Task {
             let result = await AIService.shared.translate(
@@ -83,7 +89,6 @@ class ChatViewModel: ObservableObject {
             )
             await MainActor.run {
                 self.translations[message.id] = result
-                self.translating.remove(message.id)
             }
         }
     }
