@@ -46,8 +46,7 @@ struct SettingsView: View {
                                 .font(.system(size: 24))
                                 .foregroundColor(.appPrimary)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text((authManager.currentUser?.displayName ?? localizedText("user")).capitalized)
-                                    .font(.headline)
+                                Text(profileDisplayName().capitalized)
                                 if let email = authManager.currentUser?.email, !email.isEmpty {
                                     Text(email)
                                         .font(.caption)
@@ -235,6 +234,18 @@ struct SettingsView: View {
         }
     }
 
+    private func profileDisplayName() -> String {
+        let isKorean = (languageManager.currentLanguage == .korean)
+        let raw = (authManager.currentUser?.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if raw.isEmpty {
+            return isKorean ? "사용자" : "User"
+        }
+        if raw == "테스터" || raw == "Tester" {
+            return isKorean ? "테스터" : "Tester"
+        }
+        return raw
+    }
+
     private func languageDisplayName() -> String {
         switch languageManager.currentLanguage {
         case .korean: return "한국어"
@@ -248,3 +259,4 @@ struct SettingsView: View {
             "You can change notification permissions in the device Settings"
     }
 }
+

@@ -121,6 +121,9 @@ struct ChatListView: View {
         case "study_group": return isKorean ? "스터디 그룹" : "Study Group"
         case "hello_message": return isKorean ? "안녕하세요!" : "Hello!"
         case "start_conversation": return isKorean ? "메시지를 시작해보세요" : "Start a conversation"
+        case "chat": return isKorean ? "채팅" : "Chat"
+        case "search": return isKorean ? "검색" : "Search"
+        case "friend": return isKorean ? "친구" : "Friend"
         default: return key
         }
     }

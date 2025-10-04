@@ -285,12 +285,12 @@ struct MyProfileRow: View {
                     .foregroundColor(.appPrimary)
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text((authManager.currentUser?.displayName ?? localizedText("user")).capitalized)
+                    Text(localizedDisplayName().capitalized)
                         .font(.title2)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
                     
-                    Text(authManager.currentUser?.statusMessage ?? localizedText("status_message"))
+                    Text(localizedStatusMessage())
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -308,6 +308,32 @@ struct MyProfileRow: View {
             ProfileEditView(authManager: authManager)
                 .environmentObject(languageManager)
         }
+    }
+    
+    private func localizedDisplayName() -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        let raw = (authManager.currentUser?.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if raw.isEmpty {
+            return isKorean ? "사용자" : "User"
+        }
+        // Map known default test names between languages
+        if raw == "테스터" || raw == "Tester" {
+            return isKorean ? "테스터" : "Tester"
+        }
+        return raw
+    }
+
+    private func localizedStatusMessage() -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        let raw = (authManager.currentUser?.statusMessage ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if raw.isEmpty {
+            return isKorean ? "상태 메시지를 설정해보세요" : "Set your status message"
+        }
+        // Map known default test status messages between languages
+        if raw == "테스트 모드로 체험 중입니다" || raw == "Experiencing in test mode" {
+            return isKorean ? "테스트 모드로 체험 중입니다" : "Experiencing in test mode"
+        }
+        return raw
     }
     
     private func localizedText(_ key: String) -> String {
