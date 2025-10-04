@@ -42,6 +42,7 @@ struct TalkMVPApp: App {
                 .environmentObject(authManager)
                 .environmentObject(appLock)
                 .environmentObject(languageManager)
+                .tint(.appPrimary)
                 .ignoresSafeArea(.all, edges: .all)
                 .fullScreenCover(isPresented: Binding(get: { appLock.isLocked }, set: { _ in })) {
                     AppLockView()

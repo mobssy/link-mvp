@@ -4,6 +4,7 @@ import SwiftData
 struct FriendsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \ChatRoom.name) private var chatRooms: [ChatRoom]
+    @EnvironmentObject private var languageManager: LanguageManager
     
     @State private var searchText: String = ""
     @State private var pinnedIDs: Set<String> = []
@@ -25,9 +26,9 @@ struct FriendsListView: View {
             Group {
                 if chatRooms.isEmpty {
                     VStack(spacing: 12) {
-                        Text("친구 목록이 비어 있습니다")
+                        Text(localizedText("friends_empty"))
                             .foregroundColor(.secondary)
-                        Button("샘플 친구 추가") { addSampleFriend() }
+                        Button(localizedText("add_sample_friend")) { addSampleFriend() }
                             .buttonStyle(.borderedProminent)
                     }
                     .padding()
@@ -44,7 +45,7 @@ struct FriendsListView: View {
                         }
                         .swipeActions(edge: .leading, allowsFullSwipe: true) {
                             let isPinned = pinnedIDs.contains(room.id.uuidString)
-                            Button(isPinned ? "고정 해제" : "상단 고정") {
+                            Button(localizedText(isPinned ? "unpin" : "pin_to_top")) {
                                 togglePin(for: room)
                             }.tint(.yellow)
                         }
@@ -52,24 +53,24 @@ struct FriendsListView: View {
                             Button(role: .destructive) {
                                 delete(room)
                             } label: {
-                                Label("삭제", systemImage: "trash")
+                                Label(localizedText("delete"), systemImage: "trash")
                             }
                         }
                     }
                     .listStyle(.insetGrouped)
                 }
             }
-            .navigationTitle("친구")
+            .navigationTitle(localizedText("friends_title"))
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: addSampleFriend) {
                         Image(systemName: "plus")
                     }
-                    .accessibilityLabel("친구 추가")
+                    .accessibilityLabel(localizedText("add_friend"))
                     .accessibilityIdentifier("addFriendButton")
                 }
             }
-            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "친구 검색")
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: localizedText("search_friends"))
             .onAppear {
                 if let saved = UserDefaults.standard.array(forKey: "pinnedChatRooms") as? [String] {
                     pinnedIDs = Set(saved)
@@ -93,6 +94,29 @@ struct FriendsListView: View {
         }
     }
 
+    private func localizedText(_ key: String) -> String {
+        switch key {
+        case "friends_title":
+            return languageManager.currentLanguage == .korean ? "친구" : "Friends"
+        case "friends_empty":
+            return languageManager.currentLanguage == .korean ? "친구 목록이 비어 있습니다" : "Your friends list is empty"
+        case "add_sample_friend":
+            return languageManager.currentLanguage == .korean ? "샘플 친구 추가" : "Add Sample Friend"
+        case "pin_to_top":
+            return languageManager.currentLanguage == .korean ? "상단 고정" : "Pin to Top"
+        case "unpin":
+            return languageManager.currentLanguage == .korean ? "고정 해제" : "Unpin"
+        case "delete":
+            return languageManager.currentLanguage == .korean ? "삭제" : "Delete"
+        case "add_friend":
+            return languageManager.currentLanguage == .korean ? "친구 추가" : "Add Friend"
+        case "search_friends":
+            return languageManager.currentLanguage == .korean ? "친구 검색" : "Search Friends"
+        default:
+            return key
+        }
+    }
+    
     private func addSampleFriend() {
         let names = ["엄마", "아빠", "할머니", "친구", "동생"]
         let room = ChatRoom(name: names.randomElement() ?? "친구")
@@ -115,4 +139,5 @@ struct FriendsListView: View {
     let container = try! ModelContainer(for: ChatRoom.self, Message.self)
     return FriendsListView()
         .modelContainer(container)
+        .environmentObject(LanguageManager())
 }

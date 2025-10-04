@@ -33,6 +33,34 @@ class AuthManager: ObservableObject {
     
     var modelContext: ModelContext
     
+    // MARK: - Lightweight localization for non-View layer
+    private func currentLanguageCode() -> String {
+        if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") {
+            return saved
+        }
+        if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first {
+            return first
+        }
+        return "en"
+    }
+
+    private func isKorean() -> Bool { currentLanguageCode().hasPrefix("ko") }
+
+    private func loc(_ key: String, _ param: String = "") -> String {
+        switch key {
+        case "signup_exists":
+            return isKorean() ? "이미 존재하는 사용자명 또는 이메일입니다." : "Username or email already exists."
+        case "signup_error_prefix":
+            return isKorean() ? "회원가입 중 오류가 발생했습니다: " : "An error occurred during sign up: "
+        case "signin_not_found":
+            return isKorean() ? "존재하지 않는 사용자입니다." : "User not found."
+        case "signin_error_prefix":
+            return isKorean() ? "로그인 중 오류가 발생했습니다: " : "An error occurred during sign in: "
+        default:
+            return param.isEmpty ? key : "\(key) \(param)"
+        }
+    }
+    
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
         loadCurrentUser()
@@ -75,7 +103,7 @@ class AuthManager: ObservableObject {
         do {
             let existingUsers = try modelContext.fetch(existingUserDescriptor)
             if !existingUsers.isEmpty {
-                errorMessage = "이미 존재하는 사용자명 또는 이메일입니다."
+                errorMessage = loc("signup_exists")
                 isLoading = false
                 return
             }
@@ -102,7 +130,7 @@ class AuthManager: ObservableObject {
             createSampleFriends(for: newUser)
             
         } catch {
-            errorMessage = "회원가입 중 오류가 발생했습니다: \(error.localizedDescription)"
+            errorMessage = loc("signup_error_prefix") + error.localizedDescription
         }
         
         isLoading = false
@@ -136,10 +164,10 @@ class AuthManager: ObservableObject {
                 currentUser = user
                 isAuthenticated = true
             } else {
-                errorMessage = "존재하지 않는 사용자입니다."
+                errorMessage = loc("signin_not_found")
             }
         } catch {
-            errorMessage = "로그인 중 오류가 발생했습니다: \(error.localizedDescription)"
+            errorMessage = loc("signin_error_prefix") + error.localizedDescription
         }
         
         isLoading = false
@@ -262,3 +290,4 @@ class AuthManager: ObservableObject {
         isAuthenticated = false
     }
 }
+

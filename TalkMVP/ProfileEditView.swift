@@ -52,7 +52,7 @@ struct ProfileEditView: View {
                             } else {
                                 Image(systemName: "person.circle.fill")
                                     .font(.system(size: 100))
-                                    .foregroundColor(.blue)
+                                    .foregroundColor(.appPrimary)
                             }
                         }
                         
@@ -139,28 +139,20 @@ struct ProfileEditView: View {
     }
     
     private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
         switch key {
-        case "profile_photo":
-            return languageManager.currentLanguage == .korean ? "프로필 사진" : "Profile Photo"
-        case "username":
-            return languageManager.currentLanguage == .korean ? "사용자명" : "Username"
-        case "display_name":
-            return languageManager.currentLanguage == .korean ? "표시 이름" : "Display Name"
-        case "email":
-            return languageManager.currentLanguage == .korean ? "이메일" : "Email"
-        case "account_info":
-            return languageManager.currentLanguage == .korean ? "계정 정보" : "Account Information"
-        case "status_message":
-            return languageManager.currentLanguage == .korean ? "상태메시지" : "Status Message"
-        case "logout":
-            return languageManager.currentLanguage == .korean ? "로그아웃" : "Sign Out"
-        case "edit_profile":
-            return languageManager.currentLanguage == .korean ? "프로필 편집" : "Edit Profile"
-        case "cancel":
-            return languageManager.currentLanguage == .korean ? "취소" : "Cancel"
-        case "save":
-            return languageManager.currentLanguage == .korean ? "저장" : "Save"
-        default:
+        case "profile_photo": return isKorean ? "프로필 사진" : "Profile Photo"
+        case "account_info": return isKorean ? "계정 정보" : "Account Information"
+        case "edit_profile": return isKorean ? "프로필 편집" : "Edit Profile"
+        case "display_name": return isKorean ? "표시 이름" : "Display Name"
+        case "status_message": return isKorean ? "상태 메시지" : "Status Message"
+        case "email": return isKorean ? "이메일" : "Email"
+        case "username": return isKorean ? "사용자명" : "Username"
+        case "logout": return isKorean ? "로그아웃" : "Sign Out"
+        default: 
+            // 디버깅을 위해 키가 정의되지 않은 경우를 확인
+            print("⚠️ ProfileEditView: 키 '\(key)'가 정의되지 않음")
             return key
         }
     }

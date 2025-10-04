@@ -6,6 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		AA988E1B2E90F0C1009A6653 /* SettingsView+Main.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA988E1A2E90F0C1009A6653 /* SettingsView+Main.swift */; };
+		AA988E1D2E90F322009A6653 /* SecuritySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA988E1C2E90F322009A6653 /* SecuritySettingsView.swift */; };
+		AA988E1F2E90F326009A6653 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA988E1E2E90F326009A6653 /* NotificationSettingsView.swift */; };
+		AA988E212E90F32A009A6653 /* AISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA988E202E90F32A009A6653 /* AISettingsView.swift */; };
+		AA988E232E90F32F009A6653 /* TranslationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA988E222E90F32F009A6653 /* TranslationSettingsView.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		AAA0ED872E86C2D60025D50E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,6 +32,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		AA988E1A2E90F0C1009A6653 /* SettingsView+Main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsView+Main.swift"; sourceTree = "<group>"; };
+		AA988E1C2E90F322009A6653 /* SecuritySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecuritySettingsView.swift; sourceTree = "<group>"; };
+		AA988E1E2E90F326009A6653 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
+		AA988E202E90F32A009A6653 /* AISettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISettingsView.swift; sourceTree = "<group>"; };
+		AA988E222E90F32F009A6653 /* TranslationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationSettingsView.swift; sourceTree = "<group>"; };
 		AAA0ED792E86C2D40025D50E /* TalkMVP.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TalkMVP.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAA0ED862E86C2D60025D50E /* TalkMVPTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TalkMVPTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAA0ED902E86C2D60025D50E /* TalkMVPUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TalkMVPUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -79,6 +92,11 @@
 				AAA0ED892E86C2D60025D50E /* TalkMVPTests */,
 				AAA0ED932E86C2D60025D50E /* TalkMVPUITests */,
 				AAA0ED7A2E86C2D40025D50E /* Products */,
+				AA988E1A2E90F0C1009A6653 /* SettingsView+Main.swift */,
+				AA988E1C2E90F322009A6653 /* SecuritySettingsView.swift */,
+				AA988E1E2E90F326009A6653 /* NotificationSettingsView.swift */,
+				AA988E202E90F32A009A6653 /* AISettingsView.swift */,
+				AA988E222E90F32F009A6653 /* TranslationSettingsView.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -236,6 +254,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA988E232E90F32F009A6653 /* TranslationSettingsView.swift in Sources */,
+				AA988E1B2E90F0C1009A6653 /* SettingsView+Main.swift in Sources */,
+				AA988E1F2E90F326009A6653 /* NotificationSettingsView.swift in Sources */,
+				AA988E1D2E90F322009A6653 /* SecuritySettingsView.swift in Sources */,
+				AA988E212E90F32A009A6653 /* AISettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -12,6 +12,7 @@ struct FriendProfileView: View {
     let friendship: Friendship
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var languageManager: LanguageManager
     @State private var showingChatView = false
     @State private var showingBlockAlert = false
     @State private var showingUnblockAlert = false
@@ -29,7 +30,7 @@ struct FriendProfileView: View {
                         ZStack {
                             Circle()
                                 .fill(LinearGradient(
-                                    colors: [.blue.opacity(0.3), .blue.opacity(0.1)],
+                                    colors: [Color.appPrimary.opacity(0.3), Color.appPrimary.opacity(0.1)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ))
@@ -37,7 +38,7 @@ struct FriendProfileView: View {
                             
                             Image(systemName: "person.fill")
                                 .font(.system(size: 60))
-                                .foregroundColor(.blue)
+                                .foregroundColor(.appPrimary)
                         }
                         
                         // 이름과 이메일
@@ -59,22 +60,22 @@ struct FriendProfileView: View {
                     // 프로필 정보
                     VStack(spacing: 16) {
                         ProfileInfoCard(
-                            title: "가입일",
+                            title: localizedText("joined"),
                             value: formatDate(friendship.createdAt),
                             icon: "calendar"
                         )
                         
                         if lastActivityEnabled && friendship.status == .accepted {
                             ProfileInfoCard(
-                                title: "마지막 활동",
-                                value: lastActiveText ?? "정보 없음",
+                                title: localizedText("last_active"),
+                                value: lastActiveText ?? localizedText("no_info"),
                                 icon: "circle.fill",
                                 iconColor: lastActiveIconColor
                             )
                         }
                         
                         ProfileInfoCard(
-                            title: "공통 친구",
+                            title: localizedText("mutual_friends"),
                             value: "0명", // 실제 앱에서는 계산
                             icon: "person.2"
                         )
@@ -87,10 +88,10 @@ struct FriendProfileView: View {
                             Button(action: {
                                 showingChatView = true
                             }) {
-                                Label("채팅하기", systemImage: "bubble.left.and.bubble.right")
+                                Label(localizedText("start_chat"), systemImage: "bubble.left.and.bubble.right")
                                     .frame(maxWidth: .infinity)
                                     .padding()
-                                    .background(.blue)
+                                    .background(Color.appPrimary)
                                     .foregroundColor(.white)
                                     .cornerRadius(12)
                             }
@@ -102,7 +103,7 @@ struct FriendProfileView: View {
                             Button(action: {
                                 showingBlockAlert = true
                             }) {
-                                Label("차단하기", systemImage: "hand.raised")
+                                Label(localizedText("block"), systemImage: "hand.raised")
                                     .frame(maxWidth: .infinity)
                                     .padding()
                                     .background(.red.opacity(0.1))
@@ -113,7 +114,7 @@ struct FriendProfileView: View {
                             Button(action: {
                                 showingUnblockAlert = true
                             }) {
-                                Label("차단 해제", systemImage: "hand.raised.slash")
+                                Label(localizedText("unblock"), systemImage: "hand.raised.slash")
                                     .frame(maxWidth: .infinity)
                                     .padding()
                                     .background(.orange.opacity(0.1))
@@ -121,7 +122,7 @@ struct FriendProfileView: View {
                                     .cornerRadius(12)
                             }
                         case .pending:
-                            Text("친구 요청 대기 중")
+                            Text(localizedText("request_pending"))
                                 .frame(maxWidth: .infinity)
                                 .padding()
                                 .background(.gray.opacity(0.1))
@@ -133,30 +134,30 @@ struct FriendProfileView: View {
                 }
                 .padding()
             }
-            .navigationTitle("프로필")
+            .navigationTitle(localizedText("profile"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("닫기") {
+                    Button(localizedText("close")) {
                         dismiss()
                     }
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
-                        Button("프로필 공유") {
+                        Button(localizedText("share_profile")) {
                             shareProfile()
                         }
                         
                         if friendship.status == .accepted {
-                            Button("대화 내용 보기") {
+                            Button(localizedText("view_conversation")) {
                                 showingChatView = true
                             }
                         }
                         
                         Divider()
                         
-                        Button("신고하기", role: .destructive) {
+                        Button(localizedText("report"), role: .destructive) {
                             reportUser()
                         }
                     } label: {
@@ -168,21 +169,21 @@ struct FriendProfileView: View {
         .sheet(isPresented: $showingChatView) {
             ChatViewContainer(friendship: friendship)
         }
-        .alert("친구 차단", isPresented: $showingBlockAlert) {
-            Button("취소", role: .cancel) { }
-            Button("차단", role: .destructive) {
+        .alert(localizedText("block_friend"), isPresented: $showingBlockAlert) {
+            Button(localizedText("cancel"), role: .cancel) { }
+            Button(localizedText("block"), role: .destructive) {
                 blockFriend()
             }
         } message: {
-            Text("\(friendship.friendName)님을 차단하시겠습니까? 차단된 친구는 더 이상 메시지를 보낼 수 없습니다.")
+            Text(String(format: localizedText("block_message"), friendship.friendName))
         }
-        .alert("차단 해제", isPresented: $showingUnblockAlert) {
-            Button("취소", role: .cancel) { }
-            Button("해제") {
+        .alert(localizedText("unblock_friend"), isPresented: $showingUnblockAlert) {
+            Button(localizedText("cancel"), role: .cancel) { }
+            Button(localizedText("unblock")) {
                 unblockFriend()
             }
         } message: {
-            Text("\(friendship.friendName)님의 차단을 해제하시겠습니까?")
+            Text(String(format: localizedText("unblock_message"), friendship.friendName))
         }
         .onAppear { computeLastActivity() }
     }
@@ -301,6 +302,49 @@ struct FriendProfileView: View {
         // 사용자 신고 기능 (실제 앱에서 구현)
         print("사용자 신고: \(friendship.friendName)")
     }
+    
+    private func localizedText(_ key: String) -> String {
+        switch key {
+        case "joined":
+            return languageManager.currentLanguage == .korean ? "가입일" : "Joined"
+        case "last_active":
+            return languageManager.currentLanguage == .korean ? "마지막 활동" : "Last Active"
+        case "mutual_friends":
+            return languageManager.currentLanguage == .korean ? "공통 친구" : "Mutual Friends"
+        case "no_info":
+            return languageManager.currentLanguage == .korean ? "정보 없음" : "No Info"
+        case "start_chat":
+            return languageManager.currentLanguage == .korean ? "채팅하기" : "Start Chat"
+        case "block":
+            return languageManager.currentLanguage == .korean ? "차단하기" : "Block"
+        case "unblock":
+            return languageManager.currentLanguage == .korean ? "차단 해제" : "Unblock"
+        case "request_pending":
+            return languageManager.currentLanguage == .korean ? "친구 요청 대기 중" : "Friend Request Pending"
+        case "profile":
+            return languageManager.currentLanguage == .korean ? "프로필" : "Profile"
+        case "close":
+            return languageManager.currentLanguage == .korean ? "닫기" : "Close"
+        case "share_profile":
+            return languageManager.currentLanguage == .korean ? "프로필 공유" : "Share Profile"
+        case "view_conversation":
+            return languageManager.currentLanguage == .korean ? "대화 내용 보기" : "View Conversation"
+        case "report":
+            return languageManager.currentLanguage == .korean ? "신고하기" : "Report"
+        case "block_friend":
+            return languageManager.currentLanguage == .korean ? "친구 차단" : "Block Friend"
+        case "unblock_friend":
+            return languageManager.currentLanguage == .korean ? "차단 해제" : "Unblock Friend"
+        case "block_message":
+            return languageManager.currentLanguage == .korean ? "%@님을 차단하시겠습니까? 차단된 친구는 더 이상 메시지를 보낼 수 없습니다." : "Block %@? Blocked friends can no longer send you messages."
+        case "unblock_message":
+            return languageManager.currentLanguage == .korean ? "%@님의 차단을 해제하시겠습니까?" : "Unblock %@?"
+        case "cancel":
+            return languageManager.currentLanguage == .korean ? "취소" : "Cancel"
+        default:
+            return key
+        }
+    }
 }
 
 // 상태 배지 컴포넌트
@@ -341,7 +385,7 @@ struct ProfileInfoCard: View {
     let title: String
     let value: String
     let icon: String
-    var iconColor: Color = .blue
+    var iconColor: Color = .appPrimary
     
     var body: some View {
         HStack(spacing: 16) {

@@ -109,31 +109,19 @@ struct ChatListView: View {
     }
     
     private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
         switch key {
-        case "chat":
-            return languageManager.currentLanguage == .korean ? "채팅" : "Chat"
-        case "search":
-            return languageManager.currentLanguage == .korean ? "검색" : "Search"
-        case "new_chat":
-            return languageManager.currentLanguage == .korean ? "새 채팅" : "New Chat"
-        case "group_chat":
-            return languageManager.currentLanguage == .korean ? "그룹 채팅" : "Group Chat"
-        case "new_friend":
-            return languageManager.currentLanguage == .korean ? "새 친구" : "New Friend"
-        case "new_group":
-            return languageManager.currentLanguage == .korean ? "새 그룹" : "New Group"
-        case "friend":
-            return languageManager.currentLanguage == .korean ? "친구" : "Friend"
-        case "family_group":
-            return languageManager.currentLanguage == .korean ? "가족 단톡방" : "Family Group"
-        case "work_colleagues":
-            return languageManager.currentLanguage == .korean ? "회사 동료" : "Work Colleagues"
-        case "study_group":
-            return languageManager.currentLanguage == .korean ? "스터디 그룹" : "Study Group"
-        case "hello_message":
-            return languageManager.currentLanguage == .korean ? "안녕하세요!" : "Hello!"
-        default:
-            return key
+        case "new_chat": return isKorean ? "새 채팅" : "New Chat"
+        case "group_chat": return isKorean ? "그룹 채팅" : "Group Chat"
+        case "new_friend": return isKorean ? "새 친구" : "New Friend"
+        case "new_group": return isKorean ? "새 그룹" : "New Group"
+        case "family_group": return isKorean ? "가족 단톡방" : "Family Group"
+        case "work_colleagues": return isKorean ? "회사 동료" : "Work Colleagues"
+        case "study_group": return isKorean ? "스터디 그룹" : "Study Group"
+        case "hello_message": return isKorean ? "안녕하세요!" : "Hello!"
+        case "start_conversation": return isKorean ? "메시지를 시작해보세요" : "Start a conversation"
+        default: return key
         }
     }
 }
@@ -147,7 +135,7 @@ struct ChatRoomRow: View {
             // 프로필 이미지
             Image(systemName: room.profileImage)
                 .font(.system(size: 40))
-                .foregroundColor(.blue)
+                .foregroundColor(.appPrimary)
                 .frame(width: 50, height: 50)
             
             VStack(alignment: .leading, spacing: 4) {
@@ -187,11 +175,19 @@ struct ChatRoomRow: View {
     }
     
     private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
         switch key {
-        case "start_conversation":
-            return languageManager.currentLanguage == .korean ? "메시지를 시작해보세요" : "Start a conversation"
-        default:
-            return key
+        case "new_chat": return isKorean ? "새 채팅" : "New Chat"
+        case "group_chat": return isKorean ? "그룹 채팅" : "Group Chat"
+        case "new_friend": return isKorean ? "새 친구" : "New Friend"
+        case "new_group": return isKorean ? "새 그룹" : "New Group"
+        case "family_group": return isKorean ? "가족 단톡방" : "Family Group"
+        case "work_colleagues": return isKorean ? "회사 동료" : "Work Colleagues"
+        case "study_group": return isKorean ? "스터디 그룹" : "Study Group"
+        case "hello_message": return isKorean ? "안녕하세요!" : "Hello!"
+        case "start_conversation": return isKorean ? "메시지를 시작해보세요" : "Start a conversation"
+        default: return key
         }
     }
 }
@@ -202,3 +198,4 @@ struct ChatRoomRow: View {
     ChatListView()
         .modelContainer(container)
 }
+

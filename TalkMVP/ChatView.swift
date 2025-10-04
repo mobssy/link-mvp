@@ -218,7 +218,7 @@ struct ChatView: View {
     private var baseScaffold: some View {
         VStack(spacing: 0) {
             ConnectionStatusView(chatService: chatService)
-                .accessibilityLabel("연결 상태")
+                .accessibilityLabel(localizedText("connection_status"))
                 .accessibilityIdentifier("connectionStatus")
             
             mainContentView
@@ -233,14 +233,14 @@ struct ChatView: View {
                     } label: {
                         Image(systemName: "paperclip")
                     }
-                    .accessibilityLabel("첨부")
+                    .accessibilityLabel(localizedText("attach"))
 
                     Button {
                         showingFriendProfile = true
                     } label: {
                         Image(systemName: "person.crop.circle")
                     }
-                    .accessibilityLabel("프로필 보기")
+                    .accessibilityLabel(localizedText("view_profile"))
                 }
             }
         }
@@ -300,27 +300,27 @@ struct ChatView: View {
                 ignoredDomains: $ignoredDomains,
                 openURL: { url in openURL(url) }
             ))
-            .alert("연락처 접근 권한 필요", isPresented: $showingContactsPermissionAlert) {
-                Button("취소", role: .cancel) {}
-                Button("설정 열기") {
+            .alert(localizedText("contacts_permission_title"), isPresented: $showingContactsPermissionAlert) {
+                Button(localizedText("cancel"), role: .cancel) {}
+                Button(localizedText("open_settings")) {
                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                 }
             } message: {
-                Text("친구를 찾기 위해 연락처 접근 권한이 필요합니다. 설정에서 허용해 주세요.")
+                Text(localizedText("contacts_permission_message"))
             }
-            .alert("사진 접근 권한 필요", isPresented: $showingPhotosPermissionAlert) {
-                Button("취소", role: .cancel) {}
-                Button("설정 열기") {
+            .alert(localizedText("photo_permission_title"), isPresented: $showingPhotosPermissionAlert) {
+                Button(localizedText("cancel"), role: .cancel) {}
+                Button(localizedText("open_settings")) {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         openURL(url)
                     }
                 }
             } message: {
-                Text("사진과 동영상을 첨부하려면 사진 접근 권한이 필요합니다. 설정에서 허용해 주세요.")
+                Text(localizedText("photo_permission_message"))
             }
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("채팅 화면")
-            .accessibilityHint("\(chatRoom.name)과의 채팅 화면입니다")
+            .accessibilityLabel(localizedText("chat_screen"))
+            .accessibilityHint(String(format: localizedText("chat_screen_hint"), chatRoom.name))
             .accessibilityIdentifier("chatView")
             .onDisappear {
                 viewModel?.stopTyping()
@@ -329,7 +329,7 @@ struct ChatView: View {
             }
             // 다이나믹 타입 지원
             .dynamicTypeSize(dynamicTypeSize.isAccessibilitySize ? .accessibility3 : dynamicTypeSize)
-            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "대화 검색")
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: localizedText("search_conversation"))
             .sheet(isPresented: $showingSummarySheet) {
                 NavigationStack {
                     ScrollView {
@@ -339,11 +339,11 @@ struct ChatView: View {
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .navigationTitle("대화 요약")
+                    .navigationTitle(localizedText("conversation_summary"))
                     .navigationBarTitleDisplayMode(.large)
                     .toolbar {
                         ToolbarItem(placement: .navigationBarTrailing) {
-                            Button("완료") { showingSummarySheet = false }
+                            Button(localizedText("done")) { showingSummarySheet = false }
                         }
                     }
                 }
@@ -355,6 +355,7 @@ struct ChatView: View {
                     FriendProfileView(friendship: friendship)
                 } else {
                     MiniProfileSheet(name: chatRoom.name, symbol: chatRoom.profileImage)
+                        .environmentObject(languageManager)
                 }
             }
             .sheet(isPresented: $showingContactsResult) {
@@ -362,13 +363,17 @@ struct ChatView: View {
                     List(matchedUsers) { user in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(user.displayName).font(.body)
-                            Text("매칭: \(user.matchedBy)")
+                            Text(localizedText("match_prefix") + user.matchedBy)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
                     }
-                    .navigationTitle("연락처 매칭 결과")
-                    .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("닫기") { showingContactsResult = false } } }
+                    .navigationTitle(localizedText("contacts_match_results"))
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button(localizedText("close")) { showingContactsResult = false }
+                        }
+                    }
                 }
             }
             .photosPicker(isPresented: $showingPhotosPicker, selection: $selectedPhoto, matching: .any(of: [.images, .videos]))
@@ -403,7 +408,7 @@ struct ChatView: View {
                         TypingIndicatorView(senderName: chatRoom.name)
                             .id("typing_indicator")
                             .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
-                            .accessibilityLabel("\(chatRoom.name)이 입력 중입니다")
+                            .accessibilityLabel(String(format: localizedText("typing_indicator"), chatRoom.name))
                             .accessibilityIdentifier("typingIndicator")
                     }
                 }
@@ -411,8 +416,8 @@ struct ChatView: View {
                 .padding(.horizontal, 12)
             }
             .scrollDismissesKeyboard(.interactively)
-            .accessibilityLabel("메시지 목록")
-            .accessibilityHint("위아래로 스크롤하여 메시지를 확인할 수 있습니다")
+            .accessibilityLabel(localizedText("message_list"))
+            .accessibilityHint(localizedText("scroll_messages_hint"))
             .accessibilityIdentifier("messagesScrollView")
             .onChange(of: viewModel.messages.count) { _, _ in
                 scrollToBottomInline(proxy: proxy)
@@ -463,7 +468,7 @@ struct ChatView: View {
                     showReactionPicker(for: message)
                 }
                 .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                    Button("답장") {
+                    Button(localizedText("reply")) {
                         replyingToMessage = message
                         isTextFieldFocused = true
                         
@@ -471,35 +476,35 @@ struct ChatView: View {
                         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                         impactFeedback.impactOccurred()
                     }
-                    .tint(.blue)
+                    .tint(.appPrimary)
                 }
                 .contextMenu {
                     if message.messageType == .text {
-                        Button("복사", systemImage: "doc.on.doc") {
+                        Button(localizedText("copy"), systemImage: "doc.on.doc") {
                             UIPasteboard.general.string = message.text
                             UIAccessibility.post(notification: .announcement, argument: "메시지를 복사했습니다")
                         }
                     }
-                    Button("답장", systemImage: "arrowshape.turn.up.left") {
+                    Button(localizedText("reply"), systemImage: "arrowshape.turn.up.left") {
                         replyingToMessage = message
                         isTextFieldFocused = true
                     }
-                    Button("반응 추가", systemImage: "face.smiling") {
+                    Button(localizedText("add_reaction"), systemImage: "face.smiling") {
                         showReactionPicker(for: message)
                     }
                     if message.isFromCurrentUser {
-                        Button("편집", systemImage: "pencil") {
+                        Button(localizedText("edit"), systemImage: "pencil") {
                             startEditingMessage(message)
                         }
-                        Button("삭제", systemImage: "trash", role: .destructive) {
+                        Button(localizedText("delete"), systemImage: "trash", role: .destructive) {
                             deleteMessage(message)
                         }
                     }
                     if !message.isFromCurrentUser {
-                        Button("신고", systemImage: "exclamationmark.bubble") {
+                        Button(localizedText("report"), systemImage: "exclamationmark.bubble") {
                             showingReportAlert = true
                         }
-                        Button("차단", systemImage: "hand.raised") {
+                        Button(localizedText("block"), systemImage: "hand.raised") {
                             showingBlockAlert = true
                         }
                     }
@@ -518,6 +523,7 @@ struct ChatView: View {
                 )
                 .frame(maxWidth: .infinity, alignment: message.isFromCurrentUser ? .trailing : .leading)
                 .padding(.horizontal, 2)
+                .environmentObject(languageManager)
             }
         }
     }
@@ -633,7 +639,7 @@ struct ChatView: View {
             if let replyingTo = replyingToMessage {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("\(replyingTo.isFromCurrentUser ? "나" : chatRoom.name)에게 답장")
+                        Text(String(format: localizedText("replying_to"), replyingTo.isFromCurrentUser ? localizedText("me") : chatRoom.name))
                             .font(.caption)
                             .foregroundColor(.secondary)
                         Text(replyingTo.text)
@@ -642,7 +648,7 @@ struct ChatView: View {
                             .lineLimit(2)
                     }
                     Spacer()
-                    Button("취소") {
+                    Button(localizedText("cancel")) {
                         replyingToMessage = nil
                     }
                     .font(.caption)
@@ -653,7 +659,7 @@ struct ChatView: View {
             }
             
             HStack(spacing: 12) {
-                TextField("메시지 입력", text: $inputText)
+                TextField(localizedText("message_input_placeholder"), text: $inputText)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .focused($isTextFieldFocused)
                     .onSubmit {
@@ -666,7 +672,7 @@ struct ChatView: View {
                     Image(systemName: "paperplane.fill")
                         .foregroundColor(.white)
                         .frame(width: 32, height: 32)
-                        .background(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray : Color.blue)
+                        .background(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray : Color.appPrimary)
                         .clipShape(Circle())
                 }
                 .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -700,7 +706,7 @@ struct ChatView: View {
     }
     
     private func accessibilityLabelForMessage(_ message: Message) -> String {
-        let sender = message.isFromCurrentUser ? "나" : chatRoom.name
+        let sender = message.isFromCurrentUser ? localizedText("me") : chatRoom.name
         let time = Self.timeFormatter.string(from: message.timestamp)
         return "\(sender): \(message.text), \(time)"
     }
@@ -735,23 +741,89 @@ struct ChatView: View {
         impactFeedback.impactOccurred()
         UIAccessibility.post(notification: .announcement, argument: "반응 \(emoji)를 추가했습니다")
     }
+    
+    private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
+        switch key {
+        case "cancel": return isKorean ? "취소" : "Cancel"
+        case "save": return isKorean ? "저장" : "Save"
+        case "ok": return isKorean ? "확인" : "OK"
+        case "done": return isKorean ? "완료" : "Done"
+        case "close": return isKorean ? "닫기" : "Close"
+        case "delete": return isKorean ? "삭제" : "Delete"
+        case "edit": return isKorean ? "편집" : "Edit"
+        case "add": return isKorean ? "추가" : "Add"
+        case "search": return isKorean ? "검색" : "Search"
+        case "settings": return isKorean ? "설정" : "Settings"
+        case "profile": return isKorean ? "프로필" : "Profile"
+        case "logout": return isKorean ? "로그아웃" : "Sign Out"
+        case "signin": return isKorean ? "로그인" : "Sign In"
+        case "signup": return isKorean ? "회원가입" : "Sign Up"
+        case "chat": return isKorean ? "채팅" : "Chat"
+        case "message": return isKorean ? "메시지" : "Message"
+        case "message_input_placeholder": return isKorean ? "메시지 입력" : "Type a message"
+        case "send": return isKorean ? "전송" : "Send"
+        case "typing": return isKorean ? "입력 중" : "Typing"
+        case "online": return isKorean ? "온라인" : "Online"
+        case "offline": return isKorean ? "오프라인" : "Offline"
+        case "friends": return isKorean ? "친구" : "Friends"
+        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
+        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
+        case "accept": return isKorean ? "수락" : "Accept"
+        case "reject": return isKorean ? "거절" : "Reject"
+        case "block": return isKorean ? "차단" : "Block"
+        case "unblock": return isKorean ? "차단 해제" : "Unblock"
+        case "error_occurred": return isKorean ? "오류가 발생했습니다" : "An error occurred"
+        case "network_error": return isKorean ? "네트워크 오류" : "Network Error"
+        case "try_again": return isKorean ? "다시 시도해주세요" : "Please try again"
+        case "notification": return isKorean ? "알림" : "Notification"
+        case "permission_required": return isKorean ? "권한이 필요합니다" : "Permission Required"
+        case "open_settings": return isKorean ? "설정 열기" : "Open Settings"
+        case "contacts_permission_title": return isKorean ? "연락처 접근 권한 필요" : "Contacts Permission Required"
+        case "contacts_permission_message": return isKorean ? "친구를 찾기 위해 연락처 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Contacts access is required to find friends. Please allow it in Settings."
+        case "photo_permission_title": return isKorean ? "사진 접근 권한 필요" : "Photos Permission Required"
+        case "photo_permission_message": return isKorean ? "사진과 동영상을 첨부하려면 사진 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Photos access is required to attach images and videos. Please allow it in Settings."
+        case "chat_screen": return isKorean ? "채팅 화면" : "Chat Screen"
+        case "chat_screen_hint": return isKorean ? "%@과의 채팅 화면입니다" : "Chat with %@"
+        case "message_list": return isKorean ? "메시지 목록" : "Messages"
+        case "scroll_messages_hint": return isKorean ? "위아래로 스크롤하여 메시지를 확인할 수 있습니다" : "Scroll up and down to review messages"
+        case "contacts_match_results": return isKorean ? "연락처 매칭 결과" : "Contacts Match Results"
+        case "edited_message_announcement": return isKorean ? "메시지를 편집했습니다" : "Message edited"
+        case "edit_message_prompt": return isKorean ? "메시지를 수정하세요" : "Edit your message"
+        case "location_permission_title": return isKorean ? "위치 권한 필요" : "Location Permission Required"
+        case "location_permission_message": return isKorean ? "긴급 호출을 위해 위치 접근 권한이 필요합니다. 설정에서 권한을 허용해주세요." : "Location access is required for emergency calls. Please allow it in Settings."
+        case "reported_user_message": return isKorean ? "%@을(를) 신고했습니다" : "Reported %@"
+        case "blocked_user_message": return isKorean ? "%@을(를) 차단했습니다" : "Blocked %@"
+        case "suspicious_link_detected": return isKorean ? "의심스러운 링크가 감지되었습니다" : "A suspicious link was detected"
+        case "organization_room": return isKorean ? "조직방" : "Organization Room"
+        case "enable_org_room": return isKorean ? "조직방 활성화" : "Enable Organization Room"
+        case "org_name_optional": return isKorean ? "조직명(선택)" : "Organization Name (Optional)"
+        case "working_hours": return isKorean ? "근무 시간" : "Working Hours"
+        case "working_hours_footer": return isKorean ? "간단히 요일과 시작/종료 시간을 설정하세요" : "Quickly set weekdays and start/end times"
+        case "profile_info_unavailable": return isKorean ? "프로필 정보를 불러올 수 없습니다" : "Profile information is unavailable"
+        default: return key
+        }
+    }
 }
 
 // MARK: - Alert Modifiers (to reduce type-checking complexity)
 struct EditMessageAlertModifier: ViewModifier {
+    @EnvironmentObject private var languageManager: LanguageManager
+    
     @Binding var isPresented: Bool
     @Binding var editingText: String
     @Binding var editingMessage: Message?
     let onSave: (Message, String) -> Void
 
     func body(content: Content) -> some View {
-        content.alert("메시지 편집", isPresented: $isPresented) {
-            TextField("메시지", text: $editingText)
-            Button("취소", role: .cancel) {
+        content.alert(localizedText("edit_message"), isPresented: $isPresented) {
+            TextField(localizedText("message"), text: $editingText)
+            Button(localizedText("cancel"), role: .cancel) {
                 editingMessage = nil
                 editingText = ""
             }
-            Button("저장") {
+            Button(localizedText("save")) {
                 if let message = editingMessage {
                     let newText = editingText.trimmingCharacters(in: .whitespacesAndNewlines)
                     if !newText.isEmpty {
@@ -760,85 +832,479 @@ struct EditMessageAlertModifier: ViewModifier {
                 }
                 editingMessage = nil
                 editingText = ""
-                UIAccessibility.post(notification: .announcement, argument: "메시지를 편집했습니다")
+                UIAccessibility.post(notification: .announcement, argument: localizedText("edited_message_announcement"))
             }
         } message: {
-            Text("메시지를 수정하세요")
+            Text(localizedText("edit_message_prompt"))
+        }
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
+        switch key {
+        case "cancel": return isKorean ? "취소" : "Cancel"
+        case "save": return isKorean ? "저장" : "Save"
+        case "ok": return isKorean ? "확인" : "OK"
+        case "done": return isKorean ? "완료" : "Done"
+        case "close": return isKorean ? "닫기" : "Close"
+        case "delete": return isKorean ? "삭제" : "Delete"
+        case "edit": return isKorean ? "편집" : "Edit"
+        case "add": return isKorean ? "추가" : "Add"
+        case "search": return isKorean ? "검색" : "Search"
+        case "settings": return isKorean ? "설정" : "Settings"
+        case "profile": return isKorean ? "프로필" : "Profile"
+        case "logout": return isKorean ? "로그아웃" : "Sign Out"
+        case "signin": return isKorean ? "로그인" : "Sign In"
+        case "signup": return isKorean ? "회원가입" : "Sign Up"
+        case "chat": return isKorean ? "채팅" : "Chat"
+        case "message": return isKorean ? "메시지" : "Message"
+        case "message_input_placeholder": return isKorean ? "메시지 입력" : "Type a message"
+        case "send": return isKorean ? "전송" : "Send"
+        case "typing": return isKorean ? "입력 중" : "Typing"
+        case "online": return isKorean ? "온라인" : "Online"
+        case "offline": return isKorean ? "오프라인" : "Offline"
+        case "friends": return isKorean ? "친구" : "Friends"
+        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
+        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
+        case "accept": return isKorean ? "수락" : "Accept"
+        case "reject": return isKorean ? "거절" : "Reject"
+        case "block": return isKorean ? "차단" : "Block"
+        case "unblock": return isKorean ? "차단 해제" : "Unblock"
+        case "error_occurred": return isKorean ? "오류가 발생했습니다" : "An error occurred"
+        case "network_error": return isKorean ? "네트워크 오류" : "Network Error"
+        case "try_again": return isKorean ? "다시 시도해주세요" : "Please try again"
+        case "notification": return isKorean ? "알림" : "Notification"
+        case "permission_required": return isKorean ? "권한이 필요합니다" : "Permission Required"
+        case "open_settings": return isKorean ? "설정 열기" : "Open Settings"
+        case "contacts_permission_title": return isKorean ? "연락처 접근 권한 필요" : "Contacts Permission Required"
+        case "contacts_permission_message": return isKorean ? "친구를 찾기 위해 연락처 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Contacts access is required to find friends. Please allow it in Settings."
+        case "photo_permission_title": return isKorean ? "사진 접근 권한 필요" : "Photos Permission Required"
+        case "photo_permission_message": return isKorean ? "사진과 동영상을 첨부하려면 사진 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Photos access is required to attach images and videos. Please allow it in Settings."
+        case "chat_screen": return isKorean ? "채팅 화면" : "Chat Screen"
+        case "chat_screen_hint": return isKorean ? "%@과의 채팅 화면입니다" : "Chat with %@"
+        case "message_list": return isKorean ? "메시지 목록" : "Messages"
+        case "scroll_messages_hint": return isKorean ? "위아래로 스크롤하여 메시지를 확인할 수 있습니다" : "Scroll up and down to review messages"
+        case "contacts_match_results": return isKorean ? "연락처 매칭 결과" : "Contacts Match Results"
+        case "edited_message_announcement": return isKorean ? "메시지를 편집했습니다" : "Message edited"
+        case "edit_message_prompt": return isKorean ? "메시지를 수정하세요" : "Edit your message"
+        case "location_permission_title": return isKorean ? "위치 권한 필요" : "Location Permission Required"
+        case "location_permission_message": return isKorean ? "긴급 호출을 위해 위치 접근 권한이 필요합니다. 설정에서 권한을 허용해주세요." : "Location access is required for emergency calls. Please allow it in Settings."
+        case "reported_user_message": return isKorean ? "%@을(를) 신고했습니다" : "Reported %@"
+        case "blocked_user_message": return isKorean ? "%@을(를) 차단했습니다" : "Blocked %@"
+        case "suspicious_link_detected": return isKorean ? "의심스러운 링크가 감지되었습니다" : "A suspicious link was detected"
+        case "organization_room": return isKorean ? "조직방" : "Organization Room"
+        case "enable_org_room": return isKorean ? "조직방 활성화" : "Enable Organization Room"
+        case "org_name_optional": return isKorean ? "조직명(선택)" : "Organization Name (Optional)"
+        case "working_hours": return isKorean ? "근무 시간" : "Working Hours"
+        case "working_hours_footer": return isKorean ? "간단히 요일과 시작/종료 시간을 설정하세요" : "Quickly set weekdays and start/end times"
+        case "profile_info_unavailable": return isKorean ? "프로필 정보를 불러올 수 없습니다" : "Profile information is unavailable"
+        default: return key
         }
     }
 }
 
 struct EmergencyAlertModifier: ViewModifier {
+    @EnvironmentObject private var languageManager: LanguageManager
+    
     @Binding var isPresented: Bool
     func body(content: Content) -> some View {
-        content.alert("긴급 호출", isPresented: $isPresented) {
-            Button("확인") {}
+        content.alert(localizedText("emergency_call"), isPresented: $isPresented) {
+            Button(localizedText("ok")) {}
         } message: {
-            Text("긴급 호출이 시작되었습니다")
+            Text(localizedText("emergency_started"))
+        }
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
+        switch key {
+        case "cancel": return isKorean ? "취소" : "Cancel"
+        case "save": return isKorean ? "저장" : "Save"
+        case "ok": return isKorean ? "확인" : "OK"
+        case "done": return isKorean ? "완료" : "Done"
+        case "close": return isKorean ? "닫기" : "Close"
+        case "delete": return isKorean ? "삭제" : "Delete"
+        case "edit": return isKorean ? "편집" : "Edit"
+        case "add": return isKorean ? "추가" : "Add"
+        case "search": return isKorean ? "검색" : "Search"
+        case "settings": return isKorean ? "설정" : "Settings"
+        case "profile": return isKorean ? "프로필" : "Profile"
+        case "logout": return isKorean ? "로그아웃" : "Sign Out"
+        case "signin": return isKorean ? "로그인" : "Sign In"
+        case "signup": return isKorean ? "회원가입" : "Sign Up"
+        case "chat": return isKorean ? "채팅" : "Chat"
+        case "message": return isKorean ? "메시지" : "Message"
+        case "message_input_placeholder": return isKorean ? "메시지 입력" : "Type a message"
+        case "send": return isKorean ? "전송" : "Send"
+        case "typing": return isKorean ? "입력 중" : "Typing"
+        case "online": return isKorean ? "온라인" : "Online"
+        case "offline": return isKorean ? "오프라인" : "Offline"
+        case "friends": return isKorean ? "친구" : "Friends"
+        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
+        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
+        case "accept": return isKorean ? "수락" : "Accept"
+        case "reject": return isKorean ? "거절" : "Reject"
+        case "block": return isKorean ? "차단" : "Block"
+        case "unblock": return isKorean ? "차단 해제" : "Unblock"
+        case "error_occurred": return isKorean ? "오류가 발생했습니다" : "An error occurred"
+        case "network_error": return isKorean ? "네트워크 오류" : "Network Error"
+        case "try_again": return isKorean ? "다시 시도해주세요" : "Please try again"
+        case "notification": return isKorean ? "알림" : "Notification"
+        case "permission_required": return isKorean ? "권한이 필요합니다" : "Permission Required"
+        case "open_settings": return isKorean ? "설정 열기" : "Open Settings"
+        case "contacts_permission_title": return isKorean ? "연락처 접근 권한 필요" : "Contacts Permission Required"
+        case "contacts_permission_message": return isKorean ? "친구를 찾기 위해 연락처 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Contacts access is required to find friends. Please allow it in Settings."
+        case "photo_permission_title": return isKorean ? "사진 접근 권한 필요" : "Photos Permission Required"
+        case "photo_permission_message": return isKorean ? "사진과 동영상을 첨부하려면 사진 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Photos access is required to attach images and videos. Please allow it in Settings."
+        case "chat_screen": return isKorean ? "채팅 화면" : "Chat Screen"
+        case "chat_screen_hint": return isKorean ? "%@과의 채팅 화면입니다" : "Chat with %@"
+        case "message_list": return isKorean ? "메시지 목록" : "Messages"
+        case "scroll_messages_hint": return isKorean ? "위아래로 스크롤하여 메시지를 확인할 수 있습니다" : "Scroll up and down to review messages"
+        case "contacts_match_results": return isKorean ? "연락처 매칭 결과" : "Contacts Match Results"
+        case "edited_message_announcement": return isKorean ? "메시지를 편집했습니다" : "Message edited"
+        case "edit_message_prompt": return isKorean ? "메시지를 수정하세요" : "Edit your message"
+        case "location_permission_title": return isKorean ? "위치 권한 필요" : "Location Permission Required"
+        case "location_permission_message": return isKorean ? "긴급 호출을 위해 위치 접근 권한이 필요합니다. 설정에서 권한을 허용해주세요." : "Location access is required for emergency calls. Please allow it in Settings."
+        case "reported_user_message": return isKorean ? "%@을(를) 신고했습니다" : "Reported %@"
+        case "blocked_user_message": return isKorean ? "%@을(를) 차단했습니다" : "Blocked %@"
+        case "suspicious_link_detected": return isKorean ? "의심스러운 링크가 감지되었습니다" : "A suspicious link was detected"
+        case "organization_room": return isKorean ? "조직방" : "Organization Room"
+        case "enable_org_room": return isKorean ? "조직방 활성화" : "Enable Organization Room"
+        case "org_name_optional": return isKorean ? "조직명(선택)" : "Organization Name (Optional)"
+        case "working_hours": return isKorean ? "근무 시간" : "Working Hours"
+        case "working_hours_footer": return isKorean ? "간단히 요일과 시작/종료 시간을 설정하세요" : "Quickly set weekdays and start/end times"
+        case "profile_info_unavailable": return isKorean ? "프로필 정보를 불러올 수 없습니다" : "Profile information is unavailable"
+        default: return key
         }
     }
 }
 
 struct LocationPermissionAlertModifier: ViewModifier {
+    @EnvironmentObject private var languageManager: LanguageManager
+    
     @Binding var isPresented: Bool
     let openSettings: () -> Void
     func body(content: Content) -> some View {
-        content.alert("위치 권한 필요", isPresented: $isPresented) {
-            Button("취소", role: .cancel) {}
-            Button("설정 열기") { openSettings() }
+        content.alert(localizedText("location_permission_title"), isPresented: $isPresented) {
+            Button(localizedText("cancel"), role: .cancel) {}
+            Button(localizedText("open_settings")) { openSettings() }
         } message: {
-            Text("긴급 호출을 위해 위치 접근 권한이 필요합니다. 설정에서 권한을 허용해주세요.")
+            Text(localizedText("location_permission_message"))
+        }
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
+        switch key {
+        case "cancel": return isKorean ? "취소" : "Cancel"
+        case "save": return isKorean ? "저장" : "Save"
+        case "ok": return isKorean ? "확인" : "OK"
+        case "done": return isKorean ? "완료" : "Done"
+        case "close": return isKorean ? "닫기" : "Close"
+        case "delete": return isKorean ? "삭제" : "Delete"
+        case "edit": return isKorean ? "편집" : "Edit"
+        case "add": return isKorean ? "추가" : "Add"
+        case "search": return isKorean ? "검색" : "Search"
+        case "settings": return isKorean ? "설정" : "Settings"
+        case "profile": return isKorean ? "프로필" : "Profile"
+        case "logout": return isKorean ? "로그아웃" : "Sign Out"
+        case "signin": return isKorean ? "로그인" : "Sign In"
+        case "signup": return isKorean ? "회원가입" : "Sign Up"
+        case "chat": return isKorean ? "채팅" : "Chat"
+        case "message": return isKorean ? "메시지" : "Message"
+        case "message_input_placeholder": return isKorean ? "메시지 입력" : "Type a message"
+        case "send": return isKorean ? "전송" : "Send"
+        case "typing": return isKorean ? "입력 중" : "Typing"
+        case "online": return isKorean ? "온라인" : "Online"
+        case "offline": return isKorean ? "오프라인" : "Offline"
+        case "friends": return isKorean ? "친구" : "Friends"
+        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
+        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
+        case "accept": return isKorean ? "수락" : "Accept"
+        case "reject": return isKorean ? "거절" : "Reject"
+        case "block": return isKorean ? "차단" : "Block"
+        case "unblock": return isKorean ? "차단 해제" : "Unblock"
+        case "error_occurred": return isKorean ? "오류가 발생했습니다" : "An error occurred"
+        case "network_error": return isKorean ? "네트워크 오류" : "Network Error"
+        case "try_again": return isKorean ? "다시 시도해주세요" : "Please try again"
+        case "notification": return isKorean ? "알림" : "Notification"
+        case "permission_required": return isKorean ? "권한이 필요합니다" : "Permission Required"
+        case "open_settings": return isKorean ? "설정 열기" : "Open Settings"
+        case "contacts_permission_title": return isKorean ? "연락처 접근 권한 필요" : "Contacts Permission Required"
+        case "contacts_permission_message": return isKorean ? "친구를 찾기 위해 연락처 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Contacts access is required to find friends. Please allow it in Settings."
+        case "photo_permission_title": return isKorean ? "사진 접근 권한 필요" : "Photos Permission Required"
+        case "photo_permission_message": return isKorean ? "사진과 동영상을 첨부하려면 사진 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Photos access is required to attach images and videos. Please allow it in Settings."
+        case "chat_screen": return isKorean ? "채팅 화면" : "Chat Screen"
+        case "chat_screen_hint": return isKorean ? "%@과의 채팅 화면입니다" : "Chat with %@"
+        case "message_list": return isKorean ? "메시지 목록" : "Messages"
+        case "scroll_messages_hint": return isKorean ? "위아래로 스크롤하여 메시지를 확인할 수 있습니다" : "Scroll up and down to review messages"
+        case "contacts_match_results": return isKorean ? "연락처 매칭 결과" : "Contacts Match Results"
+        case "edited_message_announcement": return isKorean ? "메시지를 편집했습니다" : "Message edited"
+        case "edit_message_prompt": return isKorean ? "메시지를 수정하세요" : "Edit your message"
+        case "location_permission_title": return isKorean ? "위치 권한 필요" : "Location Permission Required"
+        case "location_permission_message": return isKorean ? "긴급 호출을 위해 위치 접근 권한이 필요합니다. 설정에서 권한을 허용해주세요." : "Location access is required for emergency calls. Please allow it in Settings."
+        case "reported_user_message": return isKorean ? "%@을(를) 신고했습니다" : "Reported %@"
+        case "blocked_user_message": return isKorean ? "%@을(를) 차단했습니다" : "Blocked %@"
+        case "suspicious_link_detected": return isKorean ? "의심스러운 링크가 감지되었습니다" : "A suspicious link was detected"
+        case "organization_room": return isKorean ? "조직방" : "Organization Room"
+        case "enable_org_room": return isKorean ? "조직방 활성화" : "Enable Organization Room"
+        case "org_name_optional": return isKorean ? "조직명(선택)" : "Organization Name (Optional)"
+        case "working_hours": return isKorean ? "근무 시간" : "Working Hours"
+        case "working_hours_footer": return isKorean ? "간단히 요일과 시작/종료 시간을 설정하세요" : "Quickly set weekdays and start/end times"
+        case "profile_info_unavailable": return isKorean ? "프로필 정보를 불러올 수 없습니다" : "Profile information is unavailable"
+        default: return key
         }
     }
 }
 
 struct ReportAlertModifier: ViewModifier {
+    @EnvironmentObject private var languageManager: LanguageManager
+    
     @Binding var isPresented: Bool
     let name: String
     func body(content: Content) -> some View {
-        content.alert("사용자 신고", isPresented: $isPresented) {
-            Button("확인", role: .cancel) {}
+        content.alert(localizedText("report_user"), isPresented: $isPresented) {
+            Button(localizedText("ok"), role: .cancel) {}
         } message: {
-            Text("\(name)을(를) 신고했습니다. 검토 후 조치하겠습니다.")
+            Text(String(format: localizedText("reported_user_message"), name))
+        }
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
+        switch key {
+        case "cancel": return isKorean ? "취소" : "Cancel"
+        case "save": return isKorean ? "저장" : "Save"
+        case "ok": return isKorean ? "확인" : "OK"
+        case "done": return isKorean ? "완료" : "Done"
+        case "close": return isKorean ? "닫기" : "Close"
+        case "delete": return isKorean ? "삭제" : "Delete"
+        case "edit": return isKorean ? "편집" : "Edit"
+        case "add": return isKorean ? "추가" : "Add"
+        case "search": return isKorean ? "검색" : "Search"
+        case "settings": return isKorean ? "설정" : "Settings"
+        case "profile": return isKorean ? "프로필" : "Profile"
+        case "logout": return isKorean ? "로그아웃" : "Sign Out"
+        case "signin": return isKorean ? "로그인" : "Sign In"
+        case "signup": return isKorean ? "회원가입" : "Sign Up"
+        case "chat": return isKorean ? "채팅" : "Chat"
+        case "message": return isKorean ? "메시지" : "Message"
+        case "message_input_placeholder": return isKorean ? "메시지 입력" : "Type a message"
+        case "send": return isKorean ? "전송" : "Send"
+        case "typing": return isKorean ? "입력 중" : "Typing"
+        case "online": return isKorean ? "온라인" : "Online"
+        case "offline": return isKorean ? "오프라인" : "Offline"
+        case "friends": return isKorean ? "친구" : "Friends"
+        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
+        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
+        case "accept": return isKorean ? "수락" : "Accept"
+        case "reject": return isKorean ? "거절" : "Reject"
+        case "block": return isKorean ? "차단" : "Block"
+        case "unblock": return isKorean ? "차단 해제" : "Unblock"
+        case "error_occurred": return isKorean ? "오류가 발생했습니다" : "An error occurred"
+        case "network_error": return isKorean ? "네트워크 오류" : "Network Error"
+        case "try_again": return isKorean ? "다시 시도해주세요" : "Please try again"
+        case "notification": return isKorean ? "알림" : "Notification"
+        case "permission_required": return isKorean ? "권한이 필요합니다" : "Permission Required"
+        case "open_settings": return isKorean ? "설정 열기" : "Open Settings"
+        case "contacts_permission_title": return isKorean ? "연락처 접근 권한 필요" : "Contacts Permission Required"
+        case "contacts_permission_message": return isKorean ? "친구를 찾기 위해 연락처 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Contacts access is required to find friends. Please allow it in Settings."
+        case "photo_permission_title": return isKorean ? "사진 접근 권한 필요" : "Photos Permission Required"
+        case "photo_permission_message": return isKorean ? "사진과 동영상을 첨부하려면 사진 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Photos access is required to attach images and videos. Please allow it in Settings."
+        case "chat_screen": return isKorean ? "채팅 화면" : "Chat Screen"
+        case "chat_screen_hint": return isKorean ? "%@과의 채팅 화면입니다" : "Chat with %@"
+        case "message_list": return isKorean ? "메시지 목록" : "Messages"
+        case "scroll_messages_hint": return isKorean ? "위아래로 스크롤하여 메시지를 확인할 수 있습니다" : "Scroll up and down to review messages"
+        case "contacts_match_results": return isKorean ? "연락처 매칭 결과" : "Contacts Match Results"
+        case "edited_message_announcement": return isKorean ? "메시지를 편집했습니다" : "Message edited"
+        case "edit_message_prompt": return isKorean ? "메시지를 수정하세요" : "Edit your message"
+        case "location_permission_title": return isKorean ? "위치 권한 필요" : "Location Permission Required"
+        case "location_permission_message": return isKorean ? "긴급 호출을 위해 위치 접근 권한이 필요합니다. 설정에서 권한을 허용해주세요." : "Location access is required for emergency calls. Please allow it in Settings."
+        case "reported_user_message": return isKorean ? "%@을(를) 신고했습니다" : "Reported %@"
+        case "blocked_user_message": return isKorean ? "%@을(를) 차단했습니다" : "Blocked %@"
+        case "suspicious_link_detected": return isKorean ? "의심스러운 링크가 감지되었습니다" : "A suspicious link was detected"
+        case "organization_room": return isKorean ? "조직방" : "Organization Room"
+        case "enable_org_room": return isKorean ? "조직방 활성화" : "Enable Organization Room"
+        case "org_name_optional": return isKorean ? "조직명(선택)" : "Organization Name (Optional)"
+        case "working_hours": return isKorean ? "근무 시간" : "Working Hours"
+        case "working_hours_footer": return isKorean ? "간단히 요일과 시작/종료 시간을 설정하세요" : "Quickly set weekdays and start/end times"
+        case "profile_info_unavailable": return isKorean ? "프로필 정보를 불러올 수 없습니다" : "Profile information is unavailable"
+        default: return key
         }
     }
 }
 
 struct BlockAlertModifier: ViewModifier {
+    @EnvironmentObject private var languageManager: LanguageManager
+    
     @Binding var isPresented: Bool
     let name: String
     func body(content: Content) -> some View {
-        content.alert("사용자 차단", isPresented: $isPresented) {
-            Button("취소", role: .cancel) {}
-            Button("차단", role: .destructive) {
+        content.alert(localizedText("block_user"), isPresented: $isPresented) {
+            Button(localizedText("cancel"), role: .cancel) {}
+            Button(localizedText("block"), role: .destructive) {
                 // TODO: 차단 로직 연동
             }
         } message: {
-            Text("\(name)의 메시지를 더 이상 받지 않습니다.")
+            Text(String(format: localizedText("blocked_user_message"), name))
+        }
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
+        switch key {
+        case "cancel": return isKorean ? "취소" : "Cancel"
+        case "save": return isKorean ? "저장" : "Save"
+        case "ok": return isKorean ? "확인" : "OK"
+        case "done": return isKorean ? "완료" : "Done"
+        case "close": return isKorean ? "닫기" : "Close"
+        case "delete": return isKorean ? "삭제" : "Delete"
+        case "edit": return isKorean ? "편집" : "Edit"
+        case "add": return isKorean ? "추가" : "Add"
+        case "search": return isKorean ? "검색" : "Search"
+        case "settings": return isKorean ? "설정" : "Settings"
+        case "profile": return isKorean ? "프로필" : "Profile"
+        case "logout": return isKorean ? "로그아웃" : "Sign Out"
+        case "signin": return isKorean ? "로그인" : "Sign In"
+        case "signup": return isKorean ? "회원가입" : "Sign Up"
+        case "chat": return isKorean ? "채팅" : "Chat"
+        case "message": return isKorean ? "메시지" : "Message"
+        case "message_input_placeholder": return isKorean ? "메시지 입력" : "Type a message"
+        case "send": return isKorean ? "전송" : "Send"
+        case "typing": return isKorean ? "입력 중" : "Typing"
+        case "online": return isKorean ? "온라인" : "Online"
+        case "offline": return isKorean ? "오프라인" : "Offline"
+        case "friends": return isKorean ? "친구" : "Friends"
+        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
+        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
+        case "accept": return isKorean ? "수락" : "Accept"
+        case "reject": return isKorean ? "거절" : "Reject"
+        case "block": return isKorean ? "차단" : "Block"
+        case "unblock": return isKorean ? "차단 해제" : "Unblock"
+        case "error_occurred": return isKorean ? "오류가 발생했습니다" : "An error occurred"
+        case "network_error": return isKorean ? "네트워크 오류" : "Network Error"
+        case "try_again": return isKorean ? "다시 시도해주세요" : "Please try again"
+        case "notification": return isKorean ? "알림" : "Notification"
+        case "permission_required": return isKorean ? "권한이 필요합니다" : "Permission Required"
+        case "open_settings": return isKorean ? "설정 열기" : "Open Settings"
+        case "contacts_permission_title": return isKorean ? "연락처 접근 권한 필요" : "Contacts Permission Required"
+        case "contacts_permission_message": return isKorean ? "친구를 찾기 위해 연락처 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Contacts access is required to find friends. Please allow it in Settings."
+        case "photo_permission_title": return isKorean ? "사진 접근 권한 필요" : "Photos Permission Required"
+        case "photo_permission_message": return isKorean ? "사진과 동영상을 첨부하려면 사진 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Photos access is required to attach images and videos. Please allow it in Settings."
+        case "chat_screen": return isKorean ? "채팅 화면" : "Chat Screen"
+        case "chat_screen_hint": return isKorean ? "%@과의 채팅 화면입니다" : "Chat with %@"
+        case "message_list": return isKorean ? "메시지 목록" : "Messages"
+        case "scroll_messages_hint": return isKorean ? "위아래로 스크롤하여 메시지를 확인할 수 있습니다" : "Scroll up and down to review messages"
+        case "contacts_match_results": return isKorean ? "연락처 매칭 결과" : "Contacts Match Results"
+        case "edited_message_announcement": return isKorean ? "메시지를 편집했습니다" : "Message edited"
+        case "edit_message_prompt": return isKorean ? "메시지를 수정하세요" : "Edit your message"
+        case "location_permission_title": return isKorean ? "위치 권한 필요" : "Location Permission Required"
+        case "location_permission_message": return isKorean ? "긴급 호출을 위해 위치 접근 권한이 필요합니다. 설정에서 권한을 허용해주세요." : "Location access is required for emergency calls. Please allow it in Settings."
+        case "reported_user_message": return isKorean ? "%@을(를) 신고했습니다" : "Reported %@"
+        case "blocked_user_message": return isKorean ? "%@을(를) 차단했습니다" : "Blocked %@"
+        case "suspicious_link_detected": return isKorean ? "의심스러운 링크가 감지되었습니다" : "A suspicious link was detected"
+        case "organization_room": return isKorean ? "조직방" : "Organization Room"
+        case "enable_org_room": return isKorean ? "조직방 활성화" : "Enable Organization Room"
+        case "org_name_optional": return isKorean ? "조직명(선택)" : "Organization Name (Optional)"
+        case "working_hours": return isKorean ? "근무 시간" : "Working Hours"
+        case "working_hours_footer": return isKorean ? "간단히 요일과 시작/종료 시간을 설정하세요" : "Quickly set weekdays and start/end times"
+        case "profile_info_unavailable": return isKorean ? "프로필 정보를 불러올 수 없습니다" : "Profile information is unavailable"
+        default: return key
         }
     }
 }
 
 struct SuspiciousLinkAlertModifier: ViewModifier {
+    @EnvironmentObject private var languageManager: LanguageManager
+    
     @Binding var isPresented: Bool
     @Binding var linkToVerify: String?
     @Binding var ignoredDomains: Set<String>
     let openURL: (URL) -> Void
 
     func body(content: Content) -> some View {
-        content.alert("검증되지 않은 정보", isPresented: $isPresented) {
-            Button("취소", role: .cancel) {}
+        content.alert(localizedText("unverified_info"), isPresented: $isPresented) {
+            Button(localizedText("cancel"), role: .cancel) {}
             if let link = linkToVerify, let url = URL(string: link) {
-                Button("열기") { openURL(url) }
+                Button(localizedText("open")) { openURL(url) }
                 if let host = url.host {
-                    Button("항상 허용") {
+                    Button(localizedText("always_allow")) {
                         ignoredDomains.insert(host)
                         UserDefaults.standard.set(Array(ignoredDomains), forKey: "ignoredDomains")
                     }
                 }
             }
         } message: {
-            Text(linkToVerify ?? "의심스러운 링크가 감지되었습니다")
+            Text(linkToVerify ?? localizedText("suspicious_link_detected"))
+        }
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
+        switch key {
+        case "cancel": return isKorean ? "취소" : "Cancel"
+        case "save": return isKorean ? "저장" : "Save"
+        case "ok": return isKorean ? "확인" : "OK"
+        case "done": return isKorean ? "완료" : "Done"
+        case "close": return isKorean ? "닫기" : "Close"
+        case "delete": return isKorean ? "삭제" : "Delete"
+        case "edit": return isKorean ? "편집" : "Edit"
+        case "add": return isKorean ? "추가" : "Add"
+        case "search": return isKorean ? "검색" : "Search"
+        case "settings": return isKorean ? "설정" : "Settings"
+        case "profile": return isKorean ? "프로필" : "Profile"
+        case "logout": return isKorean ? "로그아웃" : "Sign Out"
+        case "signin": return isKorean ? "로그인" : "Sign In"
+        case "signup": return isKorean ? "회원가입" : "Sign Up"
+        case "chat": return isKorean ? "채팅" : "Chat"
+        case "message": return isKorean ? "메시지" : "Message"
+        case "message_input_placeholder": return isKorean ? "메시지 입력" : "Type a message"
+        case "send": return isKorean ? "전송" : "Send"
+        case "typing": return isKorean ? "입력 중" : "Typing"
+        case "online": return isKorean ? "온라인" : "Online"
+        case "offline": return isKorean ? "오프라인" : "Offline"
+        case "friends": return isKorean ? "친구" : "Friends"
+        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
+        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
+        case "accept": return isKorean ? "수락" : "Accept"
+        case "reject": return isKorean ? "거절" : "Reject"
+        case "block": return isKorean ? "차단" : "Block"
+        case "unblock": return isKorean ? "차단 해제" : "Unblock"
+        case "error_occurred": return isKorean ? "오류가 발생했습니다" : "An error occurred"
+        case "network_error": return isKorean ? "네트워크 오류" : "Network Error"
+        case "try_again": return isKorean ? "다시 시도해주세요" : "Please try again"
+        case "notification": return isKorean ? "알림" : "Notification"
+        case "permission_required": return isKorean ? "권한이 필요합니다" : "Permission Required"
+        case "open_settings": return isKorean ? "설정 열기" : "Open Settings"
+        case "contacts_permission_title": return isKorean ? "연락처 접근 권한 필요" : "Contacts Permission Required"
+        case "contacts_permission_message": return isKorean ? "친구를 찾기 위해 연락처 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Contacts access is required to find friends. Please allow it in Settings."
+        case "photo_permission_title": return isKorean ? "사진 접근 권한 필요" : "Photos Permission Required"
+        case "photo_permission_message": return isKorean ? "사진과 동영상을 첨부하려면 사진 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Photos access is required to attach images and videos. Please allow it in Settings."
+        case "chat_screen": return isKorean ? "채팅 화면" : "Chat Screen"
+        case "chat_screen_hint": return isKorean ? "%@과의 채팅 화면입니다" : "Chat with %@"
+        case "message_list": return isKorean ? "메시지 목록" : "Messages"
+        case "scroll_messages_hint": return isKorean ? "위아래로 스크롤하여 메시지를 확인할 수 있습니다" : "Scroll up and down to review messages"
+        case "contacts_match_results": return isKorean ? "연락처 매칭 결과" : "Contacts Match Results"
+        case "edited_message_announcement": return isKorean ? "메시지를 편집했습니다" : "Message edited"
+        case "edit_message_prompt": return isKorean ? "메시지를 수정하세요" : "Edit your message"
+        case "location_permission_title": return isKorean ? "위치 권한 필요" : "Location Permission Required"
+        case "location_permission_message": return isKorean ? "긴급 호출을 위해 위치 접근 권한이 필요합니다. 설정에서 권한을 허용해주세요." : "Location access is required for emergency calls. Please allow it in Settings."
+        case "reported_user_message": return isKorean ? "%@을(를) 신고했습니다" : "Reported %@"
+        case "blocked_user_message": return isKorean ? "%@을(를) 차단했습니다" : "Blocked %@"
+        case "suspicious_link_detected": return isKorean ? "의심스러운 링크가 감지되었습니다" : "A suspicious link was detected"
+        case "organization_room": return isKorean ? "조직방" : "Organization Room"
+        case "enable_org_room": return isKorean ? "조직방 활성화" : "Enable Organization Room"
+        case "org_name_optional": return isKorean ? "조직명(선택)" : "Organization Name (Optional)"
+        case "working_hours": return isKorean ? "근무 시간" : "Working Hours"
+        case "working_hours_footer": return isKorean ? "간단히 요일과 시작/종료 시간을 설정하세요" : "Quickly set weekdays and start/end times"
+        case "profile_info_unavailable": return isKorean ? "프로필 정보를 불러올 수 없습니다" : "Profile information is unavailable"
+        default: return key
         }
     }
 }
@@ -878,6 +1344,8 @@ struct DocumentPicker: UIViewControllerRepresentable {
 // MARK: - ReactionPickerView
 
 struct ReactionPickerView: View {
+    @EnvironmentObject private var languageManager: LanguageManager
+    
     let message: Message?
     let onReactionSelected: (String) -> Void
     
@@ -885,7 +1353,7 @@ struct ReactionPickerView: View {
     
     var body: some View {
         VStack(spacing: 16) {
-            Text("반응 추가")
+            Text(localizedText("add_reaction"))
                 .font(.headline)
                 .foregroundColor(.secondary)
             
@@ -900,13 +1368,77 @@ struct ReactionPickerView: View {
                             .glassEffect(.regular.interactive(), in: .circle)
                     }
                     .buttonStyle(PlainButtonStyle())
-                    .accessibilityLabel("반응: \(emoji)")
+                    .accessibilityLabel((languageManager.currentLanguage == .korean ? "반응: " : "Reaction: ") + emoji)
                 }
             }
         }
         .padding()
         .glassEffect(.regular, in: .rect(cornerRadius: 20))
         .padding()
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
+        switch key {
+        case "cancel": return isKorean ? "취소" : "Cancel"
+        case "save": return isKorean ? "저장" : "Save"
+        case "ok": return isKorean ? "확인" : "OK"
+        case "done": return isKorean ? "완료" : "Done"
+        case "close": return isKorean ? "닫기" : "Close"
+        case "delete": return isKorean ? "삭제" : "Delete"
+        case "edit": return isKorean ? "편집" : "Edit"
+        case "add": return isKorean ? "추가" : "Add"
+        case "search": return isKorean ? "검색" : "Search"
+        case "settings": return isKorean ? "설정" : "Settings"
+        case "profile": return isKorean ? "프로필" : "Profile"
+        case "logout": return isKorean ? "로그아웃" : "Sign Out"
+        case "signin": return isKorean ? "로그인" : "Sign In"
+        case "signup": return isKorean ? "회원가입" : "Sign Up"
+        case "chat": return isKorean ? "채팅" : "Chat"
+        case "message": return isKorean ? "메시지" : "Message"
+        case "message_input_placeholder": return isKorean ? "메시지 입력" : "Type a message"
+        case "send": return isKorean ? "전송" : "Send"
+        case "typing": return isKorean ? "입력 중" : "Typing"
+        case "online": return isKorean ? "온라인" : "Online"
+        case "offline": return isKorean ? "오프라인" : "Offline"
+        case "friends": return isKorean ? "친구" : "Friends"
+        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
+        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
+        case "accept": return isKorean ? "수락" : "Accept"
+        case "reject": return isKorean ? "거절" : "Reject"
+        case "block": return isKorean ? "차단" : "Block"
+        case "unblock": return isKorean ? "차단 해제" : "Unblock"
+        case "error_occurred": return isKorean ? "오류가 발생했습니다" : "An error occurred"
+        case "network_error": return isKorean ? "네트워크 오류" : "Network Error"
+        case "try_again": return isKorean ? "다시 시도해주세요" : "Please try again"
+        case "notification": return isKorean ? "알림" : "Notification"
+        case "permission_required": return isKorean ? "권한이 필요합니다" : "Permission Required"
+        case "open_settings": return isKorean ? "설정 열기" : "Open Settings"
+        case "contacts_permission_title": return isKorean ? "연락처 접근 권한 필요" : "Contacts Permission Required"
+        case "contacts_permission_message": return isKorean ? "친구를 찾기 위해 연락처 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Contacts access is required to find friends. Please allow it in Settings."
+        case "photo_permission_title": return isKorean ? "사진 접근 권한 필요" : "Photos Permission Required"
+        case "photo_permission_message": return isKorean ? "사진과 동영상을 첨부하려면 사진 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Photos access is required to attach images and videos. Please allow it in Settings."
+        case "chat_screen": return isKorean ? "채팅 화면" : "Chat Screen"
+        case "chat_screen_hint": return isKorean ? "%@과의 채팅 화면입니다" : "Chat with %@"
+        case "message_list": return isKorean ? "메시지 목록" : "Messages"
+        case "scroll_messages_hint": return isKorean ? "위아래로 스크롤하여 메시지를 확인할 수 있습니다" : "Scroll up and down to review messages"
+        case "contacts_match_results": return isKorean ? "연락처 매칭 결과" : "Contacts Match Results"
+        case "edited_message_announcement": return isKorean ? "메시지를 편집했습니다" : "Message edited"
+        case "edit_message_prompt": return isKorean ? "메시지를 수정하세요" : "Edit your message"
+        case "location_permission_title": return isKorean ? "위치 권한 필요" : "Location Permission Required"
+        case "location_permission_message": return isKorean ? "긴급 호출을 위해 위치 접근 권한이 필요합니다. 설정에서 권한을 허용해주세요." : "Location access is required for emergency calls. Please allow it in Settings."
+        case "reported_user_message": return isKorean ? "%@을(를) 신고했습니다" : "Reported %@"
+        case "blocked_user_message": return isKorean ? "%@을(를) 차단했습니다" : "Blocked %@"
+        case "suspicious_link_detected": return isKorean ? "의심스러운 링크가 감지되었습니다" : "A suspicious link was detected"
+        case "organization_room": return isKorean ? "조직방" : "Organization Room"
+        case "enable_org_room": return isKorean ? "조직방 활성화" : "Enable Organization Room"
+        case "org_name_optional": return isKorean ? "조직명(선택)" : "Organization Name (Optional)"
+        case "working_hours": return isKorean ? "근무 시간" : "Working Hours"
+        case "working_hours_footer": return isKorean ? "간단히 요일과 시작/종료 시간을 설정하세요" : "Quickly set weekdays and start/end times"
+        case "profile_info_unavailable": return isKorean ? "프로필 정보를 불러올 수 없습니다" : "Profile information is unavailable"
+        default: return key
+        }
     }
 }
 
@@ -917,6 +1449,8 @@ struct LinkPreviewView: UIViewRepresentable {
 }
 
 struct TranslatedTextView: View {
+    @EnvironmentObject private var languageManager: LanguageManager
+    
     let text: String
     let autoDetect: Bool
     let target: String
@@ -931,7 +1465,7 @@ struct TranslatedTextView: View {
                 Image(systemName: "globe")
                     .font(.caption)
                     .foregroundColor(.secondary)
-                Text(isLoading ? "번역 중…" : translated)
+                Text(isLoading ? localizedText("translating_ellipsis") : translated)
                     .font(.footnote)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -956,9 +1490,75 @@ struct TranslatedTextView: View {
             }
         }
     }
+    
+    private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
+        switch key {
+        case "cancel": return isKorean ? "취소" : "Cancel"
+        case "save": return isKorean ? "저장" : "Save"
+        case "ok": return isKorean ? "확인" : "OK"
+        case "done": return isKorean ? "완료" : "Done"
+        case "close": return isKorean ? "닫기" : "Close"
+        case "delete": return isKorean ? "삭제" : "Delete"
+        case "edit": return isKorean ? "편집" : "Edit"
+        case "add": return isKorean ? "추가" : "Add"
+        case "search": return isKorean ? "검색" : "Search"
+        case "settings": return isKorean ? "설정" : "Settings"
+        case "profile": return isKorean ? "프로필" : "Profile"
+        case "logout": return isKorean ? "로그아웃" : "Sign Out"
+        case "signin": return isKorean ? "로그인" : "Sign In"
+        case "signup": return isKorean ? "회원가입" : "Sign Up"
+        case "chat": return isKorean ? "채팅" : "Chat"
+        case "message": return isKorean ? "메시지" : "Message"
+        case "message_input_placeholder": return isKorean ? "메시지 입력" : "Type a message"
+        case "send": return isKorean ? "전송" : "Send"
+        case "typing": return isKorean ? "입력 중" : "Typing"
+        case "online": return isKorean ? "온라인" : "Online"
+        case "offline": return isKorean ? "오프라인" : "Offline"
+        case "friends": return isKorean ? "친구" : "Friends"
+        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
+        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
+        case "accept": return isKorean ? "수락" : "Accept"
+        case "reject": return isKorean ? "거절" : "Reject"
+        case "block": return isKorean ? "차단" : "Block"
+        case "unblock": return isKorean ? "차단 해제" : "Unblock"
+        case "error_occurred": return isKorean ? "오류가 발생했습니다" : "An error occurred"
+        case "network_error": return isKorean ? "네트워크 오류" : "Network Error"
+        case "try_again": return isKorean ? "다시 시도해주세요" : "Please try again"
+        case "notification": return isKorean ? "알림" : "Notification"
+        case "permission_required": return isKorean ? "권한이 필요합니다" : "Permission Required"
+        case "open_settings": return isKorean ? "설정 열기" : "Open Settings"
+        case "contacts_permission_title": return isKorean ? "연락처 접근 권한 필요" : "Contacts Permission Required"
+        case "contacts_permission_message": return isKorean ? "친구를 찾기 위해 연락처 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Contacts access is required to find friends. Please allow it in Settings."
+        case "photo_permission_title": return isKorean ? "사진 접근 권한 필요" : "Photos Permission Required"
+        case "photo_permission_message": return isKorean ? "사진과 동영상을 첨부하려면 사진 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Photos access is required to attach images and videos. Please allow it in Settings."
+        case "chat_screen": return isKorean ? "채팅 화면" : "Chat Screen"
+        case "chat_screen_hint": return isKorean ? "%@과의 채팅 화면입니다" : "Chat with %@"
+        case "message_list": return isKorean ? "메시지 목록" : "Messages"
+        case "scroll_messages_hint": return isKorean ? "위아래로 스크롤하여 메시지를 확인할 수 있습니다" : "Scroll up and down to review messages"
+        case "contacts_match_results": return isKorean ? "연락처 매칭 결과" : "Contacts Match Results"
+        case "edited_message_announcement": return isKorean ? "메시지를 편집했습니다" : "Message edited"
+        case "edit_message_prompt": return isKorean ? "메시지를 수정하세요" : "Edit your message"
+        case "location_permission_title": return isKorean ? "위치 권한 필요" : "Location Permission Required"
+        case "location_permission_message": return isKorean ? "긴급 호출을 위해 위치 접근 권한이 필요합니다. 설정에서 권한을 허용해주세요." : "Location access is required for emergency calls. Please allow it in Settings."
+        case "reported_user_message": return isKorean ? "%@을(를) 신고했습니다" : "Reported %@"
+        case "blocked_user_message": return isKorean ? "%@을(를) 차단했습니다" : "Blocked %@"
+        case "suspicious_link_detected": return isKorean ? "의심스러운 링크가 감지되었습니다" : "A suspicious link was detected"
+        case "organization_room": return isKorean ? "조직방" : "Organization Room"
+        case "enable_org_room": return isKorean ? "조직방 활성화" : "Enable Organization Room"
+        case "org_name_optional": return isKorean ? "조직명(선택)" : "Organization Name (Optional)"
+        case "working_hours": return isKorean ? "근무 시간" : "Working Hours"
+        case "working_hours_footer": return isKorean ? "간단히 요일과 시작/종료 시간을 설정하세요" : "Quickly set weekdays and start/end times"
+        case "profile_info_unavailable": return isKorean ? "프로필 정보를 불러올 수 없습니다" : "Profile information is unavailable"
+        default: return key
+        }
+    }
 }
 
 struct OrgRoomSettingsView: View {
+    @EnvironmentObject private var languageManager: LanguageManager
+    
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     var room: ChatRoom
@@ -975,27 +1575,27 @@ struct OrgRoomSettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section(header: Text("조직방")) {
-                    Toggle("조직방 활성화", isOn: $isOrgRoom)
-                    TextField("조직명(선택)", text: $orgName)
+                Section(header: Text(localizedText("organization_room"))) {
+                    Toggle(localizedText("enable_org_room"), isOn: $isOrgRoom)
+                    TextField(localizedText("org_name_optional"), text: $orgName)
                         .textInputAutocapitalization(.never)
                         .disableAutocorrection(true)
                 }
 
                 if isOrgRoom {
-                    Section(header: Text("근무 시간"), footer: Text("간단히 요일과 시작/종료 시간을 설정하세요")) {
+                    Section(header: Text(localizedText("working_hours")), footer: Text(localizedText("working_hours_footer"))) {
                         Picker("근무 요일", selection: $weekdayMode) {
                             ForEach(WeekdayMode.allCases, id: \.self) { mode in
-                                Text(mode.rawValue).tag(mode)
+                                Text(localizedText(mode == .weekdays ? "weekdays" : "daily")).tag(mode)
                             }
                         }
                         .pickerStyle(.segmented)
 
-                        DatePicker("시작", selection: $startTime, displayedComponents: .hourAndMinute)
-                        DatePicker("종료", selection: $endTime, displayedComponents: .hourAndMinute)
+                        DatePicker(localizedText("start"), selection: $startTime, displayedComponents: .hourAndMinute)
+                        DatePicker(localizedText("end"), selection: $endTime, displayedComponents: .hourAndMinute)
 
                         HStack {
-                            Text("채널 타임존")
+                            Text(localizedText("channel_timezone"))
                             Spacer()
                             Text(room.timeZoneIdentifier)
                                 .foregroundColor(.secondary)
@@ -1003,14 +1603,14 @@ struct OrgRoomSettingsView: View {
                     }
                 }
             }
-            .navigationTitle("채널 설정")
+            .navigationTitle(localizedText("channel_settings"))
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("취소") { dismiss() }
+                    Button(localizedText("cancel")) { dismiss() }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("저장") { saveAndDismiss() }
+                    Button(localizedText("save")) { saveAndDismiss() }
                         .bold()
                 }
             }
@@ -1068,9 +1668,75 @@ struct OrgRoomSettingsView: View {
         do { try modelContext.save() } catch { print("채널 설정 저장 실패: \(error)") }
         dismiss()
     }
+    
+    private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
+        switch key {
+        case "cancel": return isKorean ? "취소" : "Cancel"
+        case "save": return isKorean ? "저장" : "Save"
+        case "ok": return isKorean ? "확인" : "OK"
+        case "done": return isKorean ? "완료" : "Done"
+        case "close": return isKorean ? "닫기" : "Close"
+        case "delete": return isKorean ? "삭제" : "Delete"
+        case "edit": return isKorean ? "편집" : "Edit"
+        case "add": return isKorean ? "추가" : "Add"
+        case "search": return isKorean ? "검색" : "Search"
+        case "settings": return isKorean ? "설정" : "Settings"
+        case "profile": return isKorean ? "프로필" : "Profile"
+        case "logout": return isKorean ? "로그아웃" : "Sign Out"
+        case "signin": return isKorean ? "로그인" : "Sign In"
+        case "signup": return isKorean ? "회원가입" : "Sign Up"
+        case "chat": return isKorean ? "채팅" : "Chat"
+        case "message": return isKorean ? "메시지" : "Message"
+        case "message_input_placeholder": return isKorean ? "메시지 입력" : "Type a message"
+        case "send": return isKorean ? "전송" : "Send"
+        case "typing": return isKorean ? "입력 중" : "Typing"
+        case "online": return isKorean ? "온라인" : "Online"
+        case "offline": return isKorean ? "오프라인" : "Offline"
+        case "friends": return isKorean ? "친구" : "Friends"
+        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
+        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
+        case "accept": return isKorean ? "수락" : "Accept"
+        case "reject": return isKorean ? "거절" : "Reject"
+        case "block": return isKorean ? "차단" : "Block"
+        case "unblock": return isKorean ? "차단 해제" : "Unblock"
+        case "error_occurred": return isKorean ? "오류가 발생했습니다" : "An error occurred"
+        case "network_error": return isKorean ? "네트워크 오류" : "Network Error"
+        case "try_again": return isKorean ? "다시 시도해주세요" : "Please try again"
+        case "notification": return isKorean ? "알림" : "Notification"
+        case "permission_required": return isKorean ? "권한이 필요합니다" : "Permission Required"
+        case "open_settings": return isKorean ? "설정 열기" : "Open Settings"
+        case "contacts_permission_title": return isKorean ? "연락처 접근 권한 필요" : "Contacts Permission Required"
+        case "contacts_permission_message": return isKorean ? "친구를 찾기 위해 연락처 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Contacts access is required to find friends. Please allow it in Settings."
+        case "photo_permission_title": return isKorean ? "사진 접근 권한 필요" : "Photos Permission Required"
+        case "photo_permission_message": return isKorean ? "사진과 동영상을 첨부하려면 사진 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Photos access is required to attach images and videos. Please allow it in Settings."
+        case "chat_screen": return isKorean ? "채팅 화면" : "Chat Screen"
+        case "chat_screen_hint": return isKorean ? "%@과의 채팅 화면입니다" : "Chat with %@"
+        case "message_list": return isKorean ? "메시지 목록" : "Messages"
+        case "scroll_messages_hint": return isKorean ? "위아래로 스크롤하여 메시지를 확인할 수 있습니다" : "Scroll up and down to review messages"
+        case "contacts_match_results": return isKorean ? "연락처 매칭 결과" : "Contacts Match Results"
+        case "edited_message_announcement": return isKorean ? "메시지를 편집했습니다" : "Message edited"
+        case "edit_message_prompt": return isKorean ? "메시지를 수정하세요" : "Edit your message"
+        case "location_permission_title": return isKorean ? "위치 권한 필요" : "Location Permission Required"
+        case "location_permission_message": return isKorean ? "긴급 호출을 위해 위치 접근 권한이 필요합니다. 설정에서 권한을 허용해주세요." : "Location access is required for emergency calls. Please allow it in Settings."
+        case "reported_user_message": return isKorean ? "%@을(를) 신고했습니다" : "Reported %@"
+        case "blocked_user_message": return isKorean ? "%@을(를) 차단했습니다" : "Blocked %@"
+        case "suspicious_link_detected": return isKorean ? "의심스러운 링크가 감지되었습니다" : "A suspicious link was detected"
+        case "organization_room": return isKorean ? "조직방" : "Organization Room"
+        case "enable_org_room": return isKorean ? "조직방 활성화" : "Enable Organization Room"
+        case "org_name_optional": return isKorean ? "조직명(선택)" : "Organization Name (Optional)"
+        case "working_hours": return isKorean ? "근무 시간" : "Working Hours"
+        case "working_hours_footer": return isKorean ? "간단히 요일과 시작/종료 시간을 설정하세요" : "Quickly set weekdays and start/end times"
+        case "profile_info_unavailable": return isKorean ? "프로필 정보를 불러올 수 없습니다" : "Profile information is unavailable"
+        default: return key
+        }
+    }
 }
 
 struct MiniProfileSheet: View {
+    @EnvironmentObject private var languageManager: LanguageManager
+    
     let name: String
     let symbol: String
     @Environment(\.dismiss) private var dismiss
@@ -1080,20 +1746,84 @@ struct MiniProfileSheet: View {
             VStack(spacing: 16) {
                 Image(systemName: symbol)
                     .font(.system(size: 64))
-                    .foregroundColor(.blue)
+                    .foregroundColor(.appPrimary)
                     .padding(.top, 20)
                 Text(name)
                     .font(.title2)
                     .fontWeight(.semibold)
-                Text("프로필 정보를 불러올 수 없습니다")
+                Text(localizedText("profile_info_unavailable"))
                     .font(.footnote)
                     .foregroundColor(.secondary)
                 Spacer()
             }
             .padding()
-            .navigationTitle("프로필")
+            .navigationTitle(localizedText("profile"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("닫기") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button(localizedText("close")) { dismiss() } } }
+        }
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
+        switch key {
+        case "cancel": return isKorean ? "취소" : "Cancel"
+        case "save": return isKorean ? "저장" : "Save"
+        case "ok": return isKorean ? "확인" : "OK"
+        case "done": return isKorean ? "완료" : "Done"
+        case "close": return isKorean ? "닫기" : "Close"
+        case "delete": return isKorean ? "삭제" : "Delete"
+        case "edit": return isKorean ? "편집" : "Edit"
+        case "add": return isKorean ? "추가" : "Add"
+        case "search": return isKorean ? "검색" : "Search"
+        case "settings": return isKorean ? "설정" : "Settings"
+        case "profile": return isKorean ? "프로필" : "Profile"
+        case "logout": return isKorean ? "로그아웃" : "Sign Out"
+        case "signin": return isKorean ? "로그인" : "Sign In"
+        case "signup": return isKorean ? "회원가입" : "Sign Up"
+        case "chat": return isKorean ? "채팅" : "Chat"
+        case "message": return isKorean ? "메시지" : "Message"
+        case "message_input_placeholder": return isKorean ? "메시지 입력" : "Type a message"
+        case "send": return isKorean ? "전송" : "Send"
+        case "typing": return isKorean ? "입력 중" : "Typing"
+        case "online": return isKorean ? "온라인" : "Online"
+        case "offline": return isKorean ? "오프라인" : "Offline"
+        case "friends": return isKorean ? "친구" : "Friends"
+        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
+        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
+        case "accept": return isKorean ? "수락" : "Accept"
+        case "reject": return isKorean ? "거절" : "Reject"
+        case "block": return isKorean ? "차단" : "Block"
+        case "unblock": return isKorean ? "차단 해제" : "Unblock"
+        case "error_occurred": return isKorean ? "오류가 발생했습니다" : "An error occurred"
+        case "network_error": return isKorean ? "네트워크 오류" : "Network Error"
+        case "try_again": return isKorean ? "다시 시도해주세요" : "Please try again"
+        case "notification": return isKorean ? "알림" : "Notification"
+        case "permission_required": return isKorean ? "권한이 필요합니다" : "Permission Required"
+        case "open_settings": return isKorean ? "설정 열기" : "Open Settings"
+        case "contacts_permission_title": return isKorean ? "연락처 접근 권한 필요" : "Contacts Permission Required"
+        case "contacts_permission_message": return isKorean ? "친구를 찾기 위해 연락처 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Contacts access is required to find friends. Please allow it in Settings."
+        case "photo_permission_title": return isKorean ? "사진 접근 권한 필요" : "Photos Permission Required"
+        case "photo_permission_message": return isKorean ? "사진과 동영상을 첨부하려면 사진 접근 권한이 필요합니다. 설정에서 허용해 주세요." : "Photos access is required to attach images and videos. Please allow it in Settings."
+        case "chat_screen": return isKorean ? "채팅 화면" : "Chat Screen"
+        case "chat_screen_hint": return isKorean ? "%@과의 채팅 화면입니다" : "Chat with %@"
+        case "message_list": return isKorean ? "메시지 목록" : "Messages"
+        case "scroll_messages_hint": return isKorean ? "위아래로 스크롤하여 메시지를 확인할 수 있습니다" : "Scroll up and down to review messages"
+        case "contacts_match_results": return isKorean ? "연락처 매칭 결과" : "Contacts Match Results"
+        case "edited_message_announcement": return isKorean ? "메시지를 편집했습니다" : "Message edited"
+        case "edit_message_prompt": return isKorean ? "메시지를 수정하세요" : "Edit your message"
+        case "location_permission_title": return isKorean ? "위치 권한 필요" : "Location Permission Required"
+        case "location_permission_message": return isKorean ? "긴급 호출을 위해 위치 접근 권한이 필요합니다. 설정에서 권한을 허용해주세요." : "Location access is required for emergency calls. Please allow it in Settings."
+        case "reported_user_message": return isKorean ? "%@을(를) 신고했습니다" : "Reported %@"
+        case "blocked_user_message": return isKorean ? "%@을(를) 차단했습니다" : "Blocked %@"
+        case "suspicious_link_detected": return isKorean ? "의심스러운 링크가 감지되었습니다" : "A suspicious link was detected"
+        case "organization_room": return isKorean ? "조직방" : "Organization Room"
+        case "enable_org_room": return isKorean ? "조직방 활성화" : "Enable Organization Room"
+        case "org_name_optional": return isKorean ? "조직명(선택)" : "Organization Name (Optional)"
+        case "working_hours": return isKorean ? "근무 시간" : "Working Hours"
+        case "working_hours_footer": return isKorean ? "간단히 요일과 시작/종료 시간을 설정하세요" : "Quickly set weekdays and start/end times"
+        case "profile_info_unavailable": return isKorean ? "프로필 정보를 불러올 수 없습니다" : "Profile information is unavailable"
+        default: return key
         }
     }
 }

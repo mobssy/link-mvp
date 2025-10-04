@@ -25,12 +25,12 @@ struct SmartReplyView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles")
                             .font(.system(size: 14))
-                            .foregroundColor(.blue)
+                            .foregroundColor(.appPrimary)
                         
                         Text(localizedText("smart_replies"))
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundColor(.blue)
+                            .foregroundColor(.appPrimary)
                     }
                     
                     Spacer()
@@ -194,7 +194,7 @@ struct SmartReplyButton: View {
     
     private var backgroundColor: Color {
         if isSelected {
-            return Color.blue.opacity(0.2)
+            return Color.appPrimary.opacity(0.2)
         } else if reply.confidence > 0.8 {
             return Color.green.opacity(0.1)
         } else {
@@ -204,7 +204,7 @@ struct SmartReplyButton: View {
     
     private var borderColor: Color {
         if isSelected {
-            return Color.blue
+            return Color.appPrimary
         } else if reply.confidence > 0.8 {
             return Color.green.opacity(0.5)
         } else {
@@ -214,7 +214,7 @@ struct SmartReplyButton: View {
     
     private var textColor: Color {
         if isSelected {
-            return .blue
+            return .appPrimary
         } else {
             return .primary
         }

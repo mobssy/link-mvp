@@ -37,10 +37,10 @@ struct ContentView: View {
     
     @ViewBuilder
     private func mainContent() -> some View {
-        if authManager.isAuthenticated || isTestMode {
+        if isTestMode {
             AuthenticatedTabsView(
                 selectedTab: $selectedTab,
-                showTestModeIndicator: isTestMode
+                showTestModeIndicator: true
             )
         } else {
             UnauthenticatedView(
@@ -115,19 +115,20 @@ struct ContentView: View {
     }
     
     private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
         switch key {
-        case "test_mode_title":
-            return languageManager.currentLanguage == .korean ? "테스트 모드" : "Test Mode"
-        case "cancel":
-            return languageManager.currentLanguage == .korean ? "취소" : "Cancel"
-        case "start_test":
-            return languageManager.currentLanguage == .korean ? "테스트 시작" : "Start Test"
-        case "test_mode_message":
-            return languageManager.currentLanguage == .korean ? 
-                "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" : 
-                "You can experience all app features without logging in.\nWould you like to enter test mode?"
-        default:
-            return key
+        case "friends": return isKorean ? "친구" : "Friends"
+        case "chat": return isKorean ? "채팅" : "Chat"
+        case "settings": return isKorean ? "설정" : "Settings"
+        case "test_mode_title": return isKorean ? "테스트 모드" : "Test Mode"
+        case "start_test": return isKorean ? "테스트 시작" : "Start Test"
+        case "test_mode_message": return isKorean ? 
+            "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" : 
+            "You can experience all app features without logging in.\nWould you like to enter test mode?"
+        case "test_experience": return isKorean ? "테스트 모드로 체험하기" : "Try Test Mode"
+        case "test_mode": return isKorean ? "테스트 모드" : "Test Mode"
+        default: return key
         }
     }
 }
@@ -159,7 +160,7 @@ struct AuthenticatedTabsView: View {
                     }
                     .tag(2)
             }
-            .tint(.blue)
+            .tint(.appPrimary)
             .frame(width: geometry.size.width, height: geometry.size.height)
             .ignoresSafeArea(.all, edges: .all)
             .overlay(alignment: .bottom) {
@@ -176,15 +177,20 @@ struct AuthenticatedTabsView: View {
     }
     
     private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
         switch key {
-        case "friends":
-            return languageManager.currentLanguage == .korean ? "친구" : "Friends"
-        case "chat":
-            return languageManager.currentLanguage == .korean ? "채팅" : "Chat"
-        case "settings":
-            return languageManager.currentLanguage == .korean ? "설정" : "Settings"
-        default:
-            return key
+        case "friends": return isKorean ? "친구" : "Friends"
+        case "chat": return isKorean ? "채팅" : "Chat"
+        case "settings": return isKorean ? "설정" : "Settings"
+        case "test_mode_title": return isKorean ? "테스트 모드" : "Test Mode"
+        case "start_test": return isKorean ? "테스트 시작" : "Start Test"
+        case "test_mode_message": return isKorean ? 
+            "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" : 
+            "You can experience all app features without logging in.\nWould you like to enter test mode?"
+        case "test_experience": return isKorean ? "테스트 모드로 체험하기" : "Try Test Mode"
+        case "test_mode": return isKorean ? "테스트 모드" : "Test Mode"
+        default: return key
         }
     }
 }
@@ -249,11 +255,20 @@ struct TestModeButtonView: View {
     }
     
     private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
         switch key {
-        case "test_experience":
-            return languageManager.currentLanguage == .korean ? "테스트 모드로 체험하기" : "Try Test Mode"
-        default:
-            return key
+        case "friends": return isKorean ? "친구" : "Friends"
+        case "chat": return isKorean ? "채팅" : "Chat"
+        case "settings": return isKorean ? "설정" : "Settings"
+        case "test_mode_title": return isKorean ? "테스트 모드" : "Test Mode"
+        case "start_test": return isKorean ? "테스트 시작" : "Start Test"
+        case "test_mode_message": return isKorean ? 
+            "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" : 
+            "You can experience all app features without logging in.\nWould you like to enter test mode?"
+        case "test_experience": return isKorean ? "테스트 모드로 체험하기" : "Try Test Mode"
+        case "test_mode": return isKorean ? "테스트 모드" : "Test Mode"
+        default: return key
         }
     }
 }
@@ -282,11 +297,20 @@ struct TestModeIndicatorView: View {
     }
     
     private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
         switch key {
-        case "test_mode":
-            return languageManager.currentLanguage == .korean ? "테스트 모드" : "Test Mode"
-        default:
-            return key
+        case "friends": return isKorean ? "친구" : "Friends"
+        case "chat": return isKorean ? "채팅" : "Chat"
+        case "settings": return isKorean ? "설정" : "Settings"
+        case "test_mode_title": return isKorean ? "테스트 모드" : "Test Mode"
+        case "start_test": return isKorean ? "테스트 시작" : "Start Test"
+        case "test_mode_message": return isKorean ? 
+            "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" : 
+            "You can experience all app features without logging in.\nWould you like to enter test mode?"
+        case "test_experience": return isKorean ? "테스트 모드로 체험하기" : "Try Test Mode"
+        case "test_mode": return isKorean ? "테스트 모드" : "Test Mode"
+        default: return key
         }
     }
 }

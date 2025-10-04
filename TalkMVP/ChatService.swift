@@ -34,11 +34,20 @@ class ChatService: ObservableObject, ChatServiceProtocol {
         case reconnecting
         
         var displayText: String {
+            let isKorean: Bool = {
+                if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") {
+                    return saved.hasPrefix("ko")
+                }
+                if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first {
+                    return first.hasPrefix("ko")
+                }
+                return false
+            }()
             switch self {
-            case .disconnected: return "연결 끊김"
-            case .connecting: return "연결 중..."
-            case .connected: return "연결됨"
-            case .reconnecting: return "재연결 중..."
+            case .disconnected: return isKorean ? "연결 끊김" : "Disconnected"
+            case .connecting: return isKorean ? "연결 중..." : "Connecting..."
+            case .connected: return isKorean ? "연결됨" : "Connected"
+            case .reconnecting: return isKorean ? "재연결 중..." : "Reconnecting..."
             }
         }
         

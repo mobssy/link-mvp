@@ -7,6 +7,7 @@ import SwiftUI
 
 extension Color {
     static var tertiaryLabel: Color { Color(UIColor.tertiaryLabel) }
+    static let appPrimary = Color(red: 181/255, green: 199/255, blue: 235/255)
 }
 
 // MARK: - Glass Effect Modifier
@@ -71,4 +72,8 @@ extension View {
     func glassEffect(_ style: GlassEffect.GlassStyle = .regular, in shape: GlassEffect.GlassShape = .rect(cornerRadius: 12)) -> some View {
         self.modifier(GlassEffect(style: style, shape: shape))
     }
+}
+
+extension UIColor {
+    static let appPrimary = UIColor(red: 181/255.0, green: 199/255.0, blue: 235/255.0, alpha: 1.0)
 }

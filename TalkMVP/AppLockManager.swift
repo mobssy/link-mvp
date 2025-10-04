@@ -7,6 +7,7 @@ import Foundation
 class AppLockManager: ObservableObject {
     
     @AppStorage("appLockEnabled") private var appLockEnabled = false
+    @AppStorage("appLockMethod") private var appLockMethod: String = "biometrics"
     @Published var isLocked: Bool = false
     @Published var errorMessage: String?
 
@@ -34,32 +35,54 @@ class AppLockManager: ObservableObject {
     }
 
     // 인증 시도 (Face ID/Touch ID 또는 기기 암호)
-    func authenticate(reason: String = "앱을 잠금 해제하려면 인증이 필요합니다.") {
+    func authenticate(reason: String? = nil) {
+        let isKorean: Bool = {
+            if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") { return saved.hasPrefix("ko") }
+            if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first.hasPrefix("ko") }
+            return false
+        }()
+        let reasonText = reason ?? (isKorean ? "앱을 잠금 해제하려면 인증이 필요합니다." : "Authentication is required to unlock the app.")
+        let fallbackTitle = isKorean ? "암호 사용" : "Use Passcode"
+        let authFailed = isKorean ? "인증에 실패했습니다." : "Authentication failed."
+        let unavailable = isKorean ? "이 기기에서는 인증을 사용할 수 없습니다." : "Authentication is unavailable on this device."
+
         let context = LAContext()
-        context.localizedFallbackTitle = "암호 사용"
+        context.localizedFallbackTitle = fallbackTitle
         var authError: NSError?
 
-        // Prefer biometrics only if available AND Face ID usage description key exists (avoids crash on devices with Face ID when key is missing)
+        // Determine preferred authentication policy based on user setting
+        let preferredMethod = appLockMethod // "biometrics" or "passcode"
         let hasFaceIDUsageDescription = Bundle.main.object(forInfoDictionaryKey: "NSFaceIDUsageDescription") != nil
         let biometricsAvailable = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &authError)
-        let policy: LAPolicy = (biometricsAvailable && hasFaceIDUsageDescription) ? .deviceOwnerAuthenticationWithBiometrics : .deviceOwnerAuthentication
+
+        let policy: LAPolicy
+        if preferredMethod == "biometrics" {
+            if biometricsAvailable && hasFaceIDUsageDescription {
+                policy = .deviceOwnerAuthenticationWithBiometrics
+            } else {
+                // Fallback to device passcode if biometrics not available/allowed
+                policy = .deviceOwnerAuthentication
+            }
+        } else { // "passcode"
+            policy = .deviceOwnerAuthentication
+        }
 
         if context.canEvaluatePolicy(policy, error: &authError) {
-            context.evaluatePolicy(policy, localizedReason: reason) { success, error in
+            context.evaluatePolicy(policy, localizedReason: reasonText) { success, error in
                 Task { @MainActor in
                     if success {
                         self.isLocked = false
                         self.errorMessage = nil
                     } else {
                         self.isLocked = true
-                        self.errorMessage = (error as NSError?)?.localizedDescription ?? "인증에 실패했습니다."
+                        self.errorMessage = (error as NSError?)?.localizedDescription ?? authFailed
                     }
                 }
             }
         } else {
             // 어떤 정책도 사용할 수 없는 경우
             self.isLocked = true
-            self.errorMessage = authError?.localizedDescription ?? "이 기기에서는 인증을 사용할 수 없습니다."
+            self.errorMessage = authError?.localizedDescription ?? unavailable
         }
     }
 }

@@ -13,6 +13,7 @@ struct MessageBubbleView: View {
     let message: Message
     var avatarSymbolName: String? = nil
     var onAvatarTap: (() -> Void)? = nil
+    @EnvironmentObject private var languageManager: LanguageManager
     
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -43,7 +44,7 @@ struct MessageBubbleView: View {
                 .padding(.vertical, message.messageType == .image ? 4 : 10)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(message.isFromCurrentUser ? Color.blue : Color.gray.opacity(0.2))
+                        .fill(message.isFromCurrentUser ? Color.appPrimary : Color.gray.opacity(0.2))
                 )
                 .foregroundColor(message.isFromCurrentUser ? .white : .primary)
             
@@ -58,20 +59,20 @@ struct MessageBubbleView: View {
             if let symbol = avatarSymbolName {
                 Image(systemName: symbol)
                     .font(.system(size: 28))
-                    .foregroundColor(.blue)
+                    .foregroundColor(.appPrimary)
                     .frame(width: 36, height: 36)
             } else {
                 ZStack {
                     Circle()
-                        .fill(Color.blue.opacity(0.15))
+                        .fill(Color.appPrimary.opacity(0.15))
                     Image(systemName: "person.fill")
-                        .foregroundColor(.blue)
+                        .foregroundColor(.appPrimary)
                 }
                 .frame(width: 36, height: 36)
             }
         }
         .onTapGesture { onAvatarTap?() }
-        .accessibilityLabel("\(message.sender) 프로필")
+        .accessibilityLabel(localizedText("profile_of", message.sender))
         .accessibilityAddTraits(.isButton)
     }
     
@@ -96,7 +97,7 @@ struct MessageBubbleView: View {
             } else {
                 HStack {
                     Image(systemName: "photo")
-                    Text("이미지를 불러올 수 없습니다")
+                    Text(localizedText("image_load_failed"))
                 }
                 .foregroundColor(.secondary)
             }
@@ -104,9 +105,9 @@ struct MessageBubbleView: View {
         case .file:
             HStack {
                 Image(systemName: fileIcon(for: message.fileExtension ?? ""))
-                    .foregroundColor(.blue)
+                    .foregroundColor(.appPrimary)
                 VStack(alignment: .leading) {
-                    Text(message.fileName ?? "파일")
+                    Text(message.fileName ?? localizedText("file"))
                         .font(.headline)
                     if let fileSize = message.fileSize {
                         Text(formatFileSize(fileSize))
@@ -121,14 +122,14 @@ struct MessageBubbleView: View {
         case .audio:
             HStack {
                 Image(systemName: "waveform")
-                    .foregroundColor(.blue)
-                Text("음성 메시지")
+                    .foregroundColor(.appPrimary)
+                Text(localizedText("audio_message"))
                 Spacer()
                 Button(action: {
                     // 음성 재생 (추후 구현)
                 }) {
                     Image(systemName: "play.fill")
-                        .foregroundColor(.blue)
+                        .foregroundColor(.appPrimary)
                 }
             }
             .frame(minWidth: 150)
@@ -137,7 +138,7 @@ struct MessageBubbleView: View {
             HStack {
                 Image(systemName: "trash")
                     .foregroundColor(.secondary)
-                Text("메시지가 삭제되었습니다")
+                Text(localizedText("message_deleted"))
                     .foregroundColor(.secondary)
                     .italic()
             }
@@ -169,6 +170,25 @@ struct MessageBubbleView: View {
         formatter.countStyle = .file
         return formatter.string(fromByteCount: Int64(bytes))
     }
+    
+    private func localizedText(_ key: String, _ param: String = "") -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
+        let text: String
+        switch key {
+        case "image_load_failed": text = isKorean ? "이미지를 불러올 수 없습니다" : "Unable to load image"
+        case "audio_message": text = isKorean ? "음성 메시지" : "Audio Message"
+        case "message_deleted": text = isKorean ? "메시지가 삭제되었습니다" : "Message deleted"
+        case "file": text = isKorean ? "파일" : "File"
+        case "profile_of": text = isKorean ? "\(param) 프로필" : "Profile of \(param)"
+        default: text = key
+        }
+        
+        if !param.isEmpty && text.contains("%@") {
+            return text.replacingOccurrences(of: "%@", with: param)
+        }
+        return text
+    }
 }
 
 #Preview {
@@ -181,3 +201,4 @@ struct MessageBubbleView: View {
     .padding()
     .modelContainer(container)
 }
+

@@ -26,7 +26,7 @@ struct AuthView: View {
                 VStack(spacing: 16) {
                     Image(systemName: "message.circle.fill")
                         .font(.system(size: 80))
-                        .foregroundColor(.blue)
+                        .foregroundColor(.appPrimary)
                     
                     Text("TalkMVP")
                         .font(.largeTitle)
@@ -65,7 +65,7 @@ struct AuthView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(Color.blue)
+                    .background(Color.appPrimary)
                     .foregroundColor(.white)
                     .cornerRadius(25)
                     .disabled(authManager.isLoading || !isFormValid)
@@ -78,7 +78,7 @@ struct AuthView: View {
                         }
                     }) {
                         Text(localizedText(isSignUp ? "have_account" : "no_account"))
-                            .foregroundColor(.blue)
+                            .foregroundColor(.appPrimary)
                     }
                 }
                 .padding(.horizontal, 32)
@@ -87,6 +87,7 @@ struct AuthView: View {
             }
             .navigationTitle("")
             .navigationBarHidden(true)
+            .tint(.appPrimary)
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             .ignoresSafeArea(.all, edges: .all)
@@ -170,33 +171,20 @@ struct AuthView: View {
     }
     
     private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        
         switch key {
-        // 인증 관련
-        case "signin":
-            return languageManager.currentLanguage == .korean ? "로그인" : "Sign In"
-        case "signup":
-            return languageManager.currentLanguage == .korean ? "회원가입" : "Sign Up"
-        case "have_account":
-            return languageManager.currentLanguage == .korean ? "이미 계정이 있나요? 로그인" : "Already have an account? Sign In"
-        case "no_account":
-            return languageManager.currentLanguage == .korean ? "계정이 없나요? 회원가입" : "Don't have an account? Sign Up"
-        
-        // 폼 필드
-        case "username":
-            return languageManager.currentLanguage == .korean ? "사용자명" : "Username"
-        case "username_or_email":
-            return languageManager.currentLanguage == .korean ? "사용자명 또는 이메일" : "Username or Email"
-        case "display_name":
-            return languageManager.currentLanguage == .korean ? "표시 이름" : "Display Name"
-        case "email":
-            return languageManager.currentLanguage == .korean ? "이메일" : "Email"
-        case "password":
-            return languageManager.currentLanguage == .korean ? "비밀번호" : "Password"
-        case "confirm_password":
-            return languageManager.currentLanguage == .korean ? "비밀번호 확인" : "Confirm Password"
-        
-        default:
-            return key
+        case "signin": return isKorean ? "로그인" : "Sign In"
+        case "signup": return isKorean ? "회원가입" : "Sign Up"
+        case "have_account": return isKorean ? "이미 계정이 있나요? 로그인" : "Already have an account? Sign In"
+        case "no_account": return isKorean ? "계정이 없나요? 회원가입" : "Don't have an account? Sign Up"
+        case "username": return isKorean ? "사용자명" : "Username"
+        case "username_or_email": return isKorean ? "사용자명 또는 이메일" : "Username or Email"
+        case "display_name": return isKorean ? "표시 이름" : "Display Name"
+        case "email": return isKorean ? "이메일" : "Email"
+        case "password": return isKorean ? "비밀번호" : "Password"
+        case "confirm_password": return isKorean ? "비밀번호 확인" : "Confirm Password"
+        default: return key
         }
     }
 }
