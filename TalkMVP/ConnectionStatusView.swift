@@ -11,16 +11,17 @@ import SwiftData
 struct ConnectionStatusView: View {
     @ObservedObject var chatService: ChatService
     @State private var isVisible = false
+    @State private var isPulsing = false
     
     var body: some View {
         Group {
-            if chatService.connectionStatus != .connected || !isVisible {
+            if isVisible {
                 HStack {
                     Circle()
                         .fill(color)
                         .frame(width: 8, height: 8)
-                        .scaleEffect(chatService.connectionStatus == .connecting || chatService.connectionStatus == .reconnecting ? 1.0 : 0.8)
-                        .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: chatService.connectionStatus == .connecting || chatService.connectionStatus == .reconnecting)
+                        .scaleEffect(isPulsing ? 1.0 : 0.8)
+                        .animation(isPulsing ? .easeInOut(duration: 0.8).repeatForever(autoreverses: true) : .default, value: isPulsing)
                     
                     Text(chatService.connectionStatus.displayText)
                         .font(.caption)
@@ -53,17 +54,31 @@ struct ConnectionStatusView: View {
                 }
             }
         }
+        .onAppear {
+            // Initialize visibility and pulsing based on current status
+            let status = chatService.connectionStatus
+            isPulsing = (status == .connecting || status == .reconnecting)
+            // Show banner when not connected; if connected, start hidden
+            isVisible = (status != .connected)
+        }
         .onChange(of: chatService.connectionStatus) { _, newStatus in
-            withAnimation(.spring()) {
-                isVisible = newStatus != .connected
-            }
+            // Update pulsing based on status
+            isPulsing = (newStatus == .connecting || newStatus == .reconnecting)
             
-            // 연결됨 상태일 때 3초 후 자동 숨김
             if newStatus == .connected {
+                // Show "연결됨" briefly, then hide after 3 seconds
+                withAnimation(.spring()) {
+                    isVisible = true
+                }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
                     withAnimation {
                         isVisible = false
                     }
+                }
+            } else {
+                // For disconnected/connecting/reconnecting, keep the banner visible
+                withAnimation(.spring()) {
+                    isVisible = true
                 }
             }
         }

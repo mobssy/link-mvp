@@ -33,6 +33,7 @@ struct ContentView: View {
         } message: {
             Text(localizedText("test_mode_message"))
         }
+        .tint(.appPrimary)
     }
     
     @ViewBuilder
@@ -128,6 +129,7 @@ struct ContentView: View {
             "You can experience all app features without logging in.\nWould you like to enter test mode?"
         case "test_experience": return isKorean ? "테스트 모드로 체험하기" : "Try Test Mode"
         case "test_mode": return isKorean ? "테스트 모드" : "Test Mode"
+        case "cancel": return isKorean ? "취소" : "Cancel"
         default: return key
         }
     }
@@ -323,3 +325,4 @@ struct TestModeIndicatorView: View {
         .environmentObject(auth)
         .modelContainer(container)
 }
+

@@ -449,6 +449,7 @@ struct FriendRow: View {
         case "friend_request_failed": return isKorean ? "친구 요청 전송에 실패했습니다." : "Failed to send friend request."
         case "error_occurred_prefix": return isKorean ? "오류가 발생했습니다: " : "An error occurred: "
         case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
+        case "online": return isKorean ? "온라인" : "Online"
         default: return key
         }
     }

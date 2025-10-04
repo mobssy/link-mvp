@@ -9,6 +9,7 @@ import Foundation
 import Combine
 import SwiftData
 import UIKit
+import SwiftUI
 
 @MainActor
 class ChatViewModel: ObservableObject {
@@ -18,6 +19,15 @@ class ChatViewModel: ObservableObject {
     @Published var otherUserTyping = false
     @Published var isOnline = true
     @Published var replyingToMessage: Message?
+    
+    // Translation state (no placeholder text while translating)
+    @Published var translations: [UUID: String] = [:]
+    @Published var translating: Set<UUID> = []
+
+    // Read translation settings from UserDefaults to avoid @AppStorage dependency in non-View types
+    private var translationEnabled: Bool { UserDefaults.standard.bool(forKey: "translationEnabled") }
+    private var translationAutoDetect: Bool { UserDefaults.standard.bool(forKey: "translationAutoDetect") }
+    private var translationTargetLanguage: String { UserDefaults.standard.string(forKey: "translationTargetLanguage") ?? "auto" }
     
     private var modelContext: ModelContext
     private var chatRoom: ChatRoom
@@ -55,6 +65,28 @@ class ChatViewModel: ObservableObject {
             print("Failed to load messages: \(error)")
         }
     }
+
+    func translateIfNeeded(_ message: Message) {
+        // Only translate text messages when translation is enabled
+        guard translationEnabled else { return }
+        let trimmed = message.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        guard translations[message.id] == nil, !translating.contains(message.id) else { return }
+
+        translating.insert(message.id)
+
+        Task {
+            let result = await AIService.shared.translate(
+                trimmed,
+                autoDetect: translationAutoDetect,
+                target: translationTargetLanguage
+            )
+            await MainActor.run {
+                self.translations[message.id] = result
+                self.translating.remove(message.id)
+            }
+        }
+    }
     
     private func setupNotificationObservers() {
         NotificationCenter.default.publisher(for: .newMessageReceived)
@@ -65,6 +97,7 @@ class ChatViewModel: ObservableObject {
                 
                 Task { @MainActor in
                     self.messages.append(message)
+                    self.translateIfNeeded(message)
                     self.simulateTypingIndicator()
                 }
             }
@@ -83,6 +116,7 @@ class ChatViewModel: ObservableObject {
         
         modelContext.insert(message)
         messages.append(message)
+        translateIfNeeded(message)
         
         // 채팅방 마지막 메시지 업데이트
         chatRoom.lastMessage = newMessageText
@@ -221,6 +255,7 @@ class ChatViewModel: ObservableObject {
             
             modelContext.insert(response)
             messages.append(response)
+            translateIfNeeded(response)
             
             chatRoom.lastMessage = randomResponse
             chatRoom.timestamp = Date()

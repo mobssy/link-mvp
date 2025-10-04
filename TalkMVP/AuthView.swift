@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct AuthView: View {
     @EnvironmentObject private var authManager: AuthManager
@@ -24,9 +25,18 @@ struct AuthView: View {
                 VStack(spacing: 30) {
                 // 로고 영역
                 VStack(spacing: 16) {
-                    Image(systemName: "message.circle.fill")
-                        .font(.system(size: 80))
-                        .foregroundColor(.appPrimary)
+                    if let icon = appIconUIImage() {
+                        Image(uiImage: icon)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 80, height: 80)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    } else {
+                        Image(systemName: "message.circle.fill")
+                            .font(.system(size: 80))
+                            .foregroundColor(.appPrimary)
+                    }
                     
                     Text("TalkMVP")
                         .font(.largeTitle)
@@ -186,6 +196,17 @@ struct AuthView: View {
         case "confirm_password": return isKorean ? "비밀번호 확인" : "Confirm Password"
         default: return key
         }
+    }
+    
+    private func appIconUIImage() -> UIImage? {
+        if let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
+           let primary = icons["CFBundlePrimaryIcon"] as? [String: Any],
+           let files = primary["CFBundleIconFiles"] as? [String],
+           let iconName = files.last,
+           let image = UIImage(named: iconName) {
+            return image
+        }
+        return nil
     }
 }
 

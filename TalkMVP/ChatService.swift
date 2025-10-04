@@ -8,6 +8,8 @@
 import Foundation
 import Combine
 import SwiftData
+import UserNotifications
+import UIKit
 
 @MainActor
 class ChatService: ObservableObject, ChatServiceProtocol {
@@ -17,6 +19,7 @@ class ChatService: ObservableObject, ChatServiceProtocol {
     private var timer: Timer?
     private var randomMessageTimer: Timer?
     private var hasStartedConnection = false
+    private var hasRequestedNotificationAuth = false
     var modelContext: ModelContext {
         didSet {
             if !hasStartedConnection {
@@ -73,7 +76,33 @@ class ChatService: ObservableObject, ChatServiceProtocol {
         randomMessageTimer = nil
     }
     
+    private func ensureNotificationSetup() {
+        guard !hasRequestedNotificationAuth else { return }
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
+        center.delegate = LocalNotificationDelegate.shared
+        hasRequestedNotificationAuth = true
+    }
+    
+    private func setAppBadgeCount(_ count: Int) {
+        if #available(iOS 17.0, *) {
+            UNUserNotificationCenter.current().setBadgeCount(count) { error in
+                if let error = error {
+                    print("❌ Failed to set badge count: \(error)")
+                }
+            }
+        } else {
+            setLegacyBadgeCount(count)
+        }
+    }
+
+    @available(iOS, deprecated: 17.0, message: "Use UNUserNotificationCenter.setBadgeCount on iOS 17+")
+    private func setLegacyBadgeCount(_ count: Int) {
+        UIApplication.shared.applicationIconBadgeNumber = count
+    }
+    
     func startConnection() {
+        ensureNotificationSetup()
         connectionStatus = .connecting
         
         // 실제 WebSocket 연결 시뮬레이션
@@ -163,6 +192,39 @@ class ChatService: ObservableObject, ChatServiceProtocol {
             } catch {
                 print("❌ simulateIncomingMessage 저장 실패: \(error)")
             }
+            
+            // Update badge count based on total unread across all rooms
+            do {
+                let rooms = try modelContext.fetch(FetchDescriptor<ChatRoom>())
+                let totalUnread = rooms.map { $0.unreadCount }.reduce(0, +)
+                self.setAppBadgeCount(totalUnread)
+                
+                // Schedule a local notification for the incoming message
+                let content = UNMutableNotificationContent()
+                content.title = randomChatRoom.name
+                content.body = randomMessage
+                content.sound = .default
+                content.badge = NSNumber(value: totalUnread)
+                
+                let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
+                let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+                
+                if #available(iOS 17.0, *) {
+                    try await UNUserNotificationCenter.current().add(request)
+                } else {
+                    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                        UNUserNotificationCenter.current().add(request) { error in
+                            if let error = error {
+                                continuation.resume(throwing: error)
+                            } else {
+                                continuation.resume()
+                            }
+                        }
+                    }
+                }
+            } catch {
+                print("❌ Failed to update badge/schedule notification: \(error)")
+            }
         }
         
         // 알림 시뮬레이션
@@ -230,5 +292,15 @@ class ChatService: ObservableObject, ChatServiceProtocol {
 extension Notification.Name {
     static let newMessageReceived = Notification.Name("newMessageReceived")
     static let messageStatusUpdated = Notification.Name("messageStatusUpdated")
+}
+
+class LocalNotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
+    static let shared = LocalNotificationDelegate()
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .list, .sound, .badge])
+    }
 }
 

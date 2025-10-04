@@ -802,6 +802,7 @@ struct ChatView: View {
         case "working_hours": return isKorean ? "근무 시간" : "Working Hours"
         case "working_hours_footer": return isKorean ? "간단히 요일과 시작/종료 시간을 설정하세요" : "Quickly set weekdays and start/end times"
         case "profile_info_unavailable": return isKorean ? "프로필 정보를 불러올 수 없습니다" : "Profile information is unavailable"
+        case "search_conversation": return isKorean ? "대화 검색" : "Search conversation"
         default: return key
         }
     }
