@@ -89,7 +89,7 @@ struct FriendsListView: View {
                 UserDefaults.standard.set(Array(newValue), forKey: "pinnedChatRooms")
             }
             .navigationDestination(for: ChatRoom.self) { room in
-                ChatView(chatRoom: room)
+                ChatScreen(room: room)
             }
         }
     }

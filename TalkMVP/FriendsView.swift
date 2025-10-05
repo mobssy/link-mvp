@@ -41,7 +41,8 @@ struct FriendsView: View {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
         
         let filtered = friendships.filter { friendship in
-            friendship.userId == currentUserId && 
+            friendship.ownerUserId == currentUserId &&
+            friendship.userId == currentUserId &&
             friendship.status == .accepted
         }
         
@@ -59,7 +60,8 @@ struct FriendsView: View {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
         
         return friendships.filter { friendship in
-            friendship.userId == currentUserId && 
+            friendship.ownerUserId == currentUserId &&
+            friendship.userId == currentUserId &&
             friendship.status == .pending
         }
     }
@@ -68,7 +70,8 @@ struct FriendsView: View {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
         
         return friendships.filter { friendship in
-            friendship.friendId == currentUserId && 
+            friendship.ownerUserId == currentUserId &&
+            friendship.friendId == currentUserId &&
             friendship.status == .pending
         }
     }
@@ -77,7 +80,8 @@ struct FriendsView: View {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
         
         return friendships.filter { friendship in
-            friendship.userId == currentUserId && 
+            friendship.ownerUserId == currentUserId &&
+            friendship.userId == currentUserId &&
             friendship.status == .blocked
         }
     }
@@ -682,6 +686,7 @@ struct AddFriendView: View {
                             UserSearchResultRow(
                                 result: result,
                                 authManager: authManager,
+                                notificationManager: notificationManager,
                                 modelContext: modelContext
                             ) { success, message in
                                 lastActionWasSuccess = success
@@ -796,6 +801,7 @@ struct UserSearchResultRow: View {
     let result: UserSearchResult
     @ObservedObject var authManager: AuthManager
     @EnvironmentObject private var languageManager: LanguageManager
+    let notificationManager: NotificationManager
     let modelContext: ModelContext
     let onComplete: (Bool, String) -> Void
     
@@ -841,6 +847,34 @@ struct UserSearchResultRow: View {
                 
                 await MainActor.run {
                     if success {
+                        // Create outgoing (sender) friendship record
+                        if let senderId = authManager.currentUser?.id.uuidString {
+                            let outgoing = Friendship(
+                                userId: senderId,
+                                friendId: result.id,
+                                friendName: result.displayName,
+                                friendEmail: result.email,
+                                status: .pending
+                            )
+                            modelContext.insert(outgoing)
+                            
+                            // Create incoming (receiver) mirror record for backend readiness
+                            let mirror = Friendship(
+                                userId: result.id,
+                                friendId: senderId,
+                                friendName: authManager.currentUser?.displayName ?? localizedText("user"),
+                                friendEmail: authManager.currentUser?.email ?? "",
+                                status: .pending
+                            )
+                            modelContext.insert(mirror)
+                            
+                            try? modelContext.save()
+                            
+                            // Schedule a local notification to simulate receiver-side alert
+                            let senderName = authManager.currentUser?.displayName ?? localizedText("user")
+                            let senderEmail = authManager.currentUser?.email ?? ""
+                            notificationManager.scheduleFriendRequestNotification(from: senderName, email: senderEmail)
+                        }
                         onComplete(true, localizedText("friend_request_sent"))
                     } else {
                         onComplete(false, localizedText("friend_request_failed"))

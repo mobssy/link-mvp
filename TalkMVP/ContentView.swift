@@ -14,6 +14,8 @@ struct ContentView: View {
     @EnvironmentObject private var languageManager: LanguageManager
     @State private var selectedTab = 0
     @State private var showTestModeAlert = false
+    @AppStorage("contactsOnboardingShown") private var contactsOnboardingShown = false
+    @State private var showContactsOnboarding = false
     
     // 테스트 모드 플래그
     @State private var isTestMode = false
@@ -34,6 +36,17 @@ struct ContentView: View {
             Text(localizedText("test_mode_message"))
         }
         .tint(.appPrimary)
+        .sheet(isPresented: $showContactsOnboarding, onDismiss: {
+            contactsOnboardingShown = true
+        }) {
+            OnboardingContactsView()
+                .environmentObject(languageManager)
+        }
+        .onChange(of: authManager.isAuthenticated) { _, newValue in
+            if newValue && !contactsOnboardingShown {
+                showContactsOnboarding = true
+            }
+        }
     }
     
     @ViewBuilder

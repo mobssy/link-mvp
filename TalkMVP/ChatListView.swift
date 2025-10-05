@@ -58,7 +58,7 @@ struct ChatListView: View {
                 }
             }
             .navigationDestination(for: ChatRoom.self) { room in
-                ChatView(chatRoom: room)
+                ChatScreen(room: room)
             }
         }
         .onAppear {
@@ -195,10 +195,131 @@ struct ChatRoomRow: View {
     }
 }
 
+struct ChatScreen: View {
+    let room: ChatRoom
+    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var authManager: AuthManager
+    @EnvironmentObject private var languageManager: LanguageManager
+    @State private var friendState: FriendState = .unknown
+    @State private var showingAlert = false
+    @State private var alertMessage = ""
+    
+    private enum FriendState { case unknown, notFriend, pending, isFriend }
+    
+    var body: some View {
+        ChatView(chatRoom: room)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    friendToolbarItem
+                }
+            }
+            .onAppear { loadFriendState() }
+            .alert(localizedText("alert"), isPresented: $showingAlert) {
+                Button(localizedText("ok")) {}
+            } message: {
+                Text(alertMessage)
+            }
+    }
+    
+    @ViewBuilder
+    private var friendToolbarItem: some View {
+        switch friendState {
+        case .notFriend:
+            Button {
+                addFriend()
+            } label: {
+                Label(localizedText("add_friend"), systemImage: "person.badge.plus")
+            }
+        case .pending:
+            Label(localizedText("request_pending"), systemImage: "clock")
+                .foregroundColor(.secondary)
+        case .isFriend:
+            Label(localizedText("friend"), systemImage: "checkmark.seal")
+                .foregroundColor(.green)
+        default:
+            EmptyView()
+        }
+    }
+    
+    private func loadFriendState() {
+        guard let currentUserId = authManager.currentUser?.id.uuidString else {
+            friendState = .unknown
+            return
+        }
+        let name = room.name
+        let descriptor = FetchDescriptor<Friendship>(predicate: #Predicate<Friendship> { f in
+            f.ownerUserId == currentUserId && f.userId == currentUserId && f.friendName == name
+        })
+        do {
+            let results = try modelContext.fetch(descriptor)
+            if let existing = results.first {
+                switch existing.status {
+                case .accepted: friendState = .isFriend
+                case .pending: friendState = .pending
+                case .blocked: friendState = .notFriend
+                }
+            } else {
+                friendState = .notFriend
+            }
+        } catch {
+            print("Failed to load friend state: \(error)")
+            friendState = .unknown
+        }
+    }
+    
+    private func addFriend() {
+        guard friendState == .notFriend, let currentUserId = authManager.currentUser?.id.uuidString else { return }
+        // Outgoing record for current user
+        let outgoing = Friendship(
+            userId: currentUserId,
+            friendId: UUID().uuidString,
+            friendName: room.name,
+            friendEmail: "",
+            status: .pending
+        )
+        modelContext.insert(outgoing)
+        
+        // Mirror record for receiver (backend readiness)
+        let mirror = Friendship(
+            userId: outgoing.friendId,
+            friendId: currentUserId,
+            friendName: authManager.currentUser?.displayName ?? localizedText("user"),
+            friendEmail: authManager.currentUser?.email ?? "",
+            status: .pending
+        )
+        modelContext.insert(mirror)
+        
+        do {
+            try modelContext.save()
+            friendState = .pending
+            alertMessage = localizedText("friend_request_sent")
+            showingAlert = true
+            // Local notification to simulate receiver-side alert
+            let manager = NotificationManager()
+            let senderName = authManager.currentUser?.displayName ?? localizedText("user")
+            let senderEmail = authManager.currentUser?.email ?? ""
+            manager.scheduleFriendRequestNotification(from: senderName, email: senderEmail)
+        } catch {
+            print("Failed to save friend request: \(error)")
+        }
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.currentLanguage == .korean
+        switch key {
+        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
+        case "request_pending": return isKorean ? "친구 요청 대기 중" : "Friend Request Pending"
+        case "friend": return isKorean ? "친구" : "Friend"
+        case "alert": return isKorean ? "알림" : "Alert"
+        case "ok": return isKorean ? "확인" : "OK"
+        default: return key
+        }
+    }
+}
+
 #Preview {
     let container = try! ModelContainer(for: ChatRoom.self, Message.self)
     
     ChatListView()
         .modelContainer(container)
 }
-

@@ -13,6 +13,15 @@ struct MessageBubbleView: View {
     let message: Message
     var avatarSymbolName: String? = nil
     var onAvatarTap: (() -> Void)? = nil
+    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var authManager: AuthManager
+    
+    @State private var friendState: FriendState = .unknown
+    @State private var showingFriendAlert = false
+    @State private var friendAlertMessage = ""
+    
+    private enum FriendState { case unknown, notFriend, pending, isFriend }
+    
     @EnvironmentObject private var languageManager: LanguageManager
     
     var body: some View {
@@ -28,14 +37,38 @@ struct MessageBubbleView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 2)
+        .onAppear {
+            if !message.isFromCurrentUser { loadFriendState() }
+        }
+        .alert(localizedText("alert"), isPresented: $showingFriendAlert) {
+            Button(localizedText("ok")) {}
+        } message: {
+            Text(friendAlertMessage)
+        }
     }
     
     private var messageBubble: some View {
         VStack(alignment: message.isFromCurrentUser ? .trailing : .leading, spacing: 4) {
             if !message.isFromCurrentUser {
-                Text(message.sender)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                HStack(spacing: 8) {
+                    Text(message.sender)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    switch friendState {
+                    case .notFriend:
+                        Button(localizedText("add_friend")) { addFriend() }
+                            .font(.caption2)
+                            .buttonStyle(.bordered)
+                            .tint(.appPrimary)
+                    case .pending:
+                        Text(localizedText("request_pending"))
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    default:
+                        EmptyView()
+                    }
+                }
             }
             
             // 메시지 타입에 따른 콘텐츠
@@ -72,6 +105,18 @@ struct MessageBubbleView: View {
             }
         }
         .onTapGesture { onAvatarTap?() }
+        .contextMenu {
+            if !message.isFromCurrentUser {
+                switch friendState {
+                case .notFriend:
+                    Button(localizedText("add_friend")) { addFriend() }
+                case .pending:
+                    Label(localizedText("request_pending"), systemImage: "clock")
+                default:
+                    EmptyView()
+                }
+            }
+        }
         .accessibilityLabel(localizedText("profile_of", message.sender))
         .accessibilityAddTraits(.isButton)
     }
@@ -181,6 +226,11 @@ struct MessageBubbleView: View {
         case "message_deleted": text = isKorean ? "메시지가 삭제되었습니다" : "Message deleted"
         case "file": text = isKorean ? "파일" : "File"
         case "profile_of": text = isKorean ? "\(param) 프로필" : "Profile of \(param)"
+        case "add_friend": text = isKorean ? "친구 추가" : "Add Friend"
+        case "request_pending": text = isKorean ? "친구 요청 대기 중" : "Friend Request Pending"
+        case "friend_request_sent": text = isKorean ? "친구 요청을 보냈습니다." : "Friend request sent."
+        case "alert": text = isKorean ? "알림" : "Alert"
+        case "ok": text = isKorean ? "확인" : "OK"
         default: text = key
         }
         
@@ -188,6 +238,79 @@ struct MessageBubbleView: View {
             return text.replacingOccurrences(of: "%@", with: param)
         }
         return text
+    }
+    
+    private func loadFriendState() {
+        guard let currentUserId = authManager.currentUser?.id.uuidString else {
+            friendState = .unknown
+            return
+        }
+        // Skip for own messages
+        guard !message.isFromCurrentUser else {
+            friendState = .unknown
+            return
+        }
+        // Fetch friendship by current user and sender name
+        let senderName = message.sender
+        let descriptor = FetchDescriptor<Friendship>(predicate: #Predicate<Friendship> { f in
+            f.userId == currentUserId && f.friendName == senderName
+        })
+        do {
+            let results = try modelContext.fetch(descriptor)
+            if let existing = results.first {
+                switch existing.status {
+                case .accepted:
+                    friendState = .isFriend
+                case .pending:
+                    friendState = .pending
+                case .blocked:
+                    friendState = .notFriend
+                }
+            } else {
+                friendState = .notFriend
+            }
+        } catch {
+            print("Failed to load friendship state: \(error)")
+            friendState = .unknown
+        }
+    }
+    
+    private func addFriend() {
+        guard friendState == .notFriend, let currentUserId = authManager.currentUser?.id.uuidString else { return }
+        // Outgoing request (current user perspective)
+        let outgoing = Friendship(
+            userId: currentUserId,
+            friendId: UUID().uuidString,
+            friendName: message.sender,
+            friendEmail: "",
+            status: .pending
+        )
+        modelContext.insert(outgoing)
+        
+        // Mirror incoming request (receiver perspective) for backend readiness
+        let mirror = Friendship(
+            userId: outgoing.friendId,
+            friendId: currentUserId,
+            friendName: authManager.currentUser?.displayName ?? localizedText("user"),
+            friendEmail: authManager.currentUser?.email ?? "",
+            status: .pending
+        )
+        modelContext.insert(mirror)
+        
+        do {
+            try modelContext.save()
+            friendState = .pending
+            friendAlertMessage = localizedText("friend_request_sent")
+            showingFriendAlert = true
+            
+            // Fire a local notification to simulate receiver-side alert
+            let manager = NotificationManager()
+            let senderName = authManager.currentUser?.displayName ?? localizedText("user")
+            let senderEmail = authManager.currentUser?.email ?? ""
+            manager.scheduleFriendRequestNotification(from: senderName, email: senderEmail)
+        } catch {
+            print("Failed to save friend request: \(error)")
+        }
     }
 }
 

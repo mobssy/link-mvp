@@ -112,6 +112,16 @@ struct SettingsView: View {
                                 title: localizedText("translation")
                             )
                         }
+                        Divider().padding(.leading, 52)
+                        NavigationLink {
+                            ContactsSettingsView().environmentObject(languageManager)
+                        } label: {
+                            SettingsLinkRow(
+                                systemImage: "person.crop.circle.badge.plus",
+                                tint: .green,
+                                title: languageManager.isKorean ? "연락처" : "Contacts"
+                            )
+                        }
                     }
 
                     SettingsSectionCard(title: languageManager.isKorean ? "정보" : "Info") {
@@ -363,3 +373,4 @@ struct SettingsView: View {
             "You can change notification permissions in the device Settings"
     }
 }
+

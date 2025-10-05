@@ -46,6 +46,7 @@ class Friendship {
     var friendEmail: String
     var status: FriendshipStatus
     var createdAt: Date
+    var ownerUserId: String
     
     init(userId: String, friendId: String, friendName: String, friendEmail: String, status: FriendshipStatus = .pending) {
         self.id = UUID()
@@ -55,6 +56,7 @@ class Friendship {
         self.friendEmail = friendEmail
         self.status = status
         self.createdAt = Date()
+        self.ownerUserId = userId
     }
 }
 
@@ -71,3 +73,4 @@ enum FriendshipStatus: String, Codable, CaseIterable {
         }
     }
 }
+

@@ -231,7 +231,7 @@ class AuthManager: ObservableObject {
                 friendEmail: email,
                 status: .pending
             )
-            
+            receivedRequest.ownerUserId = user.id.uuidString
             modelContext.insert(receivedRequest)
         }
         

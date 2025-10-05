@@ -427,7 +427,7 @@ struct ChatViewContainer: View {
     
     var body: some View {
         NavigationView {
-            ChatView(chatRoom: createChatRoom(), chatService: ChatService(modelContext: modelContext))
+            ChatScreen(room: createChatRoom())
         }
     }
     
