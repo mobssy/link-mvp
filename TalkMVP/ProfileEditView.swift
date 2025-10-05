@@ -145,6 +145,8 @@ struct ProfileEditView: View {
         case "profile_photo": return isKorean ? "프로필 사진" : "Profile Photo"
         case "account_info": return isKorean ? "계정 정보" : "Account Information"
         case "edit_profile": return isKorean ? "프로필 편집" : "Edit Profile"
+        case "cancel": return isKorean ? "취소" : "Cancel"
+        case "save": return isKorean ? "저장" : "Save"
         case "display_name": return isKorean ? "표시 이름" : "Display Name"
         case "status_message": return isKorean ? "상태 메시지" : "Status Message"
         case "email": return isKorean ? "이메일" : "Email"

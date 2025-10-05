@@ -169,6 +169,14 @@ struct FriendsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
+                        activeSheet = .addFriend
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityLabel(localizedText("add_friend"))
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
                         activeSheet = .settings
                     } label: {
                         Image(systemName: "gearshape")
