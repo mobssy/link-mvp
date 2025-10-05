@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 import SwiftData
 import UserNotifications
 
@@ -289,9 +290,17 @@ struct MyProfileRow: View {
             showingProfileEdit = true
         }) {
             HStack(spacing: 16) {
-                Image(systemName: "person.circle.fill")
-                    .font(.system(size: 60))
-                    .foregroundColor(.appPrimary)
+                if let data = authManager.currentUser?.profileImageData, let uiImage = UIImage(data: data) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 60, height: 60)
+                        .clipShape(Circle())
+                } else {
+                    Image(systemName: "person.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.appPrimary)
+                }
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(localizedDisplayName().capitalized)

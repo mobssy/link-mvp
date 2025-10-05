@@ -13,10 +13,15 @@ struct AppLockSettingsView: View {
                     get: { appLockEnabled },
                     set: { newValue in
                         if newValue {
-                            appLock.authenticate(reason: localized("unlock_reason"))
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                // Wait a short moment for auth to complete and update isLocked
-                                appLockEnabled = !appLock.isLocked
+                            if appLock.canAuthenticate() {
+                                appLock.authenticate(reason: localized("unlock_reason"))
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    // Wait a short moment for auth to complete and update isLocked
+                                    appLockEnabled = !appLock.isLocked
+                                }
+                            } else {
+                                appLockEnabled = false
+                                appLock.errorMessage = localized("auth_unavailable")
                             }
                         } else {
                             appLock.isLocked = false
@@ -64,6 +69,8 @@ struct AppLockSettingsView: View {
             return languageManager.currentLanguage == .korean ? "암호" : "Passcode"
         case "test_auth":
             return languageManager.currentLanguage == .korean ? "인증 테스트" : "Test Authentication"
+        case "auth_unavailable":
+            return languageManager.currentLanguage == .korean ? "이 기기에서는 인증을 사용할 수 없습니다." : "Authentication is unavailable on this device."
         default:
             return key
         }

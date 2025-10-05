@@ -45,6 +45,7 @@ struct SettingsView: View {
                     ProfileCardView(
                         title: profileDisplayName().capitalized,
                         subtitle: authManager.currentUser?.statusMessage ?? (languageManager.isKorean ? "테스트 모드로 체험 중입니다" : "Experiencing in test mode"),
+                        imageData: authManager.currentUser?.profileImageData,
                         action: { showingProfileEdit = true }
                     )
 
@@ -59,6 +60,16 @@ struct SettingsView: View {
                             Image(systemName: "chevron.right")
                                 .foregroundStyle(.tertiary)
                                 .allowsHitTesting(false)
+                        }
+                        Divider().padding(.leading, 52)
+                        NavigationLink {
+                            ThemeSettingsView().environmentObject(languageManager)
+                        } label: {
+                            SettingsLinkRow(
+                                systemImage: "paintpalette.fill",
+                                tint: .orange,
+                                title: languageManager.isKorean ? "테마" : "Theme"
+                            )
                         }
                         Divider().padding(.leading, 52)
                         NavigationLink {

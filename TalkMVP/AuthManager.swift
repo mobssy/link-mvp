@@ -245,6 +245,7 @@ class AuthManager: ObservableObject {
         user.statusMessage = statusMessage
         user.profileImageData = profileImageData
         user.lastActiveAt = Date()
+        objectWillChange.send()
         
         try? modelContext.save()
     }

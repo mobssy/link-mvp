@@ -7,10 +7,15 @@ struct ThemeSettingsView: View {
     var body: some View {
         Form {
             Section(header: Text(localizedText("theme"))) {
-                Picker("", selection: $themeMode) {
-                    Text(localizedText("appearance_system")).tag("system")
-                    Text(localizedText("appearance_light")).tag("light")
-                    Text(localizedText("appearance_dark")).tag("dark")
+                Picker(selection: $themeMode) {
+                    Label(localizedText("appearance_system"), systemImage: "iphone")
+                        .tag("system")
+                    Label(localizedText("appearance_light"), systemImage: "sun.max.fill")
+                        .tag("light")
+                    Label(localizedText("appearance_dark"), systemImage: "moon.fill")
+                        .tag("dark")
+                } label: {
+                    EmptyView()
                 }
                 .pickerStyle(.inline)
             }

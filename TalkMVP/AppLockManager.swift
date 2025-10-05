@@ -11,9 +11,45 @@ class AppLockManager: ObservableObject {
     @Published var isLocked: Bool = false
     @Published var errorMessage: String?
 
+    // Check if device can perform authentication based on current settings
+    func canAuthenticate() -> Bool {
+        let context = LAContext()
+        var error: NSError?
+
+        // Determine policy similar to authenticate()
+        let hasFaceIDUsageDescription = Bundle.main.object(forInfoDictionaryKey: "NSFaceIDUsageDescription") != nil
+        let preferredMethod = appLockMethod
+        let biometricsAvailable = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
+
+        let policy: LAPolicy
+        if preferredMethod == "biometrics" {
+            if biometricsAvailable && hasFaceIDUsageDescription {
+                policy = .deviceOwnerAuthenticationWithBiometrics
+            } else {
+                policy = .deviceOwnerAuthentication
+            }
+        } else {
+            policy = .deviceOwnerAuthentication
+        }
+
+        return context.canEvaluatePolicy(policy, error: &error)
+    }
+
+    // Emergency disable to avoid being locked out
+    func disableLock() {
+        appLockEnabled = false
+        isLocked = false
+        errorMessage = nil
+    }
+
     // 앱 시작 시 현재 설정을 반영하여 잠금 여부 결정
     func updateLockStateOnLaunch() {
-        isLocked = appLockEnabled
+        if appLockEnabled && !canAuthenticate() {
+            // Fallback: disable to prevent permanent lockout on unsupported devices
+            disableLock()
+        } else {
+            isLocked = appLockEnabled
+        }
     }
 
     // ScenePhase 변화에 따라 잠금 처리 (활성화될 때 잠금 요구)

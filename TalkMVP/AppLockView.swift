@@ -40,6 +40,20 @@ struct AppLockView: View {
                     .cornerRadius(12)
                 }
                 .padding(.horizontal)
+
+                if appLock.errorMessage != nil {
+                    Button(role: .destructive) {
+                        appLock.disableLock()
+                    } label: {
+                        Text(languageManager.currentLanguage == .korean ? "앱 잠금 비활성화" : "Disable App Lock")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.red.opacity(0.1))
+                            .foregroundColor(.red)
+                            .cornerRadius(12)
+                    }
+                    .padding(.horizontal)
+                }
             }
         }
         .onChange(of: scenePhase) { oldPhase, newPhase in

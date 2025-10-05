@@ -14,6 +14,7 @@ struct TalkMVPApp: App {
     @StateObject private var authManager: AuthManager
     @StateObject private var languageManager = LanguageManager()
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("themeMode") private var themeMode: String = "system"
 
     init() {
         let context = ModelContext(sharedModelContainer)
@@ -43,10 +44,12 @@ struct TalkMVPApp: App {
                 .environmentObject(appLock)
                 .environmentObject(languageManager)
                 .tint(.appPrimary)
+                .preferredColorScheme(themeMode == "light" ? .light : (themeMode == "dark" ? .dark : nil))
                 .ignoresSafeArea(.all, edges: .all)
                 .fullScreenCover(isPresented: Binding(get: { appLock.isLocked }, set: { _ in })) {
                     AppLockView()
                         .environmentObject(appLock)
+                        .environmentObject(languageManager)
                 }
                 .task {
                     appLock.updateLockStateOnLaunch()
@@ -58,3 +61,4 @@ struct TalkMVPApp: App {
         }
     }
 }
+

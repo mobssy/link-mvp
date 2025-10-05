@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct SettingsSectionCard<Content: View>: View {
     let title: String
@@ -105,24 +106,34 @@ struct SettingsToggleRow: View {
 struct ProfileCardView: View {
     let title: String
     let subtitle: String
+    let imageData: Data?
     let action: () -> Void
     
-    init(title: String, subtitle: String, action: @escaping () -> Void) {
+    init(title: String, subtitle: String, imageData: Data? = nil, action: @escaping () -> Void) {
         self.title = title
         self.subtitle = subtitle
+        self.imageData = imageData
         self.action = action
     }
     
     var body: some View {
         Button(action: action) {
             HStack(spacing: 16) {
-                ZStack {
-                    Circle()
-                        .fill(Color.blue)
+                if let imageData = imageData, let uiImage = UIImage(data: imageData) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
                         .frame(width: 48, height: 48)
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 24, weight: .medium))
-                        .foregroundColor(.white)
+                        .clipShape(Circle())
+                } else {
+                    ZStack {
+                        Circle()
+                            .fill(Color.blue)
+                            .frame(width: 48, height: 48)
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundColor(.white)
+                    }
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)

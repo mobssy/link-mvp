@@ -18,6 +18,7 @@ struct ProfileEditView: View {
     @State private var statusMessage: String
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var profileImage: UIImage?
+    @State private var didRemovePhoto = false
     
     init(authManager: AuthManager) {
         self.authManager = authManager
@@ -42,7 +43,7 @@ struct ProfileEditView: View {
                                     .aspectRatio(contentMode: .fill)
                                     .frame(width: 100, height: 100)
                                     .clipShape(Circle())
-                            } else if let imageData = currentUserImageData,
+                            } else if !didRemovePhoto, let imageData = currentUserImageData,
                                       let uiImage = UIImage(data: imageData) {
                                 Image(uiImage: uiImage)
                                     .resizable()
@@ -59,6 +60,15 @@ struct ProfileEditView: View {
                         Spacer()
                     }
                     .padding(.vertical, 20)
+                    
+                    if profileImage != nil || (authManager.currentUser?.profileImageData != nil && !didRemovePhoto) {
+                        Button(role: .destructive) {
+                            profileImage = nil
+                            didRemovePhoto = true
+                        } label: {
+                            Text(localizedText("remove_photo"))
+                        }
+                    }
                 } header: {
                     Text(localizedText("profile_photo"))
                 }
@@ -126,6 +136,7 @@ struct ProfileEditView: View {
                        let uiImage = UIImage(data: data) {
                         await MainActor.run {
                             profileImage = uiImage
+                            didRemovePhoto = false
                         }
                     }
                 }
@@ -134,7 +145,14 @@ struct ProfileEditView: View {
     }
     
     private func saveProfile() {
-        let imageData = profileImage?.jpegData(compressionQuality: 0.7) ?? authManager.currentUser?.profileImageData
+        let imageData: Data?
+        if didRemovePhoto {
+            imageData = nil
+        } else if let profileImage = profileImage {
+            imageData = profileImage.jpegData(compressionQuality: 0.7)
+        } else {
+            imageData = authManager.currentUser?.profileImageData
+        }
         authManager.updateProfile(displayName: displayName, statusMessage: statusMessage, profileImageData: imageData)
     }
     
@@ -143,6 +161,7 @@ struct ProfileEditView: View {
         
         switch key {
         case "profile_photo": return isKorean ? "프로필 사진" : "Profile Photo"
+        case "remove_photo": return isKorean ? "사진 삭제" : "Remove Photo"
         case "account_info": return isKorean ? "계정 정보" : "Account Information"
         case "edit_profile": return isKorean ? "프로필 편집" : "Edit Profile"
         case "cancel": return isKorean ? "취소" : "Cancel"
