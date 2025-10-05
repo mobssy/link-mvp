@@ -140,6 +140,8 @@ struct AuthenticatedTabsView: View {
     @EnvironmentObject private var languageManager: LanguageManager
     @Binding var selectedTab: Int
     let showTestModeIndicator: Bool
+    @Query var chatRooms: [ChatRoom]
+    private var totalUnread: Int { chatRooms.map { $0.unreadCount }.reduce(0, +) }
 
     var body: some View {
         GeometryReader { geometry in
@@ -150,11 +152,20 @@ struct AuthenticatedTabsView: View {
                     }
                     .tag(0)
 
-                ChatTab()
-                    .tabItem { 
-                        Label(localizedText("chat"), systemImage: "message.fill") 
-                    }
-                    .tag(1)
+                if totalUnread > 0 {
+                    ChatTab()
+                        .tabItem {
+                            Label(localizedText("chat"), systemImage: "message.fill")
+                        }
+                        .badge(totalUnread)
+                        .tag(1)
+                } else {
+                    ChatTab()
+                        .tabItem {
+                            Label(localizedText("chat"), systemImage: "message.fill")
+                        }
+                        .tag(1)
+                }
 
                 SettingsTab()
                     .tabItem { 
