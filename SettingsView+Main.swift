@@ -11,6 +11,7 @@ struct SettingsView: View {
     @ObservedObject var authManager: AuthManager
     @EnvironmentObject private var languageManager: LanguageManager
     @Environment(\.modelContext) private var modelContext
+    @AppStorage("themeMode") private var themeMode: String = "system"
 
     // These must be accessible from the extension in another file, so don't mark them private.
     @State var showingDeleteAlert = false
@@ -216,6 +217,7 @@ struct SettingsView: View {
                 }
             }
         }
+        .preferredColorScheme(themeMode == "light" ? .light : (themeMode == "dark" ? .dark : nil))
     }
 
     private var header: some View {
@@ -361,4 +363,3 @@ struct SettingsView: View {
             "You can change notification permissions in the device Settings"
     }
 }
-

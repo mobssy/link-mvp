@@ -16,6 +16,7 @@ struct FriendsView: View {
     @EnvironmentObject private var languageManager: LanguageManager
     @StateObject private var authManager: AuthManager
     @StateObject private var notificationManager = NotificationManager()
+    @AppStorage("themeMode") private var themeMode: String = "system"
     
     enum ActiveSheet: Identifiable {
         case addFriend, blockedList, settings
@@ -88,7 +89,6 @@ struct FriendsView: View {
                 Section {
                     MyProfileRow(authManager: authManager)
                 }
-                .listRowBackground(Color.appPrimary.opacity(0.05))
                 
                 // 받은 친구 요청
                 if !receivedRequests.isEmpty {
@@ -199,6 +199,7 @@ struct FriendsView: View {
             case .settings:
                 SettingsView(authManager: authManager)
                     .environment(\.modelContext, modelContext)
+                    .preferredColorScheme(themeMode == "light" ? .light : (themeMode == "dark" ? .dark : nil))
             }
         }
         .onAppear {
