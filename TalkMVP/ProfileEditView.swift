@@ -37,23 +37,50 @@ struct ProfileEditView: View {
                         let currentUserImageData = authManager.currentUser?.profileImageData
                         
                         PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                            if let profileImage = profileImage {
-                                Image(uiImage: profileImage)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: 100, height: 100)
-                                    .clipShape(Circle())
-                            } else if !didRemovePhoto, let imageData = currentUserImageData,
-                                      let uiImage = UIImage(data: imageData) {
-                                Image(uiImage: uiImage)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: 100, height: 100)
-                                    .clipShape(Circle())
-                            } else {
-                                Image(systemName: "person.circle.fill")
-                                    .font(.system(size: 100))
-                                    .foregroundColor(.appPrimary)
+                            ZStack(alignment: .bottomTrailing) {
+                                Group {
+                                    if let profileImage = profileImage {
+                                        Image(uiImage: profileImage)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .frame(width: 100, height: 100)
+                                            .clipShape(Circle())
+                                    } else if !didRemovePhoto, let imageData = currentUserImageData,
+                                              let uiImage = UIImage(data: imageData) {
+                                        Image(uiImage: uiImage)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .frame(width: 100, height: 100)
+                                            .clipShape(Circle())
+                                    } else {
+                                        ZStack {
+                                            Circle()
+                                                .fill(Color.appPrimary.opacity(0.1))
+                                                .frame(width: 100, height: 100)
+                                            Image(systemName: "person.fill")
+                                                .font(.system(size: 48))
+                                                .foregroundColor(.appPrimary)
+                                        }
+                                    }
+                                }
+
+                                // Camera badge overlay
+                                ZStack {
+                                    Circle()
+                                        .fill(Color(.systemBackground))
+                                        .frame(width: 28, height: 28)
+                                    Circle()
+                                        .fill(Color.appPrimary)
+                                        .frame(width: 24, height: 24)
+                                        .overlay(
+                                            Image(systemName: "camera.fill")
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundColor(.white)
+                                        )
+                                }
+                                .shadow(color: Color.black.opacity(0.15), radius: 2, x: 0, y: 1)
+                                .offset(x: -3, y: -3)
+                                .accessibilityHidden(true)
                             }
                         }
                         
@@ -183,4 +210,5 @@ struct ProfileEditView: View {
     let container = try! ModelContainer(for: User.self)
     let context = ModelContext(container)
     return ProfileEditView(authManager: AuthManager(modelContext: context))
+        .environmentObject(LanguageManager())
 }
