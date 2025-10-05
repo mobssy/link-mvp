@@ -15,6 +15,8 @@ class NotificationManager: ObservableObject {
     @Published var hasPermission = false
     @Published var pendingRequests: [UNNotificationRequest] = []
     
+    private var notificationsEnabled: Bool { UserDefaults.standard.bool(forKey: "notificationsEnabled") }
+    
     init() {
         Task {
             await checkPermission()
@@ -38,6 +40,7 @@ class NotificationManager: ObservableObject {
     // 친구 요청 알림
     func scheduleFriendRequestNotification(from friendName: String, email: String) {
         guard hasPermission else { return }
+        guard notificationsEnabled else { return }
         
         let content = UNMutableNotificationContent()
         content.title = "새 친구 요청"
@@ -70,6 +73,7 @@ class NotificationManager: ObservableObject {
     // 메시지 알림
     func scheduleMessageNotification(from friendName: String, message: String) {
         guard hasPermission else { return }
+        guard notificationsEnabled else { return }
         
         let content = UNMutableNotificationContent()
         content.title = friendName
@@ -99,6 +103,7 @@ class NotificationManager: ObservableObject {
     // 강력한 메시지 알림 (노인분들용)
     func scheduleStrongMessageNotification(from friendName: String, message: String) {
         guard hasPermission else { return }
+        guard notificationsEnabled else { return }
         
         let content = UNMutableNotificationContent()
         content.title = "💝 \(friendName)님이 메시지를 보냈어요!"
@@ -167,6 +172,8 @@ class NotificationManager: ObservableObject {
     
     // 음성 알림 (TTS)
     func scheduleVoiceNotification(from friendName: String) {
+        guard notificationsEnabled else { return }
+        
         let content = UNMutableNotificationContent()
         content.title = "📞 음성 알림"
         content.body = "\(friendName)님이 메시지를 보냈어요. 확인해주세요!"
@@ -186,7 +193,8 @@ class NotificationManager: ObservableObject {
     // 배지 숫자 업데이트
     func updateBadgeCount(_ count: Int) {
         Task {
-            try? await UNUserNotificationCenter.current().setBadgeCount(count)
+            let effective = notificationsEnabled ? count : 0
+            try? await UNUserNotificationCenter.current().setBadgeCount(effective)
         }
     }
     

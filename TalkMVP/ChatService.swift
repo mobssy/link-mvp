@@ -16,6 +16,8 @@ class ChatService: ObservableObject, ChatServiceProtocol {
     @Published var isConnected = false
     @Published var connectionStatus: ConnectionStatus = .disconnected
     
+    private var notificationsEnabled: Bool { UserDefaults.standard.bool(forKey: "notificationsEnabled") }
+    
     private var timer: Timer?
     private var randomMessageTimer: Timer?
     private var hasStartedConnection = false
@@ -85,14 +87,15 @@ class ChatService: ObservableObject, ChatServiceProtocol {
     }
     
     private func setAppBadgeCount(_ count: Int) {
+        let effectiveCount = notificationsEnabled ? count : 0
         if #available(iOS 17.0, *) {
-            UNUserNotificationCenter.current().setBadgeCount(count) { error in
+            UNUserNotificationCenter.current().setBadgeCount(effectiveCount) { error in
                 if let error = error {
                     print("❌ Failed to set badge count: \(error)")
                 }
             }
         } else {
-            setLegacyBadgeCount(count)
+            setLegacyBadgeCount(effectiveCount)
         }
     }
 
@@ -199,28 +202,27 @@ class ChatService: ObservableObject, ChatServiceProtocol {
                 let totalUnread = rooms.map { $0.unreadCount }.reduce(0, +)
                 self.setAppBadgeCount(totalUnread)
                 
-                // Schedule a local notification for the incoming message
-                let content = UNMutableNotificationContent()
-                content.title = randomChatRoom.name
-                content.body = randomMessage
-                content.sound = .default
-                content.badge = NSNumber(value: totalUnread)
-                
-                let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
-                let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
-                
-                if #available(iOS 17.0, *) {
-                    try await UNUserNotificationCenter.current().add(request)
-                } else {
-                    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                        UNUserNotificationCenter.current().add(request) { error in
-                            if let error = error {
-                                continuation.resume(throwing: error)
-                            } else {
-                                continuation.resume()
+                // Schedule a local notification for the incoming message (respect user setting)
+                if self.notificationsEnabled {
+                    let content = UNMutableNotificationContent()
+                    content.title = randomChatRoom.name
+                    content.body = randomMessage
+                    content.sound = .default
+                    content.badge = NSNumber(value: totalUnread)
+                    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
+                    let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+                    if #available(iOS 17.0, *) {
+                        try await UNUserNotificationCenter.current().add(request)
+                    } else {
+                        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                            UNUserNotificationCenter.current().add(request) { error in
+                                if let error = error { continuation.resume(throwing: error) } else { continuation.resume() }
                             }
                         }
                     }
+                } else {
+                    // Notifications disabled: keep badge at 0
+                    self.setAppBadgeCount(0)
                 }
             } catch {
                 print("❌ Failed to update badge/schedule notification: \(error)")

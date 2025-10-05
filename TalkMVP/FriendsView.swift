@@ -164,7 +164,7 @@ struct FriendsView: View {
                 .headerProminence(.increased)
             }
             .listStyle(.insetGrouped)
-            .navigationTitle(localizedText("contacts"))
+            .navigationTitle(localizedText("friends"))
             .searchable(text: $searchText, prompt: localizedText("search_friends_placeholder"))
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -211,6 +211,7 @@ struct FriendsView: View {
         case "add_friends_suggestion": text = isKorean ? "친구를 추가해보세요!" : "Try adding some friends!"
         case "add_friend_by_email": text = isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
         case "contacts": text = isKorean ? "연락처" : "Contacts"
+        case "friends": text = isKorean ? "친구" : "Friends"
         case "search_friends_placeholder": text = isKorean ? "친구 이름 검색..." : "Search friend names..."
         case "user": text = isKorean ? "사용자" : "User"
         case "status_message": text = isKorean ? "상태 메시지를 설정해보세요" : "Set your status message"
