@@ -187,8 +187,6 @@ struct SettingsView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 16)
             }
-            .toolbar(.hidden, for: .navigationBar)
-            //.safeAreaInset(edge: .bottom) { bottomActionBar }
             .sheet(isPresented: $showingProfileEdit) {
                 ProfileEditView(authManager: authManager)
                     .environmentObject(languageManager)
@@ -226,6 +224,8 @@ struct SettingsView: View {
                     notificationManager.updateBadgeCount(totalUnread)
                 }
             }
+            .navigationTitle(localizedText("settings"))
+            .navigationBarTitleDisplayMode(.inline)
         }
         .preferredColorScheme(themeMode == "light" ? .light : (themeMode == "dark" ? .dark : nil))
     }

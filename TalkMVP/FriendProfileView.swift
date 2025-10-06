@@ -320,7 +320,7 @@ struct FriendProfileView: View {
         case "unblock":
             return languageManager.currentLanguage == .korean ? "차단 해제" : "Unblock"
         case "request_pending":
-            return languageManager.currentLanguage == .korean ? "친구 요청 대기 중" : "Friend Request Pending"
+            return languageManager.currentLanguage == .korean ? "승인 대기" : "Pending"
         case "profile":
             return languageManager.currentLanguage == .korean ? "프로필" : "Profile"
         case "close":
@@ -341,6 +341,8 @@ struct FriendProfileView: View {
             return languageManager.currentLanguage == .korean ? "%@님의 차단을 해제하시겠습니까?" : "Unblock %@?"
         case "cancel":
             return languageManager.currentLanguage == .korean ? "취소" : "Cancel"
+        case "pending_short":
+            return languageManager.currentLanguage == .korean ? "대기" : "Pending"
         default:
             return key
         }

@@ -12,6 +12,7 @@ import UIKit
 struct AuthView: View {
     @EnvironmentObject private var authManager: AuthManager
     @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(\.colorScheme) private var colorScheme
     @State private var isSignUp = false
     @State private var username = ""
     @State private var displayName = ""
@@ -48,47 +49,21 @@ struct AuthView: View {
                 
                 Spacer()
                 
-                // 폼 영역
-                VStack(spacing: 20) {
-                    authForm
-                    
-                    // 오류 메시지
-                    if let errorMessage = authManager.errorMessage {
-                        Text(errorMessage)
-                            .foregroundColor(.red)
-                            .font(.caption)
-                            .multilineTextAlignment(.center)
-                    }
-                    
-                    // 로그인/회원가입 버튼
-                    Button(action: handleAuth) {
-                        if authManager.isLoading {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        } else {
-                            Text(localizedText(isSignUp ? "signup" : "signin"))
-                                .fontWeight(.semibold)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(Color.appPrimary)
-                    .foregroundColor(.white)
-                    .cornerRadius(25)
-                    .disabled(authManager.isLoading || !isFormValid)
-                    
-                    // 전환 버튼
-                    Button(action: {
-                        withAnimation {
-                            isSignUp.toggle()
-                            clearForm()
-                        }
-                    }) {
-                        Text(localizedText(isSignUp ? "have_account" : "no_account"))
-                            .foregroundColor(.appPrimary)
+                // 폼 영역 (다크 모드에서 다크 그레이 래퍼 적용)
+                Group {
+                    if colorScheme == .dark {
+                        formContent
+                            .padding(20)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .fill(Color(UIColor.secondarySystemBackground))
+                            )
+                            .padding(.horizontal, 16)
+                    } else {
+                        formContent
+                            .padding(.horizontal, 32)
                     }
                 }
-                .padding(.horizontal, 32)
                 
                 Spacer()
             }
@@ -142,6 +117,48 @@ struct AuthView: View {
                     icon: "lock.fill",
                     isSecure: true
                 )
+            }
+        }
+    }
+    
+    private var formContent: some View {
+        VStack(spacing: 20) {
+            authForm
+            
+            // 오류 메시지
+            if let errorMessage = authManager.errorMessage {
+                Text(errorMessage)
+                    .foregroundColor(.red)
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
+            }
+            
+            // 로그인/회원가입 버튼
+            Button(action: handleAuth) {
+                if authManager.isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                } else {
+                    Text(localizedText(isSignUp ? "signup" : "signin"))
+                        .fontWeight(.semibold)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 50)
+            .background(Color.appPrimary)
+            .foregroundColor(.white)
+            .cornerRadius(25)
+            .disabled(authManager.isLoading || !isFormValid)
+            
+            // 전환 버튼
+            Button(action: {
+                withAnimation {
+                    isSignUp.toggle()
+                    clearForm()
+                }
+            }) {
+                Text(localizedText(isSignUp ? "have_account" : "no_account"))
+                    .foregroundColor(.appPrimary)
             }
         }
     }

@@ -308,10 +308,11 @@ struct ChatScreen: View {
         let isKorean = languageManager.currentLanguage == .korean
         switch key {
         case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
-        case "request_pending": return isKorean ? "친구 요청 대기 중" : "Friend Request Pending"
+        case "request_pending": return isKorean ? "승인 대기" : "Pending"
         case "friend": return isKorean ? "친구" : "Friend"
         case "alert": return isKorean ? "알림" : "Alert"
         case "ok": return isKorean ? "확인" : "OK"
+        case "pending_short": return isKorean ? "대기" : "Pending"
         default: return key
         }
     }
@@ -323,3 +324,4 @@ struct ChatScreen: View {
     ChatListView()
         .modelContainer(container)
 }
+

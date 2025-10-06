@@ -54,14 +54,6 @@ struct TermsPoliciesView: View {
     
     var body: some View {
         VStack {
-            Picker("", selection: $selectedSegment) {
-                ForEach(Segment.allCases, id: \.self) { segment in
-                    Text(segment.title(for: languageManager.currentLanguage)).tag(segment.rawValue)
-                }
-            }
-            .pickerStyle(SegmentedPickerStyle())
-            .padding(.horizontal)
-            
             ScrollView {
                 VStack(spacing: 16) {
                     if selectedSegment == Segment.terms.rawValue {
@@ -75,7 +67,20 @@ struct TermsPoliciesView: View {
                 .padding()
             }
         }
+        .safeAreaInset(edge: .top) {
+            Picker("", selection: $selectedSegment) {
+                ForEach(Segment.allCases, id: \.self) { segment in
+                    Text(segment.title(for: languageManager.currentLanguage)).tag(segment.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .padding(.top, 8)
+            .background(.bar)
+        }
+        .animation(.none, value: selectedSegment)
         .navigationTitle(localizedText("Terms & Policies"))
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

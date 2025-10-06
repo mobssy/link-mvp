@@ -74,8 +74,6 @@ struct LanguageSettingsView: View {
                 Text(localizedText(key: "language.restart.message"))
             }
         }
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.visible)
     }
     
     private func selectLanguage(_ language: LanguageManager.Language) {

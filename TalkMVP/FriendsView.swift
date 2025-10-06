@@ -110,11 +110,16 @@ struct FriendsView: View {
                 
                 // 보낸 친구 요청
                 if !pendingRequests.isEmpty {
-                    Section(localizedText("sent_requests", count: pendingRequests.count)) {
+                    Section {
                         ForEach(pendingRequests, id: \.id) { friendship in
                             PendingRequestRow(friendship: friendship)
                         }
                         .onDelete(perform: deletePendingRequest)
+                    } header: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "person.badge.plus")
+                            Text(localizedText("sent_requests", count: pendingRequests.count))
+                        }
                     }
                     .headerProminence(.increased)
                 }
@@ -217,7 +222,7 @@ struct FriendsView: View {
         var text: String
         switch key {
         case "received_requests": text = isKorean ? "📬 받은 친구 요청 \(count)" : "📬 Received Friend Requests \(count)"
-        case "sent_requests": text = isKorean ? "📤 보낸 친구 요청 \(count)" : "📤 Sent Friend Requests \(count)"
+        case "sent_requests": text = isKorean ? "보낸 친구 요청 \(count)" : "Sent Friend Requests \(count)"
         case "friends_list": text = isKorean ? "친구 목록 \(count)" : "Friends List \(count)"
         case "no_search_results": text = isKorean ? "검색 결과 없음" : "No Search Results"
         case "no_match_for": text = isKorean ? "'\(searchTerm)'와 일치하는 친구가 없습니다" : "No friends match '\(searchTerm)'"
@@ -231,7 +236,7 @@ struct FriendsView: View {
         case "status_message": text = isKorean ? "상태 메시지를 설정해보세요" : "Set your status message"
         case "friend_request": text = isKorean ? "친구 요청" : "Friend Request"
         case "accept": text = isKorean ? "수락" : "Accept"
-        case "request_pending": text = isKorean ? "요청 대기 중" : "Request Pending"
+        case "request_pending": text = isKorean ? "승인 대기" : "Pending"
         case "pending_short": text = isKorean ? "대기" : "Pending"
         case "friend_email_placeholder": text = isKorean ? "친구의 이메일 주소" : "Friend's email address"
         case "search": text = isKorean ? "검색" : "Search"
@@ -473,6 +478,7 @@ struct FriendRow: View {
         case "error_occurred_prefix": return isKorean ? "오류가 발생했습니다: " : "An error occurred: "
         case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
         case "online": return isKorean ? "온라인" : "Online"
+        case "request_pending": return isKorean ? "승인 대기" : "Pending"
         default: return key
         }
     }
@@ -576,7 +582,7 @@ struct PendingRequestRow: View {
                     .font(.headline)
                     .foregroundColor(.primary)
                 
-                Text(localizedText("request_pending"))
+                Text(languageManager.isKorean ? "승인 대기" : "Pending")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -623,6 +629,8 @@ struct PendingRequestRow: View {
         case "friend_request_failed": return isKorean ? "친구 요청 전송에 실패했습니다." : "Failed to send friend request."
         case "error_occurred_prefix": return isKorean ? "오류가 발생했습니다: " : "An error occurred: "
         case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
+        case "request_pending": return isKorean ? "승인 대기" : "Pending"
+        case "pending_short": return isKorean ? "대기" : "Pending"
         default: return key
         }
     }
