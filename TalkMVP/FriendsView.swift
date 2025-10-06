@@ -277,7 +277,7 @@ struct FriendsView: View {
         case "friend_request": text = isKorean ? "친구 요청" : "Friend Request"
         case "accept": text = isKorean ? "수락" : "Accept"
         case "request_pending": text = isKorean ? "승인 대기" : "Pending"
-        case "pending_short": text = isKorean ? "대기" : "Pending"
+        case "pending_short": text = isKorean ? "대기" : "Requested"
         case "friend_email_placeholder": text = isKorean ? "친구의 이메일 주소" : "Friend's email address"
         case "search": text = isKorean ? "검색" : "Search"
         case "add_by_email": text = isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
@@ -529,6 +529,7 @@ struct FriendRow: View {
         case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
         case "online": return isKorean ? "온라인" : "Online"
         case "request_pending": return isKorean ? "승인 대기" : "Pending"
+        case "pending_short": return isKorean ? "대기" : "Requested"
         default: return key
         }
     }
@@ -680,7 +681,7 @@ struct PendingRequestRow: View {
         case "error_occurred_prefix": return isKorean ? "오류가 발생했습니다: " : "An error occurred: "
         case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
         case "request_pending": return isKorean ? "승인 대기" : "Pending"
-        case "pending_short": return isKorean ? "대기" : "Pending"
+        case "pending_short": return isKorean ? "대기" : "Requested"
         default: return key
         }
     }
@@ -1311,3 +1312,4 @@ struct UserSearchResult: Identifiable {
     let displayName: String
     let email: String
 }
+
