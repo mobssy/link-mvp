@@ -121,6 +121,17 @@ struct FriendProfileView: View {
                                     .foregroundColor(.orange)
                                     .cornerRadius(12)
                             }
+                        case .hidden:
+                            Button(action: {
+                                unhideFriend()
+                            }) {
+                                Label(localizedText("unhide"), systemImage: "eye")
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(.gray.opacity(0.1))
+                                    .foregroundColor(.gray)
+                                    .cornerRadius(12)
+                            }
                         case .pending:
                             Text(localizedText("request_pending"))
                                 .frame(maxWidth: .infinity)
@@ -293,6 +304,13 @@ struct FriendProfileView: View {
         }
     }
     
+    private func unhideFriend() {
+        withAnimation {
+            friendship.status = .accepted
+            try? modelContext.save()
+        }
+    }
+    
     private func shareProfile() {
         // 프로필 공유 기능 (실제 앱에서 구현)
         print("프로필 공유: \(friendship.friendName)")
@@ -319,6 +337,8 @@ struct FriendProfileView: View {
             return languageManager.currentLanguage == .korean ? "차단하기" : "Block"
         case "unblock":
             return languageManager.currentLanguage == .korean ? "차단 해제" : "Unblock"
+        case "unhide":
+            return languageManager.currentLanguage == .korean ? "숨김 해제" : "Unhide"
         case "request_pending":
             return languageManager.currentLanguage == .korean ? "승인 대기" : "Pending"
         case "profile":
@@ -378,6 +398,8 @@ struct StatusBadge: View {
             return .orange
         case .blocked:
             return .red
+        case .hidden:
+            return .gray
         }
     }
 }

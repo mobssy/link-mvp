@@ -19,12 +19,13 @@ struct FriendsView: View {
     @AppStorage("themeMode") private var themeMode: String = "system"
     
     enum ActiveSheet: Identifiable {
-        case addFriend, blockedList, settings
+        case addFriend, blockedList, settings, manageHiddenBlocked
         var id: Int {
             switch self {
             case .addFriend: return 1
             case .blockedList: return 2
             case .settings: return 3
+            case .manageHiddenBlocked: return 4
             }
         }
     }
@@ -83,6 +84,15 @@ struct FriendsView: View {
             friendship.ownerUserId == currentUserId &&
             friendship.userId == currentUserId &&
             friendship.status == .blocked
+        }
+    }
+    
+    var hiddenFriends: [Friendship] {
+        guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
+        return friendships.filter { f in
+            f.ownerUserId == currentUserId &&
+            f.userId == currentUserId &&
+            f.status == .hidden
         }
     }
     
@@ -167,6 +177,25 @@ struct FriendsView: View {
                     } else {
                         ForEach(acceptedFriends, id: \.id) { friendship in
                             FriendRow(friendship: friendship, onDataChanged: loadFriendships)
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    Button {
+                                        let mutable = friendship
+                                        mutable.status = .hidden
+                                        try? modelContext.save()
+                                        loadFriendships()
+                                    } label: {
+                                        Label(localizedText("hide"), systemImage: "eye.slash")
+                                    }.tint(.gray)
+                                    
+                                    Button(role: .destructive) {
+                                        let mutable = friendship
+                                        mutable.status = .blocked
+                                        try? modelContext.save()
+                                        loadFriendships()
+                                    } label: {
+                                        Label(localizedText("block"), systemImage: "person.fill.xmark")
+                                    }
+                                }
                         }
                         .onDelete(perform: deleteFriend)
                     }
@@ -186,12 +215,20 @@ struct FriendsView: View {
                     .accessibilityLabel(localizedText("add_friend"))
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        activeSheet = .settings
+                    Menu {
+                        Button {
+                            activeSheet = .manageHiddenBlocked
+                        } label: {
+                            Label(localizedText("manage_hidden_blocked"), systemImage: "eye.slash")
+                        }
+                        Button {
+                            activeSheet = .settings
+                        } label: {
+                            Label(localizedText("settings"), systemImage: "gearshape")
+                        }
                     } label: {
                         Image(systemName: "gearshape")
                     }
-                    .accessibilityLabel(localizedText("settings"))
                 }
             }
         }
@@ -209,6 +246,9 @@ struct FriendsView: View {
                 SettingsView(authManager: authManager)
                     .environment(\.modelContext, modelContext)
                     .preferredColorScheme(themeMode == "light" ? .light : (themeMode == "dark" ? .dark : nil))
+            case .manageHiddenBlocked:
+                ManageFriendsView(hiddenFriends: hiddenFriends, blockedFriends: blockedFriends)
+                    .environment(\.modelContext, modelContext)
             }
         }
         .onAppear {
@@ -257,6 +297,16 @@ struct FriendsView: View {
         case "unblock": text = isKorean ? "차단 해제" : "Unblock"
         case "unblock_friend": text = isKorean ? "차단 해제" : "Unblock Friend"
         case "unblock_message": text = isKorean ? "\(searchTerm)님의 차단을 해제하시겠습니까?" : "Unblock \(searchTerm)?"
+        case "hide": text = isKorean ? "숨김" : "Hide"
+        case "manage_hidden_blocked": text = isKorean ? "숨김/차단 관리" : "Manage Hidden/Blocked"
+        case "hidden_list": text = isKorean ? "숨김 목록" : "Hidden List"
+        case "no_hidden_friends": text = isKorean ? "숨김 친구가 없습니다" : "No hidden friends"
+        case "hidden": text = isKorean ? "숨김" : "Hidden"
+        case "unhide": text = isKorean ? "숨김 해제" : "Unhide"
+        case "unhide_friend": text = isKorean ? "숨김 해제" : "Unhide Friend"
+        case "unhide_message": text = isKorean ? "\(searchTerm)님의 숨김을 해제하시겠습니까?" : "Unhide \(searchTerm)?"
+        case "block": text = isKorean ? "차단" : "Block"
+        case "settings": text = isKorean ? "설정" : "Settings"
         default: text = key
         }
         
@@ -1093,6 +1143,133 @@ struct BlockedFriendRow: View {
     }
 }
 
+// 새로 추가된 숨김/차단 관리 뷰
+struct ManageFriendsView: View {
+    let hiddenFriends: [Friendship]
+    let blockedFriends: [Friendship]
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var languageManager: LanguageManager
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section(header: Text(localizedText("hidden_list"))) {
+                    if hiddenFriends.isEmpty {
+                        ContentUnavailableView(
+                            localizedText("no_hidden_friends"),
+                            systemImage: "eye.slash",
+                            description: Text(localizedText("no_hidden_friends"))
+                        )
+                    } else {
+                        ForEach(hiddenFriends, id: \.id) { friendship in
+                            HiddenFriendRow(friendship: friendship, modelContext: modelContext)
+                        }
+                    }
+                }
+                
+                Section(header: Text(localizedText("blocked_list"))) {
+                    if blockedFriends.isEmpty {
+                        ContentUnavailableView(
+                            localizedText("no_blocked_friends"),
+                            systemImage: "hand.raised.slash",
+                            description: Text(localizedText("no_blocked_friends"))
+                        )
+                    } else {
+                        ForEach(blockedFriends, id: \.id) { friendship in
+                            BlockedFriendRow(friendship: friendship, modelContext: modelContext)
+                        }
+                    }
+                }
+            }
+            .navigationTitle(localizedText("manage_hidden_blocked"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(localizedText("close")) {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.isKorean
+        
+        switch key {
+        case "hidden_list": return isKorean ? "숨김 목록" : "Hidden List"
+        case "no_hidden_friends": return isKorean ? "숨김 친구가 없습니다" : "No hidden friends"
+        case "blocked_list": return isKorean ? "차단 목록" : "Blocked List"
+        case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
+        case "manage_hidden_blocked": return isKorean ? "숨김/차단 관리" : "Manage Hidden/Blocked"
+        case "close": return isKorean ? "닫기" : "Close"
+        default: return key
+        }
+    }
+}
+
+// 새로 추가된 숨김 친구 행
+struct HiddenFriendRow: View {
+    let friendship: Friendship
+    let modelContext: ModelContext
+    @State private var showingUnhideAlert = false
+    @EnvironmentObject private var languageManager: LanguageManager
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "person.circle.fill")
+                .font(.system(size: 40))
+                .foregroundColor(.gray)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(friendship.friendName)
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Text(localizedText("hidden"))
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            Button(localizedText("unhide")) {
+                showingUnhideAlert = true
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+        .padding(.vertical, 4)
+        .alert(localizedText("unhide_friend"), isPresented: $showingUnhideAlert) {
+            Button(localizedText("cancel"), role: .cancel) { }
+            Button(localizedText("unhide"), role: .destructive) {
+                unhideFriend()
+            }
+        } message: {
+            Text(String(format: localizedText("unhide_message"), friendship.friendName))
+        }
+    }
+    
+    private func unhideFriend() {
+        friendship.status = .accepted
+        try? modelContext.save()
+    }
+    
+    private func localizedText(_ key: String) -> String {
+        let isKorean = languageManager.isKorean
+        
+        switch key {
+        case "hidden": return isKorean ? "숨김" : "Hidden"
+        case "unhide": return isKorean ? "숨김 해제" : "Unhide"
+        case "unhide_friend": return isKorean ? "숨김 해제" : "Unhide Friend"
+        case "unhide_message": return isKorean ? "\(friendship.friendName)님의 숨김을 해제하시겠습니까?" : "Unhide \(friendship.friendName)?"
+        case "cancel": return isKorean ? "취소" : "Cancel"
+        default: return key
+        }
+    }
+}
+
 // 간소화된 친구 검색 서비스
 class FriendSearchService {
     static func searchUsers(by email: String) async throws -> [UserSearchResult] {
@@ -1134,4 +1311,3 @@ struct UserSearchResult: Identifiable {
     let displayName: String
     let email: String
 }
-

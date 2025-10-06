@@ -63,14 +63,15 @@ class Friendship {
 enum FriendshipStatus: String, Codable, CaseIterable {
     case pending = "pending"
     case accepted = "accepted"
+    case hidden = "hidden"
     case blocked = "blocked"
     
     var displayName: String {
         switch self {
         case .pending: return "대기중"
         case .accepted: return "친구"
+        case .hidden: return "숨김"
         case .blocked: return "차단됨"
         }
     }
 }
-

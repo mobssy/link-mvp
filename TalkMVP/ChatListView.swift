@@ -254,9 +254,14 @@ struct ChatScreen: View {
             let results = try modelContext.fetch(descriptor)
             if let existing = results.first {
                 switch existing.status {
-                case .accepted: friendState = .isFriend
-                case .pending: friendState = .pending
-                case .blocked: friendState = .notFriend
+                case .accepted:
+                    friendState = .isFriend
+                case .pending:
+                    friendState = .pending
+                case .blocked:
+                    friendState = .notFriend
+                default:
+                    friendState = .notFriend
                 }
             } else {
                 friendState = .notFriend

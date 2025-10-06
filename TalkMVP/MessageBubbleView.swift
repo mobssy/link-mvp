@@ -264,7 +264,7 @@ struct MessageBubbleView: View {
                     friendState = .isFriend
                 case .pending:
                     friendState = .pending
-                case .blocked:
+                case .blocked, .hidden:
                     friendState = .notFriend
                 }
             } else {
