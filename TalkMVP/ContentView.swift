@@ -106,11 +106,11 @@ struct ContentView: View {
     
     private func createTestFriends(for user: User) {
         let testFriends = [
-            ("김친구", "kim@example.com"),
-            ("이동료", "lee@example.com"),
-            ("박가족", "park@example.com"),
-            ("최스터디", "choi@example.com"),
-            ("정개발자", "jung@example.com")
+            ("권지용", "peaceminusone@example.com"),
+            ("한소희", "sohee@example.com"),
+            ("강호동", "kang@example.com"),
+            ("유재석", "youquiz@example.com"),
+            ("조세호", "cabbage@example.com")
         ]
         
         for (name, email) in testFriends {

@@ -19,6 +19,8 @@ struct FriendsView: View {
     @AppStorage("themeMode") private var themeMode: String = "system"
     
     @AppStorage("newFriendIDs") private var newFriendIDsStorage: String = "" // comma-separated UUID strings
+    @AppStorage("hasSeededNewFriends") private var hasSeededNewFriends: Bool = false
+    
     private var newFriendIDs: Set<String> {
         get { Set(newFriendIDsStorage.split(separator: ",").map { String($0) }) }
         set { newFriendIDsStorage = newValue.joined(separator: ",") }
@@ -41,51 +43,48 @@ struct FriendsView: View {
     @State private var friendships: [Friendship] = []
     @State private var showNewFriendsSection: Bool = true
     
-    private var newFriends: [Friendship] {
-        acceptedFriends.filter { newFriendIDs.contains($0.id.uuidString) }
+    var allAccepted: [Friendship] {
+        guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
+        let base = friendships.filter { f in
+            f.ownerUserId == currentUserId && f.status == .accepted
+        }
+        if searchText.isEmpty {
+            return base
+        } else {
+            return base.filter { friendship in
+                friendship.friendName.localizedCaseInsensitiveContains(searchText) ||
+                friendship.friendEmail.localizedCaseInsensitiveContains(searchText)
+            }
+        }
     }
+
+    private var newFriends: [Friendship] {
+        allAccepted.filter { newFriendIDs.contains($0.id.uuidString) }
+    }
+
+    private var regularFriends: [Friendship] {
+        allAccepted.filter { !newFriendIDs.contains($0.id.uuidString) }
+    }
+    
     private var newFriendsCount: Int { newFriends.count }
     
     init(authManager: AuthManager) {
         self._authManager = StateObject(wrappedValue: authManager)
     }
     
-    var acceptedFriends: [Friendship] {
-        guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
-        
-        let filtered = friendships.filter { friendship in
-            friendship.ownerUserId == currentUserId &&
-            friendship.userId == currentUserId &&
-            friendship.status == .accepted
-        }
-        
-        if searchText.isEmpty {
-            return filtered
-        } else {
-            return filtered.filter { friendship in
-                friendship.friendName.localizedCaseInsensitiveContains(searchText) ||
-                friendship.friendEmail.localizedCaseInsensitiveContains(searchText)
-            }
-        }
-    }
-    
     var pendingRequests: [Friendship] {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
         
         return friendships.filter { friendship in
-            friendship.ownerUserId == currentUserId &&
-            friendship.userId == currentUserId &&
-            friendship.status == .pending
+            friendship.ownerUserId == currentUserId && friendship.status == .pending
         }
     }
     
     var receivedRequests: [Friendship] {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
-        
+        // NOTE: If your model has a distinct incoming status, update here. For now, treat pending as received for the owner.
         return friendships.filter { friendship in
-            friendship.ownerUserId == currentUserId &&
-            friendship.friendId == currentUserId &&
-            friendship.status == .pending
+            friendship.ownerUserId == currentUserId && friendship.status == .pending
         }
     }
     
@@ -93,18 +92,14 @@ struct FriendsView: View {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
         
         return friendships.filter { friendship in
-            friendship.ownerUserId == currentUserId &&
-            friendship.userId == currentUserId &&
-            friendship.status == .blocked
+            friendship.ownerUserId == currentUserId && friendship.status == .blocked
         }
     }
     
     var hiddenFriends: [Friendship] {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
         return friendships.filter { f in
-            f.ownerUserId == currentUserId &&
-            f.userId == currentUserId &&
-            f.status == .hidden
+            f.ownerUserId == currentUserId && f.status == .hidden
         }
     }
     
@@ -162,14 +157,14 @@ struct FriendsView: View {
                 }
                 
                 // 친구 목록
-                Section(localizedText("friends_list", count: acceptedFriends.count)) {
-                    if acceptedFriends.isEmpty && !searchText.isEmpty {
+                Section(localizedText("friends_list", count: regularFriends.count)) {
+                    if regularFriends.isEmpty && !searchText.isEmpty {
                         ContentUnavailableView(
                             localizedText("no_search_results"),
                             systemImage: "magnifyingglass",
                             description: Text(localizedText("no_match_for", searchTerm: searchText))
                         )
-                    } else if acceptedFriends.isEmpty {
+                    } else if regularFriends.isEmpty {
                         VStack(spacing: 20) {
                             Image(systemName: "person.2")
                                 .font(.system(size: 60))
@@ -202,7 +197,7 @@ struct FriendsView: View {
                         }
                         .padding(.vertical, 40)
                     } else {
-                        ForEach(acceptedFriends, id: \.id) { friendship in
+                        ForEach(regularFriends, id: \.id) { friendship in
                             FriendRow(friendship: friendship, onDataChanged: loadFriendships)
                                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                     Button {
@@ -242,14 +237,6 @@ struct FriendsView: View {
                     .accessibilityLabel(localizedText("add_friend"))
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showNewFriendsSection.toggle()
-                    } label: {
-                        Image(systemName: showNewFriendsSection ? "bell.fill" : "bell")
-                    }
-                    .accessibilityLabel(showNewFriendsSection ? "Hide new friends" : "Show new friends")
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button {
                             activeSheet = .manageHiddenBlocked
@@ -265,16 +252,6 @@ struct FriendsView: View {
                         Image(systemName: "gearshape")
                     }
                 }
-                #if DEBUG
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        markFirstTwoAcceptedAsNewForDebug()
-                    } label: {
-                        Image(systemName: "bell.badge")
-                    }
-                    .accessibilityLabel("Mark two new friends (debug)")
-                }
-                #endif
             }
         }
         .badge(newFriendsCount)
@@ -302,17 +279,20 @@ struct FriendsView: View {
         }
         .onAppear {
             loadFriendships()
-            seedFirstTwoAcceptedAsNewIfNeeded()
+            attemptSeedAfterLoad()
             NotificationCenter.default.addObserver(forName: .friendshipPendingCreated, object: nil, queue: .main) { _ in
                 // No immediate badge; badge will appear once accepted and fetched again.
             }
-            NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
+            // Removed redundant badge post here to reduce duplicate posts
         }
         .onDisappear {
             NotificationCenter.default.removeObserver(self, name: .friendshipPendingCreated, object: nil)
         }
         .onChange(of: newFriendsCount) { _, newValue in
             NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newValue])
+        }
+        .onChange(of: friendships) { _, _ in
+            attemptSeedAfterLoad()
         }
     }
     
@@ -327,7 +307,7 @@ struct FriendsView: View {
     private func markLatestPendingAsNew() {
         // After sending a request, when it becomes accepted, we will mark it. For now, mark the most recent accepted friend not yet tracked.
         // Find any accepted friendship not present in newFriendIDs and add it.
-        if let newest = acceptedFriends.first(where: { !newFriendIDs.contains($0.id.uuidString) }) {
+        if let newest = allAccepted.first(where: { !newFriendIDs.contains($0.id.uuidString) }) {
             var ids = Set(newFriendIDsStorage.split(separator: ",").map { String($0) })
             ids.insert(newest.id.uuidString)
             newFriendIDsStorage = ids.joined(separator: ",")
@@ -335,31 +315,51 @@ struct FriendsView: View {
         }
     }
     
-    private func seedFirstTwoAcceptedAsNewIfNeeded() {
-        let currentIDs = Set(newFriendIDsStorage.split(separator: ",").map { String($0) })
-        guard currentIDs.isEmpty else { return }
-        let firstTwo = Array(acceptedFriends.prefix(2))
-        guard !firstTwo.isEmpty else { return }
-        // Rename display names as requested
-        if firstTwo.indices.contains(0) {
-            firstTwo[0].friendName = "강호동"
-        }
-        if firstTwo.indices.contains(1) {
-            firstTwo[1].friendName = "원빈"
-        }
-        try? modelContext.save()
-        let ids = firstTwo.map { $0.id.uuidString }
-        newFriendIDsStorage = ids.joined(separator: ",")
-        NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
-    }
-
-    private func markFirstTwoAcceptedAsNewForDebug() {
-        let ids = acceptedFriends.prefix(2).map { $0.id.uuidString }
-        guard !ids.isEmpty else { return }
-        newFriendIDsStorage = ids.joined(separator: ",")
+    private func attemptSeedAfterLoad() {
+        guard !hasSeededNewFriends else { return }
+        #if DEBUG
+        seedFiveNewFriendsIfNeeded()
+        #endif
         NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
     }
     
+    private func seedFiveNewFriendsIfNeeded() {
+        guard let currentUserId = authManager.currentUser?.id.uuidString else { return }
+        guard !hasSeededNewFriends else { return }
+
+        // If we already have any friendships for this user, don't auto-create duplicates
+        let existingMine = friendships.filter { $0.ownerUserId == currentUserId }
+        guard existingMine.isEmpty else { hasSeededNewFriends = true; return }
+
+        let samples: [(String, String)] = [
+            ("강호동", "kanghodong@example.com"),
+            ("원빈", "wonbin@example.com"),
+            ("유재석", "yoojaeseok@example.com"),
+            ("아이유", "iu@example.com"),
+            ("손흥민", "son7@example.com")
+        ]
+
+        var createdIDs: [String] = []
+        for s in samples {
+            let f = Friendship(
+                userId: currentUserId,
+                friendId: UUID().uuidString,
+                friendName: s.0,
+                friendEmail: s.1,
+                status: .accepted
+            )
+            f.ownerUserId = currentUserId
+            modelContext.insert(f)
+            createdIDs.append(f.id.uuidString)
+        }
+        try? modelContext.save()
+
+        // Mark all 5 as new friends
+        newFriendIDsStorage = createdIDs.joined(separator: ",")
+        hasSeededNewFriends = true
+        loadFriendships()
+    }
+
     private func localizedText(_ key: String, count: Int = 0, searchTerm: String = "") -> String {
         let isKorean = languageManager.isKorean
         
@@ -428,7 +428,7 @@ struct FriendsView: View {
     private func deleteFriend(offsets: IndexSet) {
         withAnimation {
             for index in offsets {
-                modelContext.delete(acceptedFriends[index])
+                modelContext.delete(regularFriends[index])
             }
             try? modelContext.save()
             loadFriendships()
@@ -1026,6 +1026,7 @@ struct UserSearchResultRow: View {
                                 friendEmail: result.email,
                                 status: .pending
                             )
+                            outgoing.ownerUserId = senderId
                             modelContext.insert(outgoing)
                             
                             // Create incoming (receiver) mirror record for backend readiness
@@ -1036,6 +1037,7 @@ struct UserSearchResultRow: View {
                                 friendEmail: authManager.currentUser?.email ?? "",
                                 status: .pending
                             )
+                            mirror.ownerUserId = result.id
                             modelContext.insert(mirror)
                             
                             try? modelContext.save()
