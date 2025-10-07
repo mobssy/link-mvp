@@ -72,6 +72,9 @@ enum L10n {
         case "add_friend_title": return isKorean ? "친구 추가" : "Add Friend"
         case "add_friend_message": return isKorean ? "%@님을 친구로 추가하시겠습니까?" : "Add %@ as a friend?"
         case "add": return isKorean ? "추가" : "Add"
+        case "favorites": return isKorean ? "즐겨찾기" : "Favorites"
+        case "favorite": return isKorean ? "즐겨찾기 추가" : "Add to Favorites"
+        case "unfavorite": return isKorean ? "즐겨찾기 해제" : "Remove from Favorites"
         default:
             // Fallback: return key as-is with warning
             print("⚠️ L10n: Missing translation for key '\(key)'")

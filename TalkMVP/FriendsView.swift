@@ -62,8 +62,16 @@ struct FriendsView: View {
         allAccepted.filter { newFriendIDs.contains($0.id.uuidString) }
     }
 
+    private var favoriteFriends: [Friendship] {
+        allAccepted
+            .filter { $0.isFavorite && !newFriendIDs.contains($0.id.uuidString) }
+            .sorted { $0.friendName < $1.friendName }
+    }
+
     private var regularFriends: [Friendship] {
-        allAccepted.filter { !newFriendIDs.contains($0.id.uuidString) }
+        allAccepted
+            .filter { !newFriendIDs.contains($0.id.uuidString) && !$0.isFavorite }
+            .sorted { $0.friendName < $1.friendName }
     }
 
     private var newFriendsCount: Int { newFriends.count }
@@ -151,6 +159,22 @@ struct FriendsView: View {
                         HStack(spacing: 6) {
                             Image(systemName: "person.badge.plus")
                             Text(String(format: L10n.text("sent_requests", languageManager.currentLanguage == .korean ? .korean : .english), pendingRequests.count))
+                        }
+                    }
+                    .headerProminence(.increased)
+                }
+
+                // 즐겨찾기 친구 목록
+                if !favoriteFriends.isEmpty {
+                    Section {
+                        ForEach(favoriteFriends, id: \.id) { friendship in
+                            FriendRow(friendship: friendship, onDataChanged: loadFriendships)
+                        }
+                    } header: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "star.fill")
+                                .foregroundColor(.yellow)
+                            Text(L10n.text("favorites", languageManager.currentLanguage == .korean ? .korean : .english))
                         }
                     }
                     .headerProminence(.increased)
@@ -363,6 +387,14 @@ struct FriendsView: View {
     private func loadFriendships() {
         let fetchDescriptor = FetchDescriptor<Friendship>()
         friendships = (try? modelContext.fetch(fetchDescriptor)) ?? []
+
+        // Debug logging
+        print("📱 [FriendsView] Loaded \(friendships.count) friendships")
+        print("   - Accepted: \(allAccepted.count)")
+        print("   - Pending: \(pendingRequests.count)")
+        print("   - Received: \(receivedRequests.count)")
+        print("   - Favorites: \(favoriteFriends.count)")
+
         NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
     }
 
@@ -483,10 +515,18 @@ struct FriendRow: View {
                     .foregroundColor(.appPrimary)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(friendship.friendName)
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.primary)
+                    HStack(spacing: 6) {
+                        Text(friendship.friendName)
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
+
+                        if friendship.isFavorite {
+                            Image(systemName: "star.fill")
+                                .font(.caption)
+                                .foregroundColor(.yellow)
+                        }
+                    }
 
                     Text(L10n.text("online", languageManager.currentLanguage == .korean ? .korean : .english))
                         .font(.subheadline)
@@ -502,9 +542,26 @@ struct FriendRow: View {
             .padding(.vertical, 8)
         }
         .buttonStyle(PlainButtonStyle())
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            Button {
+                toggleFavorite()
+            } label: {
+                Label(
+                    friendship.isFavorite ? L10n.text("unfavorite", languageManager.currentLanguage == .korean ? .korean : .english) : L10n.text("favorite", languageManager.currentLanguage == .korean ? .korean : .english),
+                    systemImage: friendship.isFavorite ? "star.slash.fill" : "star.fill"
+                )
+            }
+            .tint(friendship.isFavorite ? .gray : .yellow)
+        }
         .sheet(isPresented: $showingProfileView) {
             FriendProfileView(friendship: friendship)
         }
+    }
+
+    private func toggleFavorite() {
+        friendship.isFavorite.toggle()
+        try? modelContext.save()
+        onDataChanged()
     }
 }
 
