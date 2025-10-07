@@ -25,7 +25,7 @@ class ChatRoom {
     var unreadCount: Int
     var profileImage: String
     @Relationship(deleteRule: .cascade) var messages: [Message] = [Message]()
-    
+
     // MARK: - 조직방 확장 속성들
     var isOrganizationRoom: Bool = false
 
@@ -44,14 +44,14 @@ class ChatRoom {
 
     // 근무 시간 외 허용 역할 (긴급 메시지)
     var emergencyAllowedRoles: [String] = []
-    
+
     // 근무 시간 설정
     var workStartHour: Int
     var workStartMinute: Int
     var workEndHour: Int
     var workEndMinute: Int
     var timeZoneIdentifier: String
-    
+
     init(name: String, profileImage: String = "person.circle.fill") {
           self.id = UUID()
           self.name = name
@@ -63,7 +63,7 @@ class ChatRoom {
           // 조직방 확장 기본값 설정
           self.isOrganizationRoom = false
           self.roles = [:]
-          self.workingDays = [2,3,4,5,6]
+          self.workingDays = [2, 3, 4, 5, 6]
           self.workStartHour = 9
           self.workStartMinute = 0
           self.workEndHour = 18
@@ -78,7 +78,7 @@ class ChatRoom {
             self.timestamp = lastMsg.timestamp
         }
     }
-    
+
     func role(for userId: String) -> OrgRole {
         if let raw = roles[userId], let role = OrgRole(rawValue: raw) {
             return role
@@ -86,4 +86,3 @@ class ChatRoom {
         return .member
     }
 }
-

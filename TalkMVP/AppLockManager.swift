@@ -5,7 +5,7 @@ import Foundation
 
 @MainActor
 class AppLockManager: ObservableObject {
-    
+
     @AppStorage("appLockEnabled") private var appLockEnabled = false
     @AppStorage("appLockMethod") private var appLockMethod: String = "biometrics"
     @Published var isLocked: Bool = false
@@ -122,4 +122,3 @@ class AppLockManager: ObservableObject {
         }
     }
 }
-

@@ -11,19 +11,19 @@ import SwiftData
 
 struct MessageBubbleView: View {
     let message: Message
-    var avatarSymbolName: String? = nil
-    var onAvatarTap: (() -> Void)? = nil
+    var avatarSymbolName: String?
+    var onAvatarTap: (() -> Void)?
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var authManager: AuthManager
-    
+
     @State private var friendState: FriendState = .unknown
     @State private var showingFriendAlert = false
     @State private var friendAlertMessage = ""
-    
+
     private enum FriendState { case unknown, notFriend, pending, isFriend }
-    
+
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             if message.isFromCurrentUser {
@@ -46,7 +46,7 @@ struct MessageBubbleView: View {
             Text(friendAlertMessage)
         }
     }
-    
+
     private var messageBubble: some View {
         VStack(alignment: message.isFromCurrentUser ? .trailing : .leading, spacing: 4) {
             if !message.isFromCurrentUser {
@@ -54,7 +54,7 @@ struct MessageBubbleView: View {
                     Text(message.sender)
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    
+
                     switch friendState {
                     case .notFriend:
                         Button(localizedText("add_friend")) { addFriend() }
@@ -70,7 +70,7 @@ struct MessageBubbleView: View {
                     }
                 }
             }
-            
+
             // 메시지 타입에 따른 콘텐츠
             messageContent
                 .padding(.horizontal, message.messageType == .image ? 4 : 16)
@@ -80,13 +80,13 @@ struct MessageBubbleView: View {
                         .fill(message.isFromCurrentUser ? Color.appPrimary : Color.gray.opacity(0.2))
                 )
                 .foregroundColor(message.isFromCurrentUser ? .white : .primary)
-            
+
             Text(message.timestamp, style: .time)
                 .font(.caption2)
                 .foregroundColor(.secondary)
         }
     }
-    
+
     private var avatarView: some View {
         Group {
             if let symbol = avatarSymbolName {
@@ -120,14 +120,14 @@ struct MessageBubbleView: View {
         .accessibilityLabel(localizedText("profile_of", message.sender))
         .accessibilityAddTraits(.isButton)
     }
-    
+
     @ViewBuilder
     private var messageContent: some View {
         switch message.messageType {
         case .text:
             Text(message.text)
                 .multilineTextAlignment(message.isFromCurrentUser ? .trailing : .leading)
-            
+
         case .image:
             if let imageData = message.imageData,
                let uiImage = UIImage(data: imageData) {
@@ -146,7 +146,7 @@ struct MessageBubbleView: View {
                 }
                 .foregroundColor(.secondary)
             }
-            
+
         case .file:
             HStack {
                 Image(systemName: fileIcon(for: message.fileExtension ?? ""))
@@ -163,7 +163,7 @@ struct MessageBubbleView: View {
                 Spacer()
             }
             .frame(minWidth: 150)
-            
+
         case .audio:
             HStack {
                 Image(systemName: "waveform")
@@ -178,7 +178,7 @@ struct MessageBubbleView: View {
                 }
             }
             .frame(minWidth: 150)
-            
+
         case .deleted:
             HStack {
                 Image(systemName: "trash")
@@ -189,7 +189,7 @@ struct MessageBubbleView: View {
             }
         }
     }
-    
+
     private func fileIcon(for fileExtension: String) -> String {
         switch fileExtension.lowercased() {
         case "pdf":
@@ -208,17 +208,17 @@ struct MessageBubbleView: View {
             return "doc.fill"
         }
     }
-    
+
     private func formatFileSize(_ bytes: Int) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useKB, .useMB, .useGB]
         formatter.countStyle = .file
         return formatter.string(fromByteCount: Int64(bytes))
     }
-    
+
     private func localizedText(_ key: String, _ param: String = "") -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         let text: String
         switch key {
         case "image_load_failed": text = isKorean ? "이미지를 불러올 수 없습니다" : "Unable to load image"
@@ -234,13 +234,13 @@ struct MessageBubbleView: View {
         case "ok": text = isKorean ? "확인" : "OK"
         default: text = key
         }
-        
+
         if !param.isEmpty && text.contains("%@") {
             return text.replacingOccurrences(of: "%@", with: param)
         }
         return text
     }
-    
+
     private func loadFriendState() {
         guard let currentUserId = authManager.currentUser?.id.uuidString else {
             friendState = .unknown
@@ -275,7 +275,7 @@ struct MessageBubbleView: View {
             friendState = .unknown
         }
     }
-    
+
     private func addFriend() {
         guard friendState == .notFriend, let currentUserId = authManager.currentUser?.id.uuidString else { return }
         // Outgoing request (current user perspective)
@@ -287,7 +287,7 @@ struct MessageBubbleView: View {
             status: .pending
         )
         modelContext.insert(outgoing)
-        
+
         // Mirror incoming request (receiver perspective) for backend readiness
         let mirror = Friendship(
             userId: outgoing.friendId,
@@ -297,13 +297,13 @@ struct MessageBubbleView: View {
             status: .pending
         )
         modelContext.insert(mirror)
-        
+
         do {
             try modelContext.save()
             friendState = .pending
             friendAlertMessage = localizedText("friend_request_sent")
             showingFriendAlert = true
-            
+
             // Fire a local notification to simulate receiver-side alert
             let manager = NotificationManager()
             let senderName = authManager.currentUser?.displayName ?? localizedText("user")
@@ -317,7 +317,7 @@ struct MessageBubbleView: View {
 
 #Preview {
     let container = try! ModelContainer(for: Message.self, ChatRoom.self)
-    
+
     VStack {
         MessageBubbleView(message: Message(text: "안녕하세요!", isFromCurrentUser: false, sender: "친구"))
         MessageBubbleView(message: Message(text: "안녕하세요! 반갑습니다 😊", isFromCurrentUser: true))
@@ -325,4 +325,3 @@ struct MessageBubbleView: View {
     .padding()
     .modelContainer(container)
 }
-

@@ -209,7 +209,7 @@ struct SettingsView: View {
             } message: {
                 Text(localizedText("logout_hint"))
             }
-            .onChange(of: notificationsEnabled) { oldValue, newValue in
+            .onChange(of: notificationsEnabled) { _, newValue in
                 if !newValue {
                     notificationManager.clearAllNotifications()
                 } else {
@@ -341,7 +341,7 @@ struct SettingsView: View {
         case "logout": return isKorean ? "로그아웃" : "Sign Out"
         case "logout_hint": return isKorean ? "현재 계정에서 로그아웃합니다." : "Sign out of your current account."
 
-        default: 
+        default:
             // 디버깅을 위해 키가 정의되지 않은 경우를 확인
             print("⚠️ SettingsView: 키 '\(key)'가 정의되지 않음")
             return key
@@ -373,4 +373,3 @@ struct SettingsView: View {
             "You can change notification permissions in the device Settings"
     }
 }
-

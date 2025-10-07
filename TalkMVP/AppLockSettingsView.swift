@@ -5,7 +5,7 @@ struct AppLockSettingsView: View {
     @EnvironmentObject private var appLock: AppLockManager
     @AppStorage("appLockEnabled") private var appLockEnabled = false
     @AppStorage("appLockMethod") private var appLockMethod: String = "biometrics" // "biometrics", "passcode"
-    
+
     var body: some View {
         Form {
             Section {
@@ -32,7 +32,7 @@ struct AppLockSettingsView: View {
                     Text(localized("app_lock_title"))
                 }
             }
-            
+
             Section {
                 Picker("", selection: $appLockMethod) {
                     Text(localized("biometrics")).tag("biometrics")
@@ -41,7 +41,7 @@ struct AppLockSettingsView: View {
                 .pickerStyle(.segmented)
                 .disabled(!appLockEnabled)
             }
-            
+
             Section {
                 Button(action: {
                     appLock.authenticate(reason: localized("unlock_reason"))
@@ -54,7 +54,7 @@ struct AppLockSettingsView: View {
         .navigationTitle(localized("security"))
         .navigationBarTitleDisplayMode(.inline)
     }
-    
+
     private func localized(_ key: String) -> String {
         switch key {
         case "security":

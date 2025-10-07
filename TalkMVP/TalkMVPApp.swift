@@ -61,4 +61,3 @@ struct TalkMVPApp: App {
         }
     }
 }
-

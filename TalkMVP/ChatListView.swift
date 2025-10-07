@@ -15,13 +15,18 @@ struct ChatListView: View {
     @Query private var chatRooms: [ChatRoom]
     @State private var searchText = ""
     @StateObject private var chatService: ChatService
-    
+
     init() {
         // 임시 컨텍스트로 초기화, onAppear에서 실제 컨텍스트로 재설정
-        let tempContainer = try! ModelContainer(for: Message.self, ChatRoom.self, User.self, Friendship.self)
+        let tempContainer: ModelContainer
+        do {
+            tempContainer = try ModelContainer(for: Message.self, ChatRoom.self, User.self, Friendship.self)
+        } catch {
+            fatalError("Failed to create ModelContainer: \(error)")
+        }
         self._chatService = StateObject(wrappedValue: ChatService(modelContext: tempContainer.mainContext))
     }
-    
+
     var filteredChatRooms: [ChatRoom] {
         if searchText.isEmpty {
             return chatRooms.sorted { $0.timestamp > $1.timestamp }
@@ -30,7 +35,7 @@ struct ChatListView: View {
                 .sorted { $0.timestamp > $1.timestamp }
         }
     }
-    
+
     var body: some View {
         NavigationStack {
             List {
@@ -66,19 +71,19 @@ struct ChatListView: View {
             // ChatService의 modelContext는 init에서 설정되므로 여기서 변경하지 않음
         }
     }
-    
+
     private func addNewChatRoom() {
         let newRoom = ChatRoom(name: localizedText("new_friend"))
         modelContext.insert(newRoom)
         try? modelContext.save()
     }
-    
+
     private func addGroupChatRoom() {
         let groupRoom = ChatRoom(name: localizedText("new_group"), profileImage: "person.3.circle.fill")
         modelContext.insert(groupRoom)
         try? modelContext.save()
     }
-    
+
     private func deleteChatRooms(offsets: IndexSet) {
         withAnimation {
             for index in offsets {
@@ -87,7 +92,7 @@ struct ChatListView: View {
             try? modelContext.save()
         }
     }
-    
+
     private func createSampleDataIfNeeded() {
         if chatRooms.isEmpty {
             let sampleRooms = [
@@ -96,21 +101,21 @@ struct ChatListView: View {
                 ChatRoom(name: localizedText("work_colleagues")),
                 ChatRoom(name: localizedText("study_group"))
             ]
-            
+
             for room in sampleRooms {
                 room.lastMessage = localizedText("hello_message")
                 room.timestamp = Calendar.current.date(byAdding: .hour, value: -Int.random(in: 1...24), to: Date()) ?? Date()
                 room.unreadCount = Int.random(in: 0...5)
                 modelContext.insert(room)
             }
-            
+
             try? modelContext.save()
         }
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "new_chat": return isKorean ? "새 채팅" : "New Chat"
         case "group_chat": return isKorean ? "그룹 채팅" : "Group Chat"
@@ -132,7 +137,7 @@ struct ChatListView: View {
 struct ChatRoomRow: View {
     let room: ChatRoom
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     var body: some View {
         HStack(spacing: 12) {
             // 프로필 이미지
@@ -140,28 +145,28 @@ struct ChatRoomRow: View {
                 .font(.system(size: 40))
                 .foregroundColor(.appPrimary)
                 .frame(width: 50, height: 50)
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(room.name)
                         .font(.headline)
                         .lineLimit(1)
-                    
+
                     Spacer()
-                    
+
                     Text(room.timestamp, style: .time)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                
+
                 HStack {
                     Text(room.lastMessage.isEmpty ? localizedText("start_conversation") : room.lastMessage)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .lineLimit(1)
-                    
+
                     Spacer()
-                    
+
                     if room.unreadCount > 0 {
                         Text("\(room.unreadCount)")
                             .font(.caption)
@@ -176,10 +181,10 @@ struct ChatRoomRow: View {
         }
         .padding(.vertical, 4)
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "new_chat": return isKorean ? "새 채팅" : "New Chat"
         case "group_chat": return isKorean ? "그룹 채팅" : "Group Chat"
@@ -203,9 +208,9 @@ struct ChatScreen: View {
     @State private var friendState: FriendState = .unknown
     @State private var showingAlert = false
     @State private var alertMessage = ""
-    
+
     private enum FriendState { case unknown, notFriend, pending, isFriend }
-    
+
     var body: some View {
         ChatView(chatRoom: room)
             .toolbar {
@@ -220,7 +225,7 @@ struct ChatScreen: View {
                 Text(alertMessage)
             }
     }
-    
+
     @ViewBuilder
     private var friendToolbarItem: some View {
         switch friendState {
@@ -240,7 +245,7 @@ struct ChatScreen: View {
             EmptyView()
         }
     }
-    
+
     private func loadFriendState() {
         guard let currentUserId = authManager.currentUser?.id.uuidString else {
             friendState = .unknown
@@ -271,7 +276,7 @@ struct ChatScreen: View {
             friendState = .unknown
         }
     }
-    
+
     private func addFriend() {
         guard friendState == .notFriend, let currentUserId = authManager.currentUser?.id.uuidString else { return }
         // Outgoing record for current user
@@ -283,7 +288,7 @@ struct ChatScreen: View {
             status: .pending
         )
         modelContext.insert(outgoing)
-        
+
         // Mirror record for receiver (backend readiness)
         let mirror = Friendship(
             userId: outgoing.friendId,
@@ -293,7 +298,7 @@ struct ChatScreen: View {
             status: .pending
         )
         modelContext.insert(mirror)
-        
+
         do {
             try modelContext.save()
             friendState = .pending
@@ -308,7 +313,7 @@ struct ChatScreen: View {
             print("Failed to save friend request: \(error)")
         }
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
         switch key {
@@ -325,8 +330,7 @@ struct ChatScreen: View {
 
 #Preview {
     let container = try! ModelContainer(for: ChatRoom.self, Message.self)
-    
+
     ChatListView()
         .modelContainer(container)
 }
-

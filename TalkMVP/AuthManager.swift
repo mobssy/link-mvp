@@ -30,9 +30,9 @@ class AuthManager: ObservableObject {
     @Published var isAuthenticated = false
     @Published var isLoading = false
     @Published var errorMessage: String?
-    
+
     var modelContext: ModelContext
-    
+
     // MARK: - Lightweight localization for non-View layer
     private func currentLanguageCode() -> String {
         if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") {
@@ -60,12 +60,12 @@ class AuthManager: ObservableObject {
             return param.isEmpty ? key : "\(key) \(param)"
         }
     }
-    
+
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
         loadCurrentUser()
     }
-    
+
     func loadCurrentUser() {
         // Perform database fetch on a SwiftData model actor to avoid main-thread I/O during launch.
         let store = AuthStoreActor(modelContainer: modelContext.container)
@@ -85,21 +85,21 @@ class AuthManager: ObservableObject {
             }
         }
     }
-    
+
     func signUp(username: String, displayName: String, email: String, password: String) async {
         isLoading = true
         errorMessage = nil
-        
+
         // 실제 앱에서는 서버 API 호출
         try? await Task.sleep(nanoseconds: 1_000_000_000) // 1초 시뮬레이션
-        
+
         // 사용자명 중복 검사
         let existingUserDescriptor = FetchDescriptor<User>(
             predicate: #Predicate<User> { user in
                 user.username == username || user.email == email
             }
         )
-        
+
         do {
             let existingUsers = try modelContext.fetch(existingUserDescriptor)
             if !existingUsers.isEmpty {
@@ -107,10 +107,10 @@ class AuthManager: ObservableObject {
                 isLoading = false
                 return
             }
-            
+
             // 기존 현재 사용자 해제
             clearCurrentUser()
-            
+
             // 새 사용자 생성
             let newUser = User(
                 username: username,
@@ -119,48 +119,48 @@ class AuthManager: ObservableObject {
                 statusMessage: "안녕하세요!",
                 isCurrentUser: true
             )
-            
+
             modelContext.insert(newUser)
             try modelContext.save()
-            
+
             currentUser = newUser
             isAuthenticated = true
-            
+
             // 샘플 친구들 추가
             createSampleFriends(for: newUser)
-            
+
         } catch {
             errorMessage = loc("signup_error_prefix") + error.localizedDescription
         }
-        
+
         isLoading = false
     }
-    
+
     func signIn(username: String, password: String) async {
         isLoading = true
         errorMessage = nil
-        
+
         // 실제 앱에서는 서버 API 호출
         try? await Task.sleep(nanoseconds: 1_000_000_000) // 1초 시뮬레이션
-        
+
         let descriptor = FetchDescriptor<User>(
             predicate: #Predicate<User> { user in
                 user.username == username || user.email == username
             }
         )
-        
+
         do {
             let users = try modelContext.fetch(descriptor)
             if let user = users.first {
                 // 기존 현재 사용자 해제
                 clearCurrentUser()
-                
+
                 // 로그인한 사용자를 현재 사용자로 설정
                 user.isCurrentUser = true
                 user.lastActiveAt = Date()
-                
+
                 try modelContext.save()
-                
+
                 currentUser = user
                 isAuthenticated = true
             } else {
@@ -169,23 +169,23 @@ class AuthManager: ObservableObject {
         } catch {
             errorMessage = loc("signin_error_prefix") + error.localizedDescription
         }
-        
+
         isLoading = false
     }
-    
+
     func signOut() {
         clearCurrentUser()
         currentUser = nil
         isAuthenticated = false
     }
-    
+
     private func clearCurrentUser() {
         let descriptor = FetchDescriptor<User>(
             predicate: #Predicate<User> { user in
                 user.isCurrentUser == true
             }
         )
-        
+
         do {
             let users = try modelContext.fetch(descriptor)
             for user in users {
@@ -196,7 +196,7 @@ class AuthManager: ObservableObject {
             print("Failed to clear current user: \(error)")
         }
     }
-    
+
     private func createSampleFriends(for user: User) {
         let sampleFriends = [
             ("friend1", "김친구", "friend1@example.com"),
@@ -204,7 +204,7 @@ class AuthManager: ObservableObject {
             ("friend3", "박가족", "friend3@example.com"),
             ("friend4", "최스터디", "friend4@example.com")
         ]
-        
+
         for (_, name, email) in sampleFriends {
             let friendship = Friendship(
                 userId: user.id.uuidString,
@@ -213,16 +213,16 @@ class AuthManager: ObservableObject {
                 friendEmail: email,
                 status: .accepted
             )
-            
+
             modelContext.insert(friendship)
         }
-        
+
         // 테스트용 받은 친구 요청들 추가
         let pendingRequests = [
             ("pending1", "신청자1", "pending1@example.com"),
             ("pending2", "신청자2", "pending2@example.com")
         ]
-        
+
         for (_, name, email) in pendingRequests {
             let receivedRequest = Friendship(
                 userId: UUID().uuidString, // 다른 사용자의 ID
@@ -234,22 +234,22 @@ class AuthManager: ObservableObject {
             receivedRequest.ownerUserId = user.id.uuidString
             modelContext.insert(receivedRequest)
         }
-        
+
         try? modelContext.save()
     }
-    
+
     func updateProfile(displayName: String, statusMessage: String, profileImageData: Data?) {
         guard let user = currentUser else { return }
-        
+
         user.displayName = displayName
         user.statusMessage = statusMessage
         user.profileImageData = profileImageData
         user.lastActiveAt = Date()
         objectWillChange.send()
-        
+
         try? modelContext.save()
     }
-    
+
     func deleteAccount() async {
         isLoading = true
         errorMessage = nil
@@ -291,4 +291,3 @@ class AuthManager: ObservableObject {
         isAuthenticated = false
     }
 }
-

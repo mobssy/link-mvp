@@ -16,10 +16,10 @@ struct ContentView: View {
     @State private var showTestModeAlert = false
     @AppStorage("contactsOnboardingShown") private var contactsOnboardingShown = false
     @State private var showContactsOnboarding = false
-    
+
     // 테스트 모드 플래그
     @State private var isTestMode = false
-    
+
     var body: some View {
         GeometryReader { geometry in
             mainContent()
@@ -48,7 +48,7 @@ struct ContentView: View {
             }
         }
     }
-    
+
     @ViewBuilder
     private func mainContent() -> some View {
         if isTestMode {
@@ -62,7 +62,7 @@ struct ContentView: View {
             )
         }
     }
-    
+
     private func enterTestMode() {
         // 테스트용 사용자 생성
         let testUser = User(
@@ -72,14 +72,14 @@ struct ContentView: View {
             statusMessage: languageManager.currentLanguage == .korean ? "테스트 모드로 체험 중입니다" : "Experiencing in test mode",
             isCurrentUser: true
         )
-        
+
         // 기존 현재 사용자 해제
         let descriptor = FetchDescriptor<User>(
             predicate: #Predicate<User> { user in
                 user.isCurrentUser == true
             }
         )
-        
+
         do {
             let users = try modelContext.fetch(descriptor)
             for user in users {
@@ -88,22 +88,22 @@ struct ContentView: View {
         } catch {
             print("Failed to clear current users: \(error)")
         }
-        
+
         // 테스트 사용자 삽입
         modelContext.insert(testUser)
         try? modelContext.save()
-        
+
         // AuthManager 업데이트
         authManager.currentUser = testUser
         authManager.isAuthenticated = true
-        
+
         // 테스트 모드 활성화
         isTestMode = true
-        
+
         // 테스트용 친구들 생성
         createTestFriends(for: testUser)
     }
-    
+
     private func createTestFriends(for user: User) {
         let testFriends = [
             ("권지용", "peaceminusone@example.com"),
@@ -112,7 +112,7 @@ struct ContentView: View {
             ("유재석", "youquiz@example.com"),
             ("조세호", "cabbage@example.com")
         ]
-        
+
         for (name, email) in testFriends {
             let friendship = Friendship(
                 userId: user.id.uuidString,
@@ -121,24 +121,24 @@ struct ContentView: View {
                 friendEmail: email,
                 status: .accepted
             )
-            
+
             modelContext.insert(friendship)
         }
-        
+
         try? modelContext.save()
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "friends": return isKorean ? "친구" : "Friends"
         case "chat": return isKorean ? "채팅" : "Chat"
         case "settings": return isKorean ? "설정" : "Settings"
         case "test_mode_title": return isKorean ? "테스트 모드" : "Test Mode"
         case "start_test": return isKorean ? "테스트 시작" : "Start Test"
-        case "test_mode_message": return isKorean ? 
-            "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" : 
+        case "test_mode_message": return isKorean ?
+            "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" :
             "You can experience all app features without logging in.\nWould you like to enter test mode?"
         case "test_experience": return isKorean ? "테스트 모드로 체험하기" : "Try Test Mode"
         case "test_mode": return isKorean ? "테스트 모드" : "Test Mode"
@@ -160,8 +160,8 @@ struct AuthenticatedTabsView: View {
         GeometryReader { geometry in
             TabView(selection: $selectedTab) {
                 FriendsTab()
-                    .tabItem { 
-                        Label(localizedText("friends"), systemImage: "person.fill") 
+                    .tabItem {
+                        Label(localizedText("friends"), systemImage: "person.fill")
                     }
                     .tag(0)
 
@@ -181,8 +181,8 @@ struct AuthenticatedTabsView: View {
                 }
 
                 SettingsTab()
-                    .tabItem { 
-                        Label(localizedText("settings"), systemImage: "gearshape.fill") 
+                    .tabItem {
+                        Label(localizedText("settings"), systemImage: "gearshape.fill")
                     }
                     .tag(2)
             }
@@ -201,18 +201,18 @@ struct AuthenticatedTabsView: View {
             }
         }
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "friends": return isKorean ? "친구" : "Friends"
         case "chat": return isKorean ? "채팅" : "Chat"
         case "settings": return isKorean ? "설정" : "Settings"
         case "test_mode_title": return isKorean ? "테스트 모드" : "Test Mode"
         case "start_test": return isKorean ? "테스트 시작" : "Start Test"
-        case "test_mode_message": return isKorean ? 
-            "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" : 
+        case "test_mode_message": return isKorean ?
+            "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" :
             "You can experience all app features without logging in.\nWould you like to enter test mode?"
         case "test_experience": return isKorean ? "테스트 모드로 체험하기" : "Try Test Mode"
         case "test_mode": return isKorean ? "테스트 모드" : "Test Mode"
@@ -279,18 +279,18 @@ struct TestModeButtonView: View {
             .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
         }
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "friends": return isKorean ? "친구" : "Friends"
         case "chat": return isKorean ? "채팅" : "Chat"
         case "settings": return isKorean ? "설정" : "Settings"
         case "test_mode_title": return isKorean ? "테스트 모드" : "Test Mode"
         case "start_test": return isKorean ? "테스트 시작" : "Start Test"
-        case "test_mode_message": return isKorean ? 
-            "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" : 
+        case "test_mode_message": return isKorean ?
+            "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" :
             "You can experience all app features without logging in.\nWould you like to enter test mode?"
         case "test_experience": return isKorean ? "테스트 모드로 체험하기" : "Try Test Mode"
         case "test_mode": return isKorean ? "테스트 모드" : "Test Mode"
@@ -321,18 +321,18 @@ struct TestModeIndicatorView: View {
         .frame(maxWidth: .infinity)
         .multilineTextAlignment(.center)
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "friends": return isKorean ? "친구" : "Friends"
         case "chat": return isKorean ? "채팅" : "Chat"
         case "settings": return isKorean ? "설정" : "Settings"
         case "test_mode_title": return isKorean ? "테스트 모드" : "Test Mode"
         case "start_test": return isKorean ? "테스트 시작" : "Start Test"
-        case "test_mode_message": return isKorean ? 
-            "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" : 
+        case "test_mode_message": return isKorean ?
+            "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" :
             "You can experience all app features without logging in.\nWould you like to enter test mode?"
         case "test_experience": return isKorean ? "테스트 모드로 체험하기" : "Try Test Mode"
         case "test_mode": return isKorean ? "테스트 모드" : "Test Mode"
@@ -345,8 +345,7 @@ struct TestModeIndicatorView: View {
     let container = try! ModelContainer(for: Message.self, ChatRoom.self, User.self, Friendship.self)
     let context = ModelContext(container)
     let auth = AuthManager(modelContext: context)
-    return ContentView()
+    ContentView()
         .environmentObject(auth)
         .modelContainer(container)
 }
-

@@ -12,7 +12,7 @@ struct LanguageSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showingRestartAlert = false
     @State private var pendingLanguage: LanguageManager.Language?
-    
+
     var body: some View {
         NavigationStack {
             List {
@@ -29,7 +29,7 @@ struct LanguageSettingsView: View {
                         }
                     }
                 }
-                
+
                 // 디버그 정보 섹션 (선택적)
                 if ProcessInfo.processInfo.environment["SHOW_LANGUAGE_DEBUG"] == "1" {
                     Section(header: Text("Debug Info")) {
@@ -75,22 +75,22 @@ struct LanguageSettingsView: View {
             }
         }
     }
-    
+
     private func selectLanguage(_ language: LanguageManager.Language) {
         if language != languageManager.currentLanguage {
             pendingLanguage = language
             showingRestartAlert = true
         }
     }
-    
+
     private func localizedText(key: String) -> String {
         // 현재 언어 설정에 따른 지역화된 텍스트 반환
         switch key {
         case "language.settings.title":
             return languageManager.isKorean ? "언어 선택" : "Language Selection"
         case "language.settings.footer":
-            return languageManager.isKorean ? 
-                "언어를 변경하면 앱이 다시 시작됩니다." : 
+            return languageManager.isKorean ?
+                "언어를 변경하면 앱이 다시 시작됩니다." :
                 "The app will restart when you change the language."
         case "language.title":
             return languageManager.isKorean ? "언어" : "Language"
@@ -101,8 +101,8 @@ struct LanguageSettingsView: View {
         case "language.restart.title":
             return languageManager.isKorean ? "언어 변경" : "Change Language"
         case "language.restart.message":
-            return languageManager.isKorean ? 
-                "언어를 변경하면 앱이 다시 시작됩니다. 계속하시겠습니까?" : 
+            return languageManager.isKorean ?
+                "언어를 변경하면 앱이 다시 시작됩니다. 계속하시겠습니까?" :
                 "Changing the language will restart the app. Do you want to continue?"
         case "language.restart.confirm":
             return languageManager.isKorean ? "변경" : "Change"
@@ -117,7 +117,7 @@ struct LanguageRow: View {
     let isSelected: Bool
     let action: () -> Void
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     var body: some View {
         Button(action: action) {
             HStack {
@@ -125,15 +125,15 @@ struct LanguageRow: View {
                     Text(language.displayName)
                         .font(.body)
                         .foregroundColor(.primary)
-                    
+
                     // 현재 설정된 언어와 다른 언어로 설명 표시
                     Text(getAlternativeLanguageName(for: language))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                
+
                 Spacer()
-                
+
                 if isSelected {
                     Image(systemName: "checkmark")
                         .foregroundColor(.blue)
@@ -144,7 +144,7 @@ struct LanguageRow: View {
         }
         .buttonStyle(PlainButtonStyle())
     }
-    
+
     private func getAlternativeLanguageName(for language: LanguageManager.Language) -> String {
         switch language {
         case .korean:
@@ -161,4 +161,3 @@ struct LanguageRow: View {
     LanguageSettingsView()
         .environmentObject(LanguageManager())
 }
-

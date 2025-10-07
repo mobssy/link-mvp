@@ -13,19 +13,19 @@ struct ProfileEditView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var languageManager: LanguageManager
     @ObservedObject var authManager: AuthManager
-    
+
     @State private var displayName: String
     @State private var statusMessage: String
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var profileImage: UIImage?
     @State private var didRemovePhoto = false
-    
+
     init(authManager: AuthManager) {
         self.authManager = authManager
         self._displayName = State(initialValue: authManager.currentUser?.displayName ?? "")
         self._statusMessage = State(initialValue: authManager.currentUser?.statusMessage ?? "")
     }
-    
+
     var body: some View {
         NavigationView {
             Form {
@@ -33,9 +33,9 @@ struct ProfileEditView: View {
                     // 프로필 이미지
                     HStack {
                         Spacer()
-                        
+
                         let currentUserImageData = authManager.currentUser?.profileImageData
-                        
+
                         PhotosPicker(selection: $selectedPhoto, matching: .images) {
                             ZStack(alignment: .bottomTrailing) {
                                 Group {
@@ -83,11 +83,11 @@ struct ProfileEditView: View {
                                 .accessibilityHidden(true)
                             }
                         }
-                        
+
                         Spacer()
                     }
                     .padding(.vertical, 20)
-                    
+
                     if profileImage != nil || (authManager.currentUser?.profileImageData != nil && !didRemovePhoto) {
                         Button(role: .destructive) {
                             profileImage = nil
@@ -99,7 +99,7 @@ struct ProfileEditView: View {
                 } header: {
                     Text(localizedText("profile_photo"))
                 }
-                
+
                 Section {
                     HStack {
                         Text(localizedText("username"))
@@ -107,13 +107,13 @@ struct ProfileEditView: View {
                         Text(authManager.currentUser?.username ?? "")
                             .foregroundColor(.secondary)
                     }
-                    
+
                     HStack {
                         Text(localizedText("display_name"))
                         TextField(localizedText("display_name"), text: $displayName)
                             .multilineTextAlignment(.trailing)
                     }
-                    
+
                     HStack {
                         Text(localizedText("email"))
                         Spacer()
@@ -123,14 +123,14 @@ struct ProfileEditView: View {
                 } header: {
                     Text(localizedText("account_info"))
                 }
-                
+
                 Section {
                     TextField(localizedText("status_message"), text: $statusMessage, axis: .vertical)
                         .lineLimit(1...3)
                 } header: {
                     Text(localizedText("status_message"))
                 }
-                
+
                 Section {
                     Button(localizedText("logout")) {
                         authManager.signOut()
@@ -146,7 +146,7 @@ struct ProfileEditView: View {
                         dismiss()
                     }
                 }
-                
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(localizedText("save")) {
                         saveProfile()
@@ -170,7 +170,7 @@ struct ProfileEditView: View {
             }
         }
     }
-    
+
     private func saveProfile() {
         let imageData: Data?
         if didRemovePhoto {
@@ -182,10 +182,10 @@ struct ProfileEditView: View {
         }
         authManager.updateProfile(displayName: displayName, statusMessage: statusMessage, profileImageData: imageData)
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.isKorean
-        
+
         switch key {
         case "profile_photo": return isKorean ? "프로필 사진" : "Profile Photo"
         case "remove_photo": return isKorean ? "사진 삭제" : "Remove Photo"
@@ -198,7 +198,7 @@ struct ProfileEditView: View {
         case "email": return isKorean ? "이메일" : "Email"
         case "username": return isKorean ? "사용자명" : "Username"
         case "logout": return isKorean ? "로그아웃" : "Sign Out"
-        default: 
+        default:
             // 디버깅을 위해 키가 정의되지 않은 경우를 확인
             print("⚠️ ProfileEditView: 키 '\(key)'가 정의되지 않음")
             return key

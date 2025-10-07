@@ -24,7 +24,7 @@ struct ChatView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.openURL) private var openURL
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     let chatRoom: ChatRoom
     @State private var viewModel: ChatViewModel?
     @StateObject private var chatService: ChatService
@@ -41,7 +41,7 @@ struct ChatView: View {
     @State private var showingEditAlert = false
     @State private var editingText: String = ""
     @State private var inputText: String = ""
-    
+
     // 필살기 기능 상태들
     @State private var emergencyButtonPressed = false
     @State private var emergencyTimer: Timer?
@@ -61,7 +61,7 @@ struct ChatView: View {
     @State private var showingBlockAlert = false
 
     @State private var showingFriendProfile = false
-    @State private var profileFriendship: Friendship? = nil
+    @State private var profileFriendship: Friendship?
 
     // 긴급 메시지 토글 상태
     @State private var isEmergencyMessage = false
@@ -75,62 +75,61 @@ struct ChatView: View {
     @AppStorage("translationAutoDetect") private var translationAutoDetect = true
     @AppStorage("translationTargetLanguage") private var translationTargetLanguage = "auto"
     @AppStorage("translationShowOriginal") private var translationShowOriginal = true
-    
+
     // 검색 및 요약 상태
     @State private var searchText: String = ""
     @State private var showingSummarySheet = false
     @State private var summaryText: String = ""
-    
+
     // 위치 서비스
     @StateObject private var locationManager = LocationManager()
-    
+
     // 연락처 동기화
     @StateObject private var contactsSync = ContactsSyncService()
     @State private var showingContactsResult = false
     @State private var matchedUsers: [MatchedUser] = []
     @State private var showingContactsPermissionAlert = false
-    
+
     enum HealthCondition: String, CaseIterable {
         case good = "좋음 😊"
         case normal = "보통 😐"
         case tired = "피곤 😴"
         case sick = "아파요 🤒"
     }
-    
+
     // MARK: - Date Formatters (cached)
     private static let timeFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ko_KR")
-        f.timeStyle = .short
-        return f
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.timeStyle = .short
+        return formatter
     }()
 
     private static let dateTimeFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ko_KR")
-        f.dateStyle = .short
-        f.timeStyle = .short
-        return f
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter
     }()
-    
+
     private static let safeDomains: Set<String> = [
         "apple.com", "google.com", "naver.com", "daum.net", "kakao.com", "youtube.com", "icloud.com"
     ]
-    
 
     init(chatRoom: ChatRoom, chatService: ChatService? = nil) {
         self.chatRoom = chatRoom
-        
+
         // ChatService 초기화
         if let service = chatService {
             self._chatService = StateObject(wrappedValue: service)
         } else {
             // 임시 컨텍스트로 초기화, onAppear에서 실제 컨텍스트로 재설정
-            let tempContext = try! ModelContainer(for: Message.self).mainContext
+            let tempContext = (try? ModelContainer(for: Message.self).mainContext) ?? ModelContext(try! ModelContainer(for: Message.self))
             self._chatService = StateObject(wrappedValue: ChatService(modelContext: tempContext))
         }
     }
-    
+
     private func openPhotosAttachment() {
         // If NSPhotoLibraryUsageDescription is missing, avoid calling PHPhotoLibrary APIs to prevent a crash; use PHPicker directly.
         let hasPhotoUsageDescription = Bundle.main.object(forInfoDictionaryKey: "NSPhotoLibraryUsageDescription") != nil
@@ -159,7 +158,7 @@ struct ChatView: View {
             showingPhotosPermissionAlert = true
         }
     }
-    
+
     private func handlePhotoSelectionChange(_ newValue: PhotosPickerItem?) {
         guard let item = newValue else { return }
         Task {
@@ -181,7 +180,7 @@ struct ChatView: View {
             }
         }
     }
-    
+
     private func handleDocumentSelection(_ url: URL) {
         // Securely access the file selected via UIDocumentPicker (security-scoped URL)
         let didStartAccessing = url.startAccessingSecurityScopedResource()
@@ -214,13 +213,13 @@ struct ChatView: View {
             print("Failed to read picked document: \(error)")
         }
     }
-    
+
     private var baseScaffold: some View {
         VStack(spacing: 0) {
             ConnectionStatusView(chatService: chatService)
                 .accessibilityLabel(localizedText("connection_status"))
                 .accessibilityIdentifier("connectionStatus")
-            
+
             mainContentView
         }
         .navigationTitle(chatRoom.name)
@@ -272,7 +271,7 @@ struct ChatView: View {
             .presentationDragIndicator(.visible)
         }
     }
-    
+
     var body: some View {
         baseScaffold
             .modifier(EditMessageAlertModifier(
@@ -378,7 +377,7 @@ struct ChatView: View {
             }
             .photosPicker(isPresented: $showingPhotosPicker, selection: $selectedPhoto, matching: .any(of: [.images, .videos]))
     }
-    
+
     @ViewBuilder
     private var mainContentView: some View {
         if let viewModel = viewModel {
@@ -387,7 +386,7 @@ struct ChatView: View {
             ProgressView("Loading...")
         }
     }
-    
+
     @ViewBuilder
     private func chatContentView(viewModel: ChatViewModel) -> some View {
         VStack(spacing: 0) {
@@ -396,14 +395,14 @@ struct ChatView: View {
             messageInputView(viewModel: viewModel)
         }
     }
-    
+
     @ViewBuilder
     private func messagesScrollView(viewModel: ChatViewModel) -> some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(spacing: 8) {
                     messagesList(viewModel: viewModel)
-                    
+
                     if viewModel.otherUserTyping {
                         TypingIndicatorView(senderName: chatRoom.name)
                             .id("typing_indicator")
@@ -433,12 +432,12 @@ struct ChatView: View {
             }
         }
     }
-    
+
     private func scrollToBottomInline(proxy: ScrollViewProxy) {
-        let animation: Animation = reduceMotion ? 
-            .easeInOut(duration: 0.1) : 
+        let animation: Animation = reduceMotion ?
+            .easeInOut(duration: 0.1) :
             .spring(response: 0.5, dampingFraction: 0.8, blendDuration: 0.2)
-        
+
         if let lastMessage = viewModel?.messages.last {
             withAnimation(animation) {
                 proxy.scrollTo(lastMessage.id, anchor: UnitPoint.bottom)
@@ -449,7 +448,7 @@ struct ChatView: View {
             }
         }
     }
-    
+
     @ViewBuilder
     private func messagesList(viewModel: ChatViewModel) -> some View {
         ForEach(filteredMessages(viewModel: viewModel), id: \.id) { message in
@@ -471,7 +470,7 @@ struct ChatView: View {
                     Button(localizedText("reply")) {
                         replyingToMessage = message
                         isTextFieldFocused = true
-                        
+
                         // 햅틱 피드백
                         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                         impactFeedback.impactOccurred()
@@ -527,11 +526,11 @@ struct ChatView: View {
             }
         }
     }
-    
+
     private func containsHangul(_ text: String) -> Bool {
         return text.unicodeScalars.contains { scalar in
-            let v = scalar.value
-            return (0xAC00...0xD7A3).contains(v) // Hangul Syllables
+            let value = scalar.value
+            return (0xAC00...0xD7A3).contains(value) // Hangul Syllables
         }
     }
 
@@ -572,7 +571,7 @@ struct ChatView: View {
             return false
         }
     }
-    
+
     private func filteredMessages(viewModel: ChatViewModel) -> [Message] {
         guard aiSearchEnabled, !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return viewModel.messages
@@ -589,14 +588,14 @@ struct ChatView: View {
             }
         }
     }
-    
+
     private func effectiveTargetLanguage(for text: String) -> String {
-        let t = translationTargetLanguage.lowercased()
-        if t != "auto" { return t }
+        let target = translationTargetLanguage.lowercased()
+        if target != "auto" { return target }
         // Auto: use app language code as the target language
         return appLanguageCode()
     }
-    
+
     // MARK: - 타임락(근무시간) 헬퍼
     private func isWithinWorkingHours(for room: ChatRoom, now: Date = Date()) -> Bool {
         // 조직방이 아니면 항상 가능
@@ -614,7 +613,7 @@ struct ChatView: View {
         let current = hour * 60 + minute
         return current >= start && current < end
     }
-    
+
     private func setupViewModelIfNeeded() {
         // Bind ChatService to the real ModelContext so its connection can start.
         // ChatService starts its connection the first time a proper modelContext is set (via didSet).
@@ -631,7 +630,7 @@ struct ChatView: View {
             viewModel?.loadMessages()
         }
     }
-    
+
     // MARK: - Message Input View
     @ViewBuilder
     private func messageInputView(viewModel: ChatViewModel) -> some View {
@@ -657,7 +656,7 @@ struct ChatView: View {
                 .padding(.vertical, 8)
                 .background(Color(UIColor.secondarySystemGroupedBackground))
             }
-            
+
             HStack(spacing: 12) {
                 TextField(localizedText("message_input_placeholder"), text: $inputText)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -665,7 +664,7 @@ struct ChatView: View {
                     .onSubmit {
                         sendMessage(viewModel: viewModel)
                     }
-                
+
                 Button {
                     sendMessage(viewModel: viewModel)
                 } label: {
@@ -682,7 +681,7 @@ struct ChatView: View {
         }
         .background(Color(UIColor.systemGroupedBackground))
     }
-    
+
     private func sendMessage(viewModel: ChatViewModel) {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
@@ -699,40 +698,40 @@ struct ChatView: View {
         replyingToMessage = nil
         isTextFieldFocused = false
     }
-    
+
     // MARK: - Helper Functions
     private func openFriendProfile() {
         showingFriendProfile = true
     }
-    
+
     private func accessibilityLabelForMessage(_ message: Message) -> String {
         let sender = message.isFromCurrentUser ? localizedText("me") : chatRoom.name
         let time = Self.timeFormatter.string(from: message.timestamp)
         return "\(sender): \(message.text), \(time)"
     }
-    
+
     private func showReactionPicker(for message: Message) {
         reactionToMessage = message
         showingReactionPicker = true
     }
-    
+
     private func startEditingMessage(_ message: Message) {
         editingMessage = message
         editingText = message.text
         showingEditAlert = true
     }
-    
+
     private func deleteMessage(_ message: Message) {
         viewModel?.deleteMessage(message)
     }
-    
+
     private func firstURL(in text: String) -> URL? {
         let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
         let range = NSRange(location: 0, length: text.utf16.count)
         let matches = detector?.matches(in: text, options: [], range: range)
         return matches?.first?.url
     }
-    
+
     // MARK: - Reactions
     private func addReaction(emoji: String, to message: Message) {
         // TODO: Integrate with ChatViewModel/ChatService to persist reactions
@@ -741,10 +740,10 @@ struct ChatView: View {
         impactFeedback.impactOccurred()
         UIAccessibility.post(notification: .announcement, argument: "반응 \(emoji)를 추가했습니다")
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "cancel": return isKorean ? "취소" : "Cancel"
         case "save": return isKorean ? "저장" : "Save"
@@ -811,7 +810,7 @@ struct ChatView: View {
 // MARK: - Alert Modifiers (to reduce type-checking complexity)
 struct EditMessageAlertModifier: ViewModifier {
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     @Binding var isPresented: Bool
     @Binding var editingText: String
     @Binding var editingMessage: Message?
@@ -839,10 +838,10 @@ struct EditMessageAlertModifier: ViewModifier {
             Text(localizedText("edit_message_prompt"))
         }
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "cancel": return isKorean ? "취소" : "Cancel"
         case "save": return isKorean ? "저장" : "Save"
@@ -907,7 +906,7 @@ struct EditMessageAlertModifier: ViewModifier {
 
 struct EmergencyAlertModifier: ViewModifier {
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     @Binding var isPresented: Bool
     func body(content: Content) -> some View {
         content.alert(localizedText("emergency_call"), isPresented: $isPresented) {
@@ -916,10 +915,10 @@ struct EmergencyAlertModifier: ViewModifier {
             Text(localizedText("emergency_started"))
         }
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "cancel": return isKorean ? "취소" : "Cancel"
         case "save": return isKorean ? "저장" : "Save"
@@ -984,7 +983,7 @@ struct EmergencyAlertModifier: ViewModifier {
 
 struct LocationPermissionAlertModifier: ViewModifier {
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     @Binding var isPresented: Bool
     let openSettings: () -> Void
     func body(content: Content) -> some View {
@@ -995,10 +994,10 @@ struct LocationPermissionAlertModifier: ViewModifier {
             Text(localizedText("location_permission_message"))
         }
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "cancel": return isKorean ? "취소" : "Cancel"
         case "save": return isKorean ? "저장" : "Save"
@@ -1063,7 +1062,7 @@ struct LocationPermissionAlertModifier: ViewModifier {
 
 struct ReportAlertModifier: ViewModifier {
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     @Binding var isPresented: Bool
     let name: String
     func body(content: Content) -> some View {
@@ -1073,10 +1072,10 @@ struct ReportAlertModifier: ViewModifier {
             Text(String(format: localizedText("reported_user_message"), name))
         }
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "cancel": return isKorean ? "취소" : "Cancel"
         case "save": return isKorean ? "저장" : "Save"
@@ -1141,7 +1140,7 @@ struct ReportAlertModifier: ViewModifier {
 
 struct BlockAlertModifier: ViewModifier {
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     @Binding var isPresented: Bool
     let name: String
     func body(content: Content) -> some View {
@@ -1154,10 +1153,10 @@ struct BlockAlertModifier: ViewModifier {
             Text(String(format: localizedText("blocked_user_message"), name))
         }
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "cancel": return isKorean ? "취소" : "Cancel"
         case "save": return isKorean ? "저장" : "Save"
@@ -1222,7 +1221,7 @@ struct BlockAlertModifier: ViewModifier {
 
 struct SuspiciousLinkAlertModifier: ViewModifier {
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     @Binding var isPresented: Bool
     @Binding var linkToVerify: String?
     @Binding var ignoredDomains: Set<String>
@@ -1244,10 +1243,10 @@ struct SuspiciousLinkAlertModifier: ViewModifier {
             Text(linkToVerify ?? localizedText("suspicious_link_detected"))
         }
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "cancel": return isKorean ? "취소" : "Cancel"
         case "save": return isKorean ? "저장" : "Save"
@@ -1313,7 +1312,7 @@ struct SuspiciousLinkAlertModifier: ViewModifier {
 // DocumentPicker 구조체
 struct DocumentPicker: UIViewControllerRepresentable {
     let onDocumentPicked: (URL) -> Void
-    
+
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: [
             .pdf, .plainText, .image, .audio, .video, .data
@@ -1321,20 +1320,20 @@ struct DocumentPicker: UIViewControllerRepresentable {
         picker.delegate = context.coordinator
         return picker
     }
-    
+
     func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
-    
+
     func makeCoordinator() -> Coordinator {
         Coordinator(onDocumentPicked: onDocumentPicked)
     }
-    
+
     class Coordinator: NSObject, UIDocumentPickerDelegate {
         let onDocumentPicked: (URL) -> Void
-        
+
         init(onDocumentPicked: @escaping (URL) -> Void) {
             self.onDocumentPicked = onDocumentPicked
         }
-        
+
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
             guard let url = urls.first else { return }
             onDocumentPicked(url)
@@ -1346,18 +1345,18 @@ struct DocumentPicker: UIViewControllerRepresentable {
 
 struct ReactionPickerView: View {
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     let message: Message?
     let onReactionSelected: (String) -> Void
-    
+
     private let reactions = ["👍", "❤️", "😂", "😮", "😢", "😡", "👏", "🎉"]
-    
+
     var body: some View {
         VStack(spacing: 16) {
             Text(localizedText("add_reaction"))
                 .font(.headline)
                 .foregroundColor(.secondary)
-            
+
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 16) {
                 ForEach(reactions, id: \.self) { emoji in
                     Button(action: {
@@ -1377,10 +1376,10 @@ struct ReactionPickerView: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 20))
         .padding()
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "cancel": return isKorean ? "취소" : "Cancel"
         case "save": return isKorean ? "저장" : "Save"
@@ -1451,7 +1450,7 @@ struct LinkPreviewView: UIViewRepresentable {
 
 struct TranslatedTextView: View {
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     let text: String
     let autoDetect: Bool
     let target: String
@@ -1491,10 +1490,10 @@ struct TranslatedTextView: View {
             }
         }
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "cancel": return isKorean ? "취소" : "Cancel"
         case "save": return isKorean ? "저장" : "Save"
@@ -1559,7 +1558,7 @@ struct TranslatedTextView: View {
 
 struct OrgRoomSettingsView: View {
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     var room: ChatRoom
@@ -1630,9 +1629,7 @@ struct OrgRoomSettingsView: View {
 
         // Weekday mode 추정
         let set = Set(room.workingDays)
-        if set == Set([2,3,4,5,6]) { weekdayMode = .weekdays }
-        else if set == Set([1,2,3,4,5,6,7]) { weekdayMode = .daily }
-        else { weekdayMode = .weekdays }
+        if set == Set([2, 3, 4, 5, 6]) { weekdayMode = .weekdays } else if set == Set([1, 2, 3, 4, 5, 6, 7]) { weekdayMode = .daily } else { weekdayMode = .weekdays }
 
         // 시간 초기화
         var cal = Calendar.current
@@ -1648,20 +1645,20 @@ struct OrgRoomSettingsView: View {
 
     private func syncTimesToRoom() {
         let cal = Calendar.current
-        let s = cal.dateComponents([.hour, .minute], from: startTime)
-        let e = cal.dateComponents([.hour, .minute], from: endTime)
-        room.workStartHour = s.hour ?? 9
-        room.workStartMinute = s.minute ?? 0
-        room.workEndHour = e.hour ?? 18
-        room.workEndMinute = e.minute ?? 0
+        let startComponents = cal.dateComponents([.hour, .minute], from: startTime)
+        let endComponents = cal.dateComponents([.hour, .minute], from: endTime)
+        room.workStartHour = startComponents.hour ?? 9
+        room.workStartMinute = startComponents.minute ?? 0
+        room.workEndHour = endComponents.hour ?? 18
+        room.workEndMinute = endComponents.minute ?? 0
     }
 
     private func syncWeekdaysToRoom(mode: WeekdayMode) {
         switch mode {
         case .weekdays:
-            room.workingDays = [2,3,4,5,6]
+            room.workingDays = [2, 3, 4, 5, 6]
         case .daily:
-            room.workingDays = [1,2,3,4,5,6,7]
+            room.workingDays = [1, 2, 3, 4, 5, 6, 7]
         }
     }
 
@@ -1669,10 +1666,10 @@ struct OrgRoomSettingsView: View {
         do { try modelContext.save() } catch { print("채널 설정 저장 실패: \(error)") }
         dismiss()
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "cancel": return isKorean ? "취소" : "Cancel"
         case "save": return isKorean ? "저장" : "Save"
@@ -1737,7 +1734,7 @@ struct OrgRoomSettingsView: View {
 
 struct MiniProfileSheet: View {
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     let name: String
     let symbol: String
     @Environment(\.dismiss) private var dismiss
@@ -1763,10 +1760,10 @@ struct MiniProfileSheet: View {
             .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button(localizedText("close")) { dismiss() } } }
         }
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = languageManager.currentLanguage == .korean
-        
+
         switch key {
         case "cancel": return isKorean ? "취소" : "Cancel"
         case "save": return isKorean ? "저장" : "Save"
@@ -1832,7 +1829,7 @@ struct MiniProfileSheet: View {
 #Preview {
     let container = try! ModelContainer(for: Message.self, ChatRoom.self)
     let chatRoom = ChatRoom(name: "친구")
-    
+
     NavigationStack {
         ChatView(chatRoom: chatRoom)
             .environmentObject(LanguageManager())
@@ -1845,13 +1842,13 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     @Published var currentLocation: CLLocation?
     @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
-    
+
     override init() {
         super.init()
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
     }
-    
+
     func requestLocation() {
         switch authorizationStatus {
         case .notDetermined:
@@ -1864,23 +1861,23 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             break
         }
     }
-    
+
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         DispatchQueue.main.async {
             self.currentLocation = location
         }
     }
-    
+
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("위치 정보 가져오기 실패: \(error)")
     }
-    
+
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         DispatchQueue.main.async {
             self.authorizationStatus = status
         }
-        
+
         switch status {
         case .authorizedWhenInUse, .authorizedAlways:
             locationManager.requestLocation()
@@ -1889,4 +1886,3 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
 }
-

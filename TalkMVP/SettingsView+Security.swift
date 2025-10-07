@@ -43,7 +43,7 @@ private struct AppLockToggleRow: View {
                     .padding(.leading, 28)
             }
         }
-        .onChange(of: appLockEnabled) { oldValue, newValue in
+        .onChange(of: appLockEnabled) { _, newValue in
             if newValue {
                 // Pre-check: Only allow enabling if device can authenticate
                 if appLock.canAuthenticate() {

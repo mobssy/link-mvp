@@ -14,12 +14,12 @@ extension Color {
 struct GlassEffect: ViewModifier {
     let style: GlassStyle
     let shape: GlassShape
-    
+
     enum GlassStyle {
         case regular
         case thin
         case thick
-        
+
         var opacity: Double {
             switch self {
             case .regular: return 0.1
@@ -28,13 +28,13 @@ struct GlassEffect: ViewModifier {
             }
         }
     }
-    
+
     enum GlassShape {
         case rect(cornerRadius: CGFloat)
         case circle
         case capsule
     }
-    
+
     func body(content: Content) -> some View {
         content
             .background(
@@ -62,7 +62,7 @@ extension GlassEffect.GlassStyle {
     func tint(_ color: Color) -> GlassEffect.GlassStyle {
         return self
     }
-    
+
     func interactive() -> GlassEffect.GlassStyle {
         return self
     }

@@ -10,19 +10,19 @@ import SwiftUI
 struct TypingIndicatorView: View {
     let senderName: String
     @State private var animationAmount = 0.5
-    
+
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(senderName)
                     .font(.caption)
                     .foregroundColor(.secondary)
-                
+
                 HStack {
                     Text("타이핑 중")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
-                    
+
                     HStack(spacing: 4) {
                         ForEach(0..<3) { index in
                             Circle()
@@ -45,7 +45,7 @@ struct TypingIndicatorView: View {
                         .fill(Color.gray.opacity(0.2))
                 )
             }
-            
+
             Spacer()
         }
         .padding(.horizontal)

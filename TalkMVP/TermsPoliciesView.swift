@@ -3,11 +3,11 @@ import SwiftUI
 struct TermsPoliciesView: View {
     @EnvironmentObject var languageManager: LanguageManager
     @State private var selectedSegment = 0
-    
+
     private enum Segment: Int, CaseIterable {
         case terms
         case privacy
-        
+
         func title(for language: LanguageManager.Language) -> String {
             switch self {
             case .terms:
@@ -17,7 +17,7 @@ struct TermsPoliciesView: View {
             }
         }
     }
-    
+
     private func localizedText(_ key: String) -> String {
         if languageManager.currentLanguage == .korean {
             switch key {
@@ -40,18 +40,22 @@ struct TermsPoliciesView: View {
                 return "Terms & Policies"
             case "TermsPlaceholder":
                 return """
-                These terms govern the conditions of service use. Users must understand and agree to these terms to use the service. The terms detail the rights and obligations of the service provider and the responsibilities of the users. All issues arising during the use of the service are governed by these terms.
+                These terms govern the conditions of service use. Users must understand and agree to these terms to use the service. 
+                The terms detail the rights and obligations of the service provider and the responsibilities of the users. 
+                All issues arising during the use of the service are governed by these terms.
                 """
             case "PrivacyPlaceholder":
                 return """
-                The privacy policy explains principles regarding collection, use, storage, and disposal of personal information to protect users. We manage users' personal data securely and obtain clear consent before providing it to third parties. Rights concerning personal information are protected by applicable laws.
+                The privacy policy explains principles regarding collection, use, storage, and disposal of personal information to protect users. 
+                We manage users' personal data securely and obtain clear consent before providing it to third parties. 
+                Rights concerning personal information are protected by applicable laws.
                 """
             default:
                 return key
             }
         }
     }
-    
+
     var body: some View {
         VStack {
             ScrollView {

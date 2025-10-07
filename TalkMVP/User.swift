@@ -19,10 +19,10 @@ class User {
     var isCurrentUser: Bool
     var createdAt: Date
     var lastActiveAt: Date
-    
+
     // 친구 관계
     @Relationship(deleteRule: .cascade) var friendships: [Friendship] = []
-    
+
     init(username: String, displayName: String, email: String, statusMessage: String = "", isCurrentUser: Bool = false) {
         self.id = UUID()
         self.username = username
@@ -47,7 +47,7 @@ class Friendship {
     var status: FriendshipStatus
     var createdAt: Date
     var ownerUserId: String
-    
+
     init(userId: String, friendId: String, friendName: String, friendEmail: String, status: FriendshipStatus = .pending) {
         self.id = UUID()
         self.userId = userId
@@ -65,7 +65,7 @@ enum FriendshipStatus: String, Codable, CaseIterable {
     case accepted = "accepted"
     case hidden = "hidden"
     case blocked = "blocked"
-    
+
     var displayName: String {
         switch self {
         case .pending: return "대기중"

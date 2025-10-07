@@ -116,9 +116,9 @@ final class ContactsSyncService: ObservableObject {
    func syncAndMatch() async throws -> [MatchedUser] {
        let contacts = try await loadContactIdentifiers()
        var rawIdentifiers: Set<String> = []
-       for c in contacts {
-           rawIdentifiers.formUnion(c.phones)
-           rawIdentifiers.formUnion(c.emails)
+       for contact in contacts {
+           rawIdentifiers.formUnion(contact.phones)
+           rawIdentifiers.formUnion(contact.emails)
        }
        let hashes = rawIdentifiers.map { Self.sha256($0) }
        let matched = try await backend.matchContacts(identifierHashes: hashes)
@@ -147,4 +147,3 @@ final class ContactsSyncService: ObservableObject {
        return digest.compactMap { String(format: "%02x", $0) }.joined()
    }
 }
-

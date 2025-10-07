@@ -2,19 +2,19 @@ import SwiftUI
 
 struct AppInfoView: View {
     @EnvironmentObject var languageManager: LanguageManager
-    
+
     private var appName: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? ""
     }
-    
+
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
     }
-    
+
     private var appBuild: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
     }
-    
+
     private func localizedText(_ text: String) -> String {
         if languageManager.currentLanguage == .korean {
             switch text {
@@ -32,7 +32,7 @@ struct AppInfoView: View {
             return text
         }
     }
-    
+
     var body: some View {
         Form {
             Section(header: Text(localizedText("About"))) {

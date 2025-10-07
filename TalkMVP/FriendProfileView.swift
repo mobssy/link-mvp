@@ -17,9 +17,9 @@ struct FriendProfileView: View {
     @State private var showingBlockAlert = false
     @State private var showingUnblockAlert = false
     @AppStorage("lastActivityEnabled") private var lastActivityEnabled = true
-    @State private var lastActiveText: String? = nil
+    @State private var lastActiveText: String?
     @State private var lastActiveIconColor: Color = .gray
-    
+
     var body: some View {
         NavigationView {
             ScrollView {
@@ -35,28 +35,28 @@ struct FriendProfileView: View {
                                     endPoint: .bottomTrailing
                                 ))
                                 .frame(width: 120, height: 120)
-                            
+
                             Image(systemName: "person.fill")
                                 .font(.system(size: 60))
                                 .foregroundColor(.appPrimary)
                         }
-                        
+
                         // 이름과 이메일
                         VStack(spacing: 8) {
                             Text(friendship.friendName)
                                 .font(.title2)
                                 .fontWeight(.bold)
-                            
+
                             Text(friendship.friendEmail)
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
-                        
+
                         // 상태 배지
                         StatusBadge(status: friendship.status)
                     }
                     .padding(.vertical, 20)
-                    
+
                     // 프로필 정보
                     VStack(spacing: 16) {
                         ProfileInfoCard(
@@ -64,7 +64,7 @@ struct FriendProfileView: View {
                             value: formatDate(friendship.createdAt),
                             icon: "calendar"
                         )
-                        
+
                         if lastActivityEnabled && friendship.status == .accepted {
                             ProfileInfoCard(
                                 title: localizedText("last_active"),
@@ -73,14 +73,14 @@ struct FriendProfileView: View {
                                 iconColor: lastActiveIconColor
                             )
                         }
-                        
+
                         ProfileInfoCard(
                             title: localizedText("mutual_friends"),
                             value: "0명", // 실제 앱에서는 계산
                             icon: "person.2"
                         )
                     }
-                    
+
                     // 액션 버튼들
                     VStack(spacing: 12) {
                         if friendship.status == .accepted {
@@ -96,7 +96,7 @@ struct FriendProfileView: View {
                                     .cornerRadius(12)
                             }
                         }
-                        
+
                         // 상태별 액션 버튼
                         switch friendship.status {
                         case .accepted:
@@ -153,21 +153,21 @@ struct FriendProfileView: View {
                         dismiss()
                     }
                 }
-                
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button(localizedText("share_profile")) {
                             shareProfile()
                         }
-                        
+
                         if friendship.status == .accepted {
                             Button(localizedText("view_conversation")) {
                                 showingChatView = true
                             }
                         }
-                        
+
                         Divider()
-                        
+
                         Button(localizedText("report"), role: .destructive) {
                             reportUser()
                         }
@@ -198,14 +198,14 @@ struct FriendProfileView: View {
         }
         .onAppear { computeLastActivity() }
     }
-    
+
     private func computeLastActivity() {
         // Capture dynamic values into local constants for use in #Predicate
         let friendIdString = friendship.friendId
         let friendEmail = friendship.friendEmail
         let senderName = friendship.friendName
 
-        var foundDate: Date? = nil
+        var foundDate: Date?
 
         // 1) Try to find a User record for this friend by friendId
         if let friendUUID = UUID(uuidString: friendIdString) {
@@ -214,8 +214,8 @@ struct FriendProfileView: View {
                     user.id == friendUUID
                 }
             )
-            if let users = try? modelContext.fetch(descriptorById), let u = users.first {
-                foundDate = u.lastActiveAt
+            if let users = try? modelContext.fetch(descriptorById), let user = users.first {
+                foundDate = user.lastActiveAt
             }
         }
 
@@ -226,8 +226,8 @@ struct FriendProfileView: View {
                     user.email == friendEmail
                 }
             )
-            if let users = try? modelContext.fetch(descriptorByEmail), let u = users.first {
-                foundDate = u.lastActiveAt
+            if let users = try? modelContext.fetch(descriptorByEmail), let user = users.first {
+                foundDate = user.lastActiveAt
             }
         }
 
@@ -283,44 +283,44 @@ struct FriendProfileView: View {
             return formatter.string(from: date)
         }
     }
-    
+
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         return formatter.string(from: date)
     }
-    
+
     private func blockFriend() {
         withAnimation {
             friendship.status = .blocked
             try? modelContext.save()
         }
     }
-    
+
     private func unblockFriend() {
         withAnimation {
             friendship.status = .accepted
             try? modelContext.save()
         }
     }
-    
+
     private func unhideFriend() {
         withAnimation {
             friendship.status = .accepted
             try? modelContext.save()
         }
     }
-    
+
     private func shareProfile() {
         // 프로필 공유 기능 (실제 앱에서 구현)
         print("프로필 공유: \(friendship.friendName)")
     }
-    
+
     private func reportUser() {
         // 사용자 신고 기능 (실제 앱에서 구현)
         print("사용자 신고: \(friendship.friendName)")
     }
-    
+
     private func localizedText(_ key: String) -> String {
         switch key {
         case "joined":
@@ -372,13 +372,13 @@ struct FriendProfileView: View {
 // 상태 배지 컴포넌트
 struct StatusBadge: View {
     let status: FriendshipStatus
-    
+
     var body: some View {
         HStack(spacing: 6) {
             Circle()
                 .fill(statusColor)
                 .frame(width: 8, height: 8)
-            
+
             Text(status.displayName)
                 .font(.caption)
                 .fontWeight(.medium)
@@ -389,7 +389,7 @@ struct StatusBadge: View {
         .foregroundColor(statusColor)
         .cornerRadius(20)
     }
-    
+
     private var statusColor: Color {
         switch status {
         case .accepted:
@@ -410,7 +410,7 @@ struct ProfileInfoCard: View {
     let value: String
     let icon: String
     var iconColor: Color = .appPrimary
-    
+
     var body: some View {
         HStack(spacing: 16) {
             // 아이콘
@@ -418,24 +418,24 @@ struct ProfileInfoCard: View {
                 Circle()
                     .fill(iconColor.opacity(0.15))
                     .frame(width: 40, height: 40)
-                
+
                 Image(systemName: icon)
                     .foregroundColor(iconColor)
                     .font(.system(size: 16, weight: .medium))
             }
-            
+
             // 정보
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    
+
                     Text(value)
                         .font(.subheadline)
                         .fontWeight(.medium)
                 }
-                
+
                 Spacer()
             }
         }
@@ -448,13 +448,13 @@ struct ProfileInfoCard: View {
 struct ChatViewContainer: View {
     let friendship: Friendship
     @Environment(\.modelContext) private var modelContext
-    
+
     var body: some View {
         NavigationView {
             ChatScreen(room: createChatRoom())
         }
     }
-    
+
     private func createChatRoom() -> ChatRoom {
         // Create a ChatRoom from the Friendship data
         let chatRoom = ChatRoom(name: friendship.friendName, profileImage: "person.circle.fill")

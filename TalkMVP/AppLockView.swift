@@ -56,7 +56,7 @@ struct AppLockView: View {
                 }
             }
         }
-        .onChange(of: scenePhase) { oldPhase, newPhase in
+        .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active && appLock.isLocked {
                 // 포그라운드 복귀 시 자동 인증 시도
                 appLock.authenticate(reason: localizedText("unlock_reason"))
@@ -71,7 +71,7 @@ struct AppLockView: View {
         .accessibilityLabel(localizedText("app_lock_screen"))
         .accessibilityHint(localizedText("auth_hint"))
     }
-    
+
     private func localizedText(_ key: String) -> String {
         switch key {
         case "unlock_required":

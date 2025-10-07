@@ -12,7 +12,7 @@ struct ConnectionStatusView: View {
     @ObservedObject var chatService: ChatService
     @State private var isVisible = false
     @State private var isPulsing = false
-    
+
     var body: some View {
         Group {
             if isVisible {
@@ -22,13 +22,13 @@ struct ConnectionStatusView: View {
                         .frame(width: 8, height: 8)
                         .scaleEffect(isPulsing ? 1.0 : 0.8)
                         .animation(isPulsing ? .easeInOut(duration: 0.8).repeatForever(autoreverses: true) : .default, value: isPulsing)
-                    
+
                     Text(chatService.connectionStatus.displayText)
                         .font(.caption)
                         .foregroundColor(.white)
-                    
+
                     Spacer()
-                    
+
                     if chatService.connectionStatus == .disconnected {
                         Button("재연결") {
                             chatService.reconnect()
@@ -64,7 +64,7 @@ struct ConnectionStatusView: View {
         .onChange(of: chatService.connectionStatus) { _, newStatus in
             // Update pulsing based on status
             isPulsing = (newStatus == .connecting || newStatus == .reconnecting)
-            
+
             if newStatus == .connected {
                 // Show "연결됨" briefly, then hide after 3 seconds
                 withAnimation(.spring()) {
@@ -83,7 +83,7 @@ struct ConnectionStatusView: View {
             }
         }
     }
-    
+
     private var color: Color {
         switch chatService.connectionStatus {
         case .disconnected: return .red
@@ -92,7 +92,7 @@ struct ConnectionStatusView: View {
         case .reconnecting: return .orange
         }
     }
-    
+
     private var backgroundColor: Color {
         switch chatService.connectionStatus {
         case .disconnected: return Color.red

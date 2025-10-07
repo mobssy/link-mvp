@@ -19,8 +19,8 @@ struct AuthView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
-    @State private var appIcon: UIImage? = nil
-    
+    @State private var appIcon: UIImage?
+
     var body: some View {
         GeometryReader { geometry in
             NavigationStack {
@@ -39,16 +39,16 @@ struct AuthView: View {
                             .font(.system(size: 80))
                             .foregroundColor(.appPrimary)
                     }
-                    
+
                     Text("TalkMVP")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
                 }
                 .padding(.top, 50)
-                
+
                 Spacer()
-                
+
                 // 폼 영역 (다크 모드에서 다크 그레이 래퍼 적용)
                 Group {
                     if colorScheme == .dark {
@@ -64,7 +64,7 @@ struct AuthView: View {
                             .padding(.horizontal, 32)
                     }
                 }
-                
+
                 Spacer()
             }
             .navigationTitle("")
@@ -80,7 +80,7 @@ struct AuthView: View {
             }
         }
     }
-    
+
     private var authForm: some View {
         VStack(spacing: 16) {
             CustomTextField(
@@ -120,11 +120,11 @@ struct AuthView: View {
             }
         }
     }
-    
+
     private var formContent: some View {
         VStack(spacing: 20) {
             authForm
-            
+
             // 오류 메시지
             if let errorMessage = authManager.errorMessage {
                 Text(errorMessage)
@@ -132,7 +132,7 @@ struct AuthView: View {
                     .font(.caption)
                     .multilineTextAlignment(.center)
             }
-            
+
             // 로그인/회원가입 버튼
             Button(action: handleAuth) {
                 if authManager.isLoading {
@@ -149,7 +149,7 @@ struct AuthView: View {
             .foregroundColor(.white)
             .cornerRadius(25)
             .disabled(authManager.isLoading || !isFormValid)
-            
+
             // 전환 버튼
             Button(action: {
                 withAnimation {
@@ -162,16 +162,16 @@ struct AuthView: View {
             }
         }
     }
-    
+
     private var isFormValid: Bool {
         if isSignUp {
-            return !username.isEmpty && !displayName.isEmpty && !email.isEmpty && 
+            return !username.isEmpty && !displayName.isEmpty && !email.isEmpty &&
                    !password.isEmpty && password == confirmPassword && password.count >= 6
         } else {
             return !username.isEmpty && !password.isEmpty
         }
     }
-    
+
     private func handleAuth() {
         Task {
             if isSignUp {
@@ -181,7 +181,7 @@ struct AuthView: View {
             }
         }
     }
-    
+
     private func clearForm() {
         username = ""
         displayName = ""
@@ -190,10 +190,10 @@ struct AuthView: View {
         confirmPassword = ""
         authManager.errorMessage = nil
     }
-    
+
     private func localizedText(_ key: String) -> String {
         let isKorean = (languageManager.currentLanguage == .korean)
-        
+
         switch key {
         case "signin": return isKorean ? "로그인" : "Sign In"
         case "signup": return isKorean ? "회원가입" : "Sign Up"
@@ -208,7 +208,7 @@ struct AuthView: View {
         default: return key
         }
     }
-    
+
     private func appIconUIImage() -> UIImage? {
         if let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
            let primary = icons["CFBundlePrimaryIcon"] as? [String: Any],
@@ -228,13 +228,13 @@ struct CustomTextField: View {
     let icon: String
     var isSecure: Bool = false
     var keyboardType: UIKeyboardType = .default
-    
+
     var body: some View {
         HStack {
             Image(systemName: icon)
                 .foregroundColor(.gray)
                 .frame(width: 20)
-            
+
             if isSecure {
                 SecureField(placeholder, text: $text)
             } else {

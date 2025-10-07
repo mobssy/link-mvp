@@ -10,66 +10,6 @@ import UIKit
 import SwiftData
 import UserNotifications
 
-struct Loc {
-    static func text(_ key: String, isKorean: Bool, count: Int = 0, searchTerm: String = "") -> String {
-        switch key {
-        case "received_requests": return isKorean ? "📬 받은 친구 요청 \(count)" : "📬 Received Friend Requests \(count)"
-        case "sent_requests": return isKorean ? "보낸 친구 요청 \(count)" : "Sent Friend Requests \(count)"
-        case "friends_list": return isKorean ? "친구 목록 \(count)" : "Friends List \(count)"
-        case "no_search_results": return isKorean ? "검색 결과 없음" : "No Search Results"
-        case "no_match_for": return isKorean ? "'\(searchTerm)'와 일치하는 친구가 없습니다" : "No friends match '\(searchTerm)'"
-        case "no_friends_yet": return isKorean ? "아직 친구가 없어요" : "No Friends Yet"
-        case "add_friends_suggestion": return isKorean ? "친구를 추가해보세요!" : "Try adding some friends!"
-        case "add_friend_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "contacts": return isKorean ? "연락처" : "Contacts"
-        case "friends": return isKorean ? "친구" : "Friends"
-        case "search_friends_placeholder": return isKorean ? "친구 이름 검색..." : "Search friend names..."
-        case "user": return isKorean ? "사용자" : "User"
-        case "status_message": return isKorean ? "상태 메시지를 설정해보세요" : "Set your status message"
-        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
-        case "accept": return isKorean ? "수락" : "Accept"
-        case "reject": return isKorean ? "거절" : "Reject"
-        case "request_pending": return isKorean ? "승인 대기" : "Pending"
-        case "pending_short": return isKorean ? "대기" : "Requested"
-        case "friend_email_placeholder": return isKorean ? "친구의 이메일 주소" : "Friend's email address"
-        case "search": return isKorean ? "검색" : "Search"
-        case "add_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "add_by_email_footer": return isKorean ? "친구의 이메일 주소를 입력하고 검색 버튼을 누르세요." : "Enter your friend's email address and tap Search."
-        case "searching": return isKorean ? "검색 중..." : "Searching..."
-        case "searching_users": return isKorean ? "사용자를 검색하고 있습니다" : "Searching for users"
-        case "search_results": return isKorean ? "검색 결과" : "Search Results"
-        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
-        case "alert": return isKorean ? "알림" : "Alert"
-        case "cancel": return isKorean ? "취소" : "Cancel"
-        case "ok": return isKorean ? "확인" : "OK"
-        case "search_error_prefix": return isKorean ? "검색 중 오류가 발생했습니다: " : "An error occurred during search: "
-        case "friend_request_sent": return isKorean ? "친구 요청을 보냈습니다." : "Friend request sent."
-        case "friend_request_failed": return isKorean ? "친구 요청 전송에 실패했습니다." : "Failed to send friend request."
-        case "error_occurred_prefix": return isKorean ? "오류가 발생했습니다: " : "An error occurred: "
-        case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
-        case "blocked_list": return isKorean ? "차단 목록" : "Blocked List"
-        case "blocked": return isKorean ? "차단됨" : "Blocked"
-        case "unblock": return isKorean ? "차단 해제" : "Unblock"
-        case "unblock_friend": return isKorean ? "차단 해제" : "Unblock Friend"
-        case "unblock_message": return isKorean ? "\(searchTerm)님의 차단을 해제하시겠습니까?" : "Unblock \(searchTerm)?"
-        case "hide": return isKorean ? "숨김" : "Hide"
-        case "manage_hidden_blocked": return isKorean ? "숨김/차단 관리" : "Manage Hidden/Blocked"
-        case "hidden_list": return isKorean ? "숨김 목록" : "Hidden List"
-        case "no_hidden_friends": return isKorean ? "숨김 친구가 없습니다" : "No hidden friends"
-        case "hidden": return isKorean ? "숨김" : "Hidden"
-        case "unhide": return isKorean ? "숨김 해제" : "Unhide"
-        case "unhide_friend": return isKorean ? "숨김 해제" : "Unhide Friend"
-        case "unhide_message": return isKorean ? "\(searchTerm)님의 숨김을 해제하시겠습니까?" : "Unhide \(searchTerm)?"
-        case "block": return isKorean ? "차단" : "Block"
-        case "settings": return isKorean ? "설정" : "Settings"
-        case "close": return isKorean ? "닫기" : "Close"
-        case "new_friends": return isKorean ? "새로운 친구 \(count)" : "New Friends \(count)"
-        case "online": return isKorean ? "온라인" : "Online"
-        default: return key
-        }
-    }
-}
-
 // 간소화된 친구 목록 뷰
 struct FriendsView: View {
     @Environment(\.modelContext) private var modelContext
@@ -77,15 +17,15 @@ struct FriendsView: View {
     @StateObject private var authManager: AuthManager
     @StateObject private var notificationManager = NotificationManager()
     @AppStorage("themeMode") private var themeMode: String = "system"
-    
+
     @AppStorage("newFriendIDs") private var newFriendIDsStorage: String = "" // comma-separated UUID strings
     @AppStorage("hasSeededNewFriends") private var hasSeededNewFriends: Bool = false
-    
+
     private var newFriendIDs: Set<String> {
         get { Set(newFriendIDsStorage.split(separator: ",").map { String($0) }) }
         set { newFriendIDsStorage = newValue.joined(separator: ",") }
     }
-    
+
     enum ActiveSheet: Identifiable {
         case addFriend, blockedList, settings, manageHiddenBlocked
         var id: Int {
@@ -97,12 +37,12 @@ struct FriendsView: View {
             }
         }
     }
-    
+
     @State private var activeSheet: ActiveSheet?
     @State private var searchText = ""
     @State private var friendships: [Friendship] = []
     @State private var showNewFriendsSection: Bool = true
-    
+
     var allAccepted: [Friendship] {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
         let base = friendships.filter { f in
@@ -125,21 +65,21 @@ struct FriendsView: View {
     private var regularFriends: [Friendship] {
         allAccepted.filter { !newFriendIDs.contains($0.id.uuidString) }
     }
-    
+
     private var newFriendsCount: Int { newFriends.count }
-    
+
     init(authManager: AuthManager) {
         self._authManager = StateObject(wrappedValue: authManager)
     }
-    
+
     var pendingRequests: [Friendship] {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
-        
+
         return friendships.filter { friendship in
             friendship.ownerUserId == currentUserId && friendship.status == .pending
         }
     }
-    
+
     var receivedRequests: [Friendship] {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
         // NOTE: If your model has a distinct incoming status, update here. For now, treat pending as received for the owner.
@@ -147,22 +87,22 @@ struct FriendsView: View {
             friendship.ownerUserId == currentUserId && friendship.status == .pending
         }
     }
-    
+
     var blockedFriends: [Friendship] {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
-        
+
         return friendships.filter { friendship in
             friendship.ownerUserId == currentUserId && friendship.status == .blocked
         }
     }
-    
+
     var hiddenFriends: [Friendship] {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
         return friendships.filter { f in
             f.ownerUserId == currentUserId && f.status == .hidden
         }
     }
-    
+
     var body: some View {
         NavigationStack {
             List {
@@ -170,19 +110,19 @@ struct FriendsView: View {
                 Section {
                     MyProfileRow(authManager: authManager)
                 }
-                
+
                 if showNewFriendsSection && newFriendsCount > 0 {
-                    Section(header: Text(Loc.text("new_friends", isKorean: languageManager.isKorean, count: newFriendsCount))) {
+                    Section(header: Text(String(format: L10n.text("new_friends", languageManager.currentLanguage == .korean ? .korean : .english), newFriendsCount))) {
                         ForEach(newFriends, id: \.id) { friendship in
                             FriendRow(friendship: friendship, onDataChanged: loadFriendships, onOpened: { markFriendAsSeen(friendship) })
                         }
                     }
                     .headerProminence(.increased)
                 }
-                
+
                 // 받은 친구 요청
                 if !receivedRequests.isEmpty {
-                    Section(Loc.text("received_requests", isKorean: languageManager.isKorean, count: receivedRequests.count)) {
+                    Section(String(format: L10n.text("received_requests", languageManager.currentLanguage == .korean ? .korean : .english), receivedRequests.count)) {
                         ForEach(receivedRequests, id: \.id) { friendship in
                             ReceivedRequestRow(
                                 friendship: friendship,
@@ -199,7 +139,7 @@ struct FriendsView: View {
                     }
                     .headerProminence(.increased)
                 }
-                
+
                 // 보낸 친구 요청
                 if !pendingRequests.isEmpty {
                     Section {
@@ -210,41 +150,41 @@ struct FriendsView: View {
                     } header: {
                         HStack(spacing: 6) {
                             Image(systemName: "person.badge.plus")
-                            Text(Loc.text("sent_requests", isKorean: languageManager.isKorean, count: pendingRequests.count))
+                            Text(String(format: L10n.text("sent_requests", languageManager.currentLanguage == .korean ? .korean : .english), pendingRequests.count))
                         }
                     }
                     .headerProminence(.increased)
                 }
-                
+
                 // 친구 목록
-                Section(Loc.text("friends_list", isKorean: languageManager.isKorean, count: regularFriends.count)) {
+                Section(String(format: L10n.text("friends_list", languageManager.currentLanguage == .korean ? .korean : .english), regularFriends.count)) {
                     if regularFriends.isEmpty && !searchText.isEmpty {
                         ContentUnavailableView(
-                            Loc.text("no_search_results", isKorean: languageManager.isKorean),
+                            NSLocalizedString("no_search_results", comment: ""),
                             systemImage: "magnifyingglass",
-                            description: Text(Loc.text("no_match_for", isKorean: languageManager.isKorean, searchTerm: searchText))
+                            description: Text(String(format: NSLocalizedString("no_match_for", comment: ""), searchText))
                         )
                     } else if regularFriends.isEmpty {
                         VStack(spacing: 20) {
                             Image(systemName: "person.2")
                                 .font(.system(size: 60))
                                 .foregroundColor(.gray)
-                            
-                            Text(Loc.text("no_friends_yet", isKorean: languageManager.isKorean))
+
+                            Text(NSLocalizedString("no_friends_yet", comment: ""))
                                 .font(.title2)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.primary)
-                            
-                            Text(Loc.text("add_friends_suggestion", isKorean: languageManager.isKorean))
+
+                            Text(NSLocalizedString("add_friends_suggestion", comment: ""))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
-                            
+
                             Button(action: {
                                 activeSheet = .addFriend
                             }) {
                                 HStack {
                                     Image(systemName: "person.badge.plus")
-                                    Text(Loc.text("add_friend_by_email", isKorean: languageManager.isKorean))
+                                    Text(NSLocalizedString("add_friend_by_email", comment: ""))
                                 }
                                 .font(.headline)
                                 .foregroundColor(.white)
@@ -266,16 +206,16 @@ struct FriendsView: View {
                                         try? modelContext.save()
                                         loadFriendships()
                                     } label: {
-                                        Label(Loc.text("hide", isKorean: languageManager.isKorean), systemImage: "eye.slash")
+                                        Label(NSLocalizedString("hide", comment: ""), systemImage: "eye.slash")
                                     }.tint(.gray)
-                                    
+
                                     Button(role: .destructive) {
                                         let mutable = friendship
                                         mutable.status = .blocked
                                         try? modelContext.save()
                                         loadFriendships()
                                     } label: {
-                                        Label(Loc.text("block", isKorean: languageManager.isKorean), systemImage: "person.fill.xmark")
+                                        Label(NSLocalizedString("block", comment: ""), systemImage: "person.fill.xmark")
                                     }
                                 }
                         }
@@ -285,8 +225,8 @@ struct FriendsView: View {
                 .headerProminence(.increased)
             }
             .listStyle(.insetGrouped)
-            .navigationTitle(Loc.text("friends", isKorean: languageManager.isKorean))
-            .searchable(text: $searchText, prompt: Loc.text("search_friends_placeholder", isKorean: languageManager.isKorean))
+            .navigationTitle(L10n.text("friends", languageManager.currentLanguage == .korean ? .korean : .english))
+            .searchable(text: $searchText, prompt: L10n.text("search_friends_placeholder", languageManager.currentLanguage == .korean ? .korean : .english))
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -294,19 +234,19 @@ struct FriendsView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
-                    .accessibilityLabel(Loc.text("add_friend", isKorean: languageManager.isKorean))
+                    .accessibilityLabel(L10n.text("add_friend", languageManager.currentLanguage == .korean ? .korean : .english))
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button {
                             activeSheet = .manageHiddenBlocked
                         } label: {
-                            Label(Loc.text("manage_hidden_blocked", isKorean: languageManager.isKorean), systemImage: "eye.slash")
+                            Label(L10n.text("manage_hidden_blocked", languageManager.currentLanguage == .korean ? .korean : .english), systemImage: "eye.slash")
                         }
                         Button {
                             activeSheet = .settings
                         } label: {
-                            Label(Loc.text("settings", isKorean: languageManager.isKorean), systemImage: "gearshape")
+                            Label(L10n.text("settings", languageManager.currentLanguage == .korean ? .korean : .english), systemImage: "gearshape")
                         }
                     } label: {
                         Image(systemName: "gearshape")
@@ -355,7 +295,7 @@ struct FriendsView: View {
             attemptSeedAfterLoad()
         }
     }
-    
+
     private func markFriendAsSeen(_ friendship: Friendship) {
         var ids = Set(newFriendIDsStorage.split(separator: ",").map { String($0) })
         if ids.remove(friendship.id.uuidString) != nil {
@@ -374,7 +314,7 @@ struct FriendsView: View {
             NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
         }
     }
-    
+
     private func attemptSeedAfterLoad() {
         guard !hasSeededNewFriends else { return }
         #if DEBUG
@@ -382,7 +322,7 @@ struct FriendsView: View {
         #endif
         NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
     }
-    
+
     private func seedFiveNewFriendsIfNeeded() {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return }
         guard !hasSeededNewFriends else { return }
@@ -401,16 +341,16 @@ struct FriendsView: View {
 
         var createdIDs: [String] = []
         for s in samples {
-            let f = Friendship(
+            let friendship = Friendship(
                 userId: currentUserId,
                 friendId: UUID().uuidString,
                 friendName: s.0,
                 friendEmail: s.1,
                 status: .accepted
             )
-            f.ownerUserId = currentUserId
-            modelContext.insert(f)
-            createdIDs.append(f.id.uuidString)
+            friendship.ownerUserId = currentUserId
+            modelContext.insert(friendship)
+            createdIDs.append(friendship.id.uuidString)
         }
         try? modelContext.save()
 
@@ -419,13 +359,13 @@ struct FriendsView: View {
         hasSeededNewFriends = true
         loadFriendships()
     }
-    
+
     private func loadFriendships() {
         let fetchDescriptor = FetchDescriptor<Friendship>()
         friendships = (try? modelContext.fetch(fetchDescriptor)) ?? []
         NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
     }
-    
+
     private func deleteFriend(offsets: IndexSet) {
         withAnimation {
             for index in offsets {
@@ -435,7 +375,7 @@ struct FriendsView: View {
             loadFriendships()
         }
     }
-    
+
     private func deletePendingRequest(offsets: IndexSet) {
         withAnimation {
             for index in offsets {
@@ -452,7 +392,7 @@ struct MyProfileRow: View {
     @ObservedObject var authManager: AuthManager
     @EnvironmentObject private var languageManager: LanguageManager
     @State private var showingProfileEdit = false
-    
+
     var body: some View {
         Button(action: {
             showingProfileEdit = true
@@ -469,20 +409,20 @@ struct MyProfileRow: View {
                         .font(.system(size: 60))
                         .foregroundColor(.appPrimary)
                 }
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(localizedDisplayName().capitalized)
                         .font(.title2)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
-                    
+
                     Text(localizedStatusMessage())
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
-                
+
                 Spacer()
-                
+
                 Circle()
                     .fill(.green)
                     .frame(width: 12, height: 12)
@@ -495,12 +435,12 @@ struct MyProfileRow: View {
                 .environmentObject(languageManager)
         }
     }
-    
+
     private func localizedDisplayName() -> String {
         let isKorean = languageManager.isKorean
         let raw = (authManager.currentUser?.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if raw.isEmpty {
-            return isKorean ? "사용자" : "User"
+            return NSLocalizedString("user", comment: "")
         }
         // Map known default test names between languages
         if raw == "테스터" || raw == "Tester" {
@@ -513,7 +453,7 @@ struct MyProfileRow: View {
         let isKorean = languageManager.isKorean
         let raw = (authManager.currentUser?.statusMessage ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if raw.isEmpty {
-            return isKorean ? "상태 메시지를 설정해보세요" : "Set your status message"
+            return NSLocalizedString("status_message", comment: "")
         }
         // Map known default test status messages between languages
         if raw == "테스트 모드로 체험 중입니다" || raw == "Experiencing in test mode" {
@@ -527,11 +467,11 @@ struct MyProfileRow: View {
 struct FriendRow: View {
     let friendship: Friendship
     let onDataChanged: () -> Void
-    var onOpened: (() -> Void)? = nil
+    var onOpened: (() -> Void)?
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var languageManager: LanguageManager
     @State private var showingProfileView = false
-    
+
     var body: some View {
         Button(action: {
             onOpened?()
@@ -541,20 +481,20 @@ struct FriendRow: View {
                 Image(systemName: "person.circle.fill")
                     .font(.system(size: 50))
                     .foregroundColor(.appPrimary)
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(friendship.friendName)
                         .font(.title3)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
-                    
-                    Text(Loc.text("online", isKorean: languageManager.isKorean))
+
+                    Text(L10n.text("online", languageManager.currentLanguage == .korean ? .korean : .english))
                         .font(.subheadline)
                         .foregroundColor(.green)
                 }
-                
+
                 Spacer()
-                
+
                 Circle()
                     .fill(.green)
                     .frame(width: 10, height: 10)
@@ -573,29 +513,29 @@ struct ReceivedRequestRow: View {
     let friendship: Friendship
     let modelContext: ModelContext
     let onDataChanged: () -> Void
-    var onAccepted: ((Friendship) -> Void)? = nil
+    var onAccepted: ((Friendship) -> Void)?
     @State private var isAccepting = false
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     var body: some View {
         HStack {
             Image(systemName: "person.circle.fill")
                 .font(.system(size: 40))
                 .foregroundColor(.orange)
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(friendship.friendName)
                     .font(.headline)
                     .foregroundColor(.primary)
-                
-                Text(Loc.text("friend_request", isKorean: languageManager.isKorean))
+
+                Text(NSLocalizedString("friend_request", comment: ""))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-            
+
             Spacer()
-            
-            Button(Loc.text("accept", isKorean: languageManager.isKorean)) {
+
+            Button(NSLocalizedString("accept", comment: "")) {
                 acceptFriendRequest()
             }
             .buttonStyle(.borderedProminent)
@@ -604,7 +544,7 @@ struct ReceivedRequestRow: View {
         }
         .padding(.vertical, 4)
     }
-    
+
     private func acceptFriendRequest() {
         isAccepting = true
         friendship.status = .accepted
@@ -619,26 +559,26 @@ struct ReceivedRequestRow: View {
 struct PendingRequestRow: View {
     let friendship: Friendship
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     var body: some View {
         HStack {
             Image(systemName: "person.circle.fill")
                 .font(.system(size: 40))
                 .foregroundColor(.gray)
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(friendship.friendName)
                     .font(.headline)
                     .foregroundColor(.primary)
-                
-                Text(Loc.text("request_pending", isKorean: languageManager.isKorean))
+
+                Text(NSLocalizedString("request_pending", comment: ""))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-            
+
             Spacer()
-            
-            Text(Loc.text("pending_short", isKorean: languageManager.isKorean))
+
+            Text(NSLocalizedString("pending_short", comment: ""))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -654,7 +594,7 @@ struct AddFriendView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     @State private var friendEmail = ""
     @State private var showingAlert = false
     @State private var alertMessage = ""
@@ -662,21 +602,21 @@ struct AddFriendView: View {
     @State private var isSearching = false
     @State private var lastActionWasSuccess = false
     @FocusState private var isTextFieldFocused: Bool
-    
+
     var body: some View {
         NavigationStack {
             Form {
                 Section {
                     HStack {
-                        TextField(Loc.text("friend_email_placeholder", isKorean: languageManager.isKorean), text: $friendEmail)
+                        TextField(NSLocalizedString("friend_email_placeholder", comment: ""), text: $friendEmail)
                             .textInputAutocapitalization(.never)
                             .keyboardType(.emailAddress)
                             .focused($isTextFieldFocused)
                             .onSubmit {
                                 searchForUsers()
                             }
-                        
-                        Button(Loc.text("search", isKorean: languageManager.isKorean)) {
+
+                        Button(NSLocalizedString("search", comment: "")) {
                             searchForUsers()
                         }
                         .buttonStyle(.borderedProminent)
@@ -684,22 +624,22 @@ struct AddFriendView: View {
                         .disabled(friendEmail.isEmpty || isSearching)
                     }
                 } header: {
-                    Text(Loc.text("add_by_email", isKorean: languageManager.isKorean))
+                    Text(NSLocalizedString("add_by_email", comment: ""))
                 } footer: {
-                    Text(Loc.text("add_by_email_footer", isKorean: languageManager.isKorean))
+                    Text(NSLocalizedString("add_by_email_footer", comment: ""))
                 }
-                
+
                 if isSearching {
-                    Section(Loc.text("searching", isKorean: languageManager.isKorean)) {
+                    Section(NSLocalizedString("searching", comment: "")) {
                         HStack {
                             ProgressView()
                                 .controlSize(.small)
-                            Text(Loc.text("searching_users", isKorean: languageManager.isKorean))
+                            Text(NSLocalizedString("searching_users", comment: ""))
                                 .foregroundColor(.secondary)
                         }
                     }
                 } else if !searchResults.isEmpty {
-                    Section(Loc.text("search_results", isKorean: languageManager.isKorean)) {
+                    Section(NSLocalizedString("search_results", comment: "")) {
                         ForEach(searchResults, id: \.id) { result in
                             UserSearchResultRow(
                                 result: result,
@@ -720,18 +660,18 @@ struct AddFriendView: View {
                     }
                 }
             }
-            .navigationTitle(Loc.text("add_friend", isKorean: languageManager.isKorean))
+            .navigationTitle(NSLocalizedString("add_friend", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(Loc.text("cancel", isKorean: languageManager.isKorean)) {
+                    Button(NSLocalizedString("cancel", comment: "")) {
                         dismiss()
                     }
                 }
             }
         }
-        .alert(Loc.text("alert", isKorean: languageManager.isKorean), isPresented: $showingAlert) {
-            Button(Loc.text("ok", isKorean: languageManager.isKorean)) {
+        .alert(NSLocalizedString("alert", comment: ""), isPresented: $showingAlert) {
+            Button(NSLocalizedString("ok", comment: "")) {
                 if lastActionWasSuccess {
                     dismiss()
                 }
@@ -746,20 +686,27 @@ struct AddFriendView: View {
             }
         }
     }
-    
+
     private func searchForUsers() {
-        guard !friendEmail.isEmpty else { 
-            print("이메일이 비어있음")
-            return 
+        let email = friendEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !email.isEmpty else {
+            alertMessage = NSLocalizedString("enter_email_message", comment: "")
+            showingAlert = true
+            return
         }
-        
-        print("사용자 검색 시작: \(friendEmail)")
+        guard isValidEmail(email) else {
+            alertMessage = NSLocalizedString("invalid_email_format", comment: "")
+            showingAlert = true
+            return
+        }
+
+        print("사용자 검색 시작: \(email)")
         isSearching = true
         searchResults = []
-        
+
         Task {
             do {
-                let results = try await FriendSearchService.searchUsers(by: friendEmail)
+                let results = try await FriendSearchService.searchUsers(by: email)
                 await MainActor.run {
                     print("검색 결과: \(results.count)개")
                     self.searchResults = results
@@ -768,7 +715,7 @@ struct AddFriendView: View {
             } catch {
                 await MainActor.run {
                     print("검색 오류: \(error.localizedDescription)")
-                    self.alertMessage = Loc.text("search_error_prefix", isKorean: languageManager.isKorean) + error.localizedDescription
+                    self.alertMessage = NSLocalizedString("search_error_prefix", comment: "") + error.localizedDescription
                     self.showingAlert = true
                     self.isSearching = false
                 }
@@ -785,28 +732,28 @@ struct UserSearchResultRow: View {
     let notificationManager: NotificationManager
     let modelContext: ModelContext
     let onComplete: (Bool, String) -> Void
-    
+
     @State private var isSendingRequest = false
-    
+
     var body: some View {
         HStack {
             Image(systemName: "person.circle.fill")
                 .font(.system(size: 40))
                 .foregroundColor(.appPrimary)
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(result.displayName)
                     .font(.headline)
                     .foregroundColor(.primary)
-                
+
                 Text(result.email)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-            
+
             Spacer()
-            
-            Button(Loc.text("add_friend", isKorean: languageManager.isKorean)) {
+
+            Button(NSLocalizedString("add_friend", comment: "")) {
                 sendFriendRequest()
             }
             .buttonStyle(.borderedProminent)
@@ -815,17 +762,17 @@ struct UserSearchResultRow: View {
         }
         .padding(.vertical, 4)
     }
-    
+
     private func sendFriendRequest() {
         isSendingRequest = true
-        
+
         Task {
             do {
                 let success = try await FriendSearchService.sendFriendRequest(
                     from: authManager.currentUser?.id.uuidString ?? "",
                     to: result.id
                 )
-                
+
                 await MainActor.run {
                     if success {
                         // Create outgoing (sender) friendship record
@@ -839,36 +786,36 @@ struct UserSearchResultRow: View {
                             )
                             outgoing.ownerUserId = senderId
                             modelContext.insert(outgoing)
-                            
+
                             // Create incoming (receiver) mirror record for backend readiness
                             let mirror = Friendship(
                                 userId: result.id,
                                 friendId: senderId,
-                                friendName: authManager.currentUser?.displayName ?? Loc.text("user", isKorean: languageManager.isKorean),
+                                friendName: authManager.currentUser?.displayName ?? NSLocalizedString("user", comment: ""),
                                 friendEmail: authManager.currentUser?.email ?? "",
                                 status: .pending
                             )
                             mirror.ownerUserId = result.id
                             modelContext.insert(mirror)
-                            
+
                             try? modelContext.save()
-                            
+
                             NotificationCenter.default.post(name: .friendshipPendingCreated, object: nil, userInfo: ["friendId": result.id])
-                            
+
                             // Schedule a local notification to simulate receiver-side alert
-                            let senderName = authManager.currentUser?.displayName ?? Loc.text("user", isKorean: languageManager.isKorean)
+                            let senderName = authManager.currentUser?.displayName ?? NSLocalizedString("user", comment: "")
                             let senderEmail = authManager.currentUser?.email ?? ""
                             notificationManager.scheduleFriendRequestNotification(from: senderName, email: senderEmail)
                         }
-                        onComplete(true, Loc.text("friend_request_sent", isKorean: languageManager.isKorean))
+                        onComplete(true, NSLocalizedString("friend_request_sent", comment: ""))
                     } else {
-                        onComplete(false, Loc.text("friend_request_failed", isKorean: languageManager.isKorean))
+                        onComplete(false, NSLocalizedString("friend_request_failed", comment: ""))
                     }
                     isSendingRequest = false
                 }
             } catch {
                 await MainActor.run {
-                    onComplete(false, Loc.text("error_occurred_prefix", isKorean: languageManager.isKorean) + error.localizedDescription)
+                    onComplete(false, NSLocalizedString("error_occurred_prefix", comment: "") + error.localizedDescription)
                     isSendingRequest = false
                 }
             }
@@ -882,15 +829,15 @@ struct BlockedFriendsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     var body: some View {
         NavigationStack {
             List {
                 if blockedFriends.isEmpty {
                     ContentUnavailableView(
-                        Loc.text("no_blocked_friends", isKorean: languageManager.isKorean),
+                        NSLocalizedString("no_blocked_friends", comment: ""),
                         systemImage: "person.slash",
-                        description: Text(Loc.text("no_blocked_friends", isKorean: languageManager.isKorean))
+                        description: Text(NSLocalizedString("no_blocked_friends", comment: ""))
                     )
                 } else {
                     ForEach(blockedFriends, id: \.id) { friendship in
@@ -898,11 +845,11 @@ struct BlockedFriendsView: View {
                     }
                 }
             }
-            .navigationTitle(Loc.text("blocked_list", isKorean: languageManager.isKorean))
+            .navigationTitle(NSLocalizedString("blocked_list", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(Loc.text("close", isKorean: languageManager.isKorean)) {
+                    Button(NSLocalizedString("close", comment: "")) {
                         dismiss()
                     }
                 }
@@ -917,42 +864,42 @@ struct BlockedFriendRow: View {
     let modelContext: ModelContext
     @State private var showingUnblockAlert = false
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     var body: some View {
         HStack {
             Image(systemName: "person.circle.fill")
                 .font(.system(size: 40))
                 .foregroundColor(.red)
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(friendship.friendName)
                     .font(.headline)
                     .foregroundColor(.primary)
-                
-                Text(Loc.text("blocked", isKorean: languageManager.isKorean))
+
+                Text(NSLocalizedString("blocked", comment: ""))
                     .font(.caption)
                     .foregroundColor(.red)
             }
-            
+
             Spacer()
-            
-            Button(Loc.text("unblock", isKorean: languageManager.isKorean)) {
+
+            Button(NSLocalizedString("unblock", comment: "")) {
                 showingUnblockAlert = true
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
         }
         .padding(.vertical, 4)
-        .alert(Loc.text("unblock_friend", isKorean: languageManager.isKorean), isPresented: $showingUnblockAlert) {
-            Button(Loc.text("cancel", isKorean: languageManager.isKorean), role: .cancel) { }
-            Button(Loc.text("unblock", isKorean: languageManager.isKorean), role: .destructive) {
+        .alert(NSLocalizedString("unblock_friend", comment: ""), isPresented: $showingUnblockAlert) {
+            Button(NSLocalizedString("cancel", comment: ""), role: .cancel) { }
+            Button(NSLocalizedString("unblock", comment: ""), role: .destructive) {
                 unblockFriend()
             }
         } message: {
-            Text(Loc.text("unblock_message", isKorean: languageManager.isKorean, searchTerm: friendship.friendName))
+            Text(String(format: NSLocalizedString("unblock_message", comment: ""), friendship.friendName))
         }
     }
-    
+
     private func unblockFriend() {
         friendship.status = .accepted
         try? modelContext.save()
@@ -970,12 +917,12 @@ struct ManageFriendsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section(header: Text(Loc.text("hidden_list", isKorean: languageManager.isKorean))) {
+                Section(header: Text(NSLocalizedString("hidden_list", comment: ""))) {
                     if hiddenFriends.isEmpty {
                         ContentUnavailableView(
-                            Loc.text("no_hidden_friends", isKorean: languageManager.isKorean),
+                            NSLocalizedString("no_hidden_friends", comment: ""),
                             systemImage: "eye.slash",
-                            description: Text(Loc.text("no_hidden_friends", isKorean: languageManager.isKorean))
+                            description: Text(NSLocalizedString("no_hidden_friends", comment: ""))
                         )
                     } else {
                         ForEach(hiddenFriends, id: \.id) { friendship in
@@ -983,13 +930,13 @@ struct ManageFriendsView: View {
                         }
                     }
                 }
-                
-                Section(header: Text(Loc.text("blocked_list", isKorean: languageManager.isKorean))) {
+
+                Section(header: Text(NSLocalizedString("blocked_list", comment: ""))) {
                     if blockedFriends.isEmpty {
                         ContentUnavailableView(
-                            Loc.text("no_blocked_friends", isKorean: languageManager.isKorean),
+                            NSLocalizedString("no_blocked_friends", comment: ""),
                             systemImage: "hand.raised.slash",
-                            description: Text(Loc.text("no_blocked_friends", isKorean: languageManager.isKorean))
+                            description: Text(NSLocalizedString("no_blocked_friends", comment: ""))
                         )
                     } else {
                         ForEach(blockedFriends, id: \.id) { friendship in
@@ -998,11 +945,11 @@ struct ManageFriendsView: View {
                     }
                 }
             }
-            .navigationTitle(Loc.text("manage_hidden_blocked", isKorean: languageManager.isKorean))
+            .navigationTitle(NSLocalizedString("manage_hidden_blocked", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(Loc.text("close", isKorean: languageManager.isKorean)) {
+                    Button(NSLocalizedString("close", comment: "")) {
                         dismiss()
                     }
                 }
@@ -1017,46 +964,52 @@ struct HiddenFriendRow: View {
     let modelContext: ModelContext
     @State private var showingUnhideAlert = false
     @EnvironmentObject private var languageManager: LanguageManager
-    
+
     var body: some View {
         HStack {
             Image(systemName: "person.circle.fill")
                 .font(.system(size: 40))
                 .foregroundColor(.gray)
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(friendship.friendName)
                     .font(.headline)
                     .foregroundColor(.primary)
-                
-                Text(Loc.text("hidden", isKorean: languageManager.isKorean))
+
+                Text(NSLocalizedString("hidden", comment: ""))
                     .font(.caption)
                     .foregroundColor(.gray)
             }
-            
+
             Spacer()
-            
-            Button(Loc.text("unhide", isKorean: languageManager.isKorean)) {
+
+            Button(NSLocalizedString("unhide", comment: "")) {
                 showingUnhideAlert = true
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
         }
         .padding(.vertical, 4)
-        .alert(Loc.text("unhide_friend", isKorean: languageManager.isKorean), isPresented: $showingUnhideAlert) {
-            Button(Loc.text("cancel", isKorean: languageManager.isKorean), role: .cancel) { }
-            Button(Loc.text("unhide", isKorean: languageManager.isKorean), role: .destructive) {
+        .alert(NSLocalizedString("unhide_friend", comment: ""), isPresented: $showingUnhideAlert) {
+            Button(NSLocalizedString("cancel", comment: ""), role: .cancel) { }
+            Button(NSLocalizedString("unhide", comment: ""), role: .destructive) {
                 unhideFriend()
             }
         } message: {
-            Text(Loc.text("unhide_message", isKorean: languageManager.isKorean, searchTerm: friendship.friendName))
+            Text(String(format: NSLocalizedString("unhide_message", comment: ""), friendship.friendName))
         }
     }
-    
+
     private func unhideFriend() {
         friendship.status = .accepted
         try? modelContext.save()
     }
+}
+
+// email validation helper
+private func isValidEmail(_ email: String) -> Bool {
+    let pattern = "^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+    return email.range(of: pattern, options: .regularExpression) != nil
 }
 
 // 간소화된 친구 검색 서비스
@@ -1064,19 +1017,24 @@ class FriendSearchService {
     static func searchUsers(by email: String) async throws -> [UserSearchResult] {
         // 성능 개선: 대기 시간을 0.3초로 단축
         try await Task.sleep(nanoseconds: 300_000_000) // 0.3초 대기
-        
-        print("FriendSearchService: \(email) 검색 중...")
-        
+
+        let trimmed = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isValidEmail(trimmed) else {
+            return []
+        }
+
+        print("FriendSearchService: \(trimmed) 검색 중...")
+
         let mockResults = [
             UserSearchResult(
                 id: UUID().uuidString,
-                username: email.components(separatedBy: "@").first ?? "user",
-                displayName: email.components(separatedBy: "@").first?.capitalized ?? "User",
-                email: email
+                username: trimmed.components(separatedBy: "@").first ?? "user",
+                displayName: trimmed.components(separatedBy: "@").first?.capitalized ?? "User",
+                email: trimmed
             )
         ]
-        
-        if email.contains("@") && email.contains(".") {
+
+        if trimmed.contains("@") && trimmed.contains(".") {
             print("FriendSearchService: 검색 결과 반환")
             return mockResults
         } else {
@@ -1084,7 +1042,7 @@ class FriendSearchService {
             return []
         }
     }
-    
+
     static func sendFriendRequest(from senderId: String, to receiverId: String) async throws -> Bool {
         print("FriendSearchService: 친구 요청 전송 중...")
         try await Task.sleep(nanoseconds: 200_000_000) // 0.2초 대기

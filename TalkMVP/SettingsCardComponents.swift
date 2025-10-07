@@ -4,12 +4,12 @@ import UIKit
 struct SettingsSectionCard<Content: View>: View {
     let title: String
     let content: Content
-    
+
     init(title: String, @ViewBuilder content: () -> Content) {
         self.title = title
         self.content = content()
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if !title.isEmpty {
@@ -41,13 +41,13 @@ struct SettingsLinkRow: View {
     let systemImage: String
     let tint: Color
     let title: String
-    
+
     init(systemImage: String, tint: Color, title: String) {
         self.systemImage = systemImage
         self.tint = tint
         self.title = title
     }
-    
+
     var body: some View {
         HStack(spacing: 16) {
             ZStack {
@@ -75,14 +75,14 @@ struct SettingsToggleRow: View {
     let tint: Color
     let title: String
     @Binding var isOn: Bool
-    
+
     init(systemImage: String, tint: Color, title: String, isOn: Binding<Bool>) {
         self.systemImage = systemImage
         self.tint = tint
         self.title = title
         self._isOn = isOn
     }
-    
+
     var body: some View {
         HStack(spacing: 16) {
             ZStack {
@@ -108,14 +108,14 @@ struct ProfileCardView: View {
     let subtitle: String
     let imageData: Data?
     let action: () -> Void
-    
+
     init(title: String, subtitle: String, imageData: Data? = nil, action: @escaping () -> Void) {
         self.title = title
         self.subtitle = subtitle
         self.imageData = imageData
         self.action = action
     }
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 16) {
