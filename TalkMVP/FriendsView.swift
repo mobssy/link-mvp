@@ -18,6 +18,12 @@ struct FriendsView: View {
     @StateObject private var notificationManager = NotificationManager()
     @AppStorage("themeMode") private var themeMode: String = "system"
     
+    @AppStorage("newFriendIDs") private var newFriendIDsStorage: String = "" // comma-separated UUID strings
+    private var newFriendIDs: Set<String> {
+        get { Set(newFriendIDsStorage.split(separator: ",").map { String($0) }) }
+        set { newFriendIDsStorage = newValue.joined(separator: ",") }
+    }
+    
     enum ActiveSheet: Identifiable {
         case addFriend, blockedList, settings, manageHiddenBlocked
         var id: Int {
@@ -33,6 +39,12 @@ struct FriendsView: View {
     @State private var activeSheet: ActiveSheet?
     @State private var searchText = ""
     @State private var friendships: [Friendship] = []
+    @State private var showNewFriendsSection: Bool = true
+    
+    private var newFriends: [Friendship] {
+        acceptedFriends.filter { newFriendIDs.contains($0.id.uuidString) }
+    }
+    private var newFriendsCount: Int { newFriends.count }
     
     init(authManager: AuthManager) {
         self._authManager = StateObject(wrappedValue: authManager)
@@ -104,14 +116,29 @@ struct FriendsView: View {
                     MyProfileRow(authManager: authManager)
                 }
                 
+                if showNewFriendsSection && newFriendsCount > 0 {
+                    Section(header: Text(localizedText("new_friends", count: newFriendsCount))) {
+                        ForEach(newFriends, id: \.id) { friendship in
+                            FriendRow(friendship: friendship, onDataChanged: loadFriendships, onOpened: { markFriendAsSeen(friendship) })
+                        }
+                    }
+                    .headerProminence(.increased)
+                }
+                
                 // 받은 친구 요청
                 if !receivedRequests.isEmpty {
                     Section(localizedText("received_requests", count: receivedRequests.count)) {
                         ForEach(receivedRequests, id: \.id) { friendship in
                             ReceivedRequestRow(
-                                friendship: friendship, 
+                                friendship: friendship,
                                 modelContext: modelContext,
-                                onDataChanged: loadFriendships
+                                onDataChanged: loadFriendships,
+                                onAccepted: { accepted in
+                                    var ids = Set(newFriendIDsStorage.split(separator: ",").map { String($0) })
+                                    ids.insert(accepted.id.uuidString)
+                                    newFriendIDsStorage = ids.joined(separator: ",")
+                                    NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
+                                }
                             )
                         }
                     }
@@ -215,6 +242,14 @@ struct FriendsView: View {
                     .accessibilityLabel(localizedText("add_friend"))
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showNewFriendsSection.toggle()
+                    } label: {
+                        Image(systemName: showNewFriendsSection ? "bell.fill" : "bell")
+                    }
+                    .accessibilityLabel(showNewFriendsSection ? "Hide new friends" : "Show new friends")
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button {
                             activeSheet = .manageHiddenBlocked
@@ -230,15 +265,29 @@ struct FriendsView: View {
                         Image(systemName: "gearshape")
                     }
                 }
+                #if DEBUG
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        markFirstTwoAcceptedAsNewForDebug()
+                    } label: {
+                        Image(systemName: "bell.badge")
+                    }
+                    .accessibilityLabel("Mark two new friends (debug)")
+                }
+                #endif
             }
         }
+        .badge(newFriendsCount)
         .sheet(item: $activeSheet, onDismiss: { activeSheet = nil }) { sheet in
             switch sheet {
             case .addFriend:
                 AddFriendView(
                     authManager: authManager,
                     notificationManager: notificationManager,
-                    onFriendAdded: loadFriendships
+                    onFriendAdded: {
+                        loadFriendships()
+                        markLatestPendingAsNew()
+                    }
                 )
             case .blockedList:
                 BlockedFriendsView(blockedFriends: blockedFriends)
@@ -253,7 +302,62 @@ struct FriendsView: View {
         }
         .onAppear {
             loadFriendships()
+            seedFirstTwoAcceptedAsNewIfNeeded()
+            NotificationCenter.default.addObserver(forName: .friendshipPendingCreated, object: nil, queue: .main) { _ in
+                // No immediate badge; badge will appear once accepted and fetched again.
+            }
+            NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
         }
+        .onDisappear {
+            NotificationCenter.default.removeObserver(self, name: .friendshipPendingCreated, object: nil)
+        }
+        .onChange(of: newFriendsCount) { _, newValue in
+            NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newValue])
+        }
+    }
+    
+    private func markFriendAsSeen(_ friendship: Friendship) {
+        var ids = Set(newFriendIDsStorage.split(separator: ",").map { String($0) })
+        if ids.remove(friendship.id.uuidString) != nil {
+            newFriendIDsStorage = ids.joined(separator: ",")
+            NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
+        }
+    }
+
+    private func markLatestPendingAsNew() {
+        // After sending a request, when it becomes accepted, we will mark it. For now, mark the most recent accepted friend not yet tracked.
+        // Find any accepted friendship not present in newFriendIDs and add it.
+        if let newest = acceptedFriends.first(where: { !newFriendIDs.contains($0.id.uuidString) }) {
+            var ids = Set(newFriendIDsStorage.split(separator: ",").map { String($0) })
+            ids.insert(newest.id.uuidString)
+            newFriendIDsStorage = ids.joined(separator: ",")
+            NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
+        }
+    }
+    
+    private func seedFirstTwoAcceptedAsNewIfNeeded() {
+        let currentIDs = Set(newFriendIDsStorage.split(separator: ",").map { String($0) })
+        guard currentIDs.isEmpty else { return }
+        let firstTwo = Array(acceptedFriends.prefix(2))
+        guard !firstTwo.isEmpty else { return }
+        // Rename display names as requested
+        if firstTwo.indices.contains(0) {
+            firstTwo[0].friendName = "강호동"
+        }
+        if firstTwo.indices.contains(1) {
+            firstTwo[1].friendName = "원빈"
+        }
+        try? modelContext.save()
+        let ids = firstTwo.map { $0.id.uuidString }
+        newFriendIDsStorage = ids.joined(separator: ",")
+        NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
+    }
+
+    private func markFirstTwoAcceptedAsNewForDebug() {
+        let ids = acceptedFriends.prefix(2).map { $0.id.uuidString }
+        guard !ids.isEmpty else { return }
+        newFriendIDsStorage = ids.joined(separator: ",")
+        NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
     }
     
     private func localizedText(_ key: String, count: Int = 0, searchTerm: String = "") -> String {
@@ -307,6 +411,8 @@ struct FriendsView: View {
         case "unhide_message": text = isKorean ? "\(searchTerm)님의 숨김을 해제하시겠습니까?" : "Unhide \(searchTerm)?"
         case "block": text = isKorean ? "차단" : "Block"
         case "settings": text = isKorean ? "설정" : "Settings"
+        case "close": text = isKorean ? "닫기" : "Close"
+        case "new_friends": text = isKorean ? "새로운 친구 \(count)" : "New Friends \(count)"
         default: text = key
         }
         
@@ -316,6 +422,7 @@ struct FriendsView: View {
     private func loadFriendships() {
         let fetchDescriptor = FetchDescriptor<Friendship>()
         friendships = (try? modelContext.fetch(fetchDescriptor)) ?? []
+        NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
     }
     
     private func deleteFriend(offsets: IndexSet) {
@@ -456,12 +563,14 @@ struct MyProfileRow: View {
 struct FriendRow: View {
     let friendship: Friendship
     let onDataChanged: () -> Void
+    var onOpened: (() -> Void)? = nil
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var languageManager: LanguageManager
     @State private var showingProfileView = false
     
     var body: some View {
         Button(action: {
+            onOpened?()
             showingProfileView = true
         }) {
             HStack(spacing: 16) {
@@ -540,6 +649,7 @@ struct ReceivedRequestRow: View {
     let friendship: Friendship
     let modelContext: ModelContext
     let onDataChanged: () -> Void
+    var onAccepted: ((Friendship) -> Void)? = nil
     @State private var isAccepting = false
     @EnvironmentObject private var languageManager: LanguageManager
     
@@ -576,6 +686,7 @@ struct ReceivedRequestRow: View {
         friendship.status = .accepted
         try? modelContext.save()
         onDataChanged()
+        onAccepted?(friendship)
         isAccepting = false
     }
     
@@ -929,6 +1040,8 @@ struct UserSearchResultRow: View {
                             
                             try? modelContext.save()
                             
+                            NotificationCenter.default.post(name: .friendshipPendingCreated, object: nil, userInfo: ["friendId": result.id])
+                            
                             // Schedule a local notification to simulate receiver-side alert
                             let senderName = authManager.currentUser?.displayName ?? localizedText("user")
                             let senderEmail = authManager.currentUser?.email ?? ""
@@ -1264,7 +1377,7 @@ struct HiddenFriendRow: View {
         case "hidden": return isKorean ? "숨김" : "Hidden"
         case "unhide": return isKorean ? "숨김 해제" : "Unhide"
         case "unhide_friend": return isKorean ? "숨김 해제" : "Unhide Friend"
-        case "unhide_message": return isKorean ? "\(friendship.friendName)님의 숨김을 해제하시겠습니까?" : "Unhide \(friendship.friendName)?"
+        case "unhide_message": return isKorean ? "%@님의 숨김을 해제하시겠습니까?" : "Unhide %@?"
         case "cancel": return isKorean ? "취소" : "Cancel"
         default: return key
         }
@@ -1311,5 +1424,10 @@ struct UserSearchResult: Identifiable {
     let username: String
     let displayName: String
     let email: String
+}
+
+extension Notification.Name {
+    static let friendshipPendingCreated = Notification.Name("friendshipPendingCreated")
+    static let friendsBadgeUpdated = Notification.Name("friendsBadgeUpdated")
 }
 
