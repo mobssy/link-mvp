@@ -528,14 +528,14 @@ struct ReceivedRequestRow: View {
                     .font(.headline)
                     .foregroundColor(.primary)
 
-                Text(NSLocalizedString("friend_request", comment: ""))
+                Text(L10n.text("friend_request", languageManager.currentLanguage == .korean ? .korean : .english))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
 
             Spacer()
 
-            Button(NSLocalizedString("accept", comment: "")) {
+            Button(L10n.text("accept", languageManager.currentLanguage == .korean ? .korean : .english)) {
                 acceptFriendRequest()
             }
             .buttonStyle(.borderedProminent)
@@ -571,14 +571,14 @@ struct PendingRequestRow: View {
                     .font(.headline)
                     .foregroundColor(.primary)
 
-                Text(NSLocalizedString("request_pending", comment: ""))
+                Text(L10n.text("request_pending", languageManager.currentLanguage == .korean ? .korean : .english))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
 
             Spacer()
 
-            Text(NSLocalizedString("pending_short", comment: ""))
+            Text(L10n.text("pending_short", languageManager.currentLanguage == .korean ? .korean : .english))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -608,7 +608,7 @@ struct AddFriendView: View {
             Form {
                 Section {
                     HStack {
-                        TextField(NSLocalizedString("friend_email_placeholder", comment: ""), text: $friendEmail)
+                        TextField(L10n.text("friend_email_placeholder", languageManager.currentLanguage == .korean ? .korean : .english), text: $friendEmail)
                             .textInputAutocapitalization(.never)
                             .keyboardType(.emailAddress)
                             .focused($isTextFieldFocused)
@@ -616,7 +616,7 @@ struct AddFriendView: View {
                                 searchForUsers()
                             }
 
-                        Button(NSLocalizedString("search", comment: "")) {
+                        Button(L10n.text("search", languageManager.currentLanguage == .korean ? .korean : .english)) {
                             searchForUsers()
                         }
                         .buttonStyle(.borderedProminent)
@@ -624,22 +624,22 @@ struct AddFriendView: View {
                         .disabled(friendEmail.isEmpty || isSearching)
                     }
                 } header: {
-                    Text(NSLocalizedString("add_by_email", comment: ""))
+                    Text(L10n.text("add_by_email", languageManager.currentLanguage == .korean ? .korean : .english))
                 } footer: {
-                    Text(NSLocalizedString("add_by_email_footer", comment: ""))
+                    Text(L10n.text("add_by_email_footer", languageManager.currentLanguage == .korean ? .korean : .english))
                 }
 
                 if isSearching {
-                    Section(NSLocalizedString("searching", comment: "")) {
+                    Section(L10n.text("searching", languageManager.currentLanguage == .korean ? .korean : .english)) {
                         HStack {
                             ProgressView()
                                 .controlSize(.small)
-                            Text(NSLocalizedString("searching_users", comment: ""))
+                            Text(L10n.text("searching_users", languageManager.currentLanguage == .korean ? .korean : .english))
                                 .foregroundColor(.secondary)
                         }
                     }
                 } else if !searchResults.isEmpty {
-                    Section(NSLocalizedString("search_results", comment: "")) {
+                    Section(L10n.text("search_results", languageManager.currentLanguage == .korean ? .korean : .english)) {
                         ForEach(searchResults, id: \.id) { result in
                             UserSearchResultRow(
                                 result: result,
@@ -660,18 +660,18 @@ struct AddFriendView: View {
                     }
                 }
             }
-            .navigationTitle(NSLocalizedString("add_friend", comment: ""))
+            .navigationTitle(L10n.text("add_friend", languageManager.currentLanguage == .korean ? .korean : .english))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(NSLocalizedString("cancel", comment: "")) {
+                    Button(L10n.text("cancel", languageManager.currentLanguage == .korean ? .korean : .english)) {
                         dismiss()
                     }
                 }
             }
         }
-        .alert(NSLocalizedString("alert", comment: ""), isPresented: $showingAlert) {
-            Button(NSLocalizedString("ok", comment: "")) {
+        .alert(L10n.text("alert", languageManager.currentLanguage == .korean ? .korean : .english), isPresented: $showingAlert) {
+            Button(L10n.text("ok", languageManager.currentLanguage == .korean ? .korean : .english)) {
                 if lastActionWasSuccess {
                     dismiss()
                 }
@@ -753,7 +753,7 @@ struct UserSearchResultRow: View {
 
             Spacer()
 
-            Button(NSLocalizedString("add_friend", comment: "")) {
+            Button(L10n.text("add_friend", languageManager.currentLanguage == .korean ? .korean : .english)) {
                 sendFriendRequest()
             }
             .buttonStyle(.borderedProminent)
@@ -791,7 +791,7 @@ struct UserSearchResultRow: View {
                             let mirror = Friendship(
                                 userId: result.id,
                                 friendId: senderId,
-                                friendName: authManager.currentUser?.displayName ?? NSLocalizedString("user", comment: ""),
+                                friendName: authManager.currentUser?.displayName ?? L10n.text("user", languageManager.currentLanguage == .korean ? .korean : .english),
                                 friendEmail: authManager.currentUser?.email ?? "",
                                 status: .pending
                             )
@@ -803,19 +803,19 @@ struct UserSearchResultRow: View {
                             NotificationCenter.default.post(name: .friendshipPendingCreated, object: nil, userInfo: ["friendId": result.id])
 
                             // Schedule a local notification to simulate receiver-side alert
-                            let senderName = authManager.currentUser?.displayName ?? NSLocalizedString("user", comment: "")
+                            let senderName = authManager.currentUser?.displayName ?? L10n.text("user", languageManager.currentLanguage == .korean ? .korean : .english)
                             let senderEmail = authManager.currentUser?.email ?? ""
                             notificationManager.scheduleFriendRequestNotification(from: senderName, email: senderEmail)
                         }
-                        onComplete(true, NSLocalizedString("friend_request_sent", comment: ""))
+                        onComplete(true, L10n.text("friend_request_sent", languageManager.currentLanguage == .korean ? .korean : .english))
                     } else {
-                        onComplete(false, NSLocalizedString("friend_request_failed", comment: ""))
+                        onComplete(false, L10n.text("friend_request_failed", languageManager.currentLanguage == .korean ? .korean : .english))
                     }
                     isSendingRequest = false
                 }
             } catch {
                 await MainActor.run {
-                    onComplete(false, NSLocalizedString("error_occurred_prefix", comment: "") + error.localizedDescription)
+                    onComplete(false, L10n.text("error_occurred_prefix", languageManager.currentLanguage == .korean ? .korean : .english) + error.localizedDescription)
                     isSendingRequest = false
                 }
             }

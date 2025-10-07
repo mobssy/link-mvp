@@ -26,6 +26,10 @@ class ChatRoom {
     var profileImage: String
     @Relationship(deleteRule: .cascade) var messages: [Message] = [Message]()
 
+    // MARK: - 상대방 정보 (1:1 채팅용)
+    var otherUserId: String?  // 상대방 User ID
+    var otherUserEmail: String?  // 상대방 이메일
+
     // MARK: - 조직방 확장 속성들
     var isOrganizationRoom: Bool = false
 

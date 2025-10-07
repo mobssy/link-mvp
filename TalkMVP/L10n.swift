@@ -69,6 +69,9 @@ enum L10n {
         case "unhide": return isKorean ? "숨김 해제" : "Unhide"
         case "unhide_friend": return isKorean ? "친구 숨김 해제" : "Unhide Friend"
         case "unhide_message": return isKorean ? "%@님의 숨김을 해제하시겠습니까?" : "Unhide %@?"
+        case "add_friend_title": return isKorean ? "친구 추가" : "Add Friend"
+        case "add_friend_message": return isKorean ? "%@님을 친구로 추가하시겠습니까?" : "Add %@ as a friend?"
+        case "add": return isKorean ? "추가" : "Add"
         default:
             // Fallback: return key as-is with warning
             print("⚠️ L10n: Missing translation for key '\(key)'")

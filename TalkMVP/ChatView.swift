@@ -63,6 +63,11 @@ struct ChatView: View {
     @State private var showingFriendProfile = false
     @State private var profileFriendship: Friendship?
 
+    // 친구 추가 관련
+    @State private var isFriend = false
+    @State private var showingAddFriendAlert = false
+    @State private var addFriendEmail = ""
+
     // 긴급 메시지 토글 상태
     @State private var isEmergencyMessage = false
 
@@ -227,6 +232,17 @@ struct ChatView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 HStack(spacing: 12) {
+                    // 친구가 아닌 경우 친구 추가 버튼 표시
+                    if !isFriend && chatRoom.otherUserId != nil {
+                        Button {
+                            showingAddFriendAlert = true
+                        } label: {
+                            Image(systemName: "person.badge.plus")
+                                .foregroundColor(.appPrimary)
+                        }
+                        .accessibilityLabel(localizedText("add_friend"))
+                    }
+
                     Button {
                         openPhotosAttachment()
                     } label: {
@@ -246,6 +262,7 @@ struct ChatView: View {
         .background(Color(UIColor.systemGroupedBackground))
         .onAppear {
             setupViewModelIfNeeded()
+            checkIfFriend()
             if let saved = UserDefaults.standard.array(forKey: "ignoredDomains") as? [String] {
                 ignoredDomains = Set(saved)
             }
@@ -316,6 +333,14 @@ struct ChatView: View {
                 }
             } message: {
                 Text(localizedText("photo_permission_message"))
+            }
+            .alert(localizedText("add_friend_title"), isPresented: $showingAddFriendAlert) {
+                Button(localizedText("cancel"), role: .cancel) {}
+                Button(localizedText("add")) {
+                    addFriendToChatRoom()
+                }
+            } message: {
+                Text(String(format: localizedText("add_friend_message"), chatRoom.name))
             }
             .accessibilityElement(children: .contain)
             .accessibilityLabel(localizedText("chat_screen"))
@@ -631,6 +656,69 @@ struct ChatView: View {
             Task {
                 await viewModel?.loadMessages()
             }
+        }
+    }
+
+    // MARK: - Friend Management
+
+    private func checkIfFriend() {
+        guard let otherUserId = chatRoom.otherUserId else {
+            isFriend = true // 조직방이거나 상대방 정보 없으면 친구 추가 버튼 안 보임
+            return
+        }
+
+        let descriptor = FetchDescriptor<Friendship>(
+            predicate: #Predicate { friendship in
+                friendship.friendId == otherUserId && friendship.status.rawValue == "accepted"
+            }
+        )
+
+        do {
+            let friendships = try modelContext.fetch(descriptor)
+            isFriend = !friendships.isEmpty
+        } catch {
+            print("❌ [ChatView] Failed to check friendship: \(error)")
+            isFriend = false
+        }
+    }
+
+    private func addFriendToChatRoom() {
+        guard let otherUserId = chatRoom.otherUserId,
+              let otherUserEmail = chatRoom.otherUserEmail,
+              let currentUserId = getCurrentUserId() else {
+            print("❌ [ChatView] Missing user information for friend request")
+            return
+        }
+
+        let friendship = Friendship(
+            userId: currentUserId,
+            friendId: otherUserId,
+            friendName: chatRoom.name,
+            friendEmail: otherUserEmail,
+            status: .pending
+        )
+
+        modelContext.insert(friendship)
+
+        do {
+            try modelContext.save()
+            print("✅ [ChatView] Friend request sent to \(chatRoom.name)")
+            // 친구 추가 후 상태 업데이트
+            isFriend = true
+        } catch {
+            print("❌ [ChatView] Failed to send friend request: \(error)")
+        }
+    }
+
+    private func getCurrentUserId() -> String? {
+        let descriptor = FetchDescriptor<User>(
+            predicate: #Predicate { $0.isCurrentUser == true }
+        )
+        do {
+            return try modelContext.fetch(descriptor).first?.id.uuidString
+        } catch {
+            print("❌ [ChatView] Failed to get current user: \(error)")
+            return nil
         }
     }
 
@@ -1824,6 +1912,10 @@ struct MiniProfileSheet: View {
         case "working_hours": return isKorean ? "근무 시간" : "Working Hours"
         case "working_hours_footer": return isKorean ? "간단히 요일과 시작/종료 시간을 설정하세요" : "Quickly set weekdays and start/end times"
         case "profile_info_unavailable": return isKorean ? "프로필 정보를 불러올 수 없습니다" : "Profile information is unavailable"
+        case "add_friend_title": return isKorean ? "친구 추가" : "Add Friend"
+        case "add_friend_message": return isKorean ? "%@님을 친구로 추가하시겠습니까?" : "Add %@ as a friend?"
+        case "attach": return isKorean ? "첨부" : "Attach"
+        case "view_profile": return isKorean ? "프로필 보기" : "View Profile"
         default: return key
         }
     }
