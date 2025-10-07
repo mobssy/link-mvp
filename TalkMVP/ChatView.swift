@@ -558,8 +558,9 @@ struct ChatView: View {
     }
 
     private func shouldShowTranslation(for text: String) -> Bool {
-        // Always show if user explicitly enabled translation
-        if translationEnabled { return true }
+        // Only show translation if user explicitly enabled it
+        guard translationEnabled else { return false }
+
         // Compare detected source language with target
         let source = detectLanguageCode(for: text) ?? ""
         let target = effectiveTargetLanguage(for: text).lowercased()
@@ -627,7 +628,9 @@ struct ChatView: View {
             vm.checkOnlineStatus()
         } else {
             // Ensure messages are up to date if returning to this view.
-            viewModel?.loadMessages()
+            Task {
+                await viewModel?.loadMessages()
+            }
         }
     }
 

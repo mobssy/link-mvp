@@ -29,20 +29,43 @@ class ChatViewModel: ObservableObject {
     private var translationAutoDetect: Bool { UserDefaults.standard.bool(forKey: "translationAutoDetect") }
     private var translationTargetLanguage: String { UserDefaults.standard.string(forKey: "translationTargetLanguage") ?? "auto" }
 
-    private var modelContext: ModelContext
+    // Dependencies injected via constructor (Dependency Inversion Principle)
+    private let messageRepository: MessageRepositoryProtocol
+    private let chatRoomRepository: ChatRoomRepositoryProtocol
     private var chatRoom: ChatRoom
     private var chatService: ChatServiceProtocol?
     private var cancellables = Set<AnyCancellable>()
     private var typingTimer: Timer?
     private let currentUserId = "currentUser" // 실제 앱에서는 사용자 관리 시스템에서 가져옴
 
-    init(modelContext: ModelContext, chatRoom: ChatRoom, chatService: ChatServiceProtocol? = nil) {
-        self.modelContext = modelContext
+    init(
+        messageRepository: MessageRepositoryProtocol,
+        chatRoomRepository: ChatRoomRepositoryProtocol,
+        chatRoom: ChatRoom,
+        chatService: ChatServiceProtocol? = nil
+    ) {
+        self.messageRepository = messageRepository
+        self.chatRoomRepository = chatRoomRepository
         self.chatRoom = chatRoom
         self.chatService = chatService
-        loadMessages()
+
+        Task {
+            await loadMessages()
+        }
         setupNotificationObservers()
-        markAsRead()
+        Task {
+            await markAsRead()
+        }
+    }
+
+    // Convenience initializer for existing code (backward compatibility)
+    convenience init(modelContext: ModelContext, chatRoom: ChatRoom, chatService: ChatServiceProtocol? = nil) {
+        self.init(
+            messageRepository: LocalMessageRepository(modelContext: modelContext),
+            chatRoomRepository: LocalChatRoomRepository(modelContext: modelContext),
+            chatRoom: chatRoom,
+            chatService: chatService
+        )
     }
 
     deinit {
@@ -50,19 +73,12 @@ class ChatViewModel: ObservableObject {
         typingTimer?.invalidate()
     }
 
-    func loadMessages() {
-        let chatRoomIdString = chatRoom.id.uuidString
-        let descriptor = FetchDescriptor<Message>(
-            predicate: #Predicate<Message> { message in
-                message.chatRoomId == chatRoomIdString
-            },
-            sortBy: [SortDescriptor(\.timestamp)]
-        )
-
+    func loadMessages() async {
         do {
-            messages = try modelContext.fetch(descriptor)
+            messages = try await messageRepository.fetchMessages(for: chatRoom.id.uuidString)
         } catch {
-            print("Failed to load messages: \(error)")
+            print("❌ [ChatViewModel] Failed to load messages: \(error)")
+            // TODO: Show error to user
         }
     }
 
@@ -119,28 +135,36 @@ class ChatViewModel: ObservableObject {
             replyToMessageId: replyingToMessage?.id
         )
 
-        modelContext.insert(message)
-        messages.append(message)
-        translateIfNeeded(message)
+        Task {
+            do {
+                // Save message via repository
+                try await messageRepository.saveMessage(message)
 
-        // 채팅방 마지막 메시지 업데이트
-        chatRoom.lastMessage = newMessageText
-        chatRoom.timestamp = Date()
+                // Update UI
+                messages.append(message)
+                translateIfNeeded(message)
 
-        do {
-            try modelContext.save()
-        } catch {
-            print("❌ sendMessage 저장 실패: \(error)")
+                // Update chat room's last message
+                try await chatRoomRepository.updateChatRoom(
+                    chatRoom,
+                    lastMessage: newMessageText,
+                    timestamp: Date()
+                )
+
+                // Send via real-time service
+                chatService?.sendMessage(message, to: chatRoom)
+
+            } catch {
+                print("❌ [ChatViewModel] Failed to send message: \(error)")
+                // TODO: Show error to user & rollback UI
+            }
         }
 
-        // 실시간 서비스로 메시지 전송
-        chatService?.sendMessage(message, to: chatRoom)
-
         newMessageText = ""
-        replyingToMessage = nil // 답장 상태 초기화
+        replyingToMessage = nil
         stopTyping()
 
-        // 자동 응답 (실시간 느낌을 위해 약간 지연)
+        // Auto response
         sendAutoResponse()
     }
 
@@ -151,23 +175,26 @@ class ChatViewModel: ObservableObject {
             chatRoomId: chatRoom.id.uuidString
         )
 
-        modelContext.insert(message)
-        messages.append(message)
+        Task {
+            do {
+                try await messageRepository.saveMessage(message)
 
-        // 채팅방 마지막 메시지 업데이트
-        chatRoom.lastMessage = "사진을 보냈습니다"
-        chatRoom.timestamp = Date()
+                messages.append(message)
 
-        do {
-            try modelContext.save()
-        } catch {
-            print("❌ sendImage 저장 실패: \(error)")
+                try await chatRoomRepository.updateChatRoom(
+                    chatRoom,
+                    lastMessage: "사진을 보냈습니다",
+                    timestamp: Date()
+                )
+
+                chatService?.sendMessage(message, to: chatRoom)
+
+            } catch {
+                print("❌ [ChatViewModel] Failed to send image: \(error)")
+                // TODO: Show error to user
+            }
         }
 
-        // 실시간 서비스로 이미지 전송
-        chatService?.sendMessage(message, to: chatRoom)
-
-        // 자동 응답
         sendAutoResponse()
     }
 
@@ -180,19 +207,26 @@ class ChatViewModel: ObservableObject {
             chatRoomId: chatRoom.id.uuidString
         )
 
-        modelContext.insert(message)
-        messages.append(message)
+        Task {
+            do {
+                try await messageRepository.saveMessage(message)
 
-        // 채팅방 마지막 메시지 업데이트
-        chatRoom.lastMessage = "\(fileName).\(fileExtension)"
-        chatRoom.timestamp = Date()
+                messages.append(message)
 
-        try? modelContext.save()
+                try await chatRoomRepository.updateChatRoom(
+                    chatRoom,
+                    lastMessage: "\(fileName).\(fileExtension)",
+                    timestamp: Date()
+                )
 
-        // 실시간 서비스로 파일 전송
-        chatService?.sendMessage(message, to: chatRoom)
+                chatService?.sendMessage(message, to: chatRoom)
 
-        // 자동 응답
+            } catch {
+                print("❌ [ChatViewModel] Failed to send file: \(error)")
+                // TODO: Show error to user
+            }
+        }
+
         sendAutoResponse()
     }
 
@@ -258,19 +292,30 @@ class ChatViewModel: ObservableObject {
                 chatRoomId: chatRoom.id.uuidString
             )
 
-            modelContext.insert(response)
-            messages.append(response)
-            translateIfNeeded(response)
+            do {
+                try await messageRepository.saveMessage(response)
 
-            chatRoom.lastMessage = randomResponse
-            chatRoom.timestamp = Date()
+                messages.append(response)
+                translateIfNeeded(response)
 
-            try? modelContext.save()
+                try await chatRoomRepository.updateChatRoom(
+                    chatRoom,
+                    lastMessage: randomResponse,
+                    timestamp: Date()
+                )
+            } catch {
+                print("❌ [ChatViewModel] Failed to save auto response: \(error)")
+            }
         }
     }
 
-    private func markAsRead() {
-        chatService?.markAsRead(chatRoom: chatRoom)
+    private func markAsRead() async {
+        do {
+            try await chatRoomRepository.updateUnreadCount(for: chatRoom.id, count: 0)
+            chatService?.markAsRead(chatRoom: chatRoom)
+        } catch {
+            print("❌ [ChatViewModel] Failed to mark as read: \(error)")
+        }
     }
 
     // 온라인 상태 확인 (시뮬레이션)
@@ -289,30 +334,34 @@ class ChatViewModel: ObservableObject {
     func addReaction(_ emoji: String, to message: Message) {
         message.addReaction(emoji, from: currentUserId)
 
-        do {
-            try modelContext.save()
-            // UI 업데이트를 위해 messages 배열 갱신 트리거
-            objectWillChange.send()
-        } catch {
-            print("Failed to save reaction: \(error)")
-        }
+        Task {
+            do {
+                try await messageRepository.updateMessage(message)
+                // UI update trigger
+                objectWillChange.send()
 
-        // 실제 앱에서는 서버로 반응 전송
-        chatService?.sendReaction(emoji, to: message, in: chatRoom)
+                // Send to server
+                chatService?.sendReaction(emoji, to: message, in: chatRoom)
+            } catch {
+                print("❌ [ChatViewModel] Failed to save reaction: \(error)")
+                // TODO: Rollback UI
+            }
+        }
     }
 
     func removeReaction(_ emoji: String, from message: Message) {
         message.removeReaction(emoji, from: currentUserId)
 
-        do {
-            try modelContext.save()
-            objectWillChange.send()
-        } catch {
-            print("Failed to remove reaction: \(error)")
-        }
+        Task {
+            do {
+                try await messageRepository.updateMessage(message)
+                objectWillChange.send()
 
-        // 실제 앱에서는 서버로 반응 제거 전송
-        chatService?.removeReaction(emoji, from: message, in: chatRoom)
+                chatService?.removeReaction(emoji, from: message, in: chatRoom)
+            } catch {
+                print("❌ [ChatViewModel] Failed to remove reaction: \(error)")
+            }
+        }
     }
 
     func toggleReaction(_ emoji: String, for message: Message) {
@@ -346,15 +395,16 @@ class ChatViewModel: ObservableObject {
         message.isEdited = true
         message.editedAt = Date()
 
-        do {
-            try modelContext.save()
-            objectWillChange.send()
-        } catch {
-            print("Failed to edit message: \(error)")
-        }
+        Task {
+            do {
+                try await messageRepository.updateMessage(message)
+                objectWillChange.send()
 
-        // 실제 앱에서는 서버로 편집된 메시지 전송
-        chatService?.editMessage(message, in: chatRoom)
+                chatService?.editMessage(message, in: chatRoom)
+            } catch {
+                print("❌ [ChatViewModel] Failed to edit message: \(error)")
+            }
+        }
     }
 
     func deleteMessage(_ message: Message) {
@@ -364,15 +414,15 @@ class ChatViewModel: ObservableObject {
             messages.remove(at: index)
         }
 
-        modelContext.delete(message)
+        Task {
+            do {
+                try await messageRepository.deleteMessage(message)
 
-        do {
-            try modelContext.save()
-        } catch {
-            print("Failed to delete message: \(error)")
+                chatService?.deleteMessage(message, in: chatRoom)
+            } catch {
+                print("❌ [ChatViewModel] Failed to delete message: \(error)")
+                // TODO: Rollback UI - add message back
+            }
         }
-
-        // 실제 앱에서는 서버로 메시지 삭제 전송
-        chatService?.deleteMessage(message, in: chatRoom)
     }
 }

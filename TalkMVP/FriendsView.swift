@@ -170,12 +170,12 @@ struct FriendsView: View {
                                 .font(.system(size: 60))
                                 .foregroundColor(.gray)
 
-                            Text(NSLocalizedString("no_friends_yet", comment: ""))
+                            Text(L10n.text("no_friends_yet", languageManager.currentLanguage == .korean ? .korean : .english))
                                 .font(.title2)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.primary)
 
-                            Text(NSLocalizedString("add_friends_suggestion", comment: ""))
+                            Text(L10n.text("add_friends_suggestion", languageManager.currentLanguage == .korean ? .korean : .english))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
 
@@ -184,7 +184,7 @@ struct FriendsView: View {
                             }) {
                                 HStack {
                                     Image(systemName: "person.badge.plus")
-                                    Text(NSLocalizedString("add_friend_by_email", comment: ""))
+                                    Text(L10n.text("add_friend_by_email", languageManager.currentLanguage == .korean ? .korean : .english))
                                 }
                                 .font(.headline)
                                 .foregroundColor(.white)
