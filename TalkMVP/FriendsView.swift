@@ -10,6 +10,66 @@ import UIKit
 import SwiftData
 import UserNotifications
 
+struct Loc {
+    static func text(_ key: String, isKorean: Bool, count: Int = 0, searchTerm: String = "") -> String {
+        switch key {
+        case "received_requests": return isKorean ? "📬 받은 친구 요청 \(count)" : "📬 Received Friend Requests \(count)"
+        case "sent_requests": return isKorean ? "보낸 친구 요청 \(count)" : "Sent Friend Requests \(count)"
+        case "friends_list": return isKorean ? "친구 목록 \(count)" : "Friends List \(count)"
+        case "no_search_results": return isKorean ? "검색 결과 없음" : "No Search Results"
+        case "no_match_for": return isKorean ? "'\(searchTerm)'와 일치하는 친구가 없습니다" : "No friends match '\(searchTerm)'"
+        case "no_friends_yet": return isKorean ? "아직 친구가 없어요" : "No Friends Yet"
+        case "add_friends_suggestion": return isKorean ? "친구를 추가해보세요!" : "Try adding some friends!"
+        case "add_friend_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
+        case "contacts": return isKorean ? "연락처" : "Contacts"
+        case "friends": return isKorean ? "친구" : "Friends"
+        case "search_friends_placeholder": return isKorean ? "친구 이름 검색..." : "Search friend names..."
+        case "user": return isKorean ? "사용자" : "User"
+        case "status_message": return isKorean ? "상태 메시지를 설정해보세요" : "Set your status message"
+        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
+        case "accept": return isKorean ? "수락" : "Accept"
+        case "reject": return isKorean ? "거절" : "Reject"
+        case "request_pending": return isKorean ? "승인 대기" : "Pending"
+        case "pending_short": return isKorean ? "대기" : "Requested"
+        case "friend_email_placeholder": return isKorean ? "친구의 이메일 주소" : "Friend's email address"
+        case "search": return isKorean ? "검색" : "Search"
+        case "add_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
+        case "add_by_email_footer": return isKorean ? "친구의 이메일 주소를 입력하고 검색 버튼을 누르세요." : "Enter your friend's email address and tap Search."
+        case "searching": return isKorean ? "검색 중..." : "Searching..."
+        case "searching_users": return isKorean ? "사용자를 검색하고 있습니다" : "Searching for users"
+        case "search_results": return isKorean ? "검색 결과" : "Search Results"
+        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
+        case "alert": return isKorean ? "알림" : "Alert"
+        case "cancel": return isKorean ? "취소" : "Cancel"
+        case "ok": return isKorean ? "확인" : "OK"
+        case "search_error_prefix": return isKorean ? "검색 중 오류가 발생했습니다: " : "An error occurred during search: "
+        case "friend_request_sent": return isKorean ? "친구 요청을 보냈습니다." : "Friend request sent."
+        case "friend_request_failed": return isKorean ? "친구 요청 전송에 실패했습니다." : "Failed to send friend request."
+        case "error_occurred_prefix": return isKorean ? "오류가 발생했습니다: " : "An error occurred: "
+        case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
+        case "blocked_list": return isKorean ? "차단 목록" : "Blocked List"
+        case "blocked": return isKorean ? "차단됨" : "Blocked"
+        case "unblock": return isKorean ? "차단 해제" : "Unblock"
+        case "unblock_friend": return isKorean ? "차단 해제" : "Unblock Friend"
+        case "unblock_message": return isKorean ? "\(searchTerm)님의 차단을 해제하시겠습니까?" : "Unblock \(searchTerm)?"
+        case "hide": return isKorean ? "숨김" : "Hide"
+        case "manage_hidden_blocked": return isKorean ? "숨김/차단 관리" : "Manage Hidden/Blocked"
+        case "hidden_list": return isKorean ? "숨김 목록" : "Hidden List"
+        case "no_hidden_friends": return isKorean ? "숨김 친구가 없습니다" : "No hidden friends"
+        case "hidden": return isKorean ? "숨김" : "Hidden"
+        case "unhide": return isKorean ? "숨김 해제" : "Unhide"
+        case "unhide_friend": return isKorean ? "숨김 해제" : "Unhide Friend"
+        case "unhide_message": return isKorean ? "\(searchTerm)님의 숨김을 해제하시겠습니까?" : "Unhide \(searchTerm)?"
+        case "block": return isKorean ? "차단" : "Block"
+        case "settings": return isKorean ? "설정" : "Settings"
+        case "close": return isKorean ? "닫기" : "Close"
+        case "new_friends": return isKorean ? "새로운 친구 \(count)" : "New Friends \(count)"
+        case "online": return isKorean ? "온라인" : "Online"
+        default: return key
+        }
+    }
+}
+
 // 간소화된 친구 목록 뷰
 struct FriendsView: View {
     @Environment(\.modelContext) private var modelContext
@@ -112,7 +172,7 @@ struct FriendsView: View {
                 }
                 
                 if showNewFriendsSection && newFriendsCount > 0 {
-                    Section(header: Text(localizedText("new_friends", count: newFriendsCount))) {
+                    Section(header: Text(Loc.text("new_friends", isKorean: languageManager.isKorean, count: newFriendsCount))) {
                         ForEach(newFriends, id: \.id) { friendship in
                             FriendRow(friendship: friendship, onDataChanged: loadFriendships, onOpened: { markFriendAsSeen(friendship) })
                         }
@@ -122,7 +182,7 @@ struct FriendsView: View {
                 
                 // 받은 친구 요청
                 if !receivedRequests.isEmpty {
-                    Section(localizedText("received_requests", count: receivedRequests.count)) {
+                    Section(Loc.text("received_requests", isKorean: languageManager.isKorean, count: receivedRequests.count)) {
                         ForEach(receivedRequests, id: \.id) { friendship in
                             ReceivedRequestRow(
                                 friendship: friendship,
@@ -150,19 +210,19 @@ struct FriendsView: View {
                     } header: {
                         HStack(spacing: 6) {
                             Image(systemName: "person.badge.plus")
-                            Text(localizedText("sent_requests", count: pendingRequests.count))
+                            Text(Loc.text("sent_requests", isKorean: languageManager.isKorean, count: pendingRequests.count))
                         }
                     }
                     .headerProminence(.increased)
                 }
                 
                 // 친구 목록
-                Section(localizedText("friends_list", count: regularFriends.count)) {
+                Section(Loc.text("friends_list", isKorean: languageManager.isKorean, count: regularFriends.count)) {
                     if regularFriends.isEmpty && !searchText.isEmpty {
                         ContentUnavailableView(
-                            localizedText("no_search_results"),
+                            Loc.text("no_search_results", isKorean: languageManager.isKorean),
                             systemImage: "magnifyingglass",
-                            description: Text(localizedText("no_match_for", searchTerm: searchText))
+                            description: Text(Loc.text("no_match_for", isKorean: languageManager.isKorean, searchTerm: searchText))
                         )
                     } else if regularFriends.isEmpty {
                         VStack(spacing: 20) {
@@ -170,12 +230,12 @@ struct FriendsView: View {
                                 .font(.system(size: 60))
                                 .foregroundColor(.gray)
                             
-                            Text(localizedText("no_friends_yet"))
+                            Text(Loc.text("no_friends_yet", isKorean: languageManager.isKorean))
                                 .font(.title2)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.primary)
                             
-                            Text(localizedText("add_friends_suggestion"))
+                            Text(Loc.text("add_friends_suggestion", isKorean: languageManager.isKorean))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
@@ -184,7 +244,7 @@ struct FriendsView: View {
                             }) {
                                 HStack {
                                     Image(systemName: "person.badge.plus")
-                                    Text(localizedText("add_friend_by_email"))
+                                    Text(Loc.text("add_friend_by_email", isKorean: languageManager.isKorean))
                                 }
                                 .font(.headline)
                                 .foregroundColor(.white)
@@ -206,7 +266,7 @@ struct FriendsView: View {
                                         try? modelContext.save()
                                         loadFriendships()
                                     } label: {
-                                        Label(localizedText("hide"), systemImage: "eye.slash")
+                                        Label(Loc.text("hide", isKorean: languageManager.isKorean), systemImage: "eye.slash")
                                     }.tint(.gray)
                                     
                                     Button(role: .destructive) {
@@ -215,7 +275,7 @@ struct FriendsView: View {
                                         try? modelContext.save()
                                         loadFriendships()
                                     } label: {
-                                        Label(localizedText("block"), systemImage: "person.fill.xmark")
+                                        Label(Loc.text("block", isKorean: languageManager.isKorean), systemImage: "person.fill.xmark")
                                     }
                                 }
                         }
@@ -225,8 +285,8 @@ struct FriendsView: View {
                 .headerProminence(.increased)
             }
             .listStyle(.insetGrouped)
-            .navigationTitle(localizedText("friends"))
-            .searchable(text: $searchText, prompt: localizedText("search_friends_placeholder"))
+            .navigationTitle(Loc.text("friends", isKorean: languageManager.isKorean))
+            .searchable(text: $searchText, prompt: Loc.text("search_friends_placeholder", isKorean: languageManager.isKorean))
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -234,19 +294,19 @@ struct FriendsView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
-                    .accessibilityLabel(localizedText("add_friend"))
+                    .accessibilityLabel(Loc.text("add_friend", isKorean: languageManager.isKorean))
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button {
                             activeSheet = .manageHiddenBlocked
                         } label: {
-                            Label(localizedText("manage_hidden_blocked"), systemImage: "eye.slash")
+                            Label(Loc.text("manage_hidden_blocked", isKorean: languageManager.isKorean), systemImage: "eye.slash")
                         }
                         Button {
                             activeSheet = .settings
                         } label: {
-                            Label(localizedText("settings"), systemImage: "gearshape")
+                            Label(Loc.text("settings", isKorean: languageManager.isKorean), systemImage: "gearshape")
                         }
                     } label: {
                         Image(systemName: "gearshape")
@@ -359,65 +419,6 @@ struct FriendsView: View {
         hasSeededNewFriends = true
         loadFriendships()
     }
-
-    private func localizedText(_ key: String, count: Int = 0, searchTerm: String = "") -> String {
-        let isKorean = languageManager.isKorean
-        
-        var text: String
-        switch key {
-        case "received_requests": text = isKorean ? "📬 받은 친구 요청 \(count)" : "📬 Received Friend Requests \(count)"
-        case "sent_requests": text = isKorean ? "보낸 친구 요청 \(count)" : "Sent Friend Requests \(count)"
-        case "friends_list": text = isKorean ? "친구 목록 \(count)" : "Friends List \(count)"
-        case "no_search_results": text = isKorean ? "검색 결과 없음" : "No Search Results"
-        case "no_match_for": text = isKorean ? "'\(searchTerm)'와 일치하는 친구가 없습니다" : "No friends match '\(searchTerm)'"
-        case "no_friends_yet": text = isKorean ? "아직 친구가 없어요" : "No Friends Yet"
-        case "add_friends_suggestion": text = isKorean ? "친구를 추가해보세요!" : "Try adding some friends!"
-        case "add_friend_by_email": text = isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "contacts": text = isKorean ? "연락처" : "Contacts"
-        case "friends": text = isKorean ? "친구" : "Friends"
-        case "search_friends_placeholder": text = isKorean ? "친구 이름 검색..." : "Search friend names..."
-        case "user": text = isKorean ? "사용자" : "User"
-        case "status_message": text = isKorean ? "상태 메시지를 설정해보세요" : "Set your status message"
-        case "friend_request": text = isKorean ? "친구 요청" : "Friend Request"
-        case "accept": text = isKorean ? "수락" : "Accept"
-        case "request_pending": text = isKorean ? "승인 대기" : "Pending"
-        case "pending_short": text = isKorean ? "대기" : "Requested"
-        case "friend_email_placeholder": text = isKorean ? "친구의 이메일 주소" : "Friend's email address"
-        case "search": text = isKorean ? "검색" : "Search"
-        case "add_by_email": text = isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "add_by_email_footer": text = isKorean ? "친구의 이메일 주소를 입력하고 검색 버튼을 누르세요." : "Enter your friend's email address and tap Search."
-        case "searching": text = isKorean ? "검색 중..." : "Searching..."
-        case "searching_users": text = isKorean ? "사용자를 검색하고 있습니다" : "Searching for users"
-        case "search_results": text = isKorean ? "검색 결과" : "Search Results"
-        case "add_friend": text = isKorean ? "친구 추가" : "Add Friend"
-        case "alert": text = isKorean ? "알림" : "Alert"
-        case "search_error_prefix": text = isKorean ? "검색 중 오류가 발생했습니다: " : "An error occurred during search: "
-        case "friend_request_sent": text = isKorean ? "친구 요청을 보냈습니다." : "Friend request sent."
-        case "friend_request_failed": text = isKorean ? "친구 요청 전송에 실패했습니다." : "Failed to send friend request."
-        case "error_occurred_prefix": text = isKorean ? "오류가 발생했습니다: " : "An error occurred: "
-        case "no_blocked_friends": text = isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
-        case "blocked_list": text = isKorean ? "차단 목록" : "Blocked List"
-        case "blocked": text = isKorean ? "차단됨" : "Blocked"
-        case "unblock": text = isKorean ? "차단 해제" : "Unblock"
-        case "unblock_friend": text = isKorean ? "차단 해제" : "Unblock Friend"
-        case "unblock_message": text = isKorean ? "\(searchTerm)님의 차단을 해제하시겠습니까?" : "Unblock \(searchTerm)?"
-        case "hide": text = isKorean ? "숨김" : "Hide"
-        case "manage_hidden_blocked": text = isKorean ? "숨김/차단 관리" : "Manage Hidden/Blocked"
-        case "hidden_list": text = isKorean ? "숨김 목록" : "Hidden List"
-        case "no_hidden_friends": text = isKorean ? "숨김 친구가 없습니다" : "No hidden friends"
-        case "hidden": text = isKorean ? "숨김" : "Hidden"
-        case "unhide": text = isKorean ? "숨김 해제" : "Unhide"
-        case "unhide_friend": text = isKorean ? "숨김 해제" : "Unhide Friend"
-        case "unhide_message": text = isKorean ? "\(searchTerm)님의 숨김을 해제하시겠습니까?" : "Unhide \(searchTerm)?"
-        case "block": text = isKorean ? "차단" : "Block"
-        case "settings": text = isKorean ? "설정" : "Settings"
-        case "close": text = isKorean ? "닫기" : "Close"
-        case "new_friends": text = isKorean ? "새로운 친구 \(count)" : "New Friends \(count)"
-        default: text = key
-        }
-        
-        return text
-    }
     
     private func loadFriendships() {
         let fetchDescriptor = FetchDescriptor<Friendship>()
@@ -520,43 +521,6 @@ struct MyProfileRow: View {
         }
         return raw
     }
-    
-    private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.isKorean
-        
-        switch key {
-        case "friends": return isKorean ? "친구" : "Friends"
-        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
-        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
-        case "accept": return isKorean ? "수락" : "Accept"
-        case "reject": return isKorean ? "거절" : "Reject"
-        case "block": return isKorean ? "차단" : "Block"
-        case "unblock": return isKorean ? "차단 해제" : "Unblock"
-        case "friend_email_placeholder": return isKorean ? "친구의 이메일 주소" : "Friend's email address"
-        case "search": return isKorean ? "검색" : "Search"
-        case "add_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "add_by_email_footer": return isKorean ? "친구의 이메일 주소를 입력하고 검색 버튼을 누르세요." : "Enter your friend's email address and tap Search."
-        case "searching": return isKorean ? "검색 중..." : "Searching..."
-        case "searching_users": return isKorean ? "사용자를 검색하고 있습니다" : "Searching for users"
-        case "search_results": return isKorean ? "검색 결과" : "Search Results"
-        case "alert": return isKorean ? "알림" : "Alert"
-        case "cancel": return isKorean ? "취소" : "Cancel"
-        case "ok": return isKorean ? "확인" : "OK"
-        case "user": return isKorean ? "사용자" : "User"
-        case "status_message": return isKorean ? "상태 메시지를 설정해보세요" : "Set your status message"
-        case "no_search_results": return isKorean ? "검색 결과 없음" : "No Search Results"
-        case "no_match_for": return isKorean ? "'%@'와 일치하는 친구가 없습니다" : "No friends match '%@'"
-        case "no_friends_yet": return isKorean ? "아직 친구가 없어요" : "No Friends Yet"
-        case "add_friends_suggestion": return isKorean ? "친구를 추가해보세요!" : "Try adding some friends!"
-        case "add_friend_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "search_error_prefix": return isKorean ? "검색 중 오류가 발생했습니다: " : "An error occurred during search: "
-        case "friend_request_sent": return isKorean ? "친구 요청을 보냈습니다." : "Friend request sent."
-        case "friend_request_failed": return isKorean ? "친구 요청 전송에 실패했습니다." : "Failed to send friend request."
-        case "error_occurred_prefix": return isKorean ? "오류가 발생했습니다: " : "An error occurred: "
-        case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
-        default: return key
-        }
-    }
 }
 
 // 간소화된 친구 행
@@ -584,7 +548,7 @@ struct FriendRow: View {
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
                     
-                    Text(localizedText("online"))
+                    Text(Loc.text("online", isKorean: languageManager.isKorean))
                         .font(.subheadline)
                         .foregroundColor(.green)
                 }
@@ -600,46 +564,6 @@ struct FriendRow: View {
         .buttonStyle(PlainButtonStyle())
         .sheet(isPresented: $showingProfileView) {
             FriendProfileView(friendship: friendship)
-        }
-    }
-    
-    private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.isKorean
-        
-        switch key {
-        case "friends": return isKorean ? "친구" : "Friends"
-        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
-        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
-        case "accept": return isKorean ? "수락" : "Accept"
-        case "reject": return isKorean ? "거절" : "Reject"
-        case "block": return isKorean ? "차단" : "Block"
-        case "unblock": return isKorean ? "차단 해제" : "Unblock"
-        case "friend_email_placeholder": return isKorean ? "친구의 이메일 주소" : "Friend's email address"
-        case "search": return isKorean ? "검색" : "Search"
-        case "add_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "add_by_email_footer": return isKorean ? "친구의 이메일 주소를 입력하고 검색 버튼을 누르세요." : "Enter your friend's email address and tap Search."
-        case "searching": return isKorean ? "검색 중..." : "Searching..."
-        case "searching_users": return isKorean ? "사용자를 검색하고 있습니다" : "Searching for users"
-        case "search_results": return isKorean ? "검색 결과" : "Search Results"
-        case "alert": return isKorean ? "알림" : "Alert"
-        case "cancel": return isKorean ? "취소" : "Cancel"
-        case "ok": return isKorean ? "확인" : "OK"
-        case "user": return isKorean ? "사용자" : "User"
-        case "status_message": return isKorean ? "상태 메시지를 설정해보세요" : "Set your status message"
-        case "no_search_results": return isKorean ? "검색 결과 없음" : "No Search Results"
-        case "no_match_for": return isKorean ? "'%@'와 일치하는 친구가 없습니다" : "No friends match '%@'"
-        case "no_friends_yet": return isKorean ? "아직 친구가 없어요" : "No Friends Yet"
-        case "add_friends_suggestion": return isKorean ? "친구를 추가해보세요!" : "Try adding some friends!"
-        case "add_friend_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "search_error_prefix": return isKorean ? "검색 중 오류가 발생했습니다: " : "An error occurred during search: "
-        case "friend_request_sent": return isKorean ? "친구 요청을 보냈습니다." : "Friend request sent."
-        case "friend_request_failed": return isKorean ? "친구 요청 전송에 실패했습니다." : "Failed to send friend request."
-        case "error_occurred_prefix": return isKorean ? "오류가 발생했습니다: " : "An error occurred: "
-        case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
-        case "online": return isKorean ? "온라인" : "Online"
-        case "request_pending": return isKorean ? "승인 대기" : "Pending"
-        case "pending_short": return isKorean ? "대기" : "Requested"
-        default: return key
         }
     }
 }
@@ -664,14 +588,14 @@ struct ReceivedRequestRow: View {
                     .font(.headline)
                     .foregroundColor(.primary)
                 
-                Text(localizedText("friend_request"))
+                Text(Loc.text("friend_request", isKorean: languageManager.isKorean))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
             
             Spacer()
             
-            Button(localizedText("accept")) {
+            Button(Loc.text("accept", isKorean: languageManager.isKorean)) {
                 acceptFriendRequest()
             }
             .buttonStyle(.borderedProminent)
@@ -688,43 +612,6 @@ struct ReceivedRequestRow: View {
         onDataChanged()
         onAccepted?(friendship)
         isAccepting = false
-    }
-    
-    private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.isKorean
-        
-        switch key {
-        case "friends": return isKorean ? "친구" : "Friends"
-        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
-        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
-        case "accept": return isKorean ? "수락" : "Accept"
-        case "reject": return isKorean ? "거절" : "Reject"
-        case "block": return isKorean ? "차단" : "Block"
-        case "unblock": return isKorean ? "차단 해제" : "Unblock"
-        case "friend_email_placeholder": return isKorean ? "친구의 이메일 주소" : "Friend's email address"
-        case "search": return isKorean ? "검색" : "Search"
-        case "add_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "add_by_email_footer": return isKorean ? "친구의 이메일 주소를 입력하고 검색 버튼을 누르세요." : "Enter your friend's email address and tap Search."
-        case "searching": return isKorean ? "검색 중..." : "Searching..."
-        case "searching_users": return isKorean ? "사용자를 검색하고 있습니다" : "Searching for users"
-        case "search_results": return isKorean ? "검색 결과" : "Search Results"
-        case "alert": return isKorean ? "알림" : "Alert"
-        case "cancel": return isKorean ? "취소" : "Cancel"
-        case "ok": return isKorean ? "확인" : "OK"
-        case "user": return isKorean ? "사용자" : "User"
-        case "status_message": return isKorean ? "상태 메시지를 설정해보세요" : "Set your status message"
-        case "no_search_results": return isKorean ? "검색 결과 없음" : "No Search Results"
-        case "no_match_for": return isKorean ? "'%@'와 일치하는 친구가 없습니다" : "No friends match '%@'"
-        case "no_friends_yet": return isKorean ? "아직 친구가 없어요" : "No Friends Yet"
-        case "add_friends_suggestion": return isKorean ? "친구를 추가해보세요!" : "Try adding some friends!"
-        case "add_friend_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "search_error_prefix": return isKorean ? "검색 중 오류가 발생했습니다: " : "An error occurred during search: "
-        case "friend_request_sent": return isKorean ? "친구 요청을 보냈습니다." : "Friend request sent."
-        case "friend_request_failed": return isKorean ? "친구 요청 전송에 실패했습니다." : "Failed to send friend request."
-        case "error_occurred_prefix": return isKorean ? "오류가 발생했습니다: " : "An error occurred: "
-        case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
-        default: return key
-        }
     }
 }
 
@@ -744,57 +631,18 @@ struct PendingRequestRow: View {
                     .font(.headline)
                     .foregroundColor(.primary)
                 
-                Text(languageManager.isKorean ? "승인 대기" : "Pending")
+                Text(Loc.text("request_pending", isKorean: languageManager.isKorean))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
             
             Spacer()
             
-            Text(localizedText("pending_short"))
+            Text(Loc.text("pending_short", isKorean: languageManager.isKorean))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
         .padding(.vertical, 4)
-    }
-    
-    private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.isKorean
-        
-        switch key {
-        case "friends": return isKorean ? "친구" : "Friends"
-        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
-        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
-        case "accept": return isKorean ? "수락" : "Accept"
-        case "reject": return isKorean ? "거절" : "Reject"
-        case "block": return isKorean ? "차단" : "Block"
-        case "unblock": return isKorean ? "차단 해제" : "Unblock"
-        case "friend_email_placeholder": return isKorean ? "친구의 이메일 주소" : "Friend's email address"
-        case "search": return isKorean ? "검색" : "Search"
-        case "add_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "add_by_email_footer": return isKorean ? "친구의 이메일 주소를 입력하고 검색 버튼을 누르세요." : "Enter your friend's email address and tap Search."
-        case "searching": return isKorean ? "검색 중..." : "Searching..."
-        case "searching_users": return isKorean ? "사용자를 검색하고 있습니다" : "Searching for users"
-        case "search_results": return isKorean ? "검색 결과" : "Search Results"
-        case "alert": return isKorean ? "알림" : "Alert"
-        case "cancel": return isKorean ? "취소" : "Cancel"
-        case "ok": return isKorean ? "확인" : "OK"
-        case "user": return isKorean ? "사용자" : "User"
-        case "status_message": return isKorean ? "상태 메시지를 설정해보세요" : "Set your status message"
-        case "no_search_results": return isKorean ? "검색 결과 없음" : "No Search Results"
-        case "no_match_for": return isKorean ? "'%@'와 일치하는 친구가 없습니다" : "No friends match '%@'"
-        case "no_friends_yet": return isKorean ? "아직 친구가 없어요" : "No Friends Yet"
-        case "add_friends_suggestion": return isKorean ? "친구를 추가해보세요!" : "Try adding some friends!"
-        case "add_friend_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "search_error_prefix": return isKorean ? "검색 중 오류가 발생했습니다: " : "An error occurred during search: "
-        case "friend_request_sent": return isKorean ? "친구 요청을 보냈습니다." : "Friend request sent."
-        case "friend_request_failed": return isKorean ? "친구 요청 전송에 실패했습니다." : "Failed to send friend request."
-        case "error_occurred_prefix": return isKorean ? "오류가 발생했습니다: " : "An error occurred: "
-        case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
-        case "request_pending": return isKorean ? "승인 대기" : "Pending"
-        case "pending_short": return isKorean ? "대기" : "Requested"
-        default: return key
-        }
     }
 }
 
@@ -820,7 +668,7 @@ struct AddFriendView: View {
             Form {
                 Section {
                     HStack {
-                        TextField(localizedText("friend_email_placeholder"), text: $friendEmail)
+                        TextField(Loc.text("friend_email_placeholder", isKorean: languageManager.isKorean), text: $friendEmail)
                             .textInputAutocapitalization(.never)
                             .keyboardType(.emailAddress)
                             .focused($isTextFieldFocused)
@@ -828,7 +676,7 @@ struct AddFriendView: View {
                                 searchForUsers()
                             }
                         
-                        Button(localizedText("search")) {
+                        Button(Loc.text("search", isKorean: languageManager.isKorean)) {
                             searchForUsers()
                         }
                         .buttonStyle(.borderedProminent)
@@ -836,22 +684,22 @@ struct AddFriendView: View {
                         .disabled(friendEmail.isEmpty || isSearching)
                     }
                 } header: {
-                    Text(localizedText("add_by_email"))
+                    Text(Loc.text("add_by_email", isKorean: languageManager.isKorean))
                 } footer: {
-                    Text(localizedText("add_by_email_footer"))
+                    Text(Loc.text("add_by_email_footer", isKorean: languageManager.isKorean))
                 }
                 
                 if isSearching {
-                    Section(localizedText("searching")) {
+                    Section(Loc.text("searching", isKorean: languageManager.isKorean)) {
                         HStack {
                             ProgressView()
                                 .controlSize(.small)
-                            Text(localizedText("searching_users"))
+                            Text(Loc.text("searching_users", isKorean: languageManager.isKorean))
                                 .foregroundColor(.secondary)
                         }
                     }
                 } else if !searchResults.isEmpty {
-                    Section(localizedText("search_results")) {
+                    Section(Loc.text("search_results", isKorean: languageManager.isKorean)) {
                         ForEach(searchResults, id: \.id) { result in
                             UserSearchResultRow(
                                 result: result,
@@ -872,18 +720,18 @@ struct AddFriendView: View {
                     }
                 }
             }
-            .navigationTitle(localizedText("add_friend"))
+            .navigationTitle(Loc.text("add_friend", isKorean: languageManager.isKorean))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(localizedText("cancel")) {
+                    Button(Loc.text("cancel", isKorean: languageManager.isKorean)) {
                         dismiss()
                     }
                 }
             }
         }
-        .alert(localizedText("alert"), isPresented: $showingAlert) {
-            Button(localizedText("ok")) {
+        .alert(Loc.text("alert", isKorean: languageManager.isKorean), isPresented: $showingAlert) {
+            Button(Loc.text("ok", isKorean: languageManager.isKorean)) {
                 if lastActionWasSuccess {
                     dismiss()
                 }
@@ -920,48 +768,11 @@ struct AddFriendView: View {
             } catch {
                 await MainActor.run {
                     print("검색 오류: \(error.localizedDescription)")
-                    self.alertMessage = localizedText("search_error_prefix") + error.localizedDescription
+                    self.alertMessage = Loc.text("search_error_prefix", isKorean: languageManager.isKorean) + error.localizedDescription
                     self.showingAlert = true
                     self.isSearching = false
                 }
             }
-        }
-    }
-    
-    private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.isKorean
-        
-        switch key {
-        case "friends": return isKorean ? "친구" : "Friends"
-        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
-        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
-        case "accept": return isKorean ? "수락" : "Accept"
-        case "reject": return isKorean ? "거절" : "Reject"
-        case "block": return isKorean ? "차단" : "Block"
-        case "unblock": return isKorean ? "차단 해제" : "Unblock"
-        case "friend_email_placeholder": return isKorean ? "친구의 이메일 주소" : "Friend's email address"
-        case "search": return isKorean ? "검색" : "Search"
-        case "add_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "add_by_email_footer": return isKorean ? "친구의 이메일 주소를 입력하고 검색 버튼을 누르세요." : "Enter your friend's email address and tap Search."
-        case "searching": return isKorean ? "검색 중..." : "Searching..."
-        case "searching_users": return isKorean ? "사용자를 검색하고 있습니다" : "Searching for users"
-        case "search_results": return isKorean ? "검색 결과" : "Search Results"
-        case "alert": return isKorean ? "알림" : "Alert"
-        case "cancel": return isKorean ? "취소" : "Cancel"
-        case "ok": return isKorean ? "확인" : "OK"
-        case "user": return isKorean ? "사용자" : "User"
-        case "status_message": return isKorean ? "상태 메시지를 설정해보세요" : "Set your status message"
-        case "no_search_results": return isKorean ? "검색 결과 없음" : "No Search Results"
-        case "no_match_for": return isKorean ? "'%@'와 일치하는 친구가 없습니다" : "No friends match '%@'"
-        case "no_friends_yet": return isKorean ? "아직 친구가 없어요" : "No Friends Yet"
-        case "add_friends_suggestion": return isKorean ? "친구를 추가해보세요!" : "Try adding some friends!"
-        case "add_friend_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "search_error_prefix": return isKorean ? "검색 중 오류가 발생했습니다: " : "An error occurred during search: "
-        case "friend_request_sent": return isKorean ? "친구 요청을 보냈습니다." : "Friend request sent."
-        case "friend_request_failed": return isKorean ? "친구 요청 전송에 실패했습니다." : "Failed to send friend request."
-        case "error_occurred_prefix": return isKorean ? "오류가 발생했습니다: " : "An error occurred: "
-        case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
-        default: return key
         }
     }
 }
@@ -995,7 +806,7 @@ struct UserSearchResultRow: View {
             
             Spacer()
             
-            Button(localizedText("add_friend")) {
+            Button(Loc.text("add_friend", isKorean: languageManager.isKorean)) {
                 sendFriendRequest()
             }
             .buttonStyle(.borderedProminent)
@@ -1033,7 +844,7 @@ struct UserSearchResultRow: View {
                             let mirror = Friendship(
                                 userId: result.id,
                                 friendId: senderId,
-                                friendName: authManager.currentUser?.displayName ?? localizedText("user"),
+                                friendName: authManager.currentUser?.displayName ?? Loc.text("user", isKorean: languageManager.isKorean),
                                 friendEmail: authManager.currentUser?.email ?? "",
                                 status: .pending
                             )
@@ -1045,59 +856,22 @@ struct UserSearchResultRow: View {
                             NotificationCenter.default.post(name: .friendshipPendingCreated, object: nil, userInfo: ["friendId": result.id])
                             
                             // Schedule a local notification to simulate receiver-side alert
-                            let senderName = authManager.currentUser?.displayName ?? localizedText("user")
+                            let senderName = authManager.currentUser?.displayName ?? Loc.text("user", isKorean: languageManager.isKorean)
                             let senderEmail = authManager.currentUser?.email ?? ""
                             notificationManager.scheduleFriendRequestNotification(from: senderName, email: senderEmail)
                         }
-                        onComplete(true, localizedText("friend_request_sent"))
+                        onComplete(true, Loc.text("friend_request_sent", isKorean: languageManager.isKorean))
                     } else {
-                        onComplete(false, localizedText("friend_request_failed"))
+                        onComplete(false, Loc.text("friend_request_failed", isKorean: languageManager.isKorean))
                     }
                     isSendingRequest = false
                 }
             } catch {
                 await MainActor.run {
-                    onComplete(false, localizedText("error_occurred_prefix") + error.localizedDescription)
+                    onComplete(false, Loc.text("error_occurred_prefix", isKorean: languageManager.isKorean) + error.localizedDescription)
                     isSendingRequest = false
                 }
             }
-        }
-    }
-    
-    private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.isKorean
-        
-        switch key {
-        case "friends": return isKorean ? "친구" : "Friends"
-        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
-        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
-        case "accept": return isKorean ? "수락" : "Accept"
-        case "reject": return isKorean ? "거절" : "Reject"
-        case "block": return isKorean ? "차단" : "Block"
-        case "unblock": return isKorean ? "차단 해제" : "Unblock"
-        case "friend_email_placeholder": return isKorean ? "친구의 이메일 주소" : "Friend's email address"
-        case "search": return isKorean ? "검색" : "Search"
-        case "add_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "add_by_email_footer": return isKorean ? "친구의 이메일 주소를 입력하고 검색 버튼을 누르세요." : "Enter your friend's email address and tap Search."
-        case "searching": return isKorean ? "검색 중..." : "Searching..."
-        case "searching_users": return isKorean ? "사용자를 검색하고 있습니다" : "Searching for users"
-        case "search_results": return isKorean ? "검색 결과" : "Search Results"
-        case "alert": return isKorean ? "알림" : "Alert"
-        case "cancel": return isKorean ? "취소" : "Cancel"
-        case "ok": return isKorean ? "확인" : "OK"
-        case "user": return isKorean ? "사용자" : "User"
-        case "status_message": return isKorean ? "상태 메시지를 설정해보세요" : "Set your status message"
-        case "no_search_results": return isKorean ? "검색 결과 없음" : "No Search Results"
-        case "no_match_for": return isKorean ? "'%@'와 일치하는 친구가 없습니다" : "No friends match '%@'"
-        case "no_friends_yet": return isKorean ? "아직 친구가 없어요" : "No Friends Yet"
-        case "add_friends_suggestion": return isKorean ? "친구를 추가해보세요!" : "Try adding some friends!"
-        case "add_friend_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "search_error_prefix": return isKorean ? "검색 중 오류가 발생했습니다: " : "An error occurred during search: "
-        case "friend_request_sent": return isKorean ? "친구 요청을 보냈습니다." : "Friend request sent."
-        case "friend_request_failed": return isKorean ? "친구 요청 전송에 실패했습니다." : "Failed to send friend request."
-        case "error_occurred_prefix": return isKorean ? "오류가 발생했습니다: " : "An error occurred: "
-        case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
-        default: return key
         }
     }
 }
@@ -1114,9 +888,9 @@ struct BlockedFriendsView: View {
             List {
                 if blockedFriends.isEmpty {
                     ContentUnavailableView(
-                        localizedText("no_blocked_friends"),
+                        Loc.text("no_blocked_friends", isKorean: languageManager.isKorean),
                         systemImage: "person.slash",
-                        description: Text(localizedText("no_blocked_friends"))
+                        description: Text(Loc.text("no_blocked_friends", isKorean: languageManager.isKorean))
                     )
                 } else {
                     ForEach(blockedFriends, id: \.id) { friendship in
@@ -1124,52 +898,15 @@ struct BlockedFriendsView: View {
                     }
                 }
             }
-            .navigationTitle(localizedText("blocked_list"))
+            .navigationTitle(Loc.text("blocked_list", isKorean: languageManager.isKorean))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(localizedText("close")) {
+                    Button(Loc.text("close", isKorean: languageManager.isKorean)) {
                         dismiss()
                     }
                 }
             }
-        }
-    }
-    
-    private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.isKorean
-        
-        switch key {
-        case "friends": return isKorean ? "친구" : "Friends"
-        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
-        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
-        case "accept": return isKorean ? "수락" : "Accept"
-        case "reject": return isKorean ? "거절" : "Reject"
-        case "block": return isKorean ? "차단" : "Block"
-        case "unblock": return isKorean ? "차단 해제" : "Unblock"
-        case "friend_email_placeholder": return isKorean ? "친구의 이메일 주소" : "Friend's email address"
-        case "search": return isKorean ? "검색" : "Search"
-        case "add_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "add_by_email_footer": return isKorean ? "친구의 이메일 주소를 입력하고 검색 버튼을 누르세요." : "Enter your friend's email address and tap Search."
-        case "searching": return isKorean ? "검색 중..." : "Searching..."
-        case "searching_users": return isKorean ? "사용자를 검색하고 있습니다" : "Searching for users"
-        case "search_results": return isKorean ? "검색 결과" : "Search Results"
-        case "alert": return isKorean ? "알림" : "Alert"
-        case "cancel": return isKorean ? "취소" : "Cancel"
-        case "ok": return isKorean ? "확인" : "OK"
-        case "user": return isKorean ? "사용자" : "User"
-        case "status_message": return isKorean ? "상태 메시지를 설정해보세요" : "Set your status message"
-        case "no_search_results": return isKorean ? "검색 결과 없음" : "No Search Results"
-        case "no_match_for": return isKorean ? "'%@'와 일치하는 친구가 없습니다" : "No friends match '%@'"
-        case "no_friends_yet": return isKorean ? "아직 친구가 없어요" : "No Friends Yet"
-        case "add_friends_suggestion": return isKorean ? "친구를 추가해보세요!" : "Try adding some friends!"
-        case "add_friend_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "search_error_prefix": return isKorean ? "검색 중 오류가 발생했습니다: " : "An error occurred during search: "
-        case "friend_request_sent": return isKorean ? "친구 요청을 보냈습니다." : "Friend request sent."
-        case "friend_request_failed": return isKorean ? "친구 요청 전송에 실패했습니다." : "Failed to send friend request."
-        case "error_occurred_prefix": return isKorean ? "오류가 발생했습니다: " : "An error occurred: "
-        case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
-        default: return key
         }
     }
 }
@@ -1192,70 +929,33 @@ struct BlockedFriendRow: View {
                     .font(.headline)
                     .foregroundColor(.primary)
                 
-                Text(localizedText("blocked"))
+                Text(Loc.text("blocked", isKorean: languageManager.isKorean))
                     .font(.caption)
                     .foregroundColor(.red)
             }
             
             Spacer()
             
-            Button(localizedText("unblock")) {
+            Button(Loc.text("unblock", isKorean: languageManager.isKorean)) {
                 showingUnblockAlert = true
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
         }
         .padding(.vertical, 4)
-        .alert(localizedText("unblock_friend"), isPresented: $showingUnblockAlert) {
-            Button(localizedText("cancel"), role: .cancel) { }
-            Button(localizedText("unblock"), role: .destructive) {
+        .alert(Loc.text("unblock_friend", isKorean: languageManager.isKorean), isPresented: $showingUnblockAlert) {
+            Button(Loc.text("cancel", isKorean: languageManager.isKorean), role: .cancel) { }
+            Button(Loc.text("unblock", isKorean: languageManager.isKorean), role: .destructive) {
                 unblockFriend()
             }
         } message: {
-            Text(String(format: localizedText("unblock_message"), friendship.friendName))
+            Text(Loc.text("unblock_message", isKorean: languageManager.isKorean, searchTerm: friendship.friendName))
         }
     }
     
     private func unblockFriend() {
         friendship.status = .accepted
         try? modelContext.save()
-    }
-    
-    private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.isKorean
-        
-        switch key {
-        case "friends": return isKorean ? "친구" : "Friends"
-        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
-        case "friend_request": return isKorean ? "친구 요청" : "Friend Request"
-        case "accept": return isKorean ? "수락" : "Accept"
-        case "reject": return isKorean ? "거절" : "Reject"
-        case "block": return isKorean ? "차단" : "Block"
-        case "unblock": return isKorean ? "차단 해제" : "Unblock"
-        case "friend_email_placeholder": return isKorean ? "친구의 이메일 주소" : "Friend's email address"
-        case "search": return isKorean ? "검색" : "Search"
-        case "add_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "add_by_email_footer": return isKorean ? "친구의 이메일 주소를 입력하고 검색 버튼을 누르세요." : "Enter your friend's email address and tap Search."
-        case "searching": return isKorean ? "검색 중..." : "Searching..."
-        case "searching_users": return isKorean ? "사용자를 검색하고 있습니다" : "Searching for users"
-        case "search_results": return isKorean ? "검색 결과" : "Search Results"
-        case "alert": return isKorean ? "알림" : "Alert"
-        case "cancel": return isKorean ? "취소" : "Cancel"
-        case "ok": return isKorean ? "확인" : "OK"
-        case "user": return isKorean ? "사용자" : "User"
-        case "status_message": return isKorean ? "상태 메시지를 설정해보세요" : "Set your status message"
-        case "no_search_results": return isKorean ? "검색 결과 없음" : "No Search Results"
-        case "no_match_for": return isKorean ? "'%@'와 일치하는 친구가 없습니다" : "No friends match '%@'"
-        case "no_friends_yet": return isKorean ? "아직 친구가 없어요" : "No Friends Yet"
-        case "add_friends_suggestion": return isKorean ? "친구를 추가해보세요!" : "Try adding some friends!"
-        case "add_friend_by_email": return isKorean ? "이메일로 친구 추가" : "Add Friend by Email"
-        case "search_error_prefix": return isKorean ? "검색 중 오류가 발생했습니다: " : "An error occurred during search: "
-        case "friend_request_sent": return isKorean ? "친구 요청을 보냈습니다." : "Friend request sent."
-        case "friend_request_failed": return isKorean ? "친구 요청 전송에 실패했습니다." : "Failed to send friend request."
-        case "error_occurred_prefix": return isKorean ? "오류가 발생했습니다: " : "An error occurred: "
-        case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
-        default: return key
-        }
     }
 }
 
@@ -1270,12 +970,12 @@ struct ManageFriendsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section(header: Text(localizedText("hidden_list"))) {
+                Section(header: Text(Loc.text("hidden_list", isKorean: languageManager.isKorean))) {
                     if hiddenFriends.isEmpty {
                         ContentUnavailableView(
-                            localizedText("no_hidden_friends"),
+                            Loc.text("no_hidden_friends", isKorean: languageManager.isKorean),
                             systemImage: "eye.slash",
-                            description: Text(localizedText("no_hidden_friends"))
+                            description: Text(Loc.text("no_hidden_friends", isKorean: languageManager.isKorean))
                         )
                     } else {
                         ForEach(hiddenFriends, id: \.id) { friendship in
@@ -1284,12 +984,12 @@ struct ManageFriendsView: View {
                     }
                 }
                 
-                Section(header: Text(localizedText("blocked_list"))) {
+                Section(header: Text(Loc.text("blocked_list", isKorean: languageManager.isKorean))) {
                     if blockedFriends.isEmpty {
                         ContentUnavailableView(
-                            localizedText("no_blocked_friends"),
+                            Loc.text("no_blocked_friends", isKorean: languageManager.isKorean),
                             systemImage: "hand.raised.slash",
-                            description: Text(localizedText("no_blocked_friends"))
+                            description: Text(Loc.text("no_blocked_friends", isKorean: languageManager.isKorean))
                         )
                     } else {
                         ForEach(blockedFriends, id: \.id) { friendship in
@@ -1298,29 +998,15 @@ struct ManageFriendsView: View {
                     }
                 }
             }
-            .navigationTitle(localizedText("manage_hidden_blocked"))
+            .navigationTitle(Loc.text("manage_hidden_blocked", isKorean: languageManager.isKorean))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(localizedText("close")) {
+                    Button(Loc.text("close", isKorean: languageManager.isKorean)) {
                         dismiss()
                     }
                 }
             }
-        }
-    }
-
-    private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.isKorean
-        
-        switch key {
-        case "hidden_list": return isKorean ? "숨김 목록" : "Hidden List"
-        case "no_hidden_friends": return isKorean ? "숨김 친구가 없습니다" : "No hidden friends"
-        case "blocked_list": return isKorean ? "차단 목록" : "Blocked List"
-        case "no_blocked_friends": return isKorean ? "차단된 친구가 없습니다" : "No blocked friends"
-        case "manage_hidden_blocked": return isKorean ? "숨김/차단 관리" : "Manage Hidden/Blocked"
-        case "close": return isKorean ? "닫기" : "Close"
-        default: return key
         }
     }
 }
@@ -1343,46 +1029,33 @@ struct HiddenFriendRow: View {
                     .font(.headline)
                     .foregroundColor(.primary)
                 
-                Text(localizedText("hidden"))
+                Text(Loc.text("hidden", isKorean: languageManager.isKorean))
                     .font(.caption)
                     .foregroundColor(.gray)
             }
             
             Spacer()
             
-            Button(localizedText("unhide")) {
+            Button(Loc.text("unhide", isKorean: languageManager.isKorean)) {
                 showingUnhideAlert = true
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
         }
         .padding(.vertical, 4)
-        .alert(localizedText("unhide_friend"), isPresented: $showingUnhideAlert) {
-            Button(localizedText("cancel"), role: .cancel) { }
-            Button(localizedText("unhide"), role: .destructive) {
+        .alert(Loc.text("unhide_friend", isKorean: languageManager.isKorean), isPresented: $showingUnhideAlert) {
+            Button(Loc.text("cancel", isKorean: languageManager.isKorean), role: .cancel) { }
+            Button(Loc.text("unhide", isKorean: languageManager.isKorean), role: .destructive) {
                 unhideFriend()
             }
         } message: {
-            Text(String(format: localizedText("unhide_message"), friendship.friendName))
+            Text(Loc.text("unhide_message", isKorean: languageManager.isKorean, searchTerm: friendship.friendName))
         }
     }
     
     private func unhideFriend() {
         friendship.status = .accepted
         try? modelContext.save()
-    }
-    
-    private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.isKorean
-        
-        switch key {
-        case "hidden": return isKorean ? "숨김" : "Hidden"
-        case "unhide": return isKorean ? "숨김 해제" : "Unhide"
-        case "unhide_friend": return isKorean ? "숨김 해제" : "Unhide Friend"
-        case "unhide_message": return isKorean ? "%@님의 숨김을 해제하시겠습니까?" : "Unhide %@?"
-        case "cancel": return isKorean ? "취소" : "Cancel"
-        default: return key
-        }
     }
 }
 
