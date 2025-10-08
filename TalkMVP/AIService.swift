@@ -28,6 +28,8 @@ actor AIService {
                 return "- [\(sender)] 음성 메시지"
             case .deleted:
                 return "- [\(sender)] 메시지가 삭제되었습니다"
+            case .video:
+                return "- [\(sender)] 동영상을 보냈습니다"
             }
         }
         let header = "최근 대화 요약 (\(DateFormatter.localizedString(from: Date(), dateStyle: .medium, timeStyle: .short))):\n\n"

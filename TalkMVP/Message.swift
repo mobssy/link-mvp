@@ -11,9 +11,16 @@ import SwiftData
 enum MessageType: String, Codable {
     case text
     case image
+    case video
     case file
     case audio
     case deleted // 자폭 메시지로 삭제된 메시지
+}
+
+enum AttachmentType: String, Codable {
+    case image
+    case video
+    case file
 }
 
 @Model
@@ -40,6 +47,12 @@ class Message {
     var isDisappearing: Bool = false // 자폭 메시지 여부
     var disappearAfterSeconds: Int = 0 // 몇 초 후 사라질지
     var attachmentURL: String? // 첨부 파일 URL (삭제용)
+
+    // 읽음 확인 및 첨부 파일 관련 필드
+    var isRead: Bool = false // 읽음 확인
+    var videoData: Data? // 동영상 데이터 (작은 동영상용)
+    var videoURL: String? // 동영상 로컬 파일 경로 (큰 동영상용)
+    var fileURL: String? // 파일 로컬 경로
 
     init(text: String, isFromCurrentUser: Bool, sender: String = "나", chatRoomId: String = "default", messageType: MessageType = .text, replyToMessageId: UUID? = nil) {
         self.id = UUID()

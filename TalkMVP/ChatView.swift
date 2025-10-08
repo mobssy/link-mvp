@@ -168,30 +168,72 @@ struct ChatView: View {
         guard let item = newValue else { return }
         Task {
             do {
-                // Attempt to load the selected media as raw Data (works for images/videos via Transferable)
-                if let data = try await item.loadTransferable(type: Data.self) {
-                    // TODO: Integrate with your sending pipeline (e.g., via viewModel or chatService)
-                    // Example: viewModel?.sendAttachment(data: data, fileName: "attachment")
-                    print("Loaded selected photo/video, size: \(data.count) bytes")
-                } else {
-                    print("No transferable data found for selected item.")
+                // 이미지인지 동영상인지 확인
+                if let contentType = item.supportedContentTypes.first {
+                    if contentType.conforms(to: .image) {
+                        // 이미지 처리
+                        if let data = try await item.loadTransferable(type: Data.self) {
+                            await sendImageMessage(data: data)
+                        }
+                    } else if contentType.conforms(to: .movie) || contentType.conforms(to: .video) {
+                        // 동영상 처리
+                        if let data = try await item.loadTransferable(type: Data.self) {
+                            await sendVideoMessage(data: data)
+                        }
+                    }
                 }
             } catch {
-                print("Failed to load selected photo: \(error)")
+                print("❌ [ChatView] Failed to load selected media: \(error)")
             }
             await MainActor.run {
-                // Clear selection so the same item can be picked again later
                 selectedPhoto = nil
             }
         }
     }
 
+    // MARK: - Media Sending
+
+    private func sendImageMessage(data: Data) async {
+        let message = Message(imageData: data, isFromCurrentUser: true, sender: "나", chatRoomId: chatRoom.id.uuidString)
+
+        await MainActor.run {
+            modelContext.insert(message)
+            chatRoom.messages.append(message)
+            chatRoom.lastMessage = "사진을 보냈습니다"
+            chatRoom.timestamp = Date()
+
+            do {
+                try modelContext.save()
+                print("✅ [ChatView] Image message sent")
+            } catch {
+                print("❌ [ChatView] Failed to send image: \(error)")
+            }
+        }
+    }
+
+    private func sendVideoMessage(data: Data) async {
+        let message = Message(text: "동영상을 보냈습니다", isFromCurrentUser: true, sender: "나", chatRoomId: chatRoom.id.uuidString, messageType: .video)
+        message.videoData = data
+
+        await MainActor.run {
+            modelContext.insert(message)
+            chatRoom.messages.append(message)
+            chatRoom.lastMessage = "동영상을 보냈습니다"
+            chatRoom.timestamp = Date()
+
+            do {
+                try modelContext.save()
+                print("✅ [ChatView] Video message sent")
+            } catch {
+                print("❌ [ChatView] Failed to send video: \(error)")
+            }
+        }
+    }
+
     private func handleDocumentSelection(_ url: URL) {
-        // Securely access the file selected via UIDocumentPicker (security-scoped URL)
         let didStartAccessing = url.startAccessingSecurityScopedResource()
         defer {
             if didStartAccessing { url.stopAccessingSecurityScopedResource() }
-            // Dismiss the picker
             showingDocumentPicker = false
         }
 
@@ -199,23 +241,48 @@ struct ChatView: View {
             let resourceValues = try url.resourceValues(forKeys: [.fileSizeKey, .nameKey, .contentTypeKey])
             let fileName = resourceValues.name ?? url.lastPathComponent
             let fileSize = resourceValues.fileSize ?? 0
-            let typeDescription = resourceValues.contentType?.description ?? "unknown"
-            print("Picked document: \(fileName) (\(fileSize) bytes), type: \(typeDescription)")
 
-            // TODO: Integrate with your sending pipeline if available.
-            // Example:
-            // try viewModel?.sendFile(at: url, fileName: fileName, contentType: resourceValues.contentType)
+            // 파일을 앱 Documents 폴더에 복사
+            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let destinationURL = documentsPath
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathExtension(url.pathExtension)
 
-            // If you need to manage your own copy, uncomment and adjust:
-            // let tempURL = FileManager.default.temporaryDirectory
-            //     .appendingPathComponent(UUID().uuidString)
-            //     .appendingPathExtension(url.pathExtension)
-            // if FileManager.default.fileExists(atPath: tempURL.path) {
-            //     try? FileManager.default.removeItem(at: tempURL)
-            // }
-            // try FileManager.default.copyItem(at: url, to: tempURL)
+            try FileManager.default.copyItem(at: url, to: destinationURL)
+
+            // 파일 메시지 전송
+            sendFileMessage(fileName: fileName, fileURL: destinationURL.path, fileSize: fileSize)
+
+            print("✅ [ChatView] File copied and message sent: \(fileName)")
         } catch {
-            print("Failed to read picked document: \(error)")
+            print("❌ [ChatView] Failed to handle document: \(error)")
+        }
+    }
+
+    private func sendFileMessage(fileName: String, fileURL: String, fileSize: Int) {
+        let nameWithoutExt = (fileName as NSString).deletingPathExtension
+        let ext = (fileName as NSString).pathExtension
+
+        let message = Message(
+            fileName: nameWithoutExt,
+            fileExtension: ext,
+            fileSize: fileSize,
+            isFromCurrentUser: true,
+            sender: "나",
+            chatRoomId: chatRoom.id.uuidString
+        )
+        message.fileURL = fileURL
+
+        modelContext.insert(message)
+        chatRoom.messages.append(message)
+        chatRoom.lastMessage = "파일을 보냈습니다"
+        chatRoom.timestamp = Date()
+
+        do {
+            try modelContext.save()
+            print("✅ [ChatView] File message saved")
+        } catch {
+            print("❌ [ChatView] Failed to save file message: \(error)")
         }
     }
 
@@ -272,6 +339,7 @@ struct ChatView: View {
         .onAppear {
             setupViewModelIfNeeded()
             checkIfFriend()
+            markMessagesAsRead()
             if let saved = UserDefaults.standard.array(forKey: "ignoredDomains") as? [String] {
                 ignoredDomains = Set(saved)
             }
@@ -616,7 +684,7 @@ struct ChatView: View {
             switch msg.messageType {
             case .text, .file:
                 return msg.text.lowercased().contains(query)
-            case .image, .audio:
+            case .image, .audio, .video:
                 return false
             case .deleted:
                 return false
@@ -688,6 +756,23 @@ struct ChatView: View {
         } catch {
             print("❌ [ChatView] Failed to check friendship: \(error)")
             isFriend = false
+        }
+    }
+
+    // MARK: - Read Status Management
+
+    private func markMessagesAsRead() {
+        guard let messages = viewModel?.messages else { return }
+
+        for message in messages where !message.isFromCurrentUser && !message.isRead {
+            message.isRead = true
+        }
+
+        do {
+            try modelContext.save()
+            print("✅ [ChatView] Marked \(messages.filter { !$0.isFromCurrentUser && $0.isRead }.count) messages as read")
+        } catch {
+            print("❌ [ChatView] Failed to mark messages as read: \(error)")
         }
     }
 
@@ -764,6 +849,25 @@ struct ChatView: View {
             }
 
             HStack(spacing: 12) {
+                // 첨부 파일 버튼
+                Menu {
+                    Button {
+                        openPhotosAttachment()
+                    } label: {
+                        Label("사진/동영상", systemImage: "photo.on.rectangle")
+                    }
+
+                    Button {
+                        showingDocumentPicker = true
+                    } label: {
+                        Label("파일", systemImage: "doc")
+                    }
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundColor(.appPrimary)
+                        .font(.system(size: 28))
+                }
+
                 TextField(localizedText("message_input_placeholder"), text: $inputText)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .focused($isTextFieldFocused)
