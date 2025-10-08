@@ -30,6 +30,9 @@ class ChatRoom {
     var otherUserId: String?  // 상대방 User ID
     var otherUserEmail: String?  // 상대방 이메일
 
+    // MARK: - 알림 설정
+    var notificationsEnabled: Bool = true  // 채팅방 알림 활성화 여부
+
     // MARK: - 조직방 확장 속성들
     var isOrganizationRoom: Bool = false
 

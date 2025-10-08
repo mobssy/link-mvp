@@ -232,6 +232,15 @@ struct ChatView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 HStack(spacing: 12) {
+                    // 알림 토글 버튼
+                    Button {
+                        toggleChatNotifications()
+                    } label: {
+                        Image(systemName: chatRoom.notificationsEnabled ? "bell.fill" : "bell.slash.fill")
+                            .foregroundColor(chatRoom.notificationsEnabled ? .appPrimary : .gray)
+                    }
+                    .accessibilityLabel(localizedText(chatRoom.notificationsEnabled ? "mute_notifications" : "unmute_notifications"))
+
                     // 친구가 아닌 경우 친구 추가 버튼 표시
                     if !isFriend && chatRoom.otherUserId != nil {
                         Button {
@@ -720,6 +729,12 @@ struct ChatView: View {
             print("❌ [ChatView] Failed to get current user: \(error)")
             return nil
         }
+    }
+
+    private func toggleChatNotifications() {
+        chatRoom.notificationsEnabled.toggle()
+        try? modelContext.save()
+        print("🔔 [ChatView] Notifications \(chatRoom.notificationsEnabled ? "enabled" : "disabled") for \(chatRoom.name)")
     }
 
     // MARK: - Message Input View

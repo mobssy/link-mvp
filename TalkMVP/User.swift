@@ -48,6 +48,7 @@ class Friendship {
     var createdAt: Date
     var ownerUserId: String
     var isFavorite: Bool = false // 즐겨찾기 여부
+    var notificationsEnabled: Bool = true // 알림 활성화 여부
 
     init(userId: String, friendId: String, friendName: String, friendEmail: String, status: FriendshipStatus = .pending) {
         self.id = UUID()
@@ -59,6 +60,7 @@ class Friendship {
         self.createdAt = Date()
         self.ownerUserId = userId
         self.isFavorite = false
+        self.notificationsEnabled = true
     }
 }
 

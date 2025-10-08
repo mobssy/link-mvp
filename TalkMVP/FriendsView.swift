@@ -553,6 +553,17 @@ struct FriendRow: View {
             }
             .tint(friendship.isFavorite ? .gray : .yellow)
         }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button {
+                toggleNotifications()
+            } label: {
+                Label(
+                    friendship.notificationsEnabled ? L10n.text("mute_notifications", languageManager.currentLanguage == .korean ? .korean : .english) : L10n.text("unmute_notifications", languageManager.currentLanguage == .korean ? .korean : .english),
+                    systemImage: friendship.notificationsEnabled ? "bell.slash.fill" : "bell.fill"
+                )
+            }
+            .tint(friendship.notificationsEnabled ? .gray : .blue)
+        }
         .sheet(isPresented: $showingProfileView) {
             FriendProfileView(friendship: friendship)
         }
@@ -560,6 +571,12 @@ struct FriendRow: View {
 
     private func toggleFavorite() {
         friendship.isFavorite.toggle()
+        try? modelContext.save()
+        onDataChanged()
+    }
+
+    private func toggleNotifications() {
+        friendship.notificationsEnabled.toggle()
         try? modelContext.save()
         onDataChanged()
     }

@@ -75,6 +75,10 @@ enum L10n {
         case "favorites": return isKorean ? "즐겨찾기" : "Favorites"
         case "favorite": return isKorean ? "즐겨찾기 추가" : "Add to Favorites"
         case "unfavorite": return isKorean ? "즐겨찾기 해제" : "Remove from Favorites"
+        case "mute_notifications": return isKorean ? "알림 끄기" : "Mute Notifications"
+        case "unmute_notifications": return isKorean ? "알림 켜기" : "Unmute Notifications"
+        case "notifications_muted": return isKorean ? "알림 꺼짐" : "Notifications Muted"
+        case "notifications_enabled": return isKorean ? "알림 켜짐" : "Notifications Enabled"
         default:
             // Fallback: return key as-is with warning
             print("⚠️ L10n: Missing translation for key '\(key)'")
