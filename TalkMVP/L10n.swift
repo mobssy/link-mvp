@@ -79,6 +79,8 @@ enum L10n {
         case "unmute_notifications": return isKorean ? "알림 켜기" : "Unmute Notifications"
         case "notifications_muted": return isKorean ? "알림 꺼짐" : "Notifications Muted"
         case "notifications_enabled": return isKorean ? "알림 켜짐" : "Notifications Enabled"
+        case "send": return isKorean ? "보내기" : "Send"
+        case "add_caption": return isKorean ? "설명을 추가하세요..." : "Add a caption..."
         default:
             // Fallback: return key as-is with warning
             print("⚠️ L10n: Missing translation for key '\(key)'")

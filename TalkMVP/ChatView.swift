@@ -29,7 +29,6 @@ struct ChatView: View {
     @State private var viewModel: ChatViewModel?
     @StateObject private var chatService: ChatService
     @FocusState private var isTextFieldFocused: Bool
-    @State private var selectedPhoto: PhotosPickerItem?
     @State private var showingPhotosPicker = false
     @State private var showingPhotosPermissionAlert = false
     @State private var showingDocumentPicker = false
@@ -41,6 +40,10 @@ struct ChatView: View {
     @State private var showingEditAlert = false
     @State private var editingText: String = ""
     @State private var inputText: String = ""
+
+    // 첨부파일 미리보기 관련
+    @State private var pendingAttachment: PendingAttachment?
+    @State private var showingAttachmentPreview = false
 
     // 필살기 기능 상태들
     @State private var emergencyButtonPressed = false
@@ -164,33 +167,6 @@ struct ChatView: View {
         }
     }
 
-    private func handlePhotoSelectionChange(_ newValue: PhotosPickerItem?) {
-        guard let item = newValue else { return }
-        Task {
-            do {
-                // 이미지인지 동영상인지 확인
-                if let contentType = item.supportedContentTypes.first {
-                    if contentType.conforms(to: .image) {
-                        // 이미지 처리
-                        if let data = try await item.loadTransferable(type: Data.self) {
-                            await sendImageMessage(data: data)
-                        }
-                    } else if contentType.conforms(to: .movie) || contentType.conforms(to: .video) {
-                        // 동영상 처리
-                        if let data = try await item.loadTransferable(type: Data.self) {
-                            await sendVideoMessage(data: data)
-                        }
-                    }
-                }
-            } catch {
-                print("❌ [ChatView] Failed to load selected media: \(error)")
-            }
-            await MainActor.run {
-                selectedPhoto = nil
-            }
-        }
-    }
-
     // MARK: - Media Sending
 
     private func sendImageMessage(data: Data) async {
@@ -242,18 +218,15 @@ struct ChatView: View {
             let fileName = resourceValues.name ?? url.lastPathComponent
             let fileSize = resourceValues.fileSize ?? 0
 
-            // 파일을 앱 Documents 폴더에 복사
-            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let destinationURL = documentsPath
-                .appendingPathComponent(UUID().uuidString)
-                .appendingPathExtension(url.pathExtension)
+            // 파일 데이터 읽기
+            let data = try Data(contentsOf: url)
+            let fileExtension = url.pathExtension
 
-            try FileManager.default.copyItem(at: url, to: destinationURL)
+            // 미리보기 표시
+            pendingAttachment = .document(data, fileName, fileSize, fileExtension)
+            showingAttachmentPreview = true
 
-            // 파일 메시지 전송
-            sendFileMessage(fileName: fileName, fileURL: destinationURL.path, fileSize: fileSize)
-
-            print("✅ [ChatView] File copied and message sent: \(fileName)")
+            print("📎 [ChatView] Document selected for preview: \(fileName)")
         } catch {
             print("❌ [ChatView] Failed to handle document: \(error)")
         }
@@ -284,6 +257,47 @@ struct ChatView: View {
         } catch {
             print("❌ [ChatView] Failed to save file message: \(error)")
         }
+    }
+
+    private func sendPendingAttachment() {
+        guard let attachment = pendingAttachment else { return }
+
+        Task {
+            switch attachment {
+            case .image(let image):
+                if let data = image.jpegData(compressionQuality: 0.8) {
+                    await sendImageMessage(data: data)
+                }
+            case .video(let data, _):
+                await sendVideoMessage(data: data)
+            case .document(let data, let fileName, let fileSize, _):
+                // 파일을 앱 Documents 폴더에 저장
+                let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                let destinationURL = documentsPath
+                    .appendingPathComponent(UUID().uuidString)
+                    .appendingPathExtension((fileName as NSString).pathExtension)
+
+                do {
+                    try data.write(to: destinationURL)
+                    await MainActor.run {
+                        sendFileMessage(fileName: fileName, fileURL: destinationURL.path, fileSize: fileSize)
+                    }
+                } catch {
+                    print("❌ Failed to save file: \(error)")
+                }
+            }
+
+            // 전송 후 미리보기 닫기
+            await MainActor.run {
+                pendingAttachment = nil
+                showingAttachmentPreview = false
+            }
+        }
+    }
+
+    private func cancelPendingAttachment() {
+        pendingAttachment = nil
+        showingAttachmentPreview = false
     }
 
     private var baseScaffold: some View {
@@ -318,20 +332,6 @@ struct ChatView: View {
                         }
                         .accessibilityLabel(localizedText("add_friend"))
                     }
-
-                    Button {
-                        openPhotosAttachment()
-                    } label: {
-                        Image(systemName: "paperclip")
-                    }
-                    .accessibilityLabel(localizedText("attach"))
-
-                    Button {
-                        showingFriendProfile = true
-                    } label: {
-                        Image(systemName: "person.crop.circle")
-                    }
-                    .accessibilityLabel(localizedText("view_profile"))
                 }
             }
         }
@@ -343,9 +343,6 @@ struct ChatView: View {
             if let saved = UserDefaults.standard.array(forKey: "ignoredDomains") as? [String] {
                 ignoredDomains = Set(saved)
             }
-        }
-        .onChange(of: selectedPhoto) { _, newValue in
-            handlePhotoSelectionChange(newValue)
         }
         .sheet(isPresented: $showingDocumentPicker) {
             DocumentPicker { url in
@@ -477,7 +474,19 @@ struct ChatView: View {
                     }
                 }
             }
-            .photosPicker(isPresented: $showingPhotosPicker, selection: $selectedPhoto, matching: .any(of: [.images, .videos]))
+            .sheet(isPresented: $showingPhotosPicker) {
+                PhotoPickerView { selectedItems in
+                    handlePhotoPickerSelection(selectedItems)
+                }
+            }
+            .fullScreenCover(isPresented: $showingAttachmentPreview) {
+                AttachmentPreviewView(
+                    attachment: pendingAttachment,
+                    onSend: sendPendingAttachment,
+                    onCancel: cancelPendingAttachment
+                )
+                .environmentObject(languageManager)
+            }
     }
 
     @ViewBuilder
@@ -784,21 +793,40 @@ struct ChatView: View {
             return
         }
 
-        let friendship = Friendship(
+        // Create outgoing (sender) friendship record
+        let outgoing = Friendship(
             userId: currentUserId,
             friendId: otherUserId,
             friendName: chatRoom.name,
             friendEmail: otherUserEmail,
             status: .pending
         )
+        outgoing.ownerUserId = currentUserId
+        modelContext.insert(outgoing)
 
-        modelContext.insert(friendship)
+        // Create incoming (receiver) mirror record for backend readiness
+        let descriptor = FetchDescriptor<User>(
+            predicate: #Predicate { $0.isCurrentUser == true }
+        )
+        if let currentUser = try? modelContext.fetch(descriptor).first {
+            let mirror = Friendship(
+                userId: otherUserId,
+                friendId: currentUserId,
+                friendName: currentUser.displayName,
+                friendEmail: currentUser.email,
+                status: .pending
+            )
+            mirror.ownerUserId = otherUserId
+            modelContext.insert(mirror)
+        }
 
         do {
             try modelContext.save()
             print("✅ [ChatView] Friend request sent to \(chatRoom.name)")
             // 친구 추가 후 상태 업데이트
             isFriend = true
+            // FriendsView에 알림을 보내서 UI 업데이트
+            NotificationCenter.default.post(name: .friendshipPendingCreated, object: nil, userInfo: ["friendId": otherUserId])
         } catch {
             print("❌ [ChatView] Failed to send friend request: \(error)")
         }
@@ -820,6 +848,51 @@ struct ChatView: View {
         chatRoom.notificationsEnabled.toggle()
         try? modelContext.save()
         print("🔔 [ChatView] Notifications \(chatRoom.notificationsEnabled ? "enabled" : "disabled") for \(chatRoom.name)")
+    }
+
+    // MARK: - Photo Picker Handler
+
+    private func handlePhotoPickerSelection(_ items: [PHPickerResult]) {
+        guard let item = items.first else { return }
+
+        // 동영상 먼저 체크
+        if item.itemProvider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
+            item.itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, error in
+                guard let url = url, error == nil else {
+                    print("❌ Failed to load video: \(error?.localizedDescription ?? "unknown error")")
+                    return
+                }
+
+                do {
+                    let data = try Data(contentsOf: url)
+                    Task { @MainActor in
+                        // 미리보기 표시
+                        self.pendingAttachment = .video(data, url)
+                        self.showingAttachmentPreview = true
+                        print("🎥 [ChatView] Video selected for preview")
+                    }
+                } catch {
+                    print("❌ Failed to read video data: \(error)")
+                }
+            }
+        } else {
+            // 이미지 처리
+            item.itemProvider.loadObject(ofClass: UIImage.self) { reading, error in
+                if let error = error {
+                    print("❌ Failed to load image: \(error.localizedDescription)")
+                    return
+                }
+
+                if let image = reading as? UIImage {
+                    Task { @MainActor in
+                        // 미리보기 표시
+                        self.pendingAttachment = .image(image)
+                        self.showingAttachmentPreview = true
+                        print("🖼️ [ChatView] Image selected for preview")
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Message Input View
@@ -2098,5 +2171,236 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         default:
             break
         }
+    }
+}
+
+// MARK: - Pending Attachment
+
+enum PendingAttachment {
+    case image(UIImage)
+    case video(Data, URL)
+    case document(Data, String, Int, String?) // data, fileName, fileSize, fileExtension
+
+    var displayName: String {
+        switch self {
+        case .image:
+            return "사진"
+        case .video:
+            return "동영상"
+        case .document(_, let fileName, _, _):
+            return fileName
+        }
+    }
+
+    var fileSize: Int? {
+        switch self {
+        case .image(let image):
+            return image.jpegData(compressionQuality: 0.8)?.count
+        case .video(let data, _):
+            return data.count
+        case .document(_, _, let size, _):
+            return size
+        }
+    }
+}
+
+// MARK: - Photo Picker UIKit Wrapper
+
+struct PhotoPickerView: UIViewControllerRepresentable {
+    let onComplete: ([PHPickerResult]) -> Void
+
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration()
+        config.filter = .any(of: [.images, .videos])
+        config.selectionLimit = 1
+
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        let parent: PhotoPickerView
+
+        init(_ parent: PhotoPickerView) {
+            self.parent = parent
+        }
+
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            picker.dismiss(animated: true)
+            parent.onComplete(results)
+        }
+    }
+}
+
+// MARK: - Attachment Preview View
+
+struct AttachmentPreviewView: View {
+    let attachment: PendingAttachment?
+    let onSend: () -> Void
+    let onCancel: () -> Void
+    @EnvironmentObject private var languageManager: LanguageManager
+    @State private var captionText: String = ""
+    @FocusState private var isCaptionFocused: Bool
+
+    var body: some View {
+        ZStack {
+            // 배경 (검정색)
+            Color.black.ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // 상단 네비게이션
+                HStack {
+                    Button(action: onCancel) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 22))
+                            .foregroundColor(.white)
+                            .frame(width: 44, height: 44)
+                    }
+
+                    Spacer()
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+
+                // 중앙 컨텐츠 (사진/동영상/파일)
+                if let attachment = attachment {
+                    Spacer()
+
+                    GeometryReader { geometry in
+                        switch attachment {
+                        case .image(let image):
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: geometry.size.width, height: geometry.size.height)
+                                .clipped()
+
+                        case .video:
+                            ZStack {
+                                Color.black.opacity(0.5)
+
+                                VStack(spacing: 20) {
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.system(size: 80))
+                                        .foregroundColor(.white)
+
+                                    Text("동영상")
+                                        .font(.title2)
+                                        .foregroundColor(.white)
+                                }
+                            }
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+
+                        case .document(_, let fileName, let fileSize, let ext):
+                            ZStack {
+                                Color.black.opacity(0.8)
+
+                                VStack(spacing: 24) {
+                                    Image(systemName: fileIcon(for: ext ?? ""))
+                                        .font(.system(size: 100))
+                                        .foregroundColor(.white)
+
+                                    VStack(spacing: 12) {
+                                        Text(fileName)
+                                            .font(.title3)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(.white)
+                                            .multilineTextAlignment(.center)
+                                            .lineLimit(2)
+
+                                        Text(formatFileSize(fileSize))
+                                            .font(.subheadline)
+                                            .foregroundColor(.white.opacity(0.7))
+                                    }
+                                }
+                                .padding(.horizontal, 40)
+                            }
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                        }
+                    }
+
+                    Spacer()
+
+                    // 하단 입력 영역 (메시지 앱 스타일)
+                    VStack(spacing: 0) {
+                        // 구분선
+                        Divider()
+                            .background(Color.white.opacity(0.2))
+
+                        HStack(alignment: .bottom, spacing: 12) {
+                            // 텍스트 입력 필드
+                            ZStack(alignment: .leading) {
+                                if captionText.isEmpty {
+                                    Text(L10n.text("add_caption", languageManager.currentLanguage == .korean ? .korean : .english))
+                                        .foregroundColor(.white.opacity(0.5))
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 12)
+                                }
+
+                                TextField("", text: $captionText)
+                                    .focused($isCaptionFocused)
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .fill(Color.white.opacity(0.15))
+                                    )
+                            }
+
+                            // 보내기 버튼
+                            Button(action: onSend) {
+                                Image(systemName: "arrow.up.circle.fill")
+                                    .font(.system(size: 36))
+                                    .foregroundColor(.appPrimary)
+                            }
+                            .frame(width: 44, height: 44)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color.black.opacity(0.9))
+                    }
+                } else {
+                    Spacer()
+                    Text("첨부 파일 없음")
+                        .foregroundColor(.white.opacity(0.7))
+                    Spacer()
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    private func fileIcon(for fileExtension: String) -> String {
+        switch fileExtension.lowercased() {
+        case "pdf":
+            return "doc.text.fill"
+        case "doc", "docx":
+            return "doc.fill"
+        case "txt":
+            return "text.justify"
+        case "zip", "rar":
+            return "doc.zipper"
+        case "mp3", "wav":
+            return "music.note"
+        case "mp4", "mov":
+            return "video.fill"
+        default:
+            return "doc.fill"
+        }
+    }
+
+    private func formatFileSize(_ bytes: Int) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useKB, .useMB, .useGB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: Int64(bytes))
     }
 }

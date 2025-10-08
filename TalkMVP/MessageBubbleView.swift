@@ -71,15 +71,24 @@ struct MessageBubbleView: View {
                 }
             }
 
-            // 메시지 타입에 따른 콘텐츠
-            messageContent
-                .padding(.horizontal, message.messageType == .image ? 4 : 16)
-                .padding(.vertical, message.messageType == .image ? 4 : 10)
-                .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(message.isFromCurrentUser ? Color.appPrimary : Color.gray.opacity(0.2))
-                )
-                .foregroundColor(message.isFromCurrentUser ? .white : .primary)
+            HStack(spacing: 8) {
+                // 읽음 표시 (내가 보낸 메시지의 왼쪽에만)
+                if message.isFromCurrentUser {
+                    Circle()
+                        .fill(message.isRead ? Color.green : Color.red)
+                        .frame(width: 8, height: 8)
+                }
+
+                // 메시지 타입에 따른 콘텐츠
+                messageContent
+                    .padding(.horizontal, message.messageType == .image ? 4 : 16)
+                    .padding(.vertical, message.messageType == .image ? 4 : 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(message.isFromCurrentUser ? Color.appPrimary : Color.gray.opacity(0.2))
+                    )
+                    .foregroundColor(message.isFromCurrentUser ? .white : .primary)
+            }
 
             Text(message.timestamp, style: .time)
                 .font(.caption2)
@@ -125,48 +134,20 @@ struct MessageBubbleView: View {
     private var messageContent: some View {
         switch message.messageType {
         case .text:
-            VStack(alignment: message.isFromCurrentUser ? .trailing : .leading, spacing: 4) {
-                Text(message.text)
-                    .multilineTextAlignment(message.isFromCurrentUser ? .trailing : .leading)
-
-                // 읽음 표시 (내가 보낸 메시지에만)
-                if message.isFromCurrentUser {
-                    HStack(spacing: 4) {
-                        Image(systemName: message.isRead ? "checkmark.circle.fill" : "checkmark.circle")
-                            .font(.caption2)
-                            .foregroundColor(message.isRead ? .green : .white.opacity(0.7))
-                        Text(message.isRead ? "읽음" : "안읽음")
-                            .font(.caption2)
-                            .foregroundColor(.white.opacity(0.7))
-                    }
-                }
-            }
+            Text(message.text)
+                .multilineTextAlignment(message.isFromCurrentUser ? .trailing : .leading)
 
         case .image:
             if let imageData = message.imageData,
                let uiImage = UIImage(data: imageData) {
-                VStack(alignment: .trailing, spacing: 4) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(maxWidth: 200, maxHeight: 200)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .onTapGesture {
-                            // 이미지 확대 보기 (추후 구현)
-                        }
-
-                    // 읽음 표시
-                    if message.isFromCurrentUser {
-                        HStack(spacing: 4) {
-                            Image(systemName: message.isRead ? "checkmark.circle.fill" : "checkmark.circle")
-                                .font(.caption2)
-                                .foregroundColor(message.isRead ? .green : .white.opacity(0.7))
-                            Text(message.isRead ? "읽음" : "안읽음")
-                                .font(.caption2)
-                                .foregroundColor(.white.opacity(0.7))
-                        }
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: 200, maxHeight: 200)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .onTapGesture {
+                        // 이미지 확대 보기 (추후 구현)
                     }
-                }
             } else {
                 HStack {
                     Image(systemName: "photo")
@@ -177,7 +158,7 @@ struct MessageBubbleView: View {
 
         case .video:
             if let videoData = message.videoData {
-                VStack(alignment: .trailing, spacing: 4) {
+                VStack(alignment: .leading, spacing: 4) {
                     ZStack {
                         Rectangle()
                             .fill(Color.black.opacity(0.3))
@@ -195,18 +176,6 @@ struct MessageBubbleView: View {
                     Text("동영상 (\(formatFileSize(videoData.count)))")
                         .font(.caption)
                         .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.9) : .secondary)
-
-                    // 읽음 표시
-                    if message.isFromCurrentUser {
-                        HStack(spacing: 4) {
-                            Image(systemName: message.isRead ? "checkmark.circle.fill" : "checkmark.circle")
-                                .font(.caption2)
-                                .foregroundColor(message.isRead ? .green : .white.opacity(0.7))
-                            Text(message.isRead ? "읽음" : "안읽음")
-                                .font(.caption2)
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                    }
                 }
             } else {
                 HStack {
@@ -217,35 +186,21 @@ struct MessageBubbleView: View {
             }
 
         case .file:
-            VStack(alignment: .trailing, spacing: 4) {
-                HStack {
-                    Image(systemName: fileIcon(for: message.fileExtension ?? ""))
-                        .foregroundColor(message.isFromCurrentUser ? .white : .appPrimary)
-                    VStack(alignment: .leading) {
-                        Text(message.fileName ?? localizedText("file"))
-                            .font(.headline)
-                        if let fileSize = message.fileSize {
-                            Text(formatFileSize(fileSize))
-                                .font(.caption)
-                                .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.8) : .secondary)
-                        }
-                    }
-                    Spacer()
-                }
-                .frame(minWidth: 150)
-
-                // 읽음 표시
-                if message.isFromCurrentUser {
-                    HStack(spacing: 4) {
-                        Image(systemName: message.isRead ? "checkmark.circle.fill" : "checkmark.circle")
-                            .font(.caption2)
-                            .foregroundColor(message.isRead ? .green : .white.opacity(0.7))
-                        Text(message.isRead ? "읽음" : "안읽음")
-                            .font(.caption2)
-                            .foregroundColor(.white.opacity(0.7))
+            HStack {
+                Image(systemName: fileIcon(for: message.fileExtension ?? ""))
+                    .foregroundColor(message.isFromCurrentUser ? .white : .appPrimary)
+                VStack(alignment: .leading) {
+                    Text(message.fileName ?? localizedText("file"))
+                        .font(.headline)
+                    if let fileSize = message.fileSize {
+                        Text(formatFileSize(fileSize))
+                            .font(.caption)
+                            .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.8) : .secondary)
                     }
                 }
+                Spacer()
             }
+            .frame(minWidth: 150)
 
         case .audio:
             HStack {

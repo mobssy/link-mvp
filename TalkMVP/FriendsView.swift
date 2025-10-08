@@ -42,6 +42,7 @@ struct FriendsView: View {
     @State private var searchText = ""
     @State private var friendships: [Friendship] = []
     @State private var showNewFriendsSection: Bool = true
+    @State private var notificationObserver: NSObjectProtocol?
 
     var allAccepted: [Friendship] {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
@@ -279,7 +280,11 @@ struct FriendsView: View {
             }
         }
         .badge(newFriendsCount)
-        .sheet(item: $activeSheet, onDismiss: { activeSheet = nil }) { sheet in
+        .sheet(item: $activeSheet, onDismiss: {
+            print("📋 Sheet dismissed, reloading friendships...")
+            loadFriendships()
+            activeSheet = nil
+        }) { sheet in
             switch sheet {
             case .addFriend:
                 AddFriendView(
@@ -302,15 +307,33 @@ struct FriendsView: View {
             }
         }
         .onAppear {
+            print("🔵 FriendsView appeared")
             loadFriendships()
             attemptSeedAfterLoad()
-            NotificationCenter.default.addObserver(forName: .friendshipPendingCreated, object: nil, queue: .main) { _ in
-                // No immediate badge; badge will appear once accepted and fetched again.
+
+            // Observer를 제대로 등록하고 token 저장
+            if notificationObserver == nil {
+                notificationObserver = NotificationCenter.default.addObserver(
+                    forName: .friendshipPendingCreated,
+                    object: nil,
+                    queue: .main
+                ) { notification in
+                    print("🔔 Received friendshipPendingCreated notification: \(notification)")
+                    // 약간의 지연을 주어 SwiftData 저장이 완료되도록 함
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        print("🔄 Reloading friendships after notification...")
+                        loadFriendships()
+                    }
+                }
             }
-            // Removed redundant badge post here to reduce duplicate posts
         }
         .onDisappear {
-            NotificationCenter.default.removeObserver(self, name: .friendshipPendingCreated, object: nil)
+            print("🔴 FriendsView disappeared")
+            // Observer 제거
+            if let observer = notificationObserver {
+                NotificationCenter.default.removeObserver(observer)
+                notificationObserver = nil
+            }
         }
         .onChange(of: newFriendsCount) { _, newValue in
             NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newValue])
@@ -721,12 +744,14 @@ struct AddFriendView: View {
                                 notificationManager: notificationManager,
                                 modelContext: modelContext
                             ) { success, message in
+                                print("📝 UserSearchResultRow onComplete: success=\(success), message=\(message)")
                                 lastActionWasSuccess = success
                                 alertMessage = message
                                 showingAlert = true
                                 if success {
                                     searchResults.removeAll()
                                     friendEmail = ""
+                                    print("📝 Calling onFriendAdded callback...")
                                     onFriendAdded()
                                 }
                             }
@@ -747,7 +772,11 @@ struct AddFriendView: View {
         .alert(L10n.text("alert", languageManager.currentLanguage == .korean ? .korean : .english), isPresented: $showingAlert) {
             Button(L10n.text("ok", languageManager.currentLanguage == .korean ? .korean : .english)) {
                 if lastActionWasSuccess {
-                    dismiss()
+                    print("✅ Alert OK pressed, dismissing AddFriendView...")
+                    // Give time for data to propagate
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        dismiss()
+                    }
                 }
             }
         } message: {
@@ -848,47 +877,64 @@ struct UserSearchResultRow: View {
                 )
 
                 await MainActor.run {
-                    if success {
-                        // Create outgoing (sender) friendship record
-                        if let senderId = authManager.currentUser?.id.uuidString {
-                            let outgoing = Friendship(
-                                userId: senderId,
-                                friendId: result.id,
-                                friendName: result.displayName,
-                                friendEmail: result.email,
-                                status: .pending
-                            )
-                            outgoing.ownerUserId = senderId
-                            modelContext.insert(outgoing)
+                    defer { isSendingRequest = false }
 
-                            // Create incoming (receiver) mirror record for backend readiness
-                            let mirror = Friendship(
-                                userId: result.id,
-                                friendId: senderId,
-                                friendName: authManager.currentUser?.displayName ?? L10n.text("user", languageManager.currentLanguage == .korean ? .korean : .english),
-                                friendEmail: authManager.currentUser?.email ?? "",
-                                status: .pending
-                            )
-                            mirror.ownerUserId = result.id
-                            modelContext.insert(mirror)
-
-                            try? modelContext.save()
-
-                            NotificationCenter.default.post(name: .friendshipPendingCreated, object: nil, userInfo: ["friendId": result.id])
-
-                            // Schedule a local notification to simulate receiver-side alert
-                            let senderName = authManager.currentUser?.displayName ?? L10n.text("user", languageManager.currentLanguage == .korean ? .korean : .english)
-                            let senderEmail = authManager.currentUser?.email ?? ""
-                            notificationManager.scheduleFriendRequestNotification(from: senderName, email: senderEmail)
-                        }
-                        onComplete(true, L10n.text("friend_request_sent", languageManager.currentLanguage == .korean ? .korean : .english))
-                    } else {
+                    guard success else {
                         onComplete(false, L10n.text("friend_request_failed", languageManager.currentLanguage == .korean ? .korean : .english))
+                        return
                     }
-                    isSendingRequest = false
+
+                    // Create outgoing (sender) friendship record
+                    guard let senderId = authManager.currentUser?.id.uuidString else {
+                        onComplete(false, L10n.text("error_occurred_prefix", languageManager.currentLanguage == .korean ? .korean : .english) + "User not found")
+                        return
+                    }
+
+                    let outgoing = Friendship(
+                        userId: senderId,
+                        friendId: result.id,
+                        friendName: result.displayName,
+                        friendEmail: result.email,
+                        status: .pending
+                    )
+                    outgoing.ownerUserId = senderId
+                    modelContext.insert(outgoing)
+
+                    // Create incoming (receiver) mirror record for backend readiness
+                    let mirror = Friendship(
+                        userId: result.id,
+                        friendId: senderId,
+                        friendName: authManager.currentUser?.displayName ?? L10n.text("user", languageManager.currentLanguage == .korean ? .korean : .english),
+                        friendEmail: authManager.currentUser?.email ?? "",
+                        status: .pending
+                    )
+                    mirror.ownerUserId = result.id
+                    modelContext.insert(mirror)
+
+                    // Try to save - if it fails, we'll still notify (data is in memory)
+                    do {
+                        try modelContext.save()
+                        print("✅ Friendship saved successfully to persistent store")
+                    } catch let error as NSError {
+                        print("⚠️ Save to persistent store failed: \(error)")
+                        print("⚠️ Error domain: \(error.domain), code: \(error.code)")
+                        print("⚠️ Data remains in memory context and will be used")
+                    }
+
+                    // Schedule a local notification to simulate receiver-side alert
+                    let senderName = authManager.currentUser?.displayName ?? L10n.text("user", languageManager.currentLanguage == .korean ? .korean : .english)
+                    let senderEmail = authManager.currentUser?.email ?? ""
+                    notificationManager.scheduleFriendRequestNotification(from: senderName, email: senderEmail)
+
+                    // Post notification AFTER insert (data is in modelContext even if save failed)
+                    NotificationCenter.default.post(name: .friendshipPendingCreated, object: nil, userInfo: ["friendId": result.id])
+                    print("✅ Notification posted, data available in memory")
+
+                    onComplete(true, L10n.text("friend_request_sent", languageManager.currentLanguage == .korean ? .korean : .english))
                 }
             } catch {
                 await MainActor.run {
+                    print("❌ sendFriendRequest error: \(error)")
                     onComplete(false, L10n.text("error_occurred_prefix", languageManager.currentLanguage == .korean ? .korean : .english) + error.localizedDescription)
                     isSendingRequest = false
                 }
@@ -909,9 +955,9 @@ struct BlockedFriendsView: View {
             List {
                 if blockedFriends.isEmpty {
                     ContentUnavailableView(
-                        NSLocalizedString("no_blocked_friends", comment: ""),
+                        L10n.text("no_blocked_friends", languageManager.currentLanguage == .korean ? .korean : .english),
                         systemImage: "person.slash",
-                        description: Text(NSLocalizedString("no_blocked_friends", comment: ""))
+                        description: Text(L10n.text("no_blocked_friends", languageManager.currentLanguage == .korean ? .korean : .english))
                     )
                 } else {
                     ForEach(blockedFriends, id: \.id) { friendship in
@@ -919,11 +965,11 @@ struct BlockedFriendsView: View {
                     }
                 }
             }
-            .navigationTitle(NSLocalizedString("blocked_list", comment: ""))
+            .navigationTitle(L10n.text("blocked_list", languageManager.currentLanguage == .korean ? .korean : .english))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(NSLocalizedString("close", comment: "")) {
+                    Button(L10n.text("close", languageManager.currentLanguage == .korean ? .korean : .english)) {
                         dismiss()
                     }
                 }
@@ -950,27 +996,27 @@ struct BlockedFriendRow: View {
                     .font(.headline)
                     .foregroundColor(.primary)
 
-                Text(NSLocalizedString("blocked", comment: ""))
+                Text(L10n.text("blocked", languageManager.currentLanguage == .korean ? .korean : .english))
                     .font(.caption)
                     .foregroundColor(.red)
             }
 
             Spacer()
 
-            Button(NSLocalizedString("unblock", comment: "")) {
+            Button(L10n.text("unblock", languageManager.currentLanguage == .korean ? .korean : .english)) {
                 showingUnblockAlert = true
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
         }
         .padding(.vertical, 4)
-        .alert(NSLocalizedString("unblock_friend", comment: ""), isPresented: $showingUnblockAlert) {
-            Button(NSLocalizedString("cancel", comment: ""), role: .cancel) { }
-            Button(NSLocalizedString("unblock", comment: ""), role: .destructive) {
+        .alert(L10n.text("unblock_friend", languageManager.currentLanguage == .korean ? .korean : .english), isPresented: $showingUnblockAlert) {
+            Button(L10n.text("cancel", languageManager.currentLanguage == .korean ? .korean : .english), role: .cancel) { }
+            Button(L10n.text("unblock", languageManager.currentLanguage == .korean ? .korean : .english), role: .destructive) {
                 unblockFriend()
             }
         } message: {
-            Text(String(format: NSLocalizedString("unblock_message", comment: ""), friendship.friendName))
+            Text(String(format: L10n.text("unblock_message", languageManager.currentLanguage == .korean ? .korean : .english), friendship.friendName))
         }
     }
 
@@ -991,12 +1037,12 @@ struct ManageFriendsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section(header: Text(NSLocalizedString("hidden_list", comment: ""))) {
+                Section(header: Text(L10n.text("hidden_list", languageManager.currentLanguage == .korean ? .korean : .english))) {
                     if hiddenFriends.isEmpty {
                         ContentUnavailableView(
-                            NSLocalizedString("no_hidden_friends", comment: ""),
+                            L10n.text("no_hidden_friends", languageManager.currentLanguage == .korean ? .korean : .english),
                             systemImage: "eye.slash",
-                            description: Text(NSLocalizedString("no_hidden_friends", comment: ""))
+                            description: Text(L10n.text("no_hidden_friends", languageManager.currentLanguage == .korean ? .korean : .english))
                         )
                     } else {
                         ForEach(hiddenFriends, id: \.id) { friendship in
@@ -1005,12 +1051,12 @@ struct ManageFriendsView: View {
                     }
                 }
 
-                Section(header: Text(NSLocalizedString("blocked_list", comment: ""))) {
+                Section(header: Text(L10n.text("blocked_list", languageManager.currentLanguage == .korean ? .korean : .english))) {
                     if blockedFriends.isEmpty {
                         ContentUnavailableView(
-                            NSLocalizedString("no_blocked_friends", comment: ""),
+                            L10n.text("no_blocked_friends", languageManager.currentLanguage == .korean ? .korean : .english),
                             systemImage: "hand.raised.slash",
-                            description: Text(NSLocalizedString("no_blocked_friends", comment: ""))
+                            description: Text(L10n.text("no_blocked_friends", languageManager.currentLanguage == .korean ? .korean : .english))
                         )
                     } else {
                         ForEach(blockedFriends, id: \.id) { friendship in
@@ -1019,11 +1065,11 @@ struct ManageFriendsView: View {
                     }
                 }
             }
-            .navigationTitle(NSLocalizedString("manage_hidden_blocked", comment: ""))
+            .navigationTitle(L10n.text("manage_hidden_blocked", languageManager.currentLanguage == .korean ? .korean : .english))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(NSLocalizedString("close", comment: "")) {
+                    Button(L10n.text("close", languageManager.currentLanguage == .korean ? .korean : .english)) {
                         dismiss()
                     }
                 }
@@ -1050,27 +1096,27 @@ struct HiddenFriendRow: View {
                     .font(.headline)
                     .foregroundColor(.primary)
 
-                Text(NSLocalizedString("hidden", comment: ""))
+                Text(L10n.text("hidden", languageManager.currentLanguage == .korean ? .korean : .english))
                     .font(.caption)
                     .foregroundColor(.gray)
             }
 
             Spacer()
 
-            Button(NSLocalizedString("unhide", comment: "")) {
+            Button(L10n.text("unhide", languageManager.currentLanguage == .korean ? .korean : .english)) {
                 showingUnhideAlert = true
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
         }
         .padding(.vertical, 4)
-        .alert(NSLocalizedString("unhide_friend", comment: ""), isPresented: $showingUnhideAlert) {
-            Button(NSLocalizedString("cancel", comment: ""), role: .cancel) { }
-            Button(NSLocalizedString("unhide", comment: ""), role: .destructive) {
+        .alert(L10n.text("unhide_friend", languageManager.currentLanguage == .korean ? .korean : .english), isPresented: $showingUnhideAlert) {
+            Button(L10n.text("cancel", languageManager.currentLanguage == .korean ? .korean : .english), role: .cancel) { }
+            Button(L10n.text("unhide", languageManager.currentLanguage == .korean ? .korean : .english), role: .destructive) {
                 unhideFriend()
             }
         } message: {
-            Text(String(format: NSLocalizedString("unhide_message", comment: ""), friendship.friendName))
+            Text(String(format: L10n.text("unhide_message", languageManager.currentLanguage == .korean ? .korean : .english), friendship.friendName))
         }
     }
 
