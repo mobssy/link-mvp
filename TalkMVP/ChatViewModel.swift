@@ -19,6 +19,7 @@ class ChatViewModel: ObservableObject {
     @Published var otherUserTyping = false
     @Published var isOnline = true
     @Published var replyingToMessage: Message?
+    @Published var errorMessage: String?
 
     // Translation state (no placeholder text while translating)
     @Published var translations: [UUID: String] = [:]
@@ -78,7 +79,7 @@ class ChatViewModel: ObservableObject {
             messages = try await messageRepository.fetchMessages(for: chatRoom.id.uuidString)
         } catch {
             print("❌ [ChatViewModel] Failed to load messages: \(error)")
-            // TODO: Show error to user
+            errorMessage = "Failed to load messages. Please try again."
         }
     }
 
@@ -156,7 +157,11 @@ class ChatViewModel: ObservableObject {
 
             } catch {
                 print("❌ [ChatViewModel] Failed to send message: \(error)")
-                // TODO: Show error to user & rollback UI
+                errorMessage = "Failed to send message. Please try again."
+                // Rollback UI: remove the optimistically added message
+                if let index = messages.lastIndex(where: { $0.id == message.id }) {
+                    messages.remove(at: index)
+                }
             }
         }
 
@@ -191,7 +196,11 @@ class ChatViewModel: ObservableObject {
 
             } catch {
                 print("❌ [ChatViewModel] Failed to send image: \(error)")
-                // TODO: Show error to user
+                errorMessage = "Failed to send image. Please try again."
+                // Rollback UI
+                if let index = messages.lastIndex(where: { $0.id == message.id }) {
+                    messages.remove(at: index)
+                }
             }
         }
 
@@ -223,7 +232,11 @@ class ChatViewModel: ObservableObject {
 
             } catch {
                 print("❌ [ChatViewModel] Failed to send file: \(error)")
-                // TODO: Show error to user
+                errorMessage = "Failed to send file. Please try again."
+                // Rollback UI
+                if let index = messages.lastIndex(where: { $0.id == message.id }) {
+                    messages.remove(at: index)
+                }
             }
         }
 
@@ -344,7 +357,10 @@ class ChatViewModel: ObservableObject {
                 chatService?.sendReaction(emoji, to: message, in: chatRoom)
             } catch {
                 print("❌ [ChatViewModel] Failed to save reaction: \(error)")
-                // TODO: Rollback UI
+                errorMessage = "Failed to add reaction. Please try again."
+                // Rollback UI: remove the reaction from the message
+                message.removeReaction(emoji, from: currentUserId)
+                objectWillChange.send()
             }
         }
     }
@@ -421,7 +437,10 @@ class ChatViewModel: ObservableObject {
                 chatService?.deleteMessage(message, in: chatRoom)
             } catch {
                 print("❌ [ChatViewModel] Failed to delete message: \(error)")
-                // TODO: Rollback UI - add message back
+                errorMessage = "Failed to delete message. Please try again."
+                // Rollback UI: add message back at the correct position
+                messages.append(message)
+                messages.sort { $0.timestamp < $1.timestamp }
             }
         }
     }

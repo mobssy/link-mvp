@@ -149,15 +149,18 @@ struct BlockAlertModifier: ViewModifier {
     let language: Language
     @Binding var isPresented: Bool
     let name: String
+    let onBlock: () -> Void
 
     init(
         isPresented: Binding<Bool>,
         name: String,
+        onBlock: @escaping () -> Void,
         localizationService: LocalizationServiceProtocol = LocalizationService.shared,
         language: Language
     ) {
         self._isPresented = isPresented
         self.name = name
+        self.onBlock = onBlock
         self.localizationService = localizationService
         self.language = language
     }
@@ -166,7 +169,7 @@ struct BlockAlertModifier: ViewModifier {
         content.alert(localizedAlertText(.blockUser, language), isPresented: $isPresented) {
             Button(localizedAlertText(.cancel, language), role: .cancel) {}
             Button(localizedAlertText(.block, language), role: .destructive) {
-                // TODO: 차단 로직 연동
+                onBlock()
             }
         } message: {
             Text(String(format: localizedAlertText(.blockedUserMessage, language), name))
@@ -234,6 +237,7 @@ struct CompoundAlertModifier: ViewModifier {
     let chatRoomName: String
     let openURL: (URL) -> Void
     let onEditSave: (Message, String) -> Void
+    let onBlock: () -> Void
 
     @EnvironmentObject private var languageManager: LanguageManager
 
@@ -271,6 +275,7 @@ struct CompoundAlertModifier: ViewModifier {
             .modifier(BlockAlertModifier(
                 isPresented: $showingBlockAlert,
                 name: chatRoomName,
+                onBlock: onBlock,
                 language: language
             ))
             .modifier(SuspiciousLinkAlertModifier(

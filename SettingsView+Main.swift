@@ -195,7 +195,7 @@ struct SettingsView: View {
             .alert(localizedText("delete_account"), isPresented: $showingDeleteAlert) {
                 Button(localizedText("cancel"), role: .cancel) {}
                 Button(localizedText("delete_account"), role: .destructive) {
-                    // TODO: Implement account deletion logic
+                    deleteAccount()
                 }
             } message: {
                 Text(localizedText("delete_account_hint"))
@@ -371,5 +371,49 @@ struct SettingsView: View {
         return languageManager.currentLanguage == .korean ?
             "알림 권한은 기기 설정에서 변경할 수 있습니다" :
             "You can change notification permissions in the device Settings"
+    }
+
+    private func deleteAccount() {
+        // Delete all user data from SwiftData
+        do {
+            // Delete all messages
+            let messageDescriptor = FetchDescriptor<Message>()
+            let messages = try modelContext.fetch(messageDescriptor)
+            for message in messages {
+                modelContext.delete(message)
+            }
+
+            // Delete all chat rooms
+            let chatRoomDescriptor = FetchDescriptor<ChatRoom>()
+            let chatRooms = try modelContext.fetch(chatRoomDescriptor)
+            for chatRoom in chatRooms {
+                modelContext.delete(chatRoom)
+            }
+
+            // Delete all friendships
+            let friendshipDescriptor = FetchDescriptor<Friendship>()
+            let friendships = try modelContext.fetch(friendshipDescriptor)
+            for friendship in friendships {
+                modelContext.delete(friendship)
+            }
+
+            // Delete all users except current user (or delete all if desired)
+            let userDescriptor = FetchDescriptor<User>()
+            let users = try modelContext.fetch(userDescriptor)
+            for user in users {
+                modelContext.delete(user)
+            }
+
+            // Save the deletion
+            try modelContext.save()
+
+            // Sign out
+            authManager.currentUser = nil
+            authManager.isAuthenticated = false
+
+            print("✅ [SettingsView] Account and all data deleted successfully")
+        } catch {
+            print("❌ [SettingsView] Failed to delete account: \(error)")
+        }
     }
 }

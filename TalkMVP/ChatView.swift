@@ -380,6 +380,9 @@ struct ChatView: View {
             openURL: { url in openURL(url) },
             onEditSave: { message, newText in
                 viewModel?.editMessage(message, newText: newText)
+            },
+            onBlock: {
+                blockUser()
             }
         )
     }
@@ -847,6 +850,37 @@ struct ChatView: View {
         print("🔔 [ChatView] Notifications \(chatRoom.notificationsEnabled ? "enabled" : "disabled") for \(chatRoom.name)")
     }
 
+    private func blockUser() {
+        guard let otherUserId = chatRoom.otherUserId,
+              let currentUserId = getCurrentUserId() else {
+            print("❌ [ChatView] Missing user information for blocking")
+            return
+        }
+
+        // Find the friendship record and update status to blocked
+        let descriptor = FetchDescriptor<Friendship>(
+            predicate: #Predicate { friendship in
+                friendship.ownerUserId == currentUserId && friendship.friendId == otherUserId
+            }
+        )
+
+        do {
+            let friendships = try modelContext.fetch(descriptor)
+            if let friendship = friendships.first {
+                friendship.status = .blocked
+                try modelContext.save()
+                print("✅ [ChatView] Blocked user: \(chatRoom.name)")
+
+                // Optionally navigate back or show confirmation
+                NotificationCenter.default.post(name: .friendshipStatusChanged, object: nil, userInfo: ["friendId": otherUserId])
+            } else {
+                print("⚠️ [ChatView] No friendship record found to block")
+            }
+        } catch {
+            print("❌ [ChatView] Failed to block user: \(error)")
+        }
+    }
+
     // MARK: - Photo Picker Handler
 
     private func handlePhotoPickerSelection(_ items: [PHPickerResult]) {
@@ -1014,11 +1048,31 @@ struct ChatView: View {
 
     // MARK: - Reactions
     private func addReaction(emoji: String, to message: Message) {
-        // TODO: Integrate with ChatViewModel/ChatService to persist reactions
-        print("Add reaction \(emoji) to message \(message.id)")
-        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-        impactFeedback.impactOccurred()
-        UIAccessibility.post(notification: .announcement, argument: "반응 \(emoji)를 추가했습니다")
+        guard let currentUserId = getCurrentUserId() else {
+            print("❌ [ChatView] Cannot add reaction: no current user")
+            return
+        }
+
+        // Add reaction to message model
+        message.addReaction(emoji, from: currentUserId)
+
+        // Persist to database
+        do {
+            try modelContext.save()
+            print("✅ [ChatView] Reaction \(emoji) added to message \(message.id)")
+
+            // Haptic feedback
+            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.impactOccurred()
+
+            // Accessibility announcement
+            let announcement = languageManager.currentLanguage == .korean ?
+                "반응 \(emoji)를 추가했습니다" :
+                "Added reaction \(emoji)"
+            UIAccessibility.post(notification: .announcement, argument: announcement)
+        } catch {
+            print("❌ [ChatView] Failed to save reaction: \(error)")
+        }
     }
 
     // MARK: - Localization (delegated to LocalizationService)

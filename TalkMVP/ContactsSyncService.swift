@@ -27,8 +27,16 @@ protocol ContactsMatchingBackend {
 // Default dummy backend. Replace with your real server integration.
 final class DummyMatchingBackend: ContactsMatchingBackend {
    func matchContacts(identifierHashes: [String]) async throws -> [MatchedUser] {
-       // TODO: Integrate with your server endpoint, e.g. POST /contacts/match
-       // Return matched users from server.
+       // MARK: - Server Integration Required
+       // Implement your server endpoint integration here.
+       // Example: POST /api/contacts/match with body: { "hashes": identifierHashes }
+       // Expected response: [{ "id": "uuid", "displayName": "John Doe", "matchedBy": "+1234567890" }]
+       //
+       // Implementation steps:
+       // 1. Create URLRequest to your backend endpoint
+       // 2. Send SHA256 hashes of phone numbers and emails
+       // 3. Parse server response into [MatchedUser]
+       // 4. Handle errors appropriately
        return []
    }
 }
