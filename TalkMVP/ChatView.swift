@@ -175,7 +175,7 @@ struct ChatView: View {
         await MainActor.run {
             modelContext.insert(message)
             chatRoom.messages.append(message)
-            chatRoom.lastMessage = "사진을 보냈습니다"
+            chatRoom.lastMessage = localizedText("sent_photo")
             chatRoom.timestamp = Date()
 
             do {
@@ -188,13 +188,14 @@ struct ChatView: View {
     }
 
     private func sendVideoMessage(data: Data) async {
-        let message = Message(text: "동영상을 보냈습니다", isFromCurrentUser: true, sender: "나", chatRoomId: chatRoom.id.uuidString, messageType: .video)
+        let sentVideoText = localizedText("sent_video")
+        let message = Message(text: sentVideoText, isFromCurrentUser: true, sender: "나", chatRoomId: chatRoom.id.uuidString, messageType: .video)
         message.videoData = data
 
         await MainActor.run {
             modelContext.insert(message)
             chatRoom.messages.append(message)
-            chatRoom.lastMessage = "동영상을 보냈습니다"
+            chatRoom.lastMessage = sentVideoText
             chatRoom.timestamp = Date()
 
             do {
@@ -248,7 +249,7 @@ struct ChatView: View {
 
         modelContext.insert(message)
         chatRoom.messages.append(message)
-        chatRoom.lastMessage = "파일을 보냈습니다"
+        chatRoom.lastMessage = localizedText("sent_file")
         chatRoom.timestamp = Date()
 
         do {
@@ -923,13 +924,13 @@ struct ChatView: View {
                     Button {
                         openPhotosAttachment()
                     } label: {
-                        Label("사진/동영상", systemImage: "photo.on.rectangle")
+                        Label(localizedText("photos_videos"), systemImage: "photo.on.rectangle")
                     }
 
                     Button {
                         showingDocumentPicker = true
                     } label: {
-                        Label("파일", systemImage: "doc")
+                        Label(localizedText("file"), systemImage: "doc")
                     }
                 } label: {
                     Image(systemName: "plus.circle.fill")

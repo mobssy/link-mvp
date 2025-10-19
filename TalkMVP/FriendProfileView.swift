@@ -76,7 +76,7 @@ struct FriendProfileView: View {
 
                         ProfileInfoCard(
                             title: localizedText("mutual_friends"),
-                            value: "0명", // 실제 앱에서는 계산
+                            value: languageManager.currentLanguage == .korean ? "0명" : "0",
                             icon: "person.2"
                         )
                     }
@@ -248,7 +248,7 @@ struct FriendProfileView: View {
         if let date = foundDate {
             let interval = Date().timeIntervalSince(date)
             if interval < 5 * 60 { // within 5 minutes
-                lastActiveText = "온라인"
+                lastActiveText = languageManager.currentLanguage == .korean ? "온라인" : "Online"
                 lastActiveIconColor = .green
             } else {
                 lastActiveText = formatRelative(date)
@@ -266,17 +266,22 @@ struct FriendProfileView: View {
         let minute: Double = 60
         let hour = 60 * minute
         let day = 24 * hour
+        let isKorean = languageManager.currentLanguage == .korean
 
         if interval < hour {
             let mins = max(1, Int(interval / minute))
-            return "\(mins)분 전"
+            return isKorean ? "\(mins)분 전" : "\(mins)m ago"
         } else if interval < day {
             let hours = max(1, Int(interval / hour))
-            return "\(hours)시간 전"
+            return isKorean ? "\(hours)시간 전" : "\(hours)h ago"
         } else {
             let days = Int(interval / day)
-            if days == 1 { return "어제" }
-            if days < 7 { return "\(days)일 전" }
+            if days == 1 {
+                return isKorean ? "어제" : "Yesterday"
+            }
+            if days < 7 {
+                return isKorean ? "\(days)일 전" : "\(days)d ago"
+            }
             // 1주 이상이면 날짜 표기
             let formatter = DateFormatter()
             formatter.dateStyle = .medium
@@ -372,6 +377,7 @@ struct FriendProfileView: View {
 // 상태 배지 컴포넌트
 struct StatusBadge: View {
     let status: FriendshipStatus
+    @EnvironmentObject private var languageManager: LanguageManager
 
     var body: some View {
         HStack(spacing: 6) {
@@ -379,7 +385,7 @@ struct StatusBadge: View {
                 .fill(statusColor)
                 .frame(width: 8, height: 8)
 
-            Text(status.displayName)
+            Text(statusDisplayName)
                 .font(.caption)
                 .fontWeight(.medium)
         }
@@ -388,6 +394,20 @@ struct StatusBadge: View {
         .background(statusColor.opacity(0.15))
         .foregroundColor(statusColor)
         .cornerRadius(20)
+    }
+
+    private var statusDisplayName: String {
+        let isKorean = languageManager.currentLanguage == .korean
+        switch status {
+        case .pending:
+            return isKorean ? "대기중" : "Pending"
+        case .accepted:
+            return isKorean ? "친구" : "Friend"
+        case .hidden:
+            return isKorean ? "숨김" : "Hidden"
+        case .blocked:
+            return isKorean ? "차단됨" : "Blocked"
+        }
     }
 
     private var statusColor: Color {

@@ -90,7 +90,7 @@ struct HelpView: View {
                         Text(localizedText("faq_notifs_not_coming_a2"))
                     }
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("**Q. \(localizedText("faq_how_to_add_friend_q"))").fontWeight(.semibold)
+                        Text("Q. \(localizedText("faq_how_to_add_friend_q"))").fontWeight(.semibold)
                         Text(localizedText("faq_how_to_add_friend_a"))
                     }
                     VStack(alignment: .leading, spacing: 8) {

@@ -419,7 +419,7 @@ struct AttachmentPreviewView: View {
                     bottomInputView
                 } else {
                     Spacer()
-                    Text("첨부 파일 없음")
+                    Text(LocalizationService.shared.text(for: .noAttachment, language: currentLanguage))
                         .foregroundColor(.white.opacity(0.7))
                     Spacer()
                 }
@@ -447,7 +447,7 @@ struct AttachmentPreviewView: View {
                         .font(.system(size: 80))
                         .foregroundColor(.white)
 
-                    Text("동영상")
+                    Text(LocalizationService.shared.text(for: .video, language: currentLanguage))
                         .font(.title2)
                         .foregroundColor(.white)
                 }

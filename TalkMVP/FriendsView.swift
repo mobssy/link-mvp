@@ -91,9 +91,9 @@ struct FriendsView: View {
 
     var receivedRequests: [Friendship] {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
-        // NOTE: If your model has a distinct incoming status, update here. For now, treat pending as received for the owner.
+        // Received requests: where I am the friendId (recipient) and status is pending
         return friendships.filter { friendship in
-            friendship.ownerUserId == currentUserId && friendship.status == .pending
+            friendship.friendId == currentUserId && friendship.status == .pending
         }
     }
 

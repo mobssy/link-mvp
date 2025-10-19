@@ -95,6 +95,15 @@ enum LocalizationKey: String {
 
     // Captions
     case addCaption = "add_caption"
+
+    // Attachments
+    case noAttachment = "no_attachment"
+    case video
+    case photosVideos = "photos_videos"
+    case file
+    case sentPhoto = "sent_photo"
+    case sentVideo = "sent_video"
+    case sentFile = "sent_file"
 }
 
 enum Language {
@@ -228,6 +237,15 @@ class LocalizationService: LocalizationServiceProtocol {
 
         // Captions
         case .addCaption: return isKorean ? "캡션 추가..." : "Add a caption..."
+
+        // Attachments
+        case .noAttachment: return isKorean ? "첨부 파일 없음" : "No Attachment"
+        case .video: return isKorean ? "동영상" : "Video"
+        case .photosVideos: return isKorean ? "사진/동영상" : "Photos/Videos"
+        case .file: return isKorean ? "파일" : "File"
+        case .sentPhoto: return isKorean ? "사진을 보냈습니다" : "Sent a photo"
+        case .sentVideo: return isKorean ? "동영상을 보냈습니다" : "Sent a video"
+        case .sentFile: return isKorean ? "파일을 보냈습니다" : "Sent a file"
         }
     }
 }
