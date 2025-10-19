@@ -71,6 +71,9 @@ struct ChatView: View {
     @State private var showingAddFriendAlert = false
     @State private var addFriendEmail = ""
 
+    // 배경 설정
+    @State private var showingBackgroundSettings = false
+
     // 긴급 메시지 토글 상태
     @State private var isEmergencyMessage = false
 
@@ -313,30 +316,41 @@ struct ChatView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 12) {
-                    // 알림 토글 버튼
+                Menu {
+                    // 배경 설정
+                    Button {
+                        showingBackgroundSettings = true
+                    } label: {
+                        Label(languageManager.currentLanguage == .korean ? "배경 설정" : "Background", systemImage: "photo.fill")
+                    }
+
+                    // 알림 토글
                     Button {
                         toggleChatNotifications()
                     } label: {
-                        Image(systemName: chatRoom.notificationsEnabled ? "bell.fill" : "bell.slash.fill")
-                            .foregroundColor(chatRoom.notificationsEnabled ? .appPrimary : .gray)
+                        Label(
+                            chatRoom.notificationsEnabled ?
+                                (languageManager.currentLanguage == .korean ? "알림 끄기" : "Mute") :
+                                (languageManager.currentLanguage == .korean ? "알림 켜기" : "Unmute"),
+                            systemImage: chatRoom.notificationsEnabled ? "bell.slash.fill" : "bell.fill"
+                        )
                     }
-                    .accessibilityLabel(localizedText(chatRoom.notificationsEnabled ? "mute_notifications" : "unmute_notifications"))
 
-                    // 친구가 아닌 경우 친구 추가 버튼 표시
+                    // 친구 추가 (친구가 아닌 경우만)
                     if !isFriend && chatRoom.otherUserId != nil {
                         Button {
                             showingAddFriendAlert = true
                         } label: {
-                            Image(systemName: "person.badge.plus")
-                                .foregroundColor(.appPrimary)
+                            Label(languageManager.currentLanguage == .korean ? "친구 추가" : "Add Friend", systemImage: "person.badge.plus")
                         }
-                        .accessibilityLabel(localizedText("add_friend"))
                     }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .foregroundColor(.appPrimary)
                 }
             }
         }
-        .background(Color(UIColor.systemGroupedBackground))
+        .background(chatRoomBackground)
         .onAppear {
             setupViewModelIfNeeded()
             checkIfFriend()
@@ -487,6 +501,53 @@ struct ChatView: View {
                 )
                 .environmentObject(languageManager)
             }
+            .sheet(isPresented: $showingBackgroundSettings) {
+                ChatRoomBackgroundSettings(chatRoom: chatRoom)
+                    .environmentObject(languageManager)
+            }
+    }
+
+    // MARK: - Background View
+    @ViewBuilder
+    private var chatRoomBackground: some View {
+        switch chatRoom.backgroundType {
+        case "color":
+            if let hexColor = chatRoom.backgroundColor,
+               let color = Color(hex: hexColor) {
+                color.ignoresSafeArea()
+            } else {
+                Color(UIColor.systemGroupedBackground).ignoresSafeArea()
+            }
+
+        case "gradient":
+            if let startHex = chatRoom.gradientStartColor,
+               let endHex = chatRoom.gradientEndColor,
+               let startColor = Color(hex: startHex),
+               let endColor = Color(hex: endHex) {
+                LinearGradient(
+                    colors: [startColor, endColor],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+            } else {
+                Color(UIColor.systemGroupedBackground).ignoresSafeArea()
+            }
+
+        case "image":
+            if let imageData = chatRoom.backgroundImageData,
+               let uiImage = UIImage(data: imageData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+            } else {
+                Color(UIColor.systemGroupedBackground).ignoresSafeArea()
+            }
+
+        default: // "default"
+            Color(UIColor.systemGroupedBackground).ignoresSafeArea()
+        }
     }
 
     @ViewBuilder

@@ -33,6 +33,13 @@ class ChatRoom {
     // MARK: - 알림 설정
     var notificationsEnabled: Bool = true  // 채팅방 알림 활성화 여부
 
+    // MARK: - 배경/테마 커스터마이징
+    var backgroundImageData: Data?  // 채팅방 배경 이미지
+    var backgroundColor: String?  // 배경색 (hex 코드)
+    var backgroundType: String = "default"  // "default", "color", "image", "gradient"
+    var gradientStartColor: String?  // 그라디언트 시작 색
+    var gradientEndColor: String?  // 그라디언트 끝 색
+
     // MARK: - 조직방 확장 속성들
     var isOrganizationRoom: Bool = false
 
