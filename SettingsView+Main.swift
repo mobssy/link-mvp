@@ -57,11 +57,6 @@ struct SettingsView: View {
                             title: localizedText("notifications"),
                             isOn: $notificationsEnabled
                         )
-                        .overlay(alignment: .trailing) {
-                            Image(systemName: "chevron.right")
-                                .foregroundStyle(.tertiary)
-                                .allowsHitTesting(false)
-                        }
                         Divider().padding(.leading, 52)
                         NavigationLink {
                             ThemeSettingsView().environmentObject(languageManager)
