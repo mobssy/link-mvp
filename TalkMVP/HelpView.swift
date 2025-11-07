@@ -122,7 +122,7 @@ struct HelpView: View {
 
             // Notifications
             case "faq_notifs_not_coming_q": return "알림이 오지 않아요"
-            case "faq_notifs_not_coming_a1": return "설정 → 알림에서 TalkMVP 알림이 허용되어 있는지 확인하세요."
+            case "faq_notifs_not_coming_a1": return "설정 → 알림에서 L!nkMVP 알림이 허용되어 있는지 확인하세요."
             case "faq_notifs_not_coming_a2": return "집중 모드나 방해 금지 모드를 확인하세요."
             case "faq_mute_chat_q": return "특정 채팅방 알림을 끄려면?"
             case "faq_mute_chat_a": return "채팅방 우측 상단의 종 아이콘을 탭하여 알림을 끄거나 켤 수 있습니다."
@@ -197,7 +197,7 @@ struct HelpView: View {
 
             // Notifications
             case "faq_notifs_not_coming_q": return "I'm not receiving notifications"
-            case "faq_notifs_not_coming_a1": return "Check Settings → Notifications and ensure TalkMVP notifications are enabled."
+            case "faq_notifs_not_coming_a1": return "Check Settings → Notifications and ensure L!nkMVP notifications are enabled."
             case "faq_notifs_not_coming_a2": return "Check Focus mode or Do Not Disturb settings."
             case "faq_mute_chat_q": return "How do I mute a specific chat?"
             case "faq_mute_chat_a": return "Tap the bell icon at the top right of the chat to toggle notifications."
@@ -341,8 +341,8 @@ struct HelpView: View {
     }
 
     private func sendEmail() {
-        let email = "support@talkmvp.com"
-        let subject = languageManager.currentLanguage == .korean ? "TalkMVP 지원 요청" : "TalkMVP Support Request"
+        let email = "support@linkmvp.com"
+        let subject = languageManager.currentLanguage == .korean ? "L!nkMVP 지원 요청" : "L!nkMVP Support Request"
         let body = languageManager.currentLanguage == .korean ?
             "문의 내용을 입력해주세요:\n\n앱 버전: \(getAppVersion())" :
             "Please describe your issue:\n\nApp Version: \(getAppVersion())"

@@ -1,6 +1,6 @@
 //
-//  TalkMVPApp.swift
-//  TalkMVP
+//  LinkMVPApp.swift
+//  L!nkMVP
 //
 //  Created by David Song on 9/26/25.
 //
@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct TalkMVPApp: App {
+struct LinkMVPApp: App {
     @StateObject private var appLock = AppLockManager()
     @StateObject private var authManager: AuthManager
     @StateObject private var languageManager = LanguageManager()
