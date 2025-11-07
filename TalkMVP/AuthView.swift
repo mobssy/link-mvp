@@ -1,6 +1,6 @@
 //
 //  AuthView.swift
-//  TalkMVP
+//  L!nkMVP
 //
 //  Created by David Song on 9/26/25.
 //
@@ -40,7 +40,7 @@ struct AuthView: View {
                             .foregroundColor(.appPrimary)
                     }
 
-                    Text("TalkMVP")
+                    Text("L!nk MVP")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)

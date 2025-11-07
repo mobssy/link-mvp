@@ -1,6 +1,6 @@
 //
 //  ChatViewModel.swift
-//  TalkMVP
+//  L!nkMVP
 //
 //  Created by David Song on 9/26/25.
 //

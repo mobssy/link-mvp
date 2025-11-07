@@ -1,6 +1,6 @@
 //
 //  LanguageSettingsView.swift
-//  TalkMVP
+//  L!nkMVP
 //
 //  Created by David Song on 10/3/25.
 //
