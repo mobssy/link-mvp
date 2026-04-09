@@ -11,11 +11,12 @@
 
 <br/>
 
-*A messenger that gets out of your way — and breaks language barriers while it's at it.*
+_A messenger that gets out of your way — and breaks language barriers while it's at it._
 
 <br/>
 
 <!-- Replace with actual screenshot -->
+
 ![L!nk screenshot](assets/main.PNG)
 
 </div>
@@ -76,31 +77,32 @@ It's the moment of connection — the spark when two people understand each othe
 
 ## Features
 
--  **Minimal UI** — only what you need to send a message
--  **Auto-translation** — real-time, inline, supports 50+ languages
--  **No clutter** — no stories, no reactions, no noise
--  **Instant** — translation appears below the original with zero friction
--  **Trendy design** — clean, modern, and actually enjoyable to use
+- **Minimal UI** — only what you need to send a message
+- **Auto-translation** — real-time, inline, supports 50+ languages
+- **No clutter** — no stories, no reactions, no noise
+- **Instant** — translation appears below the original with zero friction
+- **Trendy design** — clean, modern, and actually enjoyable to use
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Language | Swift 5.9+ |
-| UI Framework | SwiftUI |
-| Architecture | MVVM |
-| Translation | [Apple Translation Framework] |
-| Minimum Target | iOS 17+ |
+| Layer          | Technology                    |
+| -------------- | ----------------------------- |
+| Language       | Swift 5.9+                    |
+| UI Framework   | SwiftUI                       |
+| Architecture   | MVVM                          |
+| Translation    | [Apple Translation Framework] |
+| Minimum Target | iOS 17+                       |
 
 ---
 
 ## Screenshots
 
 <!-- Add simulator or device screenshots here -->
-| Chat View | Translation On | Settings |
-|:---:|:---:|:---:|
+
+|        Chat View        |      Translation On      |       Settings       |
+| :---------------------: | :----------------------: | :------------------: |
 | ![](assets/profile.PNG) | ![](assets/settings.PNG) | ![](assets/help.PNG) |
 
 ---
@@ -169,7 +171,7 @@ MIT © 2026
 
 <br/>
 
-*방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다.*
+_방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다._
 
 <br/>
 
@@ -233,30 +235,30 @@ MIT © 2026
 
 ## 주요 기능
 
--  **미니멀 UI** — 메시지 보내는 데 필요한 것만
--  **자동 번역** — 실시간, 인라인, 50개 이상 언어 지원
--  **노이즈 없음** — 스토리, 리액션, 불필요한 기능 없음
--  **즉각적** — 원문 바로 아래에 번역이 표시
--  **트렌디한 디자인** — 깔끔하고 현대적이며 쓰기 즐거운 앱
+- **미니멀 UI** — 메시지 보내는 데 필요한 것만
+- **자동 번역** — 실시간, 인라인, 50개 이상 언어 지원
+- **노이즈 없음** — 스토리, 리액션, 불필요한 기능 없음
+- **즉각적** — 원문 바로 아래에 번역이 표시
+- **트렌디한 디자인** — 깔끔하고 현대적이며 쓰기 즐거운 앱
 
 ---
 
 ## 기술 스택
 
-| 레이어 | 기술 |
-|---|---|
-| 언어 | Swift 5.9+ |
-| UI 프레임워크 | SwiftUI |
-| 아키텍처 | MVVM |
-| 번역 | [Apple Translation Framework] |
-| 최소 타겟 | iOS 17+ |
+| 레이어        | 기술                          |
+| ------------- | ----------------------------- |
+| 언어          | Swift 5.9+                    |
+| UI 프레임워크 | SwiftUI                       |
+| 아키텍처      | MVVM                          |
+| 번역          | [Apple Translation Framework] |
+| 최소 타겟     | iOS 17+                       |
 
 ---
 
 ## 스크린샷
 
-| 채팅 화면 | 번역 켜진 상태 | 설정 |
-|:---:|:---:|:---:|
+|        채팅 화면        |      번역 켜진 상태      |         설정         |
+| :---------------------: | :----------------------: | :------------------: |
 | ![](assets/profile.PNG) | ![](assets/settings.PNG) | ![](assets/help.PNG) |
 
 ---
