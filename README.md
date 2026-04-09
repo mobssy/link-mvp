@@ -17,7 +17,7 @@ _A messenger that gets out of your way — and breaks language barriers while it
 
 <!-- Replace with actual screenshot -->
 
-![L!nk screenshot](assets/main.PNG)
+![L!nk screenshot](TalkMVP/Assets/main.PNG)
 
 </div>
 
@@ -103,7 +103,7 @@ It's the moment of connection — the spark when two people understand each othe
 
 |        Chat View        |      Translation On      |       Settings       |
 | :---------------------: | :----------------------: | :------------------: |
-| ![](assets/profile.PNG) | ![](assets/settings.PNG) | ![](assets/help.PNG) |
+| ![](TalkMVP/Assets/profile.PNG) | ![](TalkMVP/Assets/settings.PNG) | ![](TalkMVP/Assets/help.PNG) |
 
 ---
 
@@ -175,7 +175,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 <br/>
 
-![L!nk screenshot](assets/main.PNG)
+![L!nk screenshot](TalkMVP/Assets/main.PNG)
 
 </div>
 
@@ -259,7 +259,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 |        채팅 화면        |      번역 켜진 상태      |         설정         |
 | :---------------------: | :----------------------: | :------------------: |
-| ![](assets/profile.PNG) | ![](assets/settings.PNG) | ![](assets/help.PNG) |
+| ![](TalkMVP/Assets/profile.PNG) | ![](TalkMVP/Assets/settings.PNG) | ![](TalkMVP/Assets/help.PNG) |
 
 ---
 
