@@ -50,18 +50,11 @@ Just conversation.
 
 Turn it on once. Forget it's there.
 
-```
-┌─────────────────────────────────┐
-│  Hola! ¿Cómo estás?             │
-│  안녕! 잘 지내?              🌐  │
-└─────────────────────────────────┘
-
-┌─────────────────────────────────┐
-│  저도 잘 지내요! 오늘 뭐 해요?      │
-│  I'm good too! What are you     │
-│  up to today?                🌐  │
-└─────────────────────────────────┘
-```
+> Original: Hola! ¿Cómo estás?  
+> Translated: 안녕! 잘 지내? 🌐
+>
+> Original: 저도 잘 지내요! 오늘 뭐 해요?  
+> Translated: I'm good too! What are you up to today? 🌐
 
 Every message, automatically translated into your default language — inline, instantly, unobtrusively.
 
@@ -204,18 +197,11 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 한 번 켜두면, 있다는 것도 잊게 됩니다.
 
-```
-┌─────────────────────────────────┐
-│  Hola! ¿Cómo estás?             │
-│  안녕! 잘 지내?              🌐  │
-└─────────────────────────────────┘
-
-┌─────────────────────────────────┐
-│  저도 잘 지내요! 오늘 뭐 해요?      │
-│  I'm good too! What are you     │
-│  up to today?                🌐  │
-└─────────────────────────────────┘
-```
+> Original: Hola! ¿Cómo estás?  
+> Translated: 안녕! 잘 지내? 🌐
+>
+> Original: 저도 잘 지내요! 오늘 뭐 해요?  
+> Translated: I'm good too! What are you up to today? 🌐
 
 모든 메시지가 자동으로 내 기본 언어로 번역 — 인라인으로, 즉시, 조용하게.
 
