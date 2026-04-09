@@ -87,13 +87,13 @@ It's the moment of connection — the spark when two people understand each othe
 
 ## Tech Stack
 
-| Layer          | Technology                    |
-| -------------- | ----------------------------- |
-| Language       | Swift 5.9+                    |
-| UI Framework   | SwiftUI                       |
-| Architecture   | MVVM                          |
-| Translation    | [Apple Translation Framework] |
-| Minimum Target | iOS 17+                       |
+| Layer          | Technology                  |
+| -------------- | --------------------------- |
+| Language       | Swift 5.9+                  |
+| UI Framework   | SwiftUI                     |
+| Architecture   | MVVM                        |
+| Translation    | Apple Translation Framework |
+| Minimum Target | iOS 17+                     |
 
 ---
 
@@ -245,13 +245,13 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ## 기술 스택
 
-| 레이어        | 기술                          |
-| ------------- | ----------------------------- |
-| 언어          | Swift 5.9+                    |
-| UI 프레임워크 | SwiftUI                       |
-| 아키텍처      | MVVM                          |
-| 번역          | [Apple Translation Framework] |
-| 최소 타겟     | iOS 17+                       |
+| 레이어        | 기술                        |
+| ------------- | --------------------------- |
+| 언어          | Swift 5.9+                  |
+| UI 프레임워크 | SwiftUI                     |
+| 아키텍처      | MVVM                        |
+| 번역          | Apple Translation Framework |
+| 최소 타겟     | iOS 17+                     |
 
 ---
 
