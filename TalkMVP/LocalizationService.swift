@@ -67,6 +67,9 @@ enum LocalizationKey: String {
     case reportUser = "report_user", blockUser = "block_user"
     case reportedUserMessage = "reported_user_message"
     case blockedUserMessage = "blocked_user_message"
+    case deleteForMe = "delete_for_me"
+    case deleteForEveryone = "delete_for_everyone"
+    case report = "report"
 
     // Links & Security
     case suspiciousLinkDetected = "suspicious_link_detected"
@@ -206,6 +209,9 @@ class LocalizationService: LocalizationServiceProtocol {
         case .blockUser: return isKorean ? "차단" : "Block"
         case .reportedUserMessage: return isKorean ? "%@을(를) 신고했습니다" : "Reported %@"
         case .blockedUserMessage: return isKorean ? "%@을(를) 차단했습니다" : "Blocked %@"
+        case .deleteForMe: return isKorean ? "나만 삭제" : "Delete for Me"
+        case .deleteForEveryone: return isKorean ? "모두에게서 삭제" : "Delete for Everyone"
+        case .report: return isKorean ? "신고" : "Report"
 
         // Links & Security
         case .suspiciousLinkDetected: return isKorean ? "의심스러운 링크가 감지되었습니다" : "A suspicious link was detected"

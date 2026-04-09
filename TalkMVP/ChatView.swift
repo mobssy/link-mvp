@@ -667,11 +667,19 @@ struct ChatView: View {
                         Button(localizedText("edit"), systemImage: "pencil") {
                             startEditingMessage(message)
                         }
-                        Button(localizedText("delete"), systemImage: "trash", role: .destructive) {
-                            deleteMessage(message)
+                        Divider()
+                        Button(localizedText("delete_for_me"), systemImage: "trash") {
+                            deleteMessageForMe(message)
                         }
-                    }
-                    if !message.isFromCurrentUser {
+                        Button(localizedText("delete_for_everyone"), systemImage: "trash.fill", role: .destructive) {
+                            deleteMessageForEveryone(message)
+                        }
+                    } else {
+                        // 상대방 메시지는 나만 삭제 가능
+                        Button(localizedText("delete_for_me"), systemImage: "trash") {
+                            deleteMessageForMe(message)
+                        }
+                        Divider()
                         Button(localizedText("report"), systemImage: "exclamationmark.bubble") {
                             showingReportAlert = true
                         }
@@ -1096,8 +1104,12 @@ struct ChatView: View {
         showingEditAlert = true
     }
 
-    private func deleteMessage(_ message: Message) {
-        viewModel?.deleteMessage(message)
+    private func deleteMessageForMe(_ message: Message) {
+        viewModel?.deleteMessage(message, forEveryone: false)
+    }
+    
+    private func deleteMessageForEveryone(_ message: Message) {
+        viewModel?.deleteMessage(message, forEveryone: true)
     }
 
     private func firstURL(in text: String) -> URL? {

@@ -423,9 +423,27 @@ class ChatViewModel: ObservableObject {
         }
     }
 
-    func deleteMessage(_ message: Message) {
-        guard message.isFromCurrentUser else { return }
-
+    /// 메시지 삭제
+    /// - Parameter message: 삭제할 메시지
+    /// - Parameter forEveryone: true면 완전 삭제, false면 본인만 숨김 처리
+    func deleteMessage(_ message: Message, forEveryone: Bool = false) {
+        // 본인 메시지는 완전 삭제 가능
+        if message.isFromCurrentUser {
+            if forEveryone {
+                // 완전 삭제 (모든 사용자에게서 삭제)
+                deleteMessageCompletely(message)
+            } else {
+                // 본인만 숨김 처리
+                hideMessageForCurrentUser(message)
+            }
+        } else {
+            // 상대방 메시지는 본인만 숨김 처리
+            hideMessageForCurrentUser(message)
+        }
+    }
+    
+    /// 메시지를 완전히 삭제 (발신자만 가능)
+    private func deleteMessageCompletely(_ message: Message) {
         if let index = messages.firstIndex(where: { $0.id == message.id }) {
             messages.remove(at: index)
         }
@@ -437,8 +455,31 @@ class ChatViewModel: ObservableObject {
                 chatService?.deleteMessage(message, in: chatRoom)
             } catch {
                 print("❌ [ChatViewModel] Failed to delete message: \(error)")
-                errorMessage = "Failed to delete message. Please try again."
+                errorMessage = "메시지 삭제에 실패했습니다."
                 // Rollback UI: add message back at the correct position
+                messages.append(message)
+                messages.sort { $0.timestamp < $1.timestamp }
+            }
+        }
+    }
+    
+    /// 메시지를 본인만 숨김 처리 (로컬에서만 삭제)
+    private func hideMessageForCurrentUser(_ message: Message) {
+        if let index = messages.firstIndex(where: { $0.id == message.id }) {
+            messages.remove(at: index)
+        }
+
+        Task {
+            do {
+                // 로컬에서만 삭제 (실제로는 숨김 플래그를 설정하는 것이 더 나을 수 있음)
+                try await messageRepository.deleteMessage(message)
+                
+                // 서버에는 숨김 처리 요청 전송 (실제 구현 시)
+                // chatService?.hideMessage(message, for: currentUserId, in: chatRoom)
+            } catch {
+                print("❌ [ChatViewModel] Failed to hide message: \(error)")
+                errorMessage = "메시지 숨기기에 실패했습니다."
+                // Rollback UI
                 messages.append(message)
                 messages.sort { $0.timestamp < $1.timestamp }
             }
