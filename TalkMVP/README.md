@@ -121,16 +121,6 @@ It's the moment of connection — the spark when two people understand each othe
 - iOS 17+
 - Swift 5.9+
 
-### Installation
-
-```bash
-git clone https://github.com/yourusername/link-app.git
-cd link-app
-open L!nk.xcodeproj
-```
-
-Build and run on your simulator or device.
-
 ---
 
 ## Project Structure
@@ -284,16 +274,6 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 - Xcode 15+
 - iOS 17+
 - Swift 5.9+
-
-### 설치
-
-```bash
-git clone https://github.com/yourusername/link-app.git
-cd link-app
-open L!nk.xcodeproj
-```
-
-시뮬레이터 또는 기기에서 빌드 후 실행하세요.
 
 ---
 
