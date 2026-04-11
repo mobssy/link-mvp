@@ -92,17 +92,17 @@ It's the moment of connection — the spark when two people understand each othe
 
 ## Screenshots
 
-### Chat View
+### Profile View
 
-![Chat View](TalkMVP/Assets/profile.PNG)
+![Profile View](TalkMVP/Assets/profile.PNG)
+
+### Settings View
+
+![Settings View](TalkMVP/Assets/settings.PNG)
 
 ### Translation On
 
-![Translation On](TalkMVP/Assets/settings.PNG)
-
-### Settings
-
-![Settings](TalkMVP/Assets/help.PNG)
+![Translation On](TalkMVP/Assets/help.PNG)
 
 ---
 
@@ -239,17 +239,17 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ## 스크린샷
 
-### 채팅 화면
+### 프로필 화면
 
-![채팅 화면](TalkMVP/Assets/profile.PNG)
-
-### 번역 켜진 상태
-
-![번역 켜진 상태](TalkMVP/Assets/settings.PNG)
+![프로필 화면](TalkMVP/Assets/profile.PNG)
 
 ### 설정
 
-![설정](TalkMVP/Assets/help.PNG)
+![설정](TalkMVP/Assets/settings.PNG)
+
+### 번역 기능 ON
+
+![번역 기능 ON](TalkMVP/Assets/help.PNG)
 
 ---
 
