@@ -41,8 +41,6 @@ struct SettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    header
-
                     ProfileCardView(
                         title: profileDisplayName().capitalized,
                         subtitle: authManager.currentUser?.statusMessage ?? (languageManager.isKorean ? "테스트 모드로 체험 중입니다" : "Experiencing in test mode"),
@@ -189,7 +187,6 @@ struct SettingsView: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 8)
                 .padding(.bottom, 16)
             }
             .sheet(isPresented: $showingProfileEdit) {
@@ -230,7 +227,7 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle(localizedText("settings"))
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
         }
         .preferredColorScheme(themeMode == "light" ? .light : (themeMode == "dark" ? .dark : nil))
     }
