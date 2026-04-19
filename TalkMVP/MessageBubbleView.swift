@@ -19,6 +19,8 @@ struct MessageBubbleView: View {
     @State private var friendState: FriendState = .unknown
     @State private var showingFriendAlert = false
     @State private var friendAlertMessage = ""
+    @State private var showingFullScreenImage = false
+    @State private var fullScreenImage: UIImage? = nil
 
     private enum FriendState { case unknown, notFriend, pending, isFriend }
 
@@ -45,6 +47,11 @@ struct MessageBubbleView: View {
             Button(localizedText("ok")) {}
         } message: {
             Text(friendAlertMessage)
+        }
+        .sheet(isPresented: $showingFullScreenImage) {
+            if let uiImage = fullScreenImage {
+                FullScreenImageView(image: uiImage)
+            }
         }
     }
 
@@ -155,8 +162,12 @@ struct MessageBubbleView: View {
                     .frame(maxWidth: 200, maxHeight: 200)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .onTapGesture {
-                        // 이미지 확대 보기 (추후 구현)
+                        fullScreenImage = uiImage
+                        showingFullScreenImage = true
                     }
+                    .accessibilityLabel(localizedText("image_load_failed"))
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityHint(languageManager.currentLanguage == .korean ? "탭하여 전체화면으로 보기" : "Tap to view full screen")
             } else {
                 HStack {
                     Image(systemName: "photo")
@@ -178,9 +189,7 @@ struct MessageBubbleView: View {
                             .font(.system(size: 50))
                             .foregroundColor(.white)
                     }
-                    .onTapGesture {
-                        // 동영상 재생 (추후 구현)
-                    }
+                    .allowsHitTesting(false)
 
                     Text("동영상 (\(formatFileSize(videoData.count)))")
                         .font(.caption)
@@ -358,6 +367,32 @@ struct MessageBubbleView: View {
             manager.scheduleFriendRequestNotification(from: senderName, email: senderEmail)
         } catch {
             print("Failed to save friend request: \(error)")
+        }
+    }
+}
+
+struct FullScreenImageView: View {
+    let image: UIImage
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Color.black.ignoresSafeArea()
+
+            Image(uiImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(.white, .black.opacity(0.5))
+                    .padding(16)
+            }
+            .accessibilityLabel("닫기")
         }
     }
 }

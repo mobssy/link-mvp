@@ -1073,6 +1073,9 @@ struct ChatView: View {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
 
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+
         // Pass the text and reply state to the ViewModel, then send
         viewModel.newMessageText = text
         if let replying = replyingToMessage {
