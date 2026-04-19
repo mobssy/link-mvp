@@ -117,6 +117,16 @@ struct SettingsView: View {
                                 title: languageManager.isKorean ? "연락처" : "Contacts"
                             )
                         }
+                        Divider().padding(.leading, 52)
+                        NavigationLink {
+                            AccessibilitySettingsView().environmentObject(languageManager)
+                        } label: {
+                            SettingsLinkRow(
+                                systemImage: "accessibility",
+                                tint: .indigo,
+                                title: languageManager.isKorean ? "손쉬운 사용" : "Accessibility"
+                            )
+                        }
                     }
 
                     SettingsSectionCard(title: languageManager.isKorean ? "정보" : "Info") {

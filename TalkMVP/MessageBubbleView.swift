@@ -23,6 +23,7 @@ struct MessageBubbleView: View {
     private enum FriendState { case unknown, notFriend, pending, isFriend }
 
     @EnvironmentObject private var languageManager: LanguageManager
+    @AppStorage("inAppHighContrast") private var highContrast = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -44,6 +45,14 @@ struct MessageBubbleView: View {
             Button(localizedText("ok")) {}
         } message: {
             Text(friendAlertMessage)
+        }
+    }
+
+    private var bubbleBackground: Color {
+        if message.isFromCurrentUser {
+            return highContrast ? Color(UIColor.label) : Color.appPrimary
+        } else {
+            return highContrast ? Color(UIColor.systemGray4) : Color.gray.opacity(0.2)
         }
     }
 
@@ -85,9 +94,9 @@ struct MessageBubbleView: View {
                     .padding(.vertical, message.messageType == .image ? 4 : 10)
                     .background(
                         RoundedRectangle(cornerRadius: 20)
-                            .fill(message.isFromCurrentUser ? Color.appPrimary : Color.gray.opacity(0.2))
+                            .fill(bubbleBackground)
                     )
-                    .foregroundColor(message.isFromCurrentUser ? .white : .primary)
+                    .foregroundColor(message.isFromCurrentUser ? Color(UIColor.systemBackground) : .primary)
             }
 
             Text(message.timestamp, style: .time)

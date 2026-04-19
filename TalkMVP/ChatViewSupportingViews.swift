@@ -399,6 +399,7 @@ struct AttachmentPreviewView: View {
                             .foregroundColor(.white)
                             .frame(width: 44, height: 44)
                     }
+                    .accessibilityLabel(LocalizationService.shared.text(for: .cancelAttachment, language: currentLanguage))
 
                     Spacer()
                 }
@@ -516,6 +517,7 @@ struct AttachmentPreviewView: View {
                         .foregroundColor(.appPrimary)
                 }
                 .frame(width: 44, height: 44)
+                .accessibilityLabel(LocalizationService.shared.text(for: .sendAttachment, language: currentLanguage))
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)

@@ -111,14 +111,14 @@ struct ChatView: View {
     // MARK: - Date Formatters (cached)
     private static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.locale = Locale.current
         formatter.timeStyle = .short
         return formatter
     }()
 
     private static let dateTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.locale = Locale.current
         formatter.dateStyle = .short
         formatter.timeStyle = .short
         return formatter
@@ -313,7 +313,7 @@ struct ChatView: View {
             mainContentView
         }
         .navigationTitle(chatRoom.name)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
@@ -347,6 +347,7 @@ struct ChatView: View {
                 } label: {
                     Image(systemName: "ellipsis.circle")
                         .foregroundColor(.appPrimary)
+                        .accessibilityLabel(localizedText("more_options"))
                 }
             }
         }
@@ -555,7 +556,7 @@ struct ChatView: View {
         if let viewModel = viewModel {
             chatContentView(viewModel: viewModel)
         } else {
-            ProgressView("Loading...")
+            ProgressView(localizedText("loading"))
         }
     }
 
@@ -634,7 +635,7 @@ struct ChatView: View {
                 .accessibilityIdentifier("message_\(message.id)")
                 // 메시지별 접근성 정보 추가
                 .accessibilityLabel(accessibilityLabelForMessage(message))
-                .accessibilityHint("두 번 탭하여 메시지 옵션을 확인할 수 있습니다")
+                .accessibilityHint(localizedText("message_action_hint"))
                 .onLongPressGesture {
                     showReactionPicker(for: message)
                 }
@@ -653,7 +654,7 @@ struct ChatView: View {
                     if message.messageType == .text {
                         Button(localizedText("copy"), systemImage: "doc.on.doc") {
                             UIPasteboard.general.string = message.text
-                            UIAccessibility.post(notification: .announcement, argument: "메시지를 복사했습니다")
+                            UIAccessibility.post(notification: .announcement, argument: localizedText("copied_message"))
                         }
                     }
                     Button(localizedText("reply"), systemImage: "arrowshape.turn.up.left") {
@@ -1040,10 +1041,12 @@ struct ChatView: View {
                         .foregroundColor(.appPrimary)
                         .font(.system(size: 28))
                 }
+                .accessibilityLabel(localizedText("attach_file"))
 
                 TextField(localizedText("message_input_placeholder"), text: $inputText)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .focused($isTextFieldFocused)
+                    .submitLabel(.send)
                     .onSubmit {
                         sendMessage(viewModel: viewModel)
                     }
@@ -1058,6 +1061,7 @@ struct ChatView: View {
                         .clipShape(Circle())
                 }
                 .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityLabel(localizedText("send_message"))
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -1090,7 +1094,36 @@ struct ChatView: View {
     private func accessibilityLabelForMessage(_ message: Message) -> String {
         let sender = message.isFromCurrentUser ? localizedText("me") : chatRoom.name
         let time = Self.timeFormatter.string(from: message.timestamp)
-        return "\(sender): \(message.text), \(time)"
+        let lang: Language = languageManager.currentLanguage == .korean ? .korean : .english
+        let svc = LocalizationService.shared
+
+        let contentLabel: String
+        switch message.messageType {
+        case .text:
+            contentLabel = message.text
+        case .image:
+            contentLabel = svc.text(for: .photoMessage, language: lang)
+        case .video:
+            contentLabel = svc.text(for: .videoMessage, language: lang)
+        case .audio:
+            contentLabel = svc.text(for: .audioMessageLabel, language: lang)
+        case .file:
+            let fileName = message.fileName ?? svc.text(for: .fileMessage, language: lang)
+            contentLabel = "\(svc.text(for: .fileMessage, language: lang)): \(fileName)"
+        case .deleted:
+            contentLabel = svc.text(for: .deletedMessageLabel, language: lang)
+        }
+
+        let readStatus: String
+        if message.isFromCurrentUser {
+            readStatus = message.isRead
+                ? ", \(svc.text(for: .messageRead, language: lang))"
+                : ", \(svc.text(for: .messageUnread, language: lang))"
+        } else {
+            readStatus = ""
+        }
+
+        return "\(sender): \(contentLabel), \(time)\(readStatus)"
     }
 
     private func showReactionPicker(for message: Message) {

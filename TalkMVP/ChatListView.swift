@@ -60,6 +60,7 @@ struct ChatListView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityLabel(localizedText("new_chat_button"))
                 }
             }
             .navigationDestination(for: ChatRoom.self) { room in
@@ -129,6 +130,7 @@ struct ChatListView: View {
         case "chat": return isKorean ? "채팅" : "Chat"
         case "search": return isKorean ? "검색" : "Search"
         case "friend": return isKorean ? "친구" : "Friend"
+        case "new_chat_button": return isKorean ? "새 채팅 만들기" : "Create new chat"
         default: return key
         }
     }
@@ -142,7 +144,7 @@ struct ChatRoomRow: View {
         HStack(spacing: 12) {
             // 프로필 이미지
             Image(systemName: room.profileImage)
-                .font(.system(size: 40))
+                .font(.largeTitle)
                 .foregroundColor(.appPrimary)
                 .frame(width: 50, height: 50)
 
@@ -180,6 +182,23 @@ struct ChatRoomRow: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(combinedAccessibilityLabel)
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private var combinedAccessibilityLabel: String {
+        let isKorean = languageManager.currentLanguage == .korean
+        let lastMsg = room.lastMessage.isEmpty
+            ? (isKorean ? "메시지를 시작해보세요" : "Start a conversation")
+            : room.lastMessage
+        var label = "\(room.name), \(lastMsg)"
+        if room.unreadCount > 0 {
+            label += isKorean
+                ? ", 읽지 않은 메시지 \(room.unreadCount)개"
+                : ", \(room.unreadCount) unread messages"
+        }
+        return label
     }
 
     private func localizedText(_ key: String) -> String {

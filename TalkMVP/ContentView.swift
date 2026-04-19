@@ -21,32 +21,28 @@ struct ContentView: View {
     @State private var isTestMode = false
 
     var body: some View {
-        GeometryReader { geometry in
-            mainContent()
-                .frame(width: geometry.size.width, height: geometry.size.height)
-                .ignoresSafeArea(.all, edges: .all)
-        }
-        .onAppear {
-            authManager.modelContext = modelContext
-        }
-        .alert(localizedText("test_mode_title"), isPresented: $showTestModeAlert) {
-            Button(localizedText("cancel"), role: .cancel) { }
-            Button(localizedText("start_test")) { enterTestMode() }
-        } message: {
-            Text(localizedText("test_mode_message"))
-        }
-        .tint(.appPrimary)
-        .sheet(isPresented: $showContactsOnboarding, onDismiss: {
-            contactsOnboardingShown = true
-        }) {
-            OnboardingContactsView()
-                .environmentObject(languageManager)
-        }
-        .onChange(of: authManager.isAuthenticated) { _, newValue in
-            if newValue && !contactsOnboardingShown {
-                showContactsOnboarding = true
+        mainContent()
+            .onAppear {
+                authManager.modelContext = modelContext
             }
-        }
+            .alert(localizedText("test_mode_title"), isPresented: $showTestModeAlert) {
+                Button(localizedText("cancel"), role: .cancel) { }
+                Button(localizedText("start_test")) { enterTestMode() }
+            } message: {
+                Text(localizedText("test_mode_message"))
+            }
+            .tint(.appPrimary)
+            .sheet(isPresented: $showContactsOnboarding, onDismiss: {
+                contactsOnboardingShown = true
+            }) {
+                OnboardingContactsView()
+                    .environmentObject(languageManager)
+            }
+            .onChange(of: authManager.isAuthenticated) { _, newValue in
+                if newValue && !contactsOnboardingShown {
+                    showContactsOnboarding = true
+                }
+            }
     }
 
     @ViewBuilder
@@ -157,46 +153,34 @@ struct AuthenticatedTabsView: View {
     private var totalUnread: Int { chatRooms.map { $0.unreadCount }.reduce(0, +) }
 
     var body: some View {
-        GeometryReader { geometry in
-            TabView(selection: $selectedTab) {
-                FriendsTab()
-                    .tabItem {
-                        Label(localizedText("friends"), systemImage: "person.fill")
-                    }
-                    .tag(0)
-
-                if totalUnread > 0 {
-                    ChatTab()
-                        .tabItem {
-                            Label(localizedText("chat"), systemImage: "message.fill")
-                        }
-                        .badge(totalUnread)
-                        .tag(1)
-                } else {
-                    ChatTab()
-                        .tabItem {
-                            Label(localizedText("chat"), systemImage: "message.fill")
-                        }
-                        .tag(1)
+        TabView(selection: $selectedTab) {
+            FriendsTab()
+                .tabItem {
+                    Label(localizedText("friends"), systemImage: "person.fill")
                 }
+                .tag(0)
 
-                SettingsTab()
-                    .tabItem {
-                        Label(localizedText("settings"), systemImage: "gearshape.fill")
-                    }
-                    .tag(2)
-            }
-            .tint(.appPrimary)
-            .frame(width: geometry.size.width, height: geometry.size.height)
-            .ignoresSafeArea(.all, edges: .all)
-            .overlay(alignment: .bottom) {
-                if showTestModeIndicator {
-                    VStack {
-                        Spacer()
-                        TestModeIndicatorView(languageManager: languageManager)
-                            .padding(.bottom, 100) // 탭바 위쪽에 위치
-                            .padding(.horizontal, 16)
-                    }
+            ChatTab()
+                .tabItem {
+                    Label(localizedText("chat"), systemImage: "message.fill")
+                }
+                .badge(totalUnread)
+                .tag(1)
+
+            SettingsTab()
+                .tabItem {
+                    Label(localizedText("settings"), systemImage: "gearshape.fill")
+                }
+                .tag(2)
+        }
+        .tint(.appPrimary)
+        .overlay(alignment: .bottom) {
+            if showTestModeIndicator {
+                VStack {
+                    Spacer()
+                    TestModeIndicatorView(languageManager: languageManager)
+                        .padding(.bottom, 100)
+                        .padding(.horizontal, 16)
                 }
             }
         }
@@ -239,17 +223,13 @@ struct UnauthenticatedView: View {
     @Binding var showTestModeAlert: Bool
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                AuthView()
-                VStack {
-                    Spacer()
-                    TestModeButtonView(showTestModeAlert: $showTestModeAlert)
-                        .padding(.bottom, 50)
-                }
+        ZStack {
+            AuthView()
+            VStack {
+                Spacer()
+                TestModeButtonView(showTestModeAlert: $showTestModeAlert)
+                    .padding(.bottom, 50)
             }
-            .frame(width: geometry.size.width, height: geometry.size.height)
-            .ignoresSafeArea(.all, edges: .all)
         }
     }
 }

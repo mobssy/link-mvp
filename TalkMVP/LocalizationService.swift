@@ -107,6 +107,24 @@ enum LocalizationKey: String {
     case sentPhoto = "sent_photo"
     case sentVideo = "sent_video"
     case sentFile = "sent_file"
+
+    // Accessibility - Message Types & Input Actions
+    case messageRead = "message_read"
+    case messageUnread = "message_unread"
+    case photoMessage = "photo_message"
+    case videoMessage = "video_message"
+    case audioMessageLabel = "audio_message_label"
+    case fileMessage = "file_message"
+    case deletedMessageLabel = "deleted_message_label"
+    case sendMessage = "send_message"
+    case attachFile = "attach_file"
+    case cancelAttachment = "cancel_attachment"
+    case sendAttachment = "send_attachment"
+    case newChatButton = "new_chat_button"
+    case messageActionHint = "message_action_hint"
+    case loading
+    case copiedMessage = "copied_message"
+    case moreOptions = "more_options"
 }
 
 enum Language {
@@ -252,6 +270,24 @@ class LocalizationService: LocalizationServiceProtocol {
         case .sentPhoto: return isKorean ? "사진을 보냈습니다" : "Sent a photo"
         case .sentVideo: return isKorean ? "동영상을 보냈습니다" : "Sent a video"
         case .sentFile: return isKorean ? "파일을 보냈습니다" : "Sent a file"
+
+        // Accessibility - Message Types & Input Actions
+        case .messageRead: return isKorean ? "읽음" : "Read"
+        case .messageUnread: return isKorean ? "읽지 않음" : "Unread"
+        case .photoMessage: return isKorean ? "사진" : "Photo"
+        case .videoMessage: return isKorean ? "동영상" : "Video"
+        case .audioMessageLabel: return isKorean ? "음성 메시지" : "Audio message"
+        case .fileMessage: return isKorean ? "파일" : "File"
+        case .deletedMessageLabel: return isKorean ? "삭제된 메시지" : "Deleted message"
+        case .sendMessage: return isKorean ? "메시지 전송" : "Send message"
+        case .attachFile: return isKorean ? "파일 또는 미디어 첨부" : "Attach file or media"
+        case .cancelAttachment: return isKorean ? "첨부 취소" : "Cancel attachment"
+        case .sendAttachment: return isKorean ? "첨부 전송" : "Send attachment"
+        case .newChatButton: return isKorean ? "새 채팅 만들기" : "Create new chat"
+        case .messageActionHint: return isKorean ? "길게 눌러 반응 추가, 밀어서 답장" : "Long press for reactions, swipe to reply"
+        case .loading: return isKorean ? "로딩 중..." : "Loading..."
+        case .copiedMessage: return isKorean ? "메시지를 복사했습니다" : "Message copied"
+        case .moreOptions: return isKorean ? "더 보기" : "More options"
         }
     }
 }

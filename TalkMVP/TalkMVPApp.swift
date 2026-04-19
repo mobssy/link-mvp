@@ -15,6 +15,9 @@ struct LinkMVPApp: App {
     @StateObject private var languageManager = LanguageManager()
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("themeMode") private var themeMode: String = "system"
+    @AppStorage("inAppBoldText") private var boldText = false
+    @AppStorage("inAppReduceMotion") private var reduceMotion = false
+    @AppStorage("inAppTextSizeStep") private var textSizeStep = 2
 
     init() {
         let context = ModelContext(sharedModelContainer)
@@ -37,6 +40,17 @@ struct LinkMVPApp: App {
         }
     }()
 
+    private func dynamicTypeSizeForStep(_ step: Int) -> DynamicTypeSize {
+        switch step {
+        case 0: return .small
+        case 1: return .medium
+        case 3: return .xLarge
+        case 4: return .xxLarge
+        case 5: return .xxxLarge
+        default: return .large  // step 2 = iOS 기본값
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -45,6 +59,8 @@ struct LinkMVPApp: App {
                 .environmentObject(languageManager)
                 .tint(.appPrimary)
                 .preferredColorScheme(themeMode == "light" ? .light : (themeMode == "dark" ? .dark : nil))
+                .fontWeight(boldText ? .bold : .regular)
+                .dynamicTypeSize(dynamicTypeSizeForStep(textSizeStep))
                 .ignoresSafeArea(.all, edges: .all)
                 .fullScreenCover(isPresented: Binding(get: { appLock.isLocked }, set: { _ in })) {
                     AppLockView()

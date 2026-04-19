@@ -168,6 +168,7 @@ private struct FriendsListRow: View {
             Image(systemName: "person.circle.fill")
                 .font(.title2)
                 .foregroundStyle(.blue)
+                .accessibilityHidden(true)
             Text(name)
         }
         .accessibilityIdentifier("friend_\(idString)")
