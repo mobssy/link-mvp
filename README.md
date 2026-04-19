@@ -104,6 +104,10 @@ It's the moment of connection — the spark when two people understand each othe
 
 ![Translation On](TalkMVP/Assets/help.PNG)
 
+### Accessibility
+
+![Accessibility](TalkMVP/Assets/accessibility.PNG)
+
 ---
 
 ## Getting Started
@@ -250,6 +254,10 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 ### 번역 기능 ON
 
 ![번역 기능 ON](TalkMVP/Assets/help.PNG)
+
+### 접근성
+
+![접근성](TalkMVP/Assets/accessibility.PNG)
 
 ---
 
