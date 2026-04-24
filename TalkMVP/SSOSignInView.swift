@@ -5,16 +5,11 @@
 
 import SwiftUI
 import AuthenticationServices
-import UIKit
 
 struct SSOSignInView: View {
     @EnvironmentObject private var authManager: AuthManager
     @EnvironmentObject private var languageManager: LanguageManager
     @Environment(\.colorScheme) private var colorScheme
-
-    private var appleButtonStyle: ASAuthorizationAppleIDButton.Style {
-        colorScheme == .dark ? .white : .black
-    }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -40,17 +35,43 @@ struct SSOSignInView: View {
     }
 
     private var appleButton: some View {
-        LocalizedAppleSignInButton(
-            style: appleButtonStyle,
-            onCompletion: handleAppleResult
+        let isDark = colorScheme == .dark
+        let background: Color = isDark ? .white : .black
+        let foreground: Color = isDark ? .black : .white
+        let label = languageManager.localize(
+            ko: "Apple로 로그인",
+            en: "Sign in with Apple",
+            ja: "Appleでサインイン",
+            zh: "通过 Apple 登录",
+            es: "Iniciar sesión con Apple"
         )
-        .frame(maxWidth: .infinity)
-        .frame(height: 44)
-        // Force recreation of UIKit button when language changes so it reads updated "AppleLanguages"
-        .id(languageManager.currentLanguage)
+
+        return Button(action: triggerAppleSignIn) {
+            HStack(spacing: 8) {
+                Image(systemName: "apple.logo")
+                    .font(.system(size: 17, weight: .medium))
+                Text(label)
+                    .font(.system(size: 17, weight: .medium))
+            }
+            .foregroundColor(foreground)
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .background(background)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
     }
 
-    // MARK: - Handlers
+    // MARK: - Auth
+
+    private func triggerAppleSignIn() {
+        let request = ASAuthorizationAppleIDProvider().createRequest()
+        request.requestedScopes = [.fullName, .email]
+        let controller = ASAuthorizationController(authorizationRequests: [request])
+        controller.delegate = AppleSignInCoordinator.shared
+        controller.presentationContextProvider = AppleSignInCoordinator.shared
+        AppleSignInCoordinator.shared.onCompletion = handleAppleResult
+        controller.performRequests()
+    }
 
     private func handleAppleResult(_ result: Result<ASAuthorization, Error>) {
         switch result {
@@ -70,58 +91,27 @@ struct SSOSignInView: View {
     }
 }
 
-// MARK: - UIViewRepresentable wrapper for locale-aware Apple button
+// MARK: - Coordinator (singleton to avoid deallocation during auth flow)
 
-private struct LocalizedAppleSignInButton: UIViewRepresentable {
-    let style: ASAuthorizationAppleIDButton.Style
-    let onCompletion: (Result<ASAuthorization, Error>) -> Void
+private final class AppleSignInCoordinator: NSObject,
+    ASAuthorizationControllerDelegate,
+    ASAuthorizationControllerPresentationContextProviding {
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onCompletion: onCompletion)
+    static let shared = AppleSignInCoordinator()
+    var onCompletion: ((Result<ASAuthorization, Error>) -> Void)?
+
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let active = scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first
+        guard let scene = active else { preconditionFailure("No window scene") }
+        return scene.windows.first(where: { $0.isKeyWindow }) ?? UIWindow(windowScene: scene)
     }
 
-    func makeUIView(context: Context) -> ASAuthorizationAppleIDButton {
-        let button = ASAuthorizationAppleIDButton(type: .signIn, style: style)
-        button.cornerRadius = 12
-        button.addTarget(context.coordinator, action: #selector(Coordinator.handleTap), for: .touchUpInside)
-        return button
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        onCompletion?(.success(authorization))
     }
 
-    func updateUIView(_ uiView: ASAuthorizationAppleIDButton, context: Context) {}
-}
-
-// MARK: - Coordinator
-
-extension LocalizedAppleSignInButton {
-    class Coordinator: NSObject, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
-        let onCompletion: (Result<ASAuthorization, Error>) -> Void
-
-        init(onCompletion: @escaping (Result<ASAuthorization, Error>) -> Void) {
-            self.onCompletion = onCompletion
-        }
-
-        @objc func handleTap() {
-            let request = ASAuthorizationAppleIDProvider().createRequest()
-            request.requestedScopes = [.fullName, .email]
-            let controller = ASAuthorizationController(authorizationRequests: [request])
-            controller.delegate = self
-            controller.presentationContextProvider = self
-            controller.performRequests()
-        }
-
-        func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-            let windowScenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-            let activeScene = windowScenes.first(where: { $0.activationState == .foregroundActive }) ?? windowScenes.first
-            guard let scene = activeScene else { preconditionFailure("No window scene available") }
-            return scene.windows.first(where: { $0.isKeyWindow }) ?? UIWindow(windowScene: scene)
-        }
-
-        func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
-            onCompletion(.success(authorization))
-        }
-
-        func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
-            onCompletion(.failure(error))
-        }
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        onCompletion?(.failure(error))
     }
 }
