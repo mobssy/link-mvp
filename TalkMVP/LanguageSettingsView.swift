@@ -87,25 +87,69 @@ struct LanguageSettingsView: View {
         // 현재 언어 설정에 따른 지역화된 텍스트 반환
         switch key {
         case "language.settings.title":
-            return languageManager.isKorean ? "언어 선택" : "Language Selection"
+            return languageManager.localize(
+                ko: "언어 선택",
+                en: "Language Selection",
+                ja: "言語選択",
+                zh: "语言选择",
+                es: "Selección de idioma"
+            )
         case "language.settings.footer":
-            return languageManager.isKorean ?
-                "언어를 변경하면 앱이 다시 시작됩니다." :
-                "The app will restart when you change the language."
+            return languageManager.localize(
+                ko: "언어를 변경하면 앱이 다시 시작됩니다.",
+                en: "The app will restart when you change the language.",
+                ja: "言語を変更するとアプリが再起動します。",
+                zh: "更改语言后应用将重新启动。",
+                es: "La aplicación se reiniciará al cambiar el idioma."
+            )
         case "language.title":
-            return languageManager.isKorean ? "언어" : "Language"
+            return languageManager.localize(
+                ko: "언어",
+                en: "Language",
+                ja: "言語",
+                zh: "语言",
+                es: "Idioma"
+            )
         case "common.done":
-            return languageManager.isKorean ? "완료" : "Done"
+            return languageManager.localize(
+                ko: "완료",
+                en: "Done",
+                ja: "完了",
+                zh: "完成",
+                es: "Listo"
+            )
         case "common.cancel":
-            return languageManager.isKorean ? "취소" : "Cancel"
+            return languageManager.localize(
+                ko: "취소",
+                en: "Cancel",
+                ja: "キャンセル",
+                zh: "取消",
+                es: "Cancelar"
+            )
         case "language.restart.title":
-            return languageManager.isKorean ? "언어 변경" : "Change Language"
+            return languageManager.localize(
+                ko: "언어 변경",
+                en: "Change Language",
+                ja: "言語変更",
+                zh: "更改语言",
+                es: "Cambiar idioma"
+            )
         case "language.restart.message":
-            return languageManager.isKorean ?
-                "언어를 변경하면 앱이 다시 시작됩니다. 계속하시겠습니까?" :
-                "Changing the language will restart the app. Do you want to continue?"
+            return languageManager.localize(
+                ko: "언어를 변경하면 앱이 다시 시작됩니다. 계속하시겠습니까?",
+                en: "Changing the language will restart the app. Do you want to continue?",
+                ja: "言語を変更するとアプリが再起動します。続けますか？",
+                zh: "更改语言将重新启动应用。是否继续？",
+                es: "Cambiar el idioma reiniciará la aplicación. ¿Desea continuar?"
+            )
         case "language.restart.confirm":
-            return languageManager.isKorean ? "변경" : "Change"
+            return languageManager.localize(
+                ko: "변경",
+                en: "Change",
+                ja: "変更",
+                zh: "更改",
+                es: "Cambiar"
+            )
         default:
             return key
         }
@@ -148,11 +192,15 @@ struct LanguageRow: View {
     private func getAlternativeLanguageName(for language: LanguageManager.Language) -> String {
         switch language {
         case .korean:
-            // 현재 언어가 영어면 "Korean"으로, 한국어면 "Korean"으로 표시
-            return languageManager.currentLanguage == .korean ? "Korean" : "Korean"
+            return languageManager.localize(ko: "Korean", en: "Korean", ja: "韓国語", zh: "韩语", es: "Coreano")
         case .english:
-            // 현재 언어가 한국어면 "영어"로, 영어면 "English"로 표시
-            return languageManager.currentLanguage == .korean ? "영어" : "English"
+            return languageManager.localize(ko: "영어", en: "English", ja: "英語", zh: "英语", es: "Inglés")
+        case .japanese:
+            return languageManager.localize(ko: "일본어", en: "Japanese", ja: "日本語", zh: "日语", es: "Japonés")
+        case .chinese:
+            return languageManager.localize(ko: "중국어", en: "Chinese", ja: "中国語", zh: "中文", es: "Chino")
+        case .spanish:
+            return languageManager.localize(ko: "스페인어", en: "Spanish", ja: "スペイン語", zh: "西班牙语", es: "Español")
         }
     }
 }

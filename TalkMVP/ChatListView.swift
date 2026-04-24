@@ -115,22 +115,20 @@ struct ChatListView: View {
     }
 
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
-
         switch key {
-        case "new_chat": return isKorean ? "새 채팅" : "New Chat"
-        case "group_chat": return isKorean ? "그룹 채팅" : "Group Chat"
-        case "new_friend": return isKorean ? "새 친구" : "New Friend"
-        case "new_group": return isKorean ? "새 그룹" : "New Group"
-        case "family_group": return isKorean ? "가족 단톡방" : "Family Group"
-        case "work_colleagues": return isKorean ? "회사 동료" : "Work Colleagues"
-        case "study_group": return isKorean ? "스터디 그룹" : "Study Group"
-        case "hello_message": return isKorean ? "안녕하세요!" : "Hello!"
-        case "start_conversation": return isKorean ? "메시지를 시작해보세요" : "Start a conversation"
-        case "chat": return isKorean ? "채팅" : "Chat"
-        case "search": return isKorean ? "검색" : "Search"
-        case "friend": return isKorean ? "친구" : "Friend"
-        case "new_chat_button": return isKorean ? "새 채팅 만들기" : "Create new chat"
+        case "new_chat": return languageManager.localize(ko: "새 채팅", en: "New Chat", ja: "新しいチャット", zh: "新聊天", es: "Nuevo chat")
+        case "group_chat": return languageManager.localize(ko: "그룹 채팅", en: "Group Chat", ja: "グループチャット", zh: "群聊", es: "Chat grupal")
+        case "new_friend": return languageManager.localize(ko: "새 친구", en: "New Friend", ja: "新しい友達", zh: "新朋友", es: "Nuevo amigo")
+        case "new_group": return languageManager.localize(ko: "새 그룹", en: "New Group", ja: "新しいグループ", zh: "新群组", es: "Nuevo grupo")
+        case "family_group": return languageManager.localize(ko: "가족 단톡방", en: "Family Group", ja: "家族グループ", zh: "家庭群组", es: "Grupo familiar")
+        case "work_colleagues": return languageManager.localize(ko: "회사 동료", en: "Work Colleagues", ja: "職場の同僚", zh: "工作同事", es: "Colegas de trabajo")
+        case "study_group": return languageManager.localize(ko: "스터디 그룹", en: "Study Group", ja: "スタディグループ", zh: "学习小组", es: "Grupo de estudio")
+        case "hello_message": return languageManager.localize(ko: "안녕하세요!", en: "Hello!", ja: "こんにちは！", zh: "你好！", es: "¡Hola!")
+        case "start_conversation": return languageManager.localize(ko: "메시지를 시작해보세요", en: "Start a conversation", ja: "会話を始めましょう", zh: "开始对话", es: "Inicia una conversación")
+        case "chat": return languageManager.localize(ko: "채팅", en: "Chat", ja: "チャット", zh: "聊天", es: "Chat")
+        case "search": return languageManager.localize(ko: "검색", en: "Search", ja: "検索", zh: "搜索", es: "Buscar")
+        case "friend": return languageManager.localize(ko: "친구", en: "Friend", ja: "友達", zh: "朋友", es: "Amigo")
+        case "new_chat_button": return languageManager.localize(ko: "새 채팅 만들기", en: "Create new chat", ja: "新しいチャットを作成", zh: "创建新聊天", es: "Crear nuevo chat")
         default: return key
         }
     }
@@ -188,32 +186,33 @@ struct ChatRoomRow: View {
     }
 
     private var combinedAccessibilityLabel: String {
-        let isKorean = languageManager.currentLanguage == .korean
         let lastMsg = room.lastMessage.isEmpty
-            ? (isKorean ? "메시지를 시작해보세요" : "Start a conversation")
+            ? languageManager.localize(ko: "메시지를 시작해보세요", en: "Start a conversation", ja: "会話を始めましょう", zh: "开始对话", es: "Inicia una conversación")
             : room.lastMessage
         var label = "\(room.name), \(lastMsg)"
         if room.unreadCount > 0 {
-            label += isKorean
-                ? ", 읽지 않은 메시지 \(room.unreadCount)개"
-                : ", \(room.unreadCount) unread messages"
+            label += languageManager.localize(
+                ko: ", 읽지 않은 메시지 \(room.unreadCount)개",
+                en: ", \(room.unreadCount) unread messages",
+                ja: ", 未読メッセージ \(room.unreadCount)件",
+                zh: ", \(room.unreadCount) 条未读消息",
+                es: ", \(room.unreadCount) mensajes no leídos"
+            )
         }
         return label
     }
 
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
-
         switch key {
-        case "new_chat": return isKorean ? "새 채팅" : "New Chat"
-        case "group_chat": return isKorean ? "그룹 채팅" : "Group Chat"
-        case "new_friend": return isKorean ? "새 친구" : "New Friend"
-        case "new_group": return isKorean ? "새 그룹" : "New Group"
-        case "family_group": return isKorean ? "가족 단톡방" : "Family Group"
-        case "work_colleagues": return isKorean ? "회사 동료" : "Work Colleagues"
-        case "study_group": return isKorean ? "스터디 그룹" : "Study Group"
-        case "hello_message": return isKorean ? "안녕하세요!" : "Hello!"
-        case "start_conversation": return isKorean ? "메시지를 시작해보세요" : "Start a conversation"
+        case "new_chat": return languageManager.localize(ko: "새 채팅", en: "New Chat", ja: "新しいチャット", zh: "新聊天", es: "Nuevo chat")
+        case "group_chat": return languageManager.localize(ko: "그룹 채팅", en: "Group Chat", ja: "グループチャット", zh: "群聊", es: "Chat grupal")
+        case "new_friend": return languageManager.localize(ko: "새 친구", en: "New Friend", ja: "新しい友達", zh: "新朋友", es: "Nuevo amigo")
+        case "new_group": return languageManager.localize(ko: "새 그룹", en: "New Group", ja: "新しいグループ", zh: "新群组", es: "Nuevo grupo")
+        case "family_group": return languageManager.localize(ko: "가족 단톡방", en: "Family Group", ja: "家族グループ", zh: "家庭群组", es: "Grupo familiar")
+        case "work_colleagues": return languageManager.localize(ko: "회사 동료", en: "Work Colleagues", ja: "職場の同僚", zh: "工作同事", es: "Colegas de trabajo")
+        case "study_group": return languageManager.localize(ko: "스터디 그룹", en: "Study Group", ja: "スタディグループ", zh: "学习小组", es: "Grupo de estudio")
+        case "hello_message": return languageManager.localize(ko: "안녕하세요!", en: "Hello!", ja: "こんにちは！", zh: "你好！", es: "¡Hola!")
+        case "start_conversation": return languageManager.localize(ko: "메시지를 시작해보세요", en: "Start a conversation", ja: "会話を始めましょう", zh: "开始对话", es: "Inicia una conversación")
         default: return key
         }
     }
@@ -334,14 +333,15 @@ struct ChatScreen: View {
     }
 
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
         switch key {
-        case "add_friend": return isKorean ? "친구 추가" : "Add Friend"
-        case "request_pending": return isKorean ? "승인 대기" : "Pending"
-        case "friend": return isKorean ? "친구" : "Friend"
-        case "alert": return isKorean ? "알림" : "Alert"
-        case "ok": return isKorean ? "확인" : "OK"
-        case "pending_short": return isKorean ? "대기" : "Pending"
+        case "add_friend": return languageManager.localize(ko: "친구 추가", en: "Add Friend", ja: "友達を追加", zh: "添加好友", es: "Agregar amigo")
+        case "request_pending": return languageManager.localize(ko: "승인 대기", en: "Pending", ja: "承認待ち", zh: "待审批", es: "Pendiente")
+        case "friend": return languageManager.localize(ko: "친구", en: "Friend", ja: "友達", zh: "朋友", es: "Amigo")
+        case "alert": return languageManager.localize(ko: "알림", en: "Alert", ja: "お知らせ", zh: "通知", es: "Alerta")
+        case "ok": return languageManager.localize(ko: "확인", en: "OK", ja: "OK", zh: "确认", es: "Aceptar")
+        case "pending_short": return languageManager.localize(ko: "대기", en: "Pending", ja: "待機中", zh: "待处理", es: "Pendiente")
+        case "user": return languageManager.localize(ko: "사용자", en: "User", ja: "ユーザー", zh: "用户", es: "Usuario")
+        case "friend_request_sent": return languageManager.localize(ko: "친구 요청을 보냈습니다.", en: "Friend request sent.", ja: "友達リクエストを送りました。", zh: "好友请求已发送。", es: "Solicitud de amistad enviada.")
         default: return key
         }
     }

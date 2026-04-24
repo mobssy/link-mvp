@@ -72,15 +72,41 @@ class AppLockManager: ObservableObject {
 
     // 인증 시도 (Face ID/Touch ID 또는 기기 암호)
     func authenticate(reason: String? = nil) {
-        let isKorean: Bool = {
-            if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") { return saved.hasPrefix("ko") }
-            if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first.hasPrefix("ko") }
-            return false
+        let currentLanguage: String = {
+            if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") { return saved }
+            if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first }
+            return "en"
         }()
-        let reasonText = reason ?? (isKorean ? "앱을 잠금 해제하려면 인증이 필요합니다." : "Authentication is required to unlock the app.")
-        let fallbackTitle = isKorean ? "암호 사용" : "Use Passcode"
-        let authFailed = isKorean ? "인증에 실패했습니다." : "Authentication failed."
-        let unavailable = isKorean ? "이 기기에서는 인증을 사용할 수 없습니다." : "Authentication is unavailable on this device."
+        let reasonText: String
+        let fallbackTitle: String
+        let authFailed: String
+        let unavailable: String
+        if currentLanguage.hasPrefix("ja") {
+            reasonText = reason ?? "アプリのロックを解除するには認証が必要です。"
+            fallbackTitle = "パスコードを使用"
+            authFailed = "認証に失敗しました。"
+            unavailable = "このデバイスでは認証を使用できません。"
+        } else if currentLanguage.hasPrefix("zh") {
+            reasonText = reason ?? "解锁应用需要进行身份验证。"
+            fallbackTitle = "使用密码"
+            authFailed = "认证失败。"
+            unavailable = "此设备上无法使用身份验证。"
+        } else if currentLanguage.hasPrefix("es") {
+            reasonText = reason ?? "Se requiere autenticación para desbloquear la app."
+            fallbackTitle = "Usar código"
+            authFailed = "La autenticación falló."
+            unavailable = "La autenticación no está disponible en este dispositivo."
+        } else if currentLanguage.hasPrefix("ko") {
+            reasonText = reason ?? "앱을 잠금 해제하려면 인증이 필요합니다."
+            fallbackTitle = "암호 사용"
+            authFailed = "인증에 실패했습니다."
+            unavailable = "이 기기에서는 인증을 사용할 수 없습니다."
+        } else {
+            reasonText = reason ?? "Authentication is required to unlock the app."
+            fallbackTitle = "Use Passcode"
+            authFailed = "Authentication failed."
+            unavailable = "Authentication is unavailable on this device."
+        }
 
         let context = LAContext()
         context.localizedFallbackTitle = fallbackTitle

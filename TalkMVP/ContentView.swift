@@ -63,9 +63,9 @@ struct ContentView: View {
         // 테스트용 사용자 생성
         let testUser = User(
             username: "tester",
-            displayName: languageManager.currentLanguage == .korean ? "테스터" : "Tester",
+            displayName: languageManager.localize(ko: "테스터", en: "Tester", ja: "テスター", zh: "测试用户", es: "Tester"),
             email: "test@example.com",
-            statusMessage: languageManager.currentLanguage == .korean ? "테스트 모드로 체험 중입니다" : "Experiencing in test mode",
+            statusMessage: languageManager.localize(ko: "테스트 모드로 체험 중입니다", en: "Experiencing in test mode", ja: "テストモードを体験中", zh: "正在体验测试模式", es: "Explorando en modo de prueba"),
             isCurrentUser: true
         )
 
@@ -125,20 +125,31 @@ struct ContentView: View {
     }
 
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
-
         switch key {
-        case "friends": return isKorean ? "친구" : "Friends"
-        case "chat": return isKorean ? "채팅" : "Chat"
-        case "settings": return isKorean ? "설정" : "Settings"
-        case "test_mode_title": return isKorean ? "테스트 모드" : "Test Mode"
-        case "start_test": return isKorean ? "테스트 시작" : "Start Test"
-        case "test_mode_message": return isKorean ?
-            "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" :
-            "You can experience all app features without logging in.\nWould you like to enter test mode?"
-        case "test_experience": return isKorean ? "테스트 모드로 체험하기" : "Try Test Mode"
-        case "test_mode": return isKorean ? "테스트 모드" : "Test Mode"
-        case "cancel": return isKorean ? "취소" : "Cancel"
+        case "friends":
+            return languageManager.localize(ko: "친구", en: "Friends", ja: "友だち", zh: "朋友", es: "Amigos")
+        case "chat":
+            return languageManager.localize(ko: "채팅", en: "Chats", ja: "チャット", zh: "聊天", es: "Chats")
+        case "settings":
+            return languageManager.localize(ko: "설정", en: "Settings", ja: "設定", zh: "设置", es: "Configuración")
+        case "test_mode_title":
+            return languageManager.localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
+        case "start_test":
+            return languageManager.localize(ko: "테스트 시작", en: "Start Test", ja: "テスト開始", zh: "开始测试", es: "Iniciar prueba")
+        case "test_mode_message":
+            return languageManager.localize(
+                ko: "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?",
+                en: "You can experience all app features without logging in.\nWould you like to enter test mode?",
+                ja: "ログインなしですべての機能を体験できます。\nテストモードに入りますか？",
+                zh: "无需登录即可体验所有功能。\n是否进入测试模式？",
+                es: "Puedes explorar todas las funciones sin iniciar sesión.\n¿Deseas entrar al modo de prueba?"
+            )
+        case "test_experience":
+            return languageManager.localize(ko: "테스트 모드로 체험하기", en: "Try Test Mode", ja: "テストモードを体験", zh: "体验测试模式", es: "Probar modo de prueba")
+        case "test_mode":
+            return languageManager.localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
+        case "cancel":
+            return languageManager.localize(ko: "취소", en: "Cancel", ja: "キャンセル", zh: "取消", es: "Cancelar")
         default: return key
         }
     }
@@ -187,19 +198,29 @@ struct AuthenticatedTabsView: View {
     }
 
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
-
         switch key {
-        case "friends": return isKorean ? "친구" : "Friends"
-        case "chat": return isKorean ? "채팅" : "Chat"
-        case "settings": return isKorean ? "설정" : "Settings"
-        case "test_mode_title": return isKorean ? "테스트 모드" : "Test Mode"
-        case "start_test": return isKorean ? "테스트 시작" : "Start Test"
-        case "test_mode_message": return isKorean ?
-            "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" :
-            "You can experience all app features without logging in.\nWould you like to enter test mode?"
-        case "test_experience": return isKorean ? "테스트 모드로 체험하기" : "Try Test Mode"
-        case "test_mode": return isKorean ? "테스트 모드" : "Test Mode"
+        case "friends":
+            return languageManager.localize(ko: "친구", en: "Friends", ja: "友だち", zh: "朋友", es: "Amigos")
+        case "chat":
+            return languageManager.localize(ko: "채팅", en: "Chats", ja: "チャット", zh: "聊天", es: "Chats")
+        case "settings":
+            return languageManager.localize(ko: "설정", en: "Settings", ja: "設定", zh: "设置", es: "Configuración")
+        case "test_mode_title":
+            return languageManager.localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
+        case "start_test":
+            return languageManager.localize(ko: "테스트 시작", en: "Start Test", ja: "テスト開始", zh: "开始测试", es: "Iniciar prueba")
+        case "test_mode_message":
+            return languageManager.localize(
+                ko: "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?",
+                en: "You can experience all app features without logging in.\nWould you like to enter test mode?",
+                ja: "ログインなしですべての機能を体験できます。\nテストモードに入りますか？",
+                zh: "无需登录即可体验所有功能。\n是否进入测试模式？",
+                es: "Puedes explorar todas las funciones sin iniciar sesión.\n¿Deseas entrar al modo de prueba?"
+            )
+        case "test_experience":
+            return languageManager.localize(ko: "테스트 모드로 체험하기", en: "Try Test Mode", ja: "テストモードを体験", zh: "体验测试模式", es: "Probar modo de prueba")
+        case "test_mode":
+            return languageManager.localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
         default: return key
         }
     }
@@ -261,19 +282,29 @@ struct TestModeButtonView: View {
     }
 
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
-
         switch key {
-        case "friends": return isKorean ? "친구" : "Friends"
-        case "chat": return isKorean ? "채팅" : "Chat"
-        case "settings": return isKorean ? "설정" : "Settings"
-        case "test_mode_title": return isKorean ? "테스트 모드" : "Test Mode"
-        case "start_test": return isKorean ? "테스트 시작" : "Start Test"
-        case "test_mode_message": return isKorean ?
-            "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" :
-            "You can experience all app features without logging in.\nWould you like to enter test mode?"
-        case "test_experience": return isKorean ? "테스트 모드로 체험하기" : "Try Test Mode"
-        case "test_mode": return isKorean ? "테스트 모드" : "Test Mode"
+        case "friends":
+            return languageManager.localize(ko: "친구", en: "Friends", ja: "友だち", zh: "朋友", es: "Amigos")
+        case "chat":
+            return languageManager.localize(ko: "채팅", en: "Chats", ja: "チャット", zh: "聊天", es: "Chats")
+        case "settings":
+            return languageManager.localize(ko: "설정", en: "Settings", ja: "設定", zh: "设置", es: "Configuración")
+        case "test_mode_title":
+            return languageManager.localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
+        case "start_test":
+            return languageManager.localize(ko: "테스트 시작", en: "Start Test", ja: "テスト開始", zh: "开始测试", es: "Iniciar prueba")
+        case "test_mode_message":
+            return languageManager.localize(
+                ko: "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?",
+                en: "You can experience all app features without logging in.\nWould you like to enter test mode?",
+                ja: "ログインなしですべての機能を体験できます。\nテストモードに入りますか？",
+                zh: "无需登录即可体验所有功能。\n是否进入测试模式？",
+                es: "Puedes explorar todas las funciones sin iniciar sesión.\n¿Deseas entrar al modo de prueba?"
+            )
+        case "test_experience":
+            return languageManager.localize(ko: "테스트 모드로 체험하기", en: "Try Test Mode", ja: "テストモードを体験", zh: "体验测试模式", es: "Probar modo de prueba")
+        case "test_mode":
+            return languageManager.localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
         default: return key
         }
     }
@@ -303,19 +334,29 @@ struct TestModeIndicatorView: View {
     }
 
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
-
         switch key {
-        case "friends": return isKorean ? "친구" : "Friends"
-        case "chat": return isKorean ? "채팅" : "Chat"
-        case "settings": return isKorean ? "설정" : "Settings"
-        case "test_mode_title": return isKorean ? "테스트 모드" : "Test Mode"
-        case "start_test": return isKorean ? "테스트 시작" : "Start Test"
-        case "test_mode_message": return isKorean ?
-            "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?" :
-            "You can experience all app features without logging in.\nWould you like to enter test mode?"
-        case "test_experience": return isKorean ? "테스트 모드로 체험하기" : "Try Test Mode"
-        case "test_mode": return isKorean ? "테스트 모드" : "Test Mode"
+        case "friends":
+            return languageManager.localize(ko: "친구", en: "Friends", ja: "友だち", zh: "朋友", es: "Amigos")
+        case "chat":
+            return languageManager.localize(ko: "채팅", en: "Chats", ja: "チャット", zh: "聊天", es: "Chats")
+        case "settings":
+            return languageManager.localize(ko: "설정", en: "Settings", ja: "設定", zh: "设置", es: "Configuración")
+        case "test_mode_title":
+            return languageManager.localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
+        case "start_test":
+            return languageManager.localize(ko: "테스트 시작", en: "Start Test", ja: "テスト開始", zh: "开始测试", es: "Iniciar prueba")
+        case "test_mode_message":
+            return languageManager.localize(
+                ko: "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?",
+                en: "You can experience all app features without logging in.\nWould you like to enter test mode?",
+                ja: "ログインなしですべての機能を体験できます。\nテストモードに入りますか？",
+                zh: "无需登录即可体验所有功能。\n是否进入测试模式？",
+                es: "Puedes explorar todas las funciones sin iniciar sesión.\n¿Deseas entrar al modo de prueba?"
+            )
+        case "test_experience":
+            return languageManager.localize(ko: "테스트 모드로 체험하기", en: "Try Test Mode", ja: "テストモードを体験", zh: "体验测试模式", es: "Probar modo de prueba")
+        case "test_mode":
+            return languageManager.localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
         default: return key
         }
     }

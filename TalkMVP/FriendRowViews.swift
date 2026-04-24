@@ -58,25 +58,29 @@ struct MyProfileRow: View {
     }
 
     private func localizedDisplayName() -> String {
-        let isKorean = languageManager.isKorean
         let raw = (authManager.currentUser?.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if raw.isEmpty {
             return NSLocalizedString("user", comment: "")
         }
         if raw == "테스터" || raw == "Tester" {
-            return isKorean ? "테스터" : "Tester"
+            return languageManager.localize(ko: "테스터", en: "Tester", ja: "テスター", zh: "测试员", es: "Tester")
         }
         return raw
     }
 
     private func localizedStatusMessage() -> String {
-        let isKorean = languageManager.isKorean
         let raw = (authManager.currentUser?.statusMessage ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if raw.isEmpty {
             return NSLocalizedString("status_message", comment: "")
         }
         if raw == "테스트 모드로 체험 중입니다" || raw == "Experiencing in test mode" {
-            return isKorean ? "테스트 모드로 체험 중입니다" : "Experiencing in test mode"
+            return languageManager.localize(
+                ko: "테스트 모드로 체험 중입니다",
+                en: "Experiencing in test mode",
+                ja: "テストモードで体験中です",
+                zh: "正在以测试模式体验",
+                es: "Experimentando en modo de prueba"
+            )
         }
         return raw
     }
@@ -115,7 +119,7 @@ struct FriendRow: View {
                         }
                     }
 
-                    Text(L10n.text("online", languageManager.currentLanguage == .korean ? .korean : .english))
+                    Text(languageManager.localize(ko: "온라인", en: "online", ja: "オンライン", zh: "在线", es: "en línea"))
                         .font(.subheadline)
                         .foregroundColor(.green)
                 }
@@ -134,7 +138,9 @@ struct FriendRow: View {
                 toggleFavorite()
             } label: {
                 Label(
-                    friendship.isFavorite ? L10n.text("unfavorite", languageManager.currentLanguage == .korean ? .korean : .english) : L10n.text("favorite", languageManager.currentLanguage == .korean ? .korean : .english),
+                    friendship.isFavorite
+                        ? L10n.text("unfavorite", languageManager.appLanguage)
+                        : L10n.text("favorite", languageManager.appLanguage),
                     systemImage: friendship.isFavorite ? "star.slash.fill" : "star.fill"
                 )
             }
@@ -145,7 +151,9 @@ struct FriendRow: View {
                 toggleNotifications()
             } label: {
                 Label(
-                    friendship.notificationsEnabled ? L10n.text("mute_notifications", languageManager.currentLanguage == .korean ? .korean : .english) : L10n.text("unmute_notifications", languageManager.currentLanguage == .korean ? .korean : .english),
+                    friendship.notificationsEnabled
+                        ? L10n.text("mute_notifications", languageManager.appLanguage)
+                        : L10n.text("unmute_notifications", languageManager.appLanguage),
                     systemImage: friendship.notificationsEnabled ? "bell.slash.fill" : "bell.fill"
                 )
             }
@@ -189,14 +197,14 @@ struct ReceivedRequestRow: View {
                     .font(.headline)
                     .foregroundColor(.primary)
 
-                Text(L10n.text("friend_request", languageManager.currentLanguage == .korean ? .korean : .english))
+                Text(L10n.text("friend_request", languageManager.appLanguage))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
 
             Spacer()
 
-            Button(L10n.text("accept", languageManager.currentLanguage == .korean ? .korean : .english)) {
+            Button(L10n.text("accept", languageManager.appLanguage)) {
                 acceptFriendRequest()
             }
             .buttonStyle(.borderedProminent)
@@ -232,14 +240,14 @@ struct PendingRequestRow: View {
                     .font(.headline)
                     .foregroundColor(.primary)
 
-                Text(L10n.text("request_pending", languageManager.currentLanguage == .korean ? .korean : .english))
+                Text(L10n.text("request_pending", languageManager.appLanguage))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
 
             Spacer()
 
-            Text(L10n.text("pending_short", languageManager.currentLanguage == .korean ? .korean : .english))
+            Text(L10n.text("pending_short", languageManager.appLanguage))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }

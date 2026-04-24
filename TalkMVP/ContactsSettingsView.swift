@@ -108,16 +108,15 @@ struct ContactsSettingsView: View {
     }
 
     private func loc(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
         switch key {
-        case "contacts": return isKorean ? "연락처" : "Contacts"
-        case "enable_sync": return isKorean ? "연락처 동기화 사용" : "Enable Contacts Sync"
-        case "sync_now": return isKorean ? "지금 동기화" : "Sync Now"
-        case "syncing": return isKorean ? "동기화 중..." : "Syncing..."
-        case "permission_needed": return isKorean ? "설정에서 연락처 접근 권한을 허용해주세요." : "Please allow Contacts access in Settings."
-        case "privacy_hint": return isKorean ? "전화번호/이메일은 해시 처리되어 서버에 전송됩니다." : "Phone numbers/emails are hashed before sending to the server."
-        case "no_matches": return isKorean ? "일치하는 사용자가 없습니다." : "No matching users found."
-        case "found_matches": return isKorean ? "일치하는 사용자 %d명을 찾았습니다." : "Found %d matching users."
+        case "contacts": return languageManager.localize(ko: "연락처", en: "Contacts", ja: "連絡先", zh: "通讯录", es: "Contactos")
+        case "enable_sync": return languageManager.localize(ko: "연락처 동기화 사용", en: "Enable Contacts Sync", ja: "連絡先同期を有効にする", zh: "启用通讯录同步", es: "Activar sincronización de contactos")
+        case "sync_now": return languageManager.localize(ko: "지금 동기화", en: "Sync Now", ja: "今すぐ同期", zh: "立即同步", es: "Sincronizar ahora")
+        case "syncing": return languageManager.localize(ko: "동기화 중...", en: "Syncing...", ja: "同期中...", zh: "正在同步...", es: "Sincronizando...")
+        case "permission_needed": return languageManager.localize(ko: "설정에서 연락처 접근 권한을 허용해주세요.", en: "Please allow Contacts access in Settings.", ja: "設定で連絡先のアクセスを許可してください。", zh: "请在设置中允许访问通讯录。", es: "Permite el acceso a los contactos en Ajustes.")
+        case "privacy_hint": return languageManager.localize(ko: "전화번호/이메일은 해시 처리되어 서버에 전송됩니다.", en: "Phone numbers/emails are hashed before sending to the server.", ja: "電話番号/メールはハッシュ処理されてサーバーに送信されます。", zh: "电话号码/邮箱经过哈希处理后发送至服务器。", es: "Los números de teléfono/correos electrónicos se cifran antes de enviarse al servidor.")
+        case "no_matches": return languageManager.localize(ko: "일치하는 사용자가 없습니다.", en: "No matching users found.", ja: "一致するユーザーが見つかりませんでした。", zh: "未找到匹配的用户。", es: "No se encontraron usuarios coincidentes.")
+        case "found_matches": return languageManager.localize(ko: "일치하는 사용자 %d명을 찾았습니다.", en: "Found %d matching users.", ja: "一致するユーザーが%d名見つかりました。", zh: "找到 %d 个匹配的用户。", es: "Se encontraron %d usuarios coincidentes.")
         default: return key
         }
     }

@@ -76,7 +76,7 @@ struct FriendProfileView: View {
 
                         ProfileInfoCard(
                             title: localizedText("mutual_friends"),
-                            value: languageManager.currentLanguage == .korean ? "0명" : "0",
+                            value: languageManager.localize(ko: "0명", en: "0", ja: "0人", zh: "0人", es: "0"),
                             icon: "person.2"
                         )
                     }
@@ -248,7 +248,7 @@ struct FriendProfileView: View {
         if let date = foundDate {
             let interval = Date().timeIntervalSince(date)
             if interval < 5 * 60 { // within 5 minutes
-                lastActiveText = languageManager.currentLanguage == .korean ? "온라인" : "Online"
+                lastActiveText = languageManager.localize(ko: "온라인", en: "Online", ja: "オンライン", zh: "在线", es: "En línea")
                 lastActiveIconColor = .green
             } else {
                 lastActiveText = formatRelative(date)
@@ -266,21 +266,20 @@ struct FriendProfileView: View {
         let minute: Double = 60
         let hour = 60 * minute
         let day = 24 * hour
-        let isKorean = languageManager.currentLanguage == .korean
 
         if interval < hour {
             let mins = max(1, Int(interval / minute))
-            return isKorean ? "\(mins)분 전" : "\(mins)m ago"
+            return languageManager.localize(ko: "\(mins)분 전", en: "\(mins)m ago", ja: "\(mins)分前", zh: "\(mins)分钟前", es: "hace \(mins)m")
         } else if interval < day {
             let hours = max(1, Int(interval / hour))
-            return isKorean ? "\(hours)시간 전" : "\(hours)h ago"
+            return languageManager.localize(ko: "\(hours)시간 전", en: "\(hours)h ago", ja: "\(hours)時間前", zh: "\(hours)小时前", es: "hace \(hours)h")
         } else {
             let days = Int(interval / day)
             if days == 1 {
-                return isKorean ? "어제" : "Yesterday"
+                return languageManager.localize(ko: "어제", en: "Yesterday", ja: "昨日", zh: "昨天", es: "Ayer")
             }
             if days < 7 {
-                return isKorean ? "\(days)일 전" : "\(days)d ago"
+                return languageManager.localize(ko: "\(days)일 전", en: "\(days)d ago", ja: "\(days)日前", zh: "\(days)天前", es: "hace \(days)d")
             }
             // 1주 이상이면 날짜 표기
             let formatter = DateFormatter()
@@ -329,45 +328,57 @@ struct FriendProfileView: View {
     private func localizedText(_ key: String) -> String {
         switch key {
         case "joined":
-            return languageManager.currentLanguage == .korean ? "가입일" : "Joined"
+            return languageManager.localize(ko: "가입일", en: "Joined", ja: "参加日", zh: "加入日期", es: "Fecha de registro")
         case "last_active":
-            return languageManager.currentLanguage == .korean ? "마지막 활동" : "Last Active"
+            return languageManager.localize(ko: "마지막 활동", en: "Last Active", ja: "最終アクティブ", zh: "最后活跃", es: "Última actividad")
         case "mutual_friends":
-            return languageManager.currentLanguage == .korean ? "공통 친구" : "Mutual Friends"
+            return languageManager.localize(ko: "공통 친구", en: "Mutual Friends", ja: "共通の友だち", zh: "共同好友", es: "Amigos en común")
         case "no_info":
-            return languageManager.currentLanguage == .korean ? "정보 없음" : "No Info"
+            return languageManager.localize(ko: "정보 없음", en: "No Info", ja: "情報なし", zh: "无信息", es: "Sin información")
         case "start_chat":
-            return languageManager.currentLanguage == .korean ? "채팅하기" : "Start Chat"
+            return languageManager.localize(ko: "채팅하기", en: "Start Chat", ja: "チャットを始める", zh: "开始聊天", es: "Iniciar chat")
         case "block":
-            return languageManager.currentLanguage == .korean ? "차단하기" : "Block"
+            return languageManager.localize(ko: "차단하기", en: "Block", ja: "ブロック", zh: "屏蔽", es: "Bloquear")
         case "unblock":
-            return languageManager.currentLanguage == .korean ? "차단 해제" : "Unblock"
+            return languageManager.localize(ko: "차단 해제", en: "Unblock", ja: "ブロック解除", zh: "解除屏蔽", es: "Desbloquear")
         case "unhide":
-            return languageManager.currentLanguage == .korean ? "숨김 해제" : "Unhide"
+            return languageManager.localize(ko: "숨김 해제", en: "Unhide", ja: "非表示解除", zh: "取消隐藏", es: "Mostrar")
         case "request_pending":
-            return languageManager.currentLanguage == .korean ? "승인 대기" : "Pending"
+            return languageManager.localize(ko: "승인 대기", en: "Pending", ja: "承認待ち", zh: "待确认", es: "Pendiente")
         case "profile":
-            return languageManager.currentLanguage == .korean ? "프로필" : "Profile"
+            return languageManager.localize(ko: "프로필", en: "Profile", ja: "プロフィール", zh: "个人资料", es: "Perfil")
         case "close":
-            return languageManager.currentLanguage == .korean ? "닫기" : "Close"
+            return languageManager.localize(ko: "닫기", en: "Close", ja: "閉じる", zh: "关闭", es: "Cerrar")
         case "share_profile":
-            return languageManager.currentLanguage == .korean ? "프로필 공유" : "Share Profile"
+            return languageManager.localize(ko: "프로필 공유", en: "Share Profile", ja: "プロフィールを共有", zh: "分享资料", es: "Compartir perfil")
         case "view_conversation":
-            return languageManager.currentLanguage == .korean ? "대화 내용 보기" : "View Conversation"
+            return languageManager.localize(ko: "대화 내용 보기", en: "View Conversation", ja: "会話を見る", zh: "查看对话", es: "Ver conversación")
         case "report":
-            return languageManager.currentLanguage == .korean ? "신고하기" : "Report"
+            return languageManager.localize(ko: "신고하기", en: "Report", ja: "報告", zh: "举报", es: "Reportar")
         case "block_friend":
-            return languageManager.currentLanguage == .korean ? "친구 차단" : "Block Friend"
+            return languageManager.localize(ko: "친구 차단", en: "Block Friend", ja: "友だちをブロック", zh: "屏蔽朋友", es: "Bloquear amigo")
         case "unblock_friend":
-            return languageManager.currentLanguage == .korean ? "차단 해제" : "Unblock Friend"
+            return languageManager.localize(ko: "차단 해제", en: "Unblock Friend", ja: "ブロック解除", zh: "解除屏蔽", es: "Desbloquear amigo")
         case "block_message":
-            return languageManager.currentLanguage == .korean ? "%@님을 차단하시겠습니까? 차단된 친구는 더 이상 메시지를 보낼 수 없습니다." : "Block %@? Blocked friends can no longer send you messages."
+            return languageManager.localize(
+                ko: "%@님을 차단하시겠습니까? 차단된 친구는 더 이상 메시지를 보낼 수 없습니다.",
+                en: "Block %@? Blocked friends can no longer send you messages.",
+                ja: "%@さんをブロックしますか？ブロックした友だちはメッセージを送れなくなります。",
+                zh: "屏蔽%@？被屏蔽的朋友将无法再向您发送消息。",
+                es: "¿Bloquear a %@? Los amigos bloqueados ya no podrán enviarte mensajes."
+            )
         case "unblock_message":
-            return languageManager.currentLanguage == .korean ? "%@님의 차단을 해제하시겠습니까?" : "Unblock %@?"
+            return languageManager.localize(
+                ko: "%@님의 차단을 해제하시겠습니까?",
+                en: "Unblock %@?",
+                ja: "%@さんのブロックを解除しますか？",
+                zh: "解除对%@的屏蔽？",
+                es: "¿Desbloquear a %@?"
+            )
         case "cancel":
-            return languageManager.currentLanguage == .korean ? "취소" : "Cancel"
+            return languageManager.localize(ko: "취소", en: "Cancel", ja: "キャンセル", zh: "取消", es: "Cancelar")
         case "pending_short":
-            return languageManager.currentLanguage == .korean ? "대기" : "Pending"
+            return languageManager.localize(ko: "대기", en: "Pending", ja: "保留中", zh: "待处理", es: "Pendiente")
         default:
             return key
         }
@@ -397,16 +408,15 @@ struct StatusBadge: View {
     }
 
     private var statusDisplayName: String {
-        let isKorean = languageManager.currentLanguage == .korean
         switch status {
         case .pending:
-            return isKorean ? "대기중" : "Pending"
+            return languageManager.localize(ko: "대기중", en: "Pending", ja: "保留中", zh: "待处理", es: "Pendiente")
         case .accepted:
-            return isKorean ? "친구" : "Friend"
+            return languageManager.localize(ko: "친구", en: "Friend", ja: "友だち", zh: "朋友", es: "Amigo")
         case .hidden:
-            return isKorean ? "숨김" : "Hidden"
+            return languageManager.localize(ko: "숨김", en: "Hidden", ja: "非表示", zh: "已隐藏", es: "Oculto")
         case .blocked:
-            return isKorean ? "차단됨" : "Blocked"
+            return languageManager.localize(ko: "차단됨", en: "Blocked", ja: "ブロック済み", zh: "已屏蔽", es: "Bloqueado")
         }
     }
 

@@ -167,7 +167,7 @@ struct MessageBubbleView: View {
                     }
                     .accessibilityLabel(localizedText("image_load_failed"))
                     .accessibilityAddTraits(.isButton)
-                    .accessibilityHint(languageManager.currentLanguage == .korean ? "탭하여 전체화면으로 보기" : "Tap to view full screen")
+                    .accessibilityHint(languageManager.localize(ko: "탭하여 전체화면으로 보기", en: "Tap to view full screen", ja: "タップしてフルスクリーンで表示", zh: "点击全屏查看", es: "Toca para ver en pantalla completa"))
             } else {
                 HStack {
                     Image(systemName: "photo")
@@ -191,14 +191,14 @@ struct MessageBubbleView: View {
                     }
                     .allowsHitTesting(false)
 
-                    Text("동영상 (\(formatFileSize(videoData.count)))")
+                    Text("\(languageManager.localize(ko: "동영상", en: "Video", ja: "動画", zh: "视频", es: "Video")) (\(formatFileSize(videoData.count)))")
                         .font(.caption)
                         .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.9) : .secondary)
                 }
             } else {
                 HStack {
                     Image(systemName: "video")
-                    Text("동영상 로드 실패")
+                    Text(languageManager.localize(ko: "동영상 로드 실패", en: "Unable to load video", ja: "動画を読み込めません", zh: "无法加载视频", es: "No se puede cargar el video"))
                 }
                 .foregroundColor(.secondary)
             }
@@ -273,21 +273,20 @@ struct MessageBubbleView: View {
     }
 
     private func localizedText(_ key: String, _ param: String = "") -> String {
-        let isKorean = languageManager.currentLanguage == .korean
-
         let text: String
         switch key {
-        case "image_load_failed": text = isKorean ? "이미지를 불러올 수 없습니다" : "Unable to load image"
-        case "audio_message": text = isKorean ? "음성 메시지" : "Audio Message"
-        case "message_deleted": text = isKorean ? "메시지가 삭제되었습니다" : "Message deleted"
-        case "file": text = isKorean ? "파일" : "File"
-        case "profile_of": text = isKorean ? "\(param) 프로필" : "Profile of \(param)"
-        case "add_friend": text = isKorean ? "친구 추가" : "Add Friend"
-        case "request_pending": text = isKorean ? "승인 대기" : "Pending"
-        case "pending_short": text = isKorean ? "대기" : "Pending"
-        case "friend_request_sent": text = isKorean ? "친구 요청을 보냈습니다." : "Friend request sent."
-        case "alert": text = isKorean ? "알림" : "Alert"
-        case "ok": text = isKorean ? "확인" : "OK"
+        case "image_load_failed": text = languageManager.localize(ko: "이미지를 불러올 수 없습니다", en: "Unable to load image", ja: "画像を読み込めません", zh: "无法加载图片", es: "No se puede cargar la imagen")
+        case "audio_message": text = languageManager.localize(ko: "음성 메시지", en: "Audio Message", ja: "音声メッセージ", zh: "语音消息", es: "Mensaje de audio")
+        case "message_deleted": text = languageManager.localize(ko: "메시지가 삭제되었습니다", en: "Message deleted", ja: "削除されたメッセージ", zh: "已删除的消息", es: "Mensaje eliminado")
+        case "file": text = languageManager.localize(ko: "파일", en: "File", ja: "ファイル", zh: "文件", es: "Archivo")
+        case "profile_of": text = languageManager.localize(ko: "\(param) 프로필", en: "Profile of \(param)", ja: "\(param)のプロフィール", zh: "\(param)的资料", es: "Perfil de \(param)")
+        case "add_friend": text = languageManager.localize(ko: "친구 추가", en: "Add Friend", ja: "友だちを追加", zh: "添加朋友", es: "Agregar amigo")
+        case "request_pending": text = languageManager.localize(ko: "승인 대기", en: "Pending", ja: "承認待ち", zh: "待确认", es: "Pendiente")
+        case "pending_short": text = languageManager.localize(ko: "대기", en: "Pending", ja: "保留中", zh: "待处理", es: "Pendiente")
+        case "friend_request_sent": text = languageManager.localize(ko: "친구 요청을 보냈습니다.", en: "Friend request sent.", ja: "友だちリクエストを送りました。", zh: "好友请求已发送。", es: "Solicitud de amistad enviada.")
+        case "alert": text = languageManager.localize(ko: "알림", en: "Alert", ja: "通知", zh: "提示", es: "Alerta")
+        case "ok": text = languageManager.localize(ko: "확인", en: "OK", ja: "OK", zh: "确认", es: "Aceptar")
+        case "user": text = languageManager.localize(ko: "사용자", en: "User", ja: "ユーザー", zh: "用户", es: "Usuario")
         default: text = key
         }
 
@@ -392,7 +391,7 @@ struct FullScreenImageView: View {
                     .foregroundStyle(.white, .black.opacity(0.5))
                     .padding(16)
             }
-            .accessibilityLabel("닫기")
+            .accessibilityLabel(Text("닫기 / Close"))
         }
     }
 }

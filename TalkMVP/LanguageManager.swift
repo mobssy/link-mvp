@@ -16,11 +16,17 @@ class LanguageManager: ObservableObject {
     enum Language: String, CaseIterable {
         case korean = "ko"
         case english = "en"
+        case japanese = "ja"
+        case chinese = "zh-Hans"
+        case spanish = "es"
 
         var displayName: String {
             switch self {
             case .korean: return "한국어"
             case .english: return "English"
+            case .japanese: return "日本語"
+            case .chinese: return "中文"
+            case .spanish: return "Español"
             }
         }
 
@@ -28,6 +34,9 @@ class LanguageManager: ObservableObject {
             switch self {
             case .korean: return Bundle.localizedString(forKey: "language.korean", value: "한국어", table: nil)
             case .english: return Bundle.localizedString(forKey: "language.english", value: "English", table: nil)
+            case .japanese: return "日本語"
+            case .chinese: return "中文"
+            case .spanish: return "Español"
             }
         }
     }
@@ -63,11 +72,15 @@ class LanguageManager: ObservableObject {
         // 1. 먼저 기기 시스템 언어 확인 (최우선 조건)
         let systemLanguage = Locale.preferredLanguages.first ?? "en"
 
-        if systemLanguage.hasPrefix("ko") {
-            // 3. 기기 시스템 언어가 한국어일 경우 → 앱은 무조건 한국어로 표시
+        if systemLanguage.hasPrefix("ja") {
+            return .japanese
+        } else if systemLanguage.hasPrefix("zh") {
+            return .chinese
+        } else if systemLanguage.hasPrefix("es") {
+            return .spanish
+        } else if systemLanguage.hasPrefix("ko") {
             return .korean
         } else {
-            // 4. 기기 시스템 언어가 한국어가 아닐 경우 → 앱은 무조건 영어로 표시
             return .english
         }
     }
@@ -135,6 +148,17 @@ class LanguageManager: ObservableObject {
     private func applyLanguage() {
         UserDefaults.standard.set([currentLanguage.rawValue], forKey: "AppleLanguages")
         UserDefaults.standard.synchronize()
+    }
+
+    // 5개 언어를 인라인으로 분기하는 편의 메서드
+    func localize(ko: String, en: String, ja: String, zh: String, es: String) -> String {
+        switch currentLanguage {
+        case .korean: return ko
+        case .english: return en
+        case .japanese: return ja
+        case .chinese: return zh
+        case .spanish: return es
+        }
     }
 
     // 지역화된 문자열을 가져오는 헬퍼 메서드

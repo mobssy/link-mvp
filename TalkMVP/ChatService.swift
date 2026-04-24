@@ -39,20 +39,46 @@ class ChatService: ObservableObject, ChatServiceProtocol {
         case reconnecting
 
         var displayText: String {
-            let isKorean: Bool = {
-                if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") {
-                    return saved.hasPrefix("ko")
-                }
-                if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first {
-                    return first.hasPrefix("ko")
-                }
-                return false
+            let currentLanguage: String = {
+                if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") { return saved }
+                if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first }
+                return "en"
             }()
-            switch self {
-            case .disconnected: return isKorean ? "연결 끊김" : "Disconnected"
-            case .connecting: return isKorean ? "연결 중..." : "Connecting..."
-            case .connected: return isKorean ? "연결됨" : "Connected"
-            case .reconnecting: return isKorean ? "재연결 중..." : "Reconnecting..."
+            if currentLanguage.hasPrefix("ja") {
+                switch self {
+                case .disconnected: return "切断されました"
+                case .connecting: return "接続中..."
+                case .connected: return "接続済み"
+                case .reconnecting: return "再接続中..."
+                }
+            } else if currentLanguage.hasPrefix("zh") {
+                switch self {
+                case .disconnected: return "已断开连接"
+                case .connecting: return "连接中..."
+                case .connected: return "已连接"
+                case .reconnecting: return "重新连接中..."
+                }
+            } else if currentLanguage.hasPrefix("es") {
+                switch self {
+                case .disconnected: return "Desconectado"
+                case .connecting: return "Conectando..."
+                case .connected: return "Conectado"
+                case .reconnecting: return "Reconectando..."
+                }
+            } else if currentLanguage.hasPrefix("ko") {
+                switch self {
+                case .disconnected: return "연결 끊김"
+                case .connecting: return "연결 중..."
+                case .connected: return "연결됨"
+                case .reconnecting: return "재연결 중..."
+                }
+            } else {
+                switch self {
+                case .disconnected: return "Disconnected"
+                case .connecting: return "Connecting..."
+                case .connected: return "Connected"
+                case .reconnecting: return "Reconnecting..."
+                }
             }
         }
 

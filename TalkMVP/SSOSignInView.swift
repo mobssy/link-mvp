@@ -11,8 +11,6 @@ struct SSOSignInView: View {
     @EnvironmentObject private var languageManager: LanguageManager
     @Environment(\.colorScheme) private var colorScheme
 
-    private var isKorean: Bool { languageManager.currentLanguage == .korean }
-
     private var appleButtonStyle: SignInWithAppleButton.Style {
         colorScheme == .dark ? .white : .black
     }
@@ -31,7 +29,7 @@ struct SSOSignInView: View {
             Rectangle()
                 .frame(height: 1)
                 .foregroundColor(Color(UIColor.separator))
-            Text(isKorean ? "또는" : "or")
+            Text(languageManager.localize(ko: "또는", en: "or", ja: "または", zh: "或者", es: "o"))
                 .font(.footnote)
                 .foregroundColor(.secondary)
             Rectangle()

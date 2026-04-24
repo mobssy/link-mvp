@@ -90,13 +90,25 @@ class ChatViewModel: ObservableObject {
         guard !trimmed.isEmpty else { return }
         guard translations[message.id] == nil else { return }
 
-        let isKorean: Bool = {
-            if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") { return saved.hasPrefix("ko") }
-            if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first.hasPrefix("ko") }
-            return false
+        let currentLanguage: String = {
+            if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") { return saved }
+            if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first }
+            return "en"
         }()
         // Show a user-friendly placeholder while translating
-        self.translations[message.id] = isKorean ? "번역중..." : "Translating..."
+        let translatingText: String
+        if currentLanguage.hasPrefix("ja") {
+            translatingText = "翻訳中..."
+        } else if currentLanguage.hasPrefix("zh") {
+            translatingText = "翻译中..."
+        } else if currentLanguage.hasPrefix("es") {
+            translatingText = "Traduciendo..."
+        } else if currentLanguage.hasPrefix("ko") {
+            translatingText = "번역중..."
+        } else {
+            translatingText = "Translating..."
+        }
+        self.translations[message.id] = translatingText
 
         Task {
             let result = await AIService.shared.translate(

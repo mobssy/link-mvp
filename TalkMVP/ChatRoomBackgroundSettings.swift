@@ -31,12 +31,12 @@ struct ChatRoomBackgroundSettings: View {
         case gradient
         case image
 
-        func title(isKorean: Bool) -> String {
+        func title(languageManager: LanguageManager) -> String {
             switch self {
-            case .default: return isKorean ? "기본" : "Default"
-            case .color: return isKorean ? "단색" : "Solid Color"
-            case .gradient: return isKorean ? "그라디언트" : "Gradient"
-            case .image: return isKorean ? "이미지" : "Image"
+            case .default: return languageManager.localize(ko: "기본", en: "Default", ja: "デフォルト", zh: "默认", es: "Predeterminado")
+            case .color: return languageManager.localize(ko: "단색", en: "Solid Color", ja: "単色", zh: "纯色", es: "Color sólido")
+            case .gradient: return languageManager.localize(ko: "그라디언트", en: "Gradient", ja: "グラデーション", zh: "渐变", es: "Degradado")
+            case .image: return languageManager.localize(ko: "이미지", en: "Image", ja: "画像", zh: "图片", es: "Imagen")
             }
         }
 
@@ -73,20 +73,19 @@ struct ChatRoomBackgroundSettings: View {
     }
 
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.currentLanguage == .korean
         switch key {
-        case "chat_background": return isKorean ? "채팅 배경" : "Chat Background"
-        case "background_type": return isKorean ? "배경 타입" : "Background Type"
-        case "choose_color": return isKorean ? "색상 선택" : "Choose Color"
-        case "gradient_start": return isKorean ? "그라디언트 시작" : "Gradient Start"
-        case "gradient_end": return isKorean ? "그라디언트 끝" : "Gradient End"
-        case "choose_image": return isKorean ? "이미지 선택" : "Choose Image"
-        case "preview": return isKorean ? "미리보기" : "Preview"
-        case "save": return isKorean ? "저장" : "Save"
-        case "cancel": return isKorean ? "취소" : "Cancel"
-        case "reset": return isKorean ? "초기화" : "Reset"
-        case "reset_confirm": return isKorean ? "배경을 기본값으로 초기화하시겠습니까?" : "Reset background to default?"
-        case "sample_message": return isKorean ? "안녕하세요! 이것은 샘플 메시지입니다." : "Hello! This is a sample message."
+        case "chat_background": return languageManager.localize(ko: "채팅 배경", en: "Chat Background", ja: "チャット背景", zh: "聊天背景", es: "Fondo del chat")
+        case "background_type": return languageManager.localize(ko: "배경 타입", en: "Background Type", ja: "背景タイプ", zh: "背景类型", es: "Tipo de fondo")
+        case "choose_color": return languageManager.localize(ko: "색상 선택", en: "Choose Color", ja: "色を選択", zh: "选择颜色", es: "Elegir color")
+        case "gradient_start": return languageManager.localize(ko: "그라디언트 시작", en: "Gradient Start", ja: "グラデーション開始", zh: "渐变起始", es: "Inicio del degradado")
+        case "gradient_end": return languageManager.localize(ko: "그라디언트 끝", en: "Gradient End", ja: "グラデーション終了", zh: "渐变结束", es: "Fin del degradado")
+        case "choose_image": return languageManager.localize(ko: "이미지 선택", en: "Choose Image", ja: "画像を選択", zh: "选择图片", es: "Elegir imagen")
+        case "preview": return languageManager.localize(ko: "미리보기", en: "Preview", ja: "プレビュー", zh: "预览", es: "Vista previa")
+        case "save": return languageManager.localize(ko: "저장", en: "Save", ja: "保存", zh: "保存", es: "Guardar")
+        case "cancel": return languageManager.localize(ko: "취소", en: "Cancel", ja: "キャンセル", zh: "取消", es: "Cancelar")
+        case "reset": return languageManager.localize(ko: "초기화", en: "Reset", ja: "リセット", zh: "重置", es: "Restablecer")
+        case "reset_confirm": return languageManager.localize(ko: "배경을 기본값으로 초기화하시겠습니까?", en: "Reset background to default?", ja: "背景をデフォルトにリセットしますか？", zh: "将背景重置为默认值？", es: "¿Restablecer el fondo a los valores predeterminados?")
+        case "sample_message": return languageManager.localize(ko: "안녕하세요! 이것은 샘플 메시지입니다.", en: "Hello! This is a sample message.", ja: "こんにちは！これはサンプルメッセージです。", zh: "你好！这是一条示例消息。", es: "¡Hola! Este es un mensaje de muestra.")
         default: return key
         }
     }
@@ -227,7 +226,7 @@ struct ChatRoomBackgroundSettings: View {
                                 .foregroundColor(.appPrimary)
                                 .frame(width: 24)
 
-                            Text(type.title(isKorean: languageManager.currentLanguage == .korean))
+                            Text(type.title(languageManager: languageManager))
                                 .foregroundColor(.primary)
 
                             Spacer()
@@ -259,9 +258,7 @@ struct ChatRoomBackgroundSettings: View {
             HStack {
                 Image(systemName: "info.circle.fill")
                     .foregroundColor(.blue)
-                Text(languageManager.currentLanguage == .korean ?
-                     "시스템 기본 배경을 사용합니다" :
-                     "Using system default background")
+                Text(languageManager.localize(ko: "시스템 기본 배경을 사용합니다", en: "Using system default background", ja: "システムのデフォルト背景を使用します", zh: "使用系统默认背景", es: "Usando el fondo predeterminado del sistema"))
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }

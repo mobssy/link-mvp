@@ -37,12 +37,11 @@ struct AISettingsView: View {
     }
 
     private func localizedText(_ key: String) -> String {
-        let isKorean = (languageManager.currentLanguage == .korean)
         switch key {
-        case "ai_features": return isKorean ? "AI 기능" : "AI Features"
-        case "ai_summary": return isKorean ? "대화 요약" : "Conversation Summary"
-        case "ai_search": return isKorean ? "대화 검색" : "Conversation Search"
-        case "ai_meeting_notes": return isKorean ? "자동 회의 노트" : "Auto Meeting Notes"
+        case "ai_features": return languageManager.localize(ko: "AI 기능", en: "AI Features", ja: "AI機能", zh: "AI功能", es: "Funciones de IA")
+        case "ai_summary": return languageManager.localize(ko: "대화 요약", en: "Conversation Summary", ja: "会話要約", zh: "对话摘要", es: "Resumen de conversación")
+        case "ai_search": return languageManager.localize(ko: "대화 검색", en: "Conversation Search", ja: "会話検索", zh: "对话搜索", es: "Búsqueda de conversación")
+        case "ai_meeting_notes": return languageManager.localize(ko: "자동 회의 노트", en: "Auto Meeting Notes", ja: "自動会議メモ", zh: "自动会议记录", es: "Notas de reunión automáticas")
         default: return key
         }
     }

@@ -184,20 +184,18 @@ struct ProfileEditView: View {
     }
 
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.isKorean
-
         switch key {
-        case "profile_photo": return isKorean ? "프로필 사진" : "Profile Photo"
-        case "remove_photo": return isKorean ? "사진 삭제" : "Remove Photo"
-        case "account_info": return isKorean ? "계정 정보" : "Account Information"
-        case "edit_profile": return isKorean ? "프로필 편집" : "Edit Profile"
-        case "cancel": return isKorean ? "취소" : "Cancel"
-        case "save": return isKorean ? "저장" : "Save"
-        case "display_name": return isKorean ? "표시 이름" : "Display Name"
-        case "status_message": return isKorean ? "상태 메시지" : "Status Message"
-        case "email": return isKorean ? "이메일" : "Email"
-        case "username": return isKorean ? "사용자명" : "Username"
-        case "logout": return isKorean ? "로그아웃" : "Sign Out"
+        case "profile_photo": return languageManager.localize(ko: "프로필 사진", en: "Profile Photo", ja: "プロフィール写真", zh: "个人头像", es: "Foto de perfil")
+        case "remove_photo": return languageManager.localize(ko: "사진 삭제", en: "Remove Photo", ja: "写真を削除", zh: "删除照片", es: "Eliminar foto")
+        case "account_info": return languageManager.localize(ko: "계정 정보", en: "Account Information", ja: "アカウント情報", zh: "账户信息", es: "Información de cuenta")
+        case "edit_profile": return languageManager.localize(ko: "프로필 편집", en: "Edit Profile", ja: "プロフィール編集", zh: "编辑资料", es: "Editar perfil")
+        case "cancel": return languageManager.localize(ko: "취소", en: "Cancel", ja: "キャンセル", zh: "取消", es: "Cancelar")
+        case "save": return languageManager.localize(ko: "저장", en: "Save", ja: "保存", zh: "保存", es: "Guardar")
+        case "display_name": return languageManager.localize(ko: "표시 이름", en: "Display Name", ja: "表示名", zh: "显示名称", es: "Nombre visible")
+        case "status_message": return languageManager.localize(ko: "상태 메시지", en: "Status Message", ja: "ステータスメッセージ", zh: "状态消息", es: "Mensaje de estado")
+        case "email": return languageManager.localize(ko: "이메일", en: "Email", ja: "メール", zh: "邮箱", es: "Correo electrónico")
+        case "username": return languageManager.localize(ko: "사용자명", en: "Username", ja: "ユーザー名", zh: "用户名", es: "Nombre de usuario")
+        case "logout": return languageManager.localize(ko: "로그아웃", en: "Sign Out", ja: "サインアウト", zh: "退出登录", es: "Cerrar sesión")
         default:
             // 디버깅을 위해 키가 정의되지 않은 경우를 확인
             print("⚠️ ProfileEditView: 키 '\(key)'가 정의되지 않음")

@@ -21,6 +21,14 @@ struct AuthView: View {
     @State private var confirmPassword = ""
     @State private var appIcon: UIImage?
 
+    private var appTitle: AttributedString {
+        var str = AttributedString("L!NK")
+        if let range = str.range(of: "!") {
+            str[range].foregroundColor = Color.appPrimary
+        }
+        return str
+    }
+
     var body: some View {
         GeometryReader { geometry in
             NavigationStack {
@@ -40,7 +48,7 @@ struct AuthView: View {
                             .foregroundColor(.appPrimary)
                     }
 
-                    Text("L!nk MVP")
+                    Text(appTitle)
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
@@ -197,19 +205,27 @@ struct AuthView: View {
     }
 
     private func localizedText(_ key: String) -> String {
-        let isKorean = (languageManager.currentLanguage == .korean)
-
         switch key {
-        case "signin": return isKorean ? "로그인" : "Sign In"
-        case "signup": return isKorean ? "회원가입" : "Sign Up"
-        case "have_account": return isKorean ? "이미 계정이 있나요? 로그인" : "Already have an account? Sign In"
-        case "no_account": return isKorean ? "계정이 없나요? 회원가입" : "Don't have an account? Sign Up"
-        case "username": return isKorean ? "사용자명" : "Username"
-        case "username_or_email": return isKorean ? "사용자명 또는 이메일" : "Username or Email"
-        case "display_name": return isKorean ? "표시 이름" : "Display Name"
-        case "email": return isKorean ? "이메일" : "Email"
-        case "password": return isKorean ? "비밀번호" : "Password"
-        case "confirm_password": return isKorean ? "비밀번호 확인" : "Confirm Password"
+        case "signin":
+            return languageManager.localize(ko: "로그인", en: "Sign In", ja: "ログイン", zh: "登录", es: "Iniciar sesión")
+        case "signup":
+            return languageManager.localize(ko: "회원가입", en: "Sign Up", ja: "新規登録", zh: "注册", es: "Registrarse")
+        case "have_account":
+            return languageManager.localize(ko: "이미 계정이 있나요? 로그인", en: "Already have an account? Sign In", ja: "すでにアカウントをお持ちですか？ログイン", zh: "已有账号？登录", es: "¿Ya tienes cuenta? Inicia sesión")
+        case "no_account":
+            return languageManager.localize(ko: "계정이 없나요? 회원가입", en: "Don't have an account? Sign Up", ja: "アカウントがありませんか？新規登録", zh: "没有账号？注册", es: "¿No tienes cuenta? Regístrate")
+        case "username":
+            return languageManager.localize(ko: "사용자명", en: "Username", ja: "ユーザー名", zh: "用户名", es: "Nombre de usuario")
+        case "username_or_email":
+            return languageManager.localize(ko: "사용자명 또는 이메일", en: "Username or Email", ja: "ユーザー名またはメール", zh: "用户名或邮箱", es: "Usuario o correo")
+        case "display_name":
+            return languageManager.localize(ko: "표시 이름", en: "Display Name", ja: "表示名", zh: "显示名称", es: "Nombre visible")
+        case "email":
+            return languageManager.localize(ko: "이메일", en: "Email", ja: "メール", zh: "邮箱", es: "Correo")
+        case "password":
+            return languageManager.localize(ko: "비밀번호", en: "Password", ja: "パスワード", zh: "密码", es: "Contraseña")
+        case "confirm_password":
+            return languageManager.localize(ko: "비밀번호 확인", en: "Confirm Password", ja: "パスワード確認", zh: "确认密码", es: "Confirmar contraseña")
         default: return key
         }
     }

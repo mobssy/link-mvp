@@ -25,12 +25,11 @@ struct ThemeSettingsView: View {
     }
 
     private func localizedText(_ key: String) -> String {
-        let isKorean = languageManager.isKorean
         switch key {
-        case "theme": return isKorean ? "테마" : "Theme"
-        case "appearance_system": return isKorean ? "기기 설정" : "Use System"
-        case "appearance_light": return isKorean ? "라이트 모드" : "Light"
-        case "appearance_dark": return isKorean ? "다크 모드" : "Dark"
+        case "theme": return languageManager.localize(ko: "테마", en: "Theme", ja: "テーマ", zh: "主题", es: "Tema")
+        case "appearance_system": return languageManager.localize(ko: "기기 설정", en: "Use System", ja: "システム設定", zh: "系统设置", es: "Configuración del sistema")
+        case "appearance_light": return languageManager.localize(ko: "라이트 모드", en: "Light", ja: "ライトモード", zh: "浅色模式", es: "Modo claro")
+        case "appearance_dark": return languageManager.localize(ko: "다크 모드", en: "Dark", ja: "ダークモード", zh: "深色模式", es: "Modo oscuro")
         default: return key
         }
     }
