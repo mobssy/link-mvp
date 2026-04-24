@@ -15,9 +15,7 @@ _A messenger that gets out of your way — and breaks language barriers while it
 
 <br/>
 
-<!-- Replace with actual screenshot -->
-
-![L!nk screenshot](Assets/main.PNG)
+![L!nk screenshot](Assets/main1.png.png)
 
 </div>
 
@@ -72,8 +70,10 @@ It's the moment of connection — the spark when two people understand each othe
 
 - **Minimal UI** — only what you need to send a message
 - **Auto-translation** — real-time, inline, supports 50+ languages
+- **Multi-language app** — Korean, English, Japanese, Chinese, Spanish
 - **No clutter** — no stories, no reactions, no noise
 - **Instant** — translation appears below the original with zero friction
+- **Accessibility** — dynamic type, high contrast, screen reader support
 - **Trendy design** — clean, modern, and actually enjoyable to use
 
 ---
@@ -92,17 +92,25 @@ It's the moment of connection — the spark when two people understand each othe
 
 ## Screenshots
 
-### Chat View
+### Chat
 
-![Chat View](Assets/profile.PNG)
+![Chat](Assets/main1.png.png)
 
-### Translation On
+### Translation
 
-![Translation On](Assets/settings.PNG)
+![Translation](Assets/translation.png.png)
 
 ### Settings
 
-![Settings](Assets/help.PNG)
+![Settings](Assets/settings1.png.png)
+
+### Help
+
+![Help](Assets/help1.png.png)
+
+### Accessibility
+
+![Accessibility](Assets/accessibility1.png.png)
 
 ---
 
@@ -121,20 +129,28 @@ It's the moment of connection — the spark when two people understand each othe
 ```
 L!nk/
 ├── App/
-│   └── L!nkApp.swift
+│   └── TalkMVPApp.swift
 ├── Features/
 │   ├── Chat/
 │   │   ├── ChatView.swift
 │   │   ├── ChatViewModel.swift
-│   │   └── MessageBubble.swift
+│   │   └── MessageBubbleView.swift
 │   ├── Translation/
-│   │   ├── TranslationService.swift
-│   │   └── TranslationToggle.swift
+│   │   └── TranslationSettingsView.swift
+│   ├── Friends/
+│   │   ├── FriendsView.swift
+│   │   └── FriendProfileView.swift
 │   └── Settings/
-│       └── SettingsView.swift
-├── Components/
-├── Extensions/
+│       ├── SettingsView.swift
+│       ├── AccessibilitySettingsView.swift
+│       ├── LanguageSettingsView.swift
+│       └── ThemeSettingsView.swift
+├── Services/
+│   ├── ChatService.swift
+│   ├── AIService.swift
+│   └── LocalizationService.swift
 └── Resources/
+    └── Assets.xcassets
 ```
 
 ---
@@ -164,7 +180,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 <br/>
 
-![L!nk screenshot](Assets/main.PNG)
+![L!nk screenshot](Assets/main1.png.png)
 
 </div>
 
@@ -219,8 +235,10 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 - **미니멀 UI** — 메시지 보내는 데 필요한 것만
 - **자동 번역** — 실시간, 인라인, 50개 이상 언어 지원
+- **다국어 앱** — 한국어, 영어, 일본어, 중국어, 스페인어 지원
 - **노이즈 없음** — 스토리, 리액션, 불필요한 기능 없음
 - **즉각적** — 원문 바로 아래에 번역이 표시
+- **접근성** — 다이나믹 타입, 고대비, 화면 낭독기 지원
 - **트렌디한 디자인** — 깔끔하고 현대적이며 쓰기 즐거운 앱
 
 ---
@@ -239,17 +257,25 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ## 스크린샷
 
-### 채팅 화면
+### 채팅
 
-![채팅 화면](Assets/profile.PNG)
+![채팅](Assets/main1.png.png)
 
-### 번역 켜진 상태
+### 번역
 
-![번역 켜진 상태](Assets/settings.PNG)
+![번역](Assets/translation.png.png)
 
 ### 설정
 
-![설정](Assets/help.PNG)
+![설정](Assets/settings1.png.png)
+
+### 도움말
+
+![도움말](Assets/help1.png.png)
+
+### 접근성
+
+![접근성](Assets/accessibility1.png.png)
 
 ---
 
@@ -268,20 +294,28 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 ```
 L!nk/
 ├── App/
-│   └── L!nkApp.swift
+│   └── TalkMVPApp.swift
 ├── Features/
 │   ├── Chat/
 │   │   ├── ChatView.swift
 │   │   ├── ChatViewModel.swift
-│   │   └── MessageBubble.swift
+│   │   └── MessageBubbleView.swift
 │   ├── Translation/
-│   │   ├── TranslationService.swift
-│   │   └── TranslationToggle.swift
+│   │   └── TranslationSettingsView.swift
+│   ├── Friends/
+│   │   ├── FriendsView.swift
+│   │   └── FriendProfileView.swift
 │   └── Settings/
-│       └── SettingsView.swift
-├── Components/
-├── Extensions/
+│       ├── SettingsView.swift
+│       ├── AccessibilitySettingsView.swift
+│       ├── LanguageSettingsView.swift
+│       └── ThemeSettingsView.swift
+├── Services/
+│   ├── ChatService.swift
+│   ├── AIService.swift
+│   └── LocalizationService.swift
 └── Resources/
+    └── Assets.xcassets
 ```
 
 ---
