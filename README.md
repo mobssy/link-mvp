@@ -58,7 +58,7 @@ Every message, automatically translated into your default language — inline, i
 
 ---
 
-## Why "L!nk"
+## Why "L!NK"
 
 The exclamation mark isn't a typo.
 
@@ -245,7 +245,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ---
 
-## 왜 "L!nk" 인가
+## 왜 "L!NK" 인가
 
 느낌표는 오타가 아닙니다.
 
