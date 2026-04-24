@@ -15,7 +15,7 @@ _A messenger that gets out of your way — and breaks language barriers while it
 
 <br/>
 
-![L!nk screenshot](Assets/main1.png.png)
+![L!nk screenshot](Assets/mainmain.png.png)
 
 </div>
 
@@ -94,7 +94,7 @@ It's the moment of connection — the spark when two people understand each othe
 
 ### Chat
 
-![Chat](Assets/main1.png.png)
+![Chat](Assets/chatchat.png.png)
 
 ### Translation
 
@@ -180,7 +180,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 <br/>
 
-![L!nk screenshot](Assets/main1.png.png)
+![L!nk screenshot](Assets/mainmain.png.png)
 
 </div>
 
@@ -259,7 +259,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ### 채팅
 
-![채팅](Assets/main1.png.png)
+![채팅](Assets/chatchat.png.png)
 
 ### 번역
 
