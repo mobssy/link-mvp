@@ -48,6 +48,7 @@ struct SSOSignInView: View {
         .frame(maxWidth: .infinity)
         .frame(height: 44)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .environment(\.locale, Locale(identifier: languageManager.currentLanguage.rawValue))
     }
 
     // MARK: - Handlers
