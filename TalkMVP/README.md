@@ -98,7 +98,7 @@ It's the moment of connection — the spark when two people understand each othe
 
 ### Translation
 
-![Translation](Assets/translation.png.png)
+![Translation](Assets/translation1.png)
 
 ### Settings
 
@@ -263,7 +263,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ### 번역
 
-![번역](Assets/translation.png.png)
+![번역](Assets/translation1.png)
 
 ### 설정
 
