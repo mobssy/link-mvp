@@ -1,6 +1,6 @@
 <div align="center">
 
-# L!NK MVP
+# L!nk
 
 **Messaging without borders. Minimal by design. Universal by nature.**
 
@@ -15,9 +15,7 @@ _A messenger that gets out of your way — and breaks language barriers while it
 
 <br/>
 
-<!-- Replace with actual screenshot -->
-
-![L!nk screenshot](TalkMVP/Assets/main.PNG)
+![L!nk screenshot](TalkMVP/Assets/main1.png.png)
 
 </div>
 
@@ -72,8 +70,10 @@ It's the moment of connection — the spark when two people understand each othe
 
 - **Minimal UI** — only what you need to send a message
 - **Auto-translation** — real-time, inline, supports 50+ languages
+- **Multi-language app** — Korean, English, Japanese, Chinese, Spanish
 - **No clutter** — no stories, no reactions, no noise
 - **Instant** — translation appears below the original with zero friction
+- **Accessibility** — dynamic type, high contrast, screen reader support
 - **Trendy design** — clean, modern, and actually enjoyable to use
 
 ---
@@ -92,21 +92,25 @@ It's the moment of connection — the spark when two people understand each othe
 
 ## Screenshots
 
-### Profile View
+### Chat
 
-![Profile View](TalkMVP/Assets/profile.PNG)
+![Chat](TalkMVP/Assets/main1.png.png)
 
-### Settings View
+### Translation
 
-![Settings View](TalkMVP/Assets/settings.PNG)
+![Translation](TalkMVP/Assets/translation.png.png)
 
-### Translation On
+### Settings
 
-![Translation On](TalkMVP/Assets/help.PNG)
+![Settings](TalkMVP/Assets/settings1.png.png)
+
+### Help
+
+![Help](TalkMVP/Assets/help1.png.png)
 
 ### Accessibility
 
-![Accessibility](TalkMVP/Assets/accessibility.PNG)
+![Accessibility](TalkMVP/Assets/accessibility1.png.png)
 
 ---
 
@@ -125,20 +129,28 @@ It's the moment of connection — the spark when two people understand each othe
 ```
 L!nk/
 ├── App/
-│   └── L!nkApp.swift
+│   └── TalkMVPApp.swift
 ├── Features/
 │   ├── Chat/
 │   │   ├── ChatView.swift
 │   │   ├── ChatViewModel.swift
-│   │   └── MessageBubble.swift
+│   │   └── MessageBubbleView.swift
 │   ├── Translation/
-│   │   ├── TranslationService.swift
-│   │   └── TranslationToggle.swift
+│   │   └── TranslationSettingsView.swift
+│   ├── Friends/
+│   │   ├── FriendsView.swift
+│   │   └── FriendProfileView.swift
 │   └── Settings/
-│       └── SettingsView.swift
-├── Components/
-├── Extensions/
+│       ├── SettingsView.swift
+│       ├── AccessibilitySettingsView.swift
+│       ├── LanguageSettingsView.swift
+│       └── ThemeSettingsView.swift
+├── Services/
+│   ├── ChatService.swift
+│   ├── AIService.swift
+│   └── LocalizationService.swift
 └── Resources/
+    └── Assets.xcassets
 ```
 
 ---
@@ -153,7 +165,7 @@ MIT © 2026
 
 <div align="center">
 
-# L!NK MVP
+# L!nk
 
 **언어의 경계 없이. 미니멀하게 설계된. 모두를 위한 메신저.**
 
@@ -168,7 +180,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 <br/>
 
-![L!nk screenshot](TalkMVP/Assets/main.PNG)
+![L!nk screenshot](TalkMVP/Assets/main1.png.png)
 
 </div>
 
@@ -223,8 +235,10 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 - **미니멀 UI** — 메시지 보내는 데 필요한 것만
 - **자동 번역** — 실시간, 인라인, 50개 이상 언어 지원
+- **다국어 앱** — 한국어, 영어, 일본어, 중국어, 스페인어 지원
 - **노이즈 없음** — 스토리, 리액션, 불필요한 기능 없음
 - **즉각적** — 원문 바로 아래에 번역이 표시
+- **접근성** — 다이나믹 타입, 고대비, 화면 낭독기 지원
 - **트렌디한 디자인** — 깔끔하고 현대적이며 쓰기 즐거운 앱
 
 ---
@@ -243,21 +257,25 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ## 스크린샷
 
-### 프로필 화면
+### 채팅
 
-![프로필 화면](TalkMVP/Assets/profile.PNG)
+![채팅](TalkMVP/Assets/main1.png.png)
+
+### 번역
+
+![번역](TalkMVP/Assets/translation.png.png)
 
 ### 설정
 
-![설정](TalkMVP/Assets/settings.PNG)
+![설정](TalkMVP/Assets/settings1.png.png)
 
-### 번역 기능 ON
+### 도움말
 
-![번역 기능 ON](TalkMVP/Assets/help.PNG)
+![도움말](TalkMVP/Assets/help1.png.png)
 
 ### 접근성
 
-![접근성](TalkMVP/Assets/accessibility.PNG)
+![접근성](TalkMVP/Assets/accessibility1.png.png)
 
 ---
 
@@ -276,20 +294,28 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 ```
 L!nk/
 ├── App/
-│   └── L!nkApp.swift
+│   └── TalkMVPApp.swift
 ├── Features/
 │   ├── Chat/
 │   │   ├── ChatView.swift
 │   │   ├── ChatViewModel.swift
-│   │   └── MessageBubble.swift
+│   │   └── MessageBubbleView.swift
 │   ├── Translation/
-│   │   ├── TranslationService.swift
-│   │   └── TranslationToggle.swift
+│   │   └── TranslationSettingsView.swift
+│   ├── Friends/
+│   │   ├── FriendsView.swift
+│   │   └── FriendProfileView.swift
 │   └── Settings/
-│       └── SettingsView.swift
-├── Components/
-├── Extensions/
+│       ├── SettingsView.swift
+│       ├── AccessibilitySettingsView.swift
+│       ├── LanguageSettingsView.swift
+│       └── ThemeSettingsView.swift
+├── Services/
+│   ├── ChatService.swift
+│   ├── AIService.swift
+│   └── LocalizationService.swift
 └── Resources/
+    └── Assets.xcassets
 ```
 
 ---
