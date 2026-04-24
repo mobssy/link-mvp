@@ -129,26 +129,48 @@ It's the moment of connection — the spark when two people understand each othe
 ```
 L!nk/
 ├── App/
-│   └── TalkMVPApp.swift
-├── Features/
-│   ├── Chat/
-│   │   ├── ChatView.swift
-│   │   ├── ChatViewModel.swift
-│   │   └── MessageBubbleView.swift
-│   ├── Translation/
-│   │   └── TranslationSettingsView.swift
-│   ├── Friends/
-│   │   ├── FriendsView.swift
-│   │   └── FriendProfileView.swift
-│   └── Settings/
-│       ├── SettingsView.swift
-│       ├── AccessibilitySettingsView.swift
-│       ├── LanguageSettingsView.swift
-│       └── ThemeSettingsView.swift
+│   ├── TalkMVPApp.swift
+│   └── ContentView.swift
+├── Auth/
+│   ├── AuthView.swift
+│   ├── AuthManager.swift
+│   ├── SSOSignInView.swift
+│   └── GoogleOAuthService.swift
+├── Chat/
+│   ├── ChatView.swift
+│   ├── ChatViewModel.swift
+│   ├── ChatListView.swift
+│   ├── MessageBubbleView.swift
+│   ├── ChatRoom.swift
+│   ├── Message.swift
+│   └── TypingIndicatorView.swift
+├── Friends/
+│   ├── FriendsView.swift
+│   ├── FriendProfileView.swift
+│   ├── FriendSearchService.swift
+│   └── AddFriendView.swift
+├── Settings/
+│   ├── SettingsView.swift
+│   ├── AISettingsView.swift
+│   ├── AccessibilitySettingsView.swift
+│   ├── LanguageSettingsView.swift
+│   ├── NotificationSettingsView.swift
+│   ├── SecuritySettingsView.swift
+│   ├── ThemeSettingsView.swift
+│   └── TranslationSettingsView.swift
 ├── Services/
-│   ├── ChatService.swift
 │   ├── AIService.swift
-│   └── LocalizationService.swift
+│   ├── ChatService.swift
+│   ├── LocalizationService.swift
+│   ├── NotificationManager.swift
+│   └── ContactsSyncService.swift
+├── Repositories/
+│   ├── ChatRoomRepository.swift
+│   └── MessageRepository.swift
+├── Managers/
+│   ├── AppLockManager.swift
+│   ├── AttachmentHandler.swift
+│   └── LanguageManager.swift
 └── Resources/
     └── Assets.xcassets
 ```
@@ -294,26 +316,48 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 ```
 L!nk/
 ├── App/
-│   └── TalkMVPApp.swift
-├── Features/
-│   ├── Chat/
-│   │   ├── ChatView.swift
-│   │   ├── ChatViewModel.swift
-│   │   └── MessageBubbleView.swift
-│   ├── Translation/
-│   │   └── TranslationSettingsView.swift
-│   ├── Friends/
-│   │   ├── FriendsView.swift
-│   │   └── FriendProfileView.swift
-│   └── Settings/
-│       ├── SettingsView.swift
-│       ├── AccessibilitySettingsView.swift
-│       ├── LanguageSettingsView.swift
-│       └── ThemeSettingsView.swift
+│   ├── TalkMVPApp.swift
+│   └── ContentView.swift
+├── Auth/
+│   ├── AuthView.swift
+│   ├── AuthManager.swift
+│   ├── SSOSignInView.swift
+│   └── GoogleOAuthService.swift
+├── Chat/
+│   ├── ChatView.swift
+│   ├── ChatViewModel.swift
+│   ├── ChatListView.swift
+│   ├── MessageBubbleView.swift
+│   ├── ChatRoom.swift
+│   ├── Message.swift
+│   └── TypingIndicatorView.swift
+├── Friends/
+│   ├── FriendsView.swift
+│   ├── FriendProfileView.swift
+│   ├── FriendSearchService.swift
+│   └── AddFriendView.swift
+├── Settings/
+│   ├── SettingsView.swift
+│   ├── AISettingsView.swift
+│   ├── AccessibilitySettingsView.swift
+│   ├── LanguageSettingsView.swift
+│   ├── NotificationSettingsView.swift
+│   ├── SecuritySettingsView.swift
+│   ├── ThemeSettingsView.swift
+│   └── TranslationSettingsView.swift
 ├── Services/
-│   ├── ChatService.swift
 │   ├── AIService.swift
-│   └── LocalizationService.swift
+│   ├── ChatService.swift
+│   ├── LocalizationService.swift
+│   ├── NotificationManager.swift
+│   └── ContactsSyncService.swift
+├── Repositories/
+│   ├── ChatRoomRepository.swift
+│   └── MessageRepository.swift
+├── Managers/
+│   ├── AppLockManager.swift
+│   ├── AttachmentHandler.swift
+│   └── LanguageManager.swift
 └── Resources/
     └── Assets.xcassets
 ```
