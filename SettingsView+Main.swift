@@ -367,8 +367,7 @@ struct SettingsView: View {
         case .japanese: return "日本語"
         case .chinese: return "中文"
         case .spanish: return "Español"
-        case .chineseTraditional:
-            <#code#>
+        case .chineseTraditional: return "繁體中文"
         }
     }
 
