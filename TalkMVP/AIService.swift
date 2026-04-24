@@ -171,7 +171,13 @@ actor AIService {
         case "es", "spa": return "es"
         case "fr", "fra": return "fr"
         case "de", "deu": return "de"
-        case "auto": return "en" // default
+        case "auto":
+            // "auto" should be resolved to the app language before reaching here;
+            // fall back to English only as a last resort
+            if let lang = UserDefaults.standard.string(forKey: "selectedLanguage") {
+                return normalizeLanguageCode(lang)
+            }
+            return "en"
         default: return lowercased
         }
     }

@@ -28,7 +28,14 @@ class ChatViewModel: ObservableObject {
     // Read translation settings from UserDefaults to avoid @AppStorage dependency in non-View types
     private var translationEnabled: Bool { UserDefaults.standard.bool(forKey: "translationEnabled") }
     private var translationAutoDetect: Bool { UserDefaults.standard.bool(forKey: "translationAutoDetect") }
-    private var translationTargetLanguage: String { UserDefaults.standard.string(forKey: "translationTargetLanguage") ?? "auto" }
+    private var translationTargetLanguage: String {
+        let stored = UserDefaults.standard.string(forKey: "translationTargetLanguage") ?? "auto"
+        guard stored == "auto" else { return stored }
+        // Resolve "auto" to the current app language instead of hardcoding English
+        if let lang = UserDefaults.standard.string(forKey: "selectedLanguage") { return lang }
+        if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first }
+        return "en"
+    }
 
     // Dependencies injected via constructor (Dependency Inversion Principle)
     private let messageRepository: MessageRepositoryProtocol

@@ -735,7 +735,14 @@ struct ChatView: View {
     }
 
     private func appLanguageCode() -> String {
-        return languageManager.currentLanguage == .korean ? "ko" : "en"
+        switch languageManager.currentLanguage {
+        case .korean: return "ko"
+        case .english: return "en"
+        case .japanese: return "ja"
+        case .chinese: return "zh-Hans"
+        case .chineseTraditional: return "zh-Hant"
+        case .spanish: return "es"
+        }
     }
 
     private func shouldShowTranslation(for text: String) -> Bool {
