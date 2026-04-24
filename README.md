@@ -1,6 +1,6 @@
 <div align="center">
 
-# L!nk
+# L!NK
 
 **Messaging without borders. Minimal by design. Universal by nature.**
 
