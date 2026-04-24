@@ -18,6 +18,7 @@ class LanguageManager: ObservableObject {
         case english = "en"
         case japanese = "ja"
         case chinese = "zh-Hans"
+        case chineseTraditional = "zh-Hant"
         case spanish = "es"
 
         var displayName: String {
@@ -25,7 +26,8 @@ class LanguageManager: ObservableObject {
             case .korean: return "한국어"
             case .english: return "English"
             case .japanese: return "日本語"
-            case .chinese: return "中文"
+            case .chinese: return "中文（简体）"
+            case .chineseTraditional: return "中文（繁體）"
             case .spanish: return "Español"
             }
         }
@@ -35,7 +37,8 @@ class LanguageManager: ObservableObject {
             case .korean: return Bundle.localizedString(forKey: "language.korean", value: "한국어", table: nil)
             case .english: return Bundle.localizedString(forKey: "language.english", value: "English", table: nil)
             case .japanese: return "日本語"
-            case .chinese: return "中文"
+            case .chinese: return "中文（简体）"
+            case .chineseTraditional: return "中文（繁體）"
             case .spanish: return "Español"
             }
         }
@@ -74,6 +77,8 @@ class LanguageManager: ObservableObject {
 
         if systemLanguage.hasPrefix("ja") {
             return .japanese
+        } else if systemLanguage.hasPrefix("zh-Hant") || systemLanguage.hasPrefix("zh_Hant") {
+            return .chineseTraditional
         } else if systemLanguage.hasPrefix("zh") {
             return .chinese
         } else if systemLanguage.hasPrefix("es") {
@@ -150,13 +155,25 @@ class LanguageManager: ObservableObject {
         UserDefaults.standard.synchronize()
     }
 
-    // 5개 언어를 인라인으로 분기하는 편의 메서드
+    // 5개 언어를 인라인으로 분기하는 편의 메서드 (번체 중국어는 간체로 폴백)
     func localize(ko: String, en: String, ja: String, zh: String, es: String) -> String {
         switch currentLanguage {
         case .korean: return ko
         case .english: return en
         case .japanese: return ja
-        case .chinese: return zh
+        case .chinese, .chineseTraditional: return zh
+        case .spanish: return es
+        }
+    }
+
+    // 간체/번체 중국어를 구분할 때 사용하는 6개 언어 메서드
+    func localize(ko: String, en: String, ja: String, zhHans: String, zhHant: String, es: String) -> String {
+        switch currentLanguage {
+        case .korean: return ko
+        case .english: return en
+        case .japanese: return ja
+        case .chinese: return zhHans
+        case .chineseTraditional: return zhHant
         case .spanish: return es
         }
     }

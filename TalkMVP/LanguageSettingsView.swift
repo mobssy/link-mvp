@@ -198,7 +198,9 @@ struct LanguageRow: View {
         case .japanese:
             return languageManager.localize(ko: "일본어", en: "Japanese", ja: "日本語", zh: "日语", es: "Japonés")
         case .chinese:
-            return languageManager.localize(ko: "중국어", en: "Chinese", ja: "中国語", zh: "中文", es: "Chino")
+            return languageManager.localize(ko: "중국어 (간체)", en: "Chinese (Simplified)", ja: "中国語（簡体字）", zh: "中文（简体）", es: "Chino simplificado")
+        case .chineseTraditional:
+            return languageManager.localize(ko: "중국어 (번체)", en: "Chinese (Traditional)", ja: "中国語（繁体字）", zh: "中文（繁體）", es: "Chino tradicional")
         case .spanish:
             return languageManager.localize(ko: "스페인어", en: "Spanish", ja: "スペイン語", zh: "西班牙语", es: "Español")
         }

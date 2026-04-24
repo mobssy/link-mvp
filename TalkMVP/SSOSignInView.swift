@@ -42,7 +42,8 @@ struct SSOSignInView: View {
             ko: "Apple로 로그인",
             en: "Sign in with Apple",
             ja: "Appleでサインイン",
-            zh: "通过 Apple 登录",
+            zhHans: "通过 Apple 登录",
+            zhHant: "使用 Apple 登入",
             es: "Iniciar sesión con Apple"
         )
 

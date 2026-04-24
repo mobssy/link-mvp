@@ -1104,6 +1104,7 @@ extension LocalizationService {
         case .english: language = .english
         case .japanese: language = .japanese
         case .chinese: language = .chinese
+        case .chineseTraditional: language = .chinese
         case .spanish: language = .spanish
         }
         return text(for: locKey, language: language)

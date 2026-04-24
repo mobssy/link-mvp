@@ -17,6 +17,9 @@ extension LanguageManager {
     /// Convenience flag for checking if the current app language is Chinese (Simplified).
     var isChinese: Bool { currentLanguage == .chinese }
 
+    /// Convenience flag for checking if the current app language is Chinese (Traditional).
+    var isChineseTraditional: Bool { currentLanguage == .chineseTraditional }
+
     /// Convenience flag for checking if the current app language is Spanish.
     var isSpanish: Bool { currentLanguage == .spanish }
 
@@ -27,6 +30,7 @@ extension LanguageManager {
         case .english: return .english
         case .japanese: return .japanese
         case .chinese: return .chinese
+        case .chineseTraditional: return .chinese
         case .spanish: return .spanish
         }
     }
