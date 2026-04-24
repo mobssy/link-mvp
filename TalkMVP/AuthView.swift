@@ -150,6 +150,11 @@ struct AuthView: View {
             .cornerRadius(25)
             .disabled(authManager.isLoading || !isFormValid)
 
+            // SSO 버튼 (로그인 화면에서만)
+            if !isSignUp {
+                SSOSignInView()
+            }
+
             // 전환 버튼
             Button(action: {
                 withAnimation {

@@ -238,6 +238,94 @@ class AuthManager: ObservableObject {
         try? modelContext.save()
     }
 
+    // MARK: - SSO Sign-In
+
+    func signInWithApple(userId: String, email: String?, fullName: PersonNameComponents?) async {
+        isLoading = true
+        errorMessage = nil
+
+        let identifier = "apple_\(String(userId.prefix(8)))"
+        let name = [fullName?.givenName, fullName?.familyName]
+            .compactMap { $0 }
+            .joined(separator: " ")
+
+        do {
+            let descriptor = FetchDescriptor<User>(
+                predicate: #Predicate<User> { user in user.username == identifier }
+            )
+            let existing = try modelContext.fetch(descriptor)
+            clearCurrentUser()
+
+            let user: User
+            if let existingUser = existing.first {
+                existingUser.isCurrentUser = true
+                existingUser.lastActiveAt = Date()
+                user = existingUser
+            } else {
+                let newUser = User(
+                    username: identifier,
+                    displayName: name.isEmpty ? "Apple User" : name,
+                    email: email ?? "",
+                    statusMessage: "안녕하세요!",
+                    isCurrentUser: true
+                )
+                modelContext.insert(newUser)
+                user = newUser
+            }
+
+            try modelContext.save()
+            currentUser = user
+            isAuthenticated = true
+        } catch {
+            errorMessage = isKorean()
+                ? "Apple 로그인 중 오류가 발생했습니다."
+                : "An error occurred during Apple sign in."
+        }
+
+        isLoading = false
+    }
+
+    func signInWithGoogle() async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let info = try await GoogleOAuthService.signIn()
+            let identifier = "google_\(String(info.userId.prefix(8)))"
+
+            let descriptor = FetchDescriptor<User>(
+                predicate: #Predicate<User> { user in user.username == identifier }
+            )
+            let existing = try modelContext.fetch(descriptor)
+            clearCurrentUser()
+
+            let user: User
+            if let existingUser = existing.first {
+                existingUser.isCurrentUser = true
+                existingUser.lastActiveAt = Date()
+                user = existingUser
+            } else {
+                let newUser = User(
+                    username: identifier,
+                    displayName: info.displayName,
+                    email: info.email,
+                    statusMessage: "안녕하세요!",
+                    isCurrentUser: true
+                )
+                modelContext.insert(newUser)
+                user = newUser
+            }
+
+            try modelContext.save()
+            currentUser = user
+            isAuthenticated = true
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
     func updateProfile(displayName: String, statusMessage: String, profileImageData: Data?) {
         guard let user = currentUser else { return }
 
