@@ -25,11 +25,11 @@ struct ContentView: View {
             .onAppear {
                 authManager.modelContext = modelContext
             }
-            .alert(localizedText("test_mode_title"), isPresented: $showTestModeAlert) {
-                Button(localizedText("cancel"), role: .cancel) { }
-                Button(localizedText("start_test")) { enterTestMode() }
+            .alert(languageManager.localizedText("test_mode_title"), isPresented: $showTestModeAlert) {
+                Button(languageManager.localizedText("cancel"), role: .cancel) { }
+                Button(languageManager.localizedText("start_test")) { enterTestMode() }
             } message: {
-                Text(localizedText("test_mode_message"))
+                Text(languageManager.localizedText("test_mode_message"))
             }
             .tint(.appPrimary)
             .sheet(isPresented: $showContactsOnboarding, onDismiss: {
@@ -60,7 +60,6 @@ struct ContentView: View {
     }
 
     private func enterTestMode() {
-        // 테스트용 사용자 생성
         let testUser = User(
             username: "tester",
             displayName: languageManager.localize(ko: "테스터", en: "Tester", ja: "テスター", zh: "测试用户", es: "Tester"),
@@ -69,7 +68,6 @@ struct ContentView: View {
             isCurrentUser: true
         )
 
-        // 기존 현재 사용자 해제
         let descriptor = FetchDescriptor<User>(
             predicate: #Predicate<User> { user in
                 user.isCurrentUser == true
@@ -85,29 +83,18 @@ struct ContentView: View {
             print("Failed to clear current users: \(error)")
         }
 
-        // 테스트 사용자 삽입
         modelContext.insert(testUser)
         try? modelContext.save()
 
-        // AuthManager 업데이트
         authManager.currentUser = testUser
         authManager.isAuthenticated = true
-
-        // 테스트 모드 활성화
         isTestMode = true
 
-        // 테스트용 친구들 생성
         createTestFriends(for: testUser)
     }
 
     private func createTestFriends(for user: User) {
-        let testFriends = [
-            ("권지용", "peaceminusone@example.com"),
-            ("한소희", "sohee@example.com"),
-            ("강호동", "kang@example.com"),
-            ("유재석", "youquiz@example.com"),
-            ("조세호", "cabbage@example.com")
-        ]
+        let testFriends = TestData.friends
 
         for (name, email) in testFriends {
             let friendship = Friendship(
@@ -123,36 +110,6 @@ struct ContentView: View {
 
         try? modelContext.save()
     }
-
-    private func localizedText(_ key: String) -> String {
-        switch key {
-        case "friends":
-            return languageManager.localize(ko: "친구", en: "Friends", ja: "友だち", zh: "朋友", es: "Amigos")
-        case "chat":
-            return languageManager.localize(ko: "채팅", en: "Chats", ja: "チャット", zh: "聊天", es: "Chats")
-        case "settings":
-            return languageManager.localize(ko: "설정", en: "Settings", ja: "設定", zh: "设置", es: "Configuración")
-        case "test_mode_title":
-            return languageManager.localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
-        case "start_test":
-            return languageManager.localize(ko: "테스트 시작", en: "Start Test", ja: "テスト開始", zh: "开始测试", es: "Iniciar prueba")
-        case "test_mode_message":
-            return languageManager.localize(
-                ko: "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?",
-                en: "You can experience all app features without logging in.\nWould you like to enter test mode?",
-                ja: "ログインなしですべての機能を体験できます。\nテストモードに入りますか？",
-                zh: "无需登录即可体验所有功能。\n是否进入测试模式？",
-                es: "Puedes explorar todas las funciones sin iniciar sesión.\n¿Deseas entrar al modo de prueba?"
-            )
-        case "test_experience":
-            return languageManager.localize(ko: "테스트 모드로 체험하기", en: "Try Test Mode", ja: "テストモードを体験", zh: "体验测试模式", es: "Probar modo de prueba")
-        case "test_mode":
-            return languageManager.localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
-        case "cancel":
-            return languageManager.localize(ko: "취소", en: "Cancel", ja: "キャンセル", zh: "取消", es: "Cancelar")
-        default: return key
-        }
-    }
 }
 
 struct AuthenticatedTabsView: View {
@@ -167,20 +124,20 @@ struct AuthenticatedTabsView: View {
         TabView(selection: $selectedTab) {
             FriendsTab()
                 .tabItem {
-                    Label(localizedText("friends"), systemImage: "person.fill")
+                    Label(languageManager.localizedText("friends"), systemImage: "person.fill")
                 }
                 .tag(0)
 
             ChatTab()
                 .tabItem {
-                    Label(localizedText("chat"), systemImage: "message.fill")
+                    Label(languageManager.localizedText("chat"), systemImage: "message.fill")
                 }
                 .badge(totalUnread)
                 .tag(1)
 
             SettingsTab()
                 .tabItem {
-                    Label(localizedText("settings"), systemImage: "gearshape.fill")
+                    Label(languageManager.localizedText("settings"), systemImage: "gearshape.fill")
                 }
                 .tag(2)
         }
@@ -194,34 +151,6 @@ struct AuthenticatedTabsView: View {
                         .padding(.horizontal, 16)
                 }
             }
-        }
-    }
-
-    private func localizedText(_ key: String) -> String {
-        switch key {
-        case "friends":
-            return languageManager.localize(ko: "친구", en: "Friends", ja: "友だち", zh: "朋友", es: "Amigos")
-        case "chat":
-            return languageManager.localize(ko: "채팅", en: "Chats", ja: "チャット", zh: "聊天", es: "Chats")
-        case "settings":
-            return languageManager.localize(ko: "설정", en: "Settings", ja: "設定", zh: "设置", es: "Configuración")
-        case "test_mode_title":
-            return languageManager.localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
-        case "start_test":
-            return languageManager.localize(ko: "테스트 시작", en: "Start Test", ja: "テスト開始", zh: "开始测试", es: "Iniciar prueba")
-        case "test_mode_message":
-            return languageManager.localize(
-                ko: "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?",
-                en: "You can experience all app features without logging in.\nWould you like to enter test mode?",
-                ja: "ログインなしですべての機能を体験できます。\nテストモードに入りますか？",
-                zh: "无需登录即可体验所有功能。\n是否进入测试模式？",
-                es: "Puedes explorar todas las funciones sin iniciar sesión.\n¿Deseas entrar al modo de prueba?"
-            )
-        case "test_experience":
-            return languageManager.localize(ko: "테스트 모드로 체험하기", en: "Try Test Mode", ja: "テストモードを体験", zh: "体验测试模式", es: "Probar modo de prueba")
-        case "test_mode":
-            return languageManager.localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
-        default: return key
         }
     }
 }
@@ -263,7 +192,7 @@ struct TestModeButtonView: View {
         Button(action: { showTestModeAlert = true }) {
             HStack {
                 Image(systemName: "wrench.and.screwdriver")
-                Text(localizedText("test_experience"))
+                Text(languageManager.localizedText("test_experience"))
             }
             .font(.headline)
             .foregroundColor(.white)
@@ -280,34 +209,6 @@ struct TestModeButtonView: View {
             .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
         }
     }
-
-    private func localizedText(_ key: String) -> String {
-        switch key {
-        case "friends":
-            return languageManager.localize(ko: "친구", en: "Friends", ja: "友だち", zh: "朋友", es: "Amigos")
-        case "chat":
-            return languageManager.localize(ko: "채팅", en: "Chats", ja: "チャット", zh: "聊天", es: "Chats")
-        case "settings":
-            return languageManager.localize(ko: "설정", en: "Settings", ja: "設定", zh: "设置", es: "Configuración")
-        case "test_mode_title":
-            return languageManager.localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
-        case "start_test":
-            return languageManager.localize(ko: "테스트 시작", en: "Start Test", ja: "テスト開始", zh: "开始测试", es: "Iniciar prueba")
-        case "test_mode_message":
-            return languageManager.localize(
-                ko: "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?",
-                en: "You can experience all app features without logging in.\nWould you like to enter test mode?",
-                ja: "ログインなしですべての機能を体験できます。\nテストモードに入りますか？",
-                zh: "无需登录即可体验所有功能。\n是否进入测试模式？",
-                es: "Puedes explorar todas las funciones sin iniciar sesión.\n¿Deseas entrar al modo de prueba?"
-            )
-        case "test_experience":
-            return languageManager.localize(ko: "테스트 모드로 체험하기", en: "Try Test Mode", ja: "テストモードを体験", zh: "体验测试模式", es: "Probar modo de prueba")
-        case "test_mode":
-            return languageManager.localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
-        default: return key
-        }
-    }
 }
 
 struct TestModeIndicatorView: View {
@@ -317,7 +218,7 @@ struct TestModeIndicatorView: View {
         HStack(spacing: 6) {
             Image(systemName: "wrench.and.screwdriver")
                 .font(.caption)
-            Text(localizedText("test_mode"))
+            Text(languageManager.localizedText("test_mode"))
                 .font(.caption)
                 .fontWeight(.semibold)
         }
@@ -332,21 +233,37 @@ struct TestModeIndicatorView: View {
         .frame(maxWidth: .infinity)
         .multilineTextAlignment(.center)
     }
+}
 
-    private func localizedText(_ key: String) -> String {
+// MARK: - Test Data
+
+enum TestData {
+    static let friends: [(String, String)] = [
+        ("권지용", "peaceminusone@example.com"),
+        ("한소희", "sohee@example.com"),
+        ("강호동", "kang@example.com"),
+        ("유재석", "youquiz@example.com"),
+        ("조세호", "cabbage@example.com")
+    ]
+}
+
+// MARK: - Shared Localization
+
+fileprivate extension LanguageManager {
+    func localizedText(_ key: String) -> String {
         switch key {
         case "friends":
-            return languageManager.localize(ko: "친구", en: "Friends", ja: "友だち", zh: "朋友", es: "Amigos")
+            return localize(ko: "친구", en: "Friends", ja: "友だち", zh: "朋友", es: "Amigos")
         case "chat":
-            return languageManager.localize(ko: "채팅", en: "Chats", ja: "チャット", zh: "聊天", es: "Chats")
+            return localize(ko: "채팅", en: "Chats", ja: "チャット", zh: "聊天", es: "Chats")
         case "settings":
-            return languageManager.localize(ko: "설정", en: "Settings", ja: "設定", zh: "设置", es: "Configuración")
+            return localize(ko: "설정", en: "Settings", ja: "設定", zh: "设置", es: "Configuración")
         case "test_mode_title":
-            return languageManager.localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
+            return localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
         case "start_test":
-            return languageManager.localize(ko: "테스트 시작", en: "Start Test", ja: "テスト開始", zh: "开始测试", es: "Iniciar prueba")
+            return localize(ko: "테스트 시작", en: "Start Test", ja: "テスト開始", zh: "开始测试", es: "Iniciar prueba")
         case "test_mode_message":
-            return languageManager.localize(
+            return localize(
                 ko: "로그인 없이 앱의 모든 기능을 체험할 수 있습니다.\n테스트 모드로 진입하시겠습니까?",
                 en: "You can experience all app features without logging in.\nWould you like to enter test mode?",
                 ja: "ログインなしですべての機能を体験できます。\nテストモードに入りますか？",
@@ -354,10 +271,13 @@ struct TestModeIndicatorView: View {
                 es: "Puedes explorar todas las funciones sin iniciar sesión.\n¿Deseas entrar al modo de prueba?"
             )
         case "test_experience":
-            return languageManager.localize(ko: "테스트 모드로 체험하기", en: "Try Test Mode", ja: "テストモードを体験", zh: "体验测试模式", es: "Probar modo de prueba")
+            return localize(ko: "테스트 모드로 체험하기", en: "Try Test Mode", ja: "テストモードを体験", zh: "体验测试模式", es: "Probar modo de prueba")
         case "test_mode":
-            return languageManager.localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
-        default: return key
+            return localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
+        case "cancel":
+            return localize(ko: "취소", en: "Cancel", ja: "キャンセル", zh: "取消", es: "Cancelar")
+        default:
+            return key
         }
     }
 }
