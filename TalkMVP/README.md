@@ -138,6 +138,11 @@ L!nk/
 │   └── GoogleOAuthService.swift
 ├── Chat/
 │   ├── ChatView.swift
+│   ├── ChatView+Media.swift
+│   ├── ChatView+Messages.swift
+│   ├── ChatView+Input.swift
+│   ├── ChatView+Friends.swift
+│   ├── ChatView+Helpers.swift
 │   ├── ChatViewModel.swift
 │   ├── ChatListView.swift
 │   ├── MessageBubbleView.swift
@@ -325,6 +330,11 @@ L!nk/
 │   └── GoogleOAuthService.swift
 ├── Chat/
 │   ├── ChatView.swift
+│   ├── ChatView+Media.swift
+│   ├── ChatView+Messages.swift
+│   ├── ChatView+Input.swift
+│   ├── ChatView+Friends.swift
+│   ├── ChatView+Helpers.swift
 │   ├── ChatViewModel.swift
 │   ├── ChatListView.swift
 │   ├── MessageBubbleView.swift
