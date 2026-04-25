@@ -33,7 +33,7 @@ And if you want to talk to someone who speaks a different language? You're copy-
 
 ## The Solution
 
-**L!nk** strips messaging down to what it actually is: two people talking.
+**L!NK** strips messaging down to what it actually is: two people talking.
 
 Clean interface. No noise. And one feature that changes everything — **real-time auto-translation**, inline, right below every message.
 
@@ -58,11 +58,11 @@ Every message, automatically translated into your default language — inline, i
 
 ---
 
-## Why "L!nk"
+## Why "L!NK"
 
 The exclamation mark isn't a typo.
 
-It's the moment of connection — the spark when two people understand each other despite speaking different languages. L!nk is built to create that moment, again and again, for anyone, anywhere.
+It's the moment of connection — the spark when two people understand each other despite speaking different languages. L!NK is built to create that moment, again and again, for anyone, anywhere.
 
 ---
 
@@ -127,7 +127,7 @@ It's the moment of connection — the spark when two people understand each othe
 ## Project Structure
 
 ```
-L!nk/
+L!NK/
 ├── App/
 │   ├── TalkMVPApp.swift
 │   └── ContentView.swift
@@ -187,7 +187,7 @@ MIT © 2026
 
 <div align="center">
 
-# L!nk
+# L!NK
 
 **언어의 경계 없이. 미니멀하게 설계된. 모두를 위한 메신저.**
 
@@ -220,7 +220,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ## 해결책
 
-**L!nk** 는 메시징을 본질로 되돌립니다: 두 사람의 대화.
+**L!NK** 는 메시징을 본질로 되돌립니다: 두 사람의 대화.
 
 깔끔한 인터페이스. 불필요한 요소 없음. 그리고 모든 걸 바꾸는 기능 하나 — **실시간 자동 번역**, 메시지 바로 아래에, 인라인으로.
 
@@ -245,11 +245,11 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ---
 
-## 왜 "L!nk" 인가
+## 왜 "L!NK" 인가
 
 느낌표는 오타가 아닙니다.
 
-그것은 연결의 순간 — 서로 다른 언어를 쓰는 두 사람이 서로를 이해하는 그 찰나입니다. L!nk는 그 순간을, 누구에게나, 어디서나, 계속 만들어내기 위해 만들어졌습니다.
+그것은 연결의 순간 — 서로 다른 언어를 쓰는 두 사람이 서로를 이해하는 그 찰나입니다. L!NK는 그 순간을, 누구에게나, 어디서나, 계속 만들어내기 위해 만들어졌습니다.
 
 ---
 
@@ -314,7 +314,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 ## 프로젝트 구조
 
 ```
-L!nk/
+L!NK/
 ├── App/
 │   ├── TalkMVPApp.swift
 │   └── ContentView.swift
