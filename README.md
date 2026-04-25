@@ -62,7 +62,7 @@ Every message, automatically translated into your default language — inline, i
 
 The exclamation mark isn't a typo.
 
-It's the moment of connection — the spark when two people understand each other despite speaking different languages. L!nk is built to create that moment, again and again, for anyone, anywhere.
+It's the moment of connection — the spark when two people understand each other despite speaking different languages. L!NK is built to create that moment, again and again, for anyone, anywhere.
 
 ---
 
