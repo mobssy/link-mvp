@@ -108,7 +108,7 @@ struct HelpView: View {
         case "faq_send_photos_a": return languageManager.localize(ko: "채팅 입력창 왼쪽의 + 버튼을 눌러 사진/동영상을 선택하세요.", en: "Tap the + button on the left of the message input to select photos/videos.", ja: "メッセージ入力欄の左側の＋ボタンをタップして写真・動画を選択してください。", zh: "点击消息输入框左侧的+按钮选择照片/视频。", es: "Toca el botón + a la izquierda del campo de mensaje para seleccionar fotos/videos.")
         case "faq_delete_msg_q": return languageManager.localize(ko: "보낸 메시지를 삭제할 수 있나요?", en: "Can I delete sent messages?", ja: "送信したメッセージを削除できますか？", zh: "可以删除已发送的消息吗？", es: "¿Puedo eliminar mensajes enviados?")
         case "faq_delete_msg_a": return languageManager.localize(ko: "메시지를 길게 눌러 '삭제'를 선택하세요. 자신이 보낸 메시지만 삭제할 수 있습니다.", en: "Long press a message and select 'Delete'. You can only delete your own messages.", ja: "メッセージを長押しして「削除」を選択してください。自分が送ったメッセージのみ削除できます。", zh: "长按消息并选择「删除」。您只能删除自己发送的消息。", es: "Mantén presionado un mensaje y selecciona 'Eliminar'. Solo puedes eliminar tus propios mensajes.")
-        case "faq_search_msg_q": return languageManager.localize(ko: "이전 메시지를 검索하려면?", en: "How do I search previous messages?", ja: "過去のメッセージを検索するには？", zh: "如何搜索以前的消息？", es: "¿Cómo busco mensajes anteriores?")
+        case "faq_search_msg_q": return languageManager.localize(ko: "이전 메시지를 검색하려면?", en: "How do I search previous messages?", ja: "過去のメッセージを検索するには？", zh: "如何搜索以前的消息？", es: "¿Cómo busco mensajes anteriores?")
         case "faq_search_msg_a": return languageManager.localize(ko: "채팅방 상단의 검색 아이콘을 탭하여 키워드로 검색하세요.", en: "Tap the search icon at the top of the chat to search by keyword.", ja: "チャット上部の検索アイコンをタップしてキーワードで検索してください。", zh: "点击聊天顶部的搜索图标，按关键词搜索。", es: "Toca el ícono de búsqueda en la parte superior del chat para buscar por palabra clave.")
 
         // Friends
