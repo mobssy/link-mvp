@@ -14,28 +14,61 @@ import FoundationModels
 actor AIService {
     static let shared = AIService()
 
-    // Very lightweight mock summarization: join last N messages and trim
-    func summarize(messages: [Message], limit: Int = 30) async -> String {
+    func summarize(messages: [Message], limit: Int = 30, targetLanguage: String = "en") async -> String {
         let last = Array(messages.suffix(limit))
-        let lines = last.map { msg in
-            let sender = msg.isFromCurrentUser ? "나" : (msg.sender)
-            switch msg.messageType {
-            case .text:
-                return "- [\(sender)] \(msg.text)"
-            case .image:
-                return "- [\(sender)] 이미지 전송"
-            case .file:
-                return "- [\(sender)] 파일: \(msg.text)"
-            case .audio:
-                return "- [\(sender)] 음성 메시지"
-            case .deleted:
-                return "- [\(sender)] 메시지가 삭제되었습니다"
-            case .video:
-                return "- [\(sender)] 동영상을 보냈습니다"
+        let labels = summaryLabels(for: targetLanguage)
+
+        let lines: [String] = await withTaskGroup(of: (Int, String).self) { group in
+            for (index, msg) in last.enumerated() {
+                group.addTask {
+                    let sender = msg.isFromCurrentUser ? labels.me : msg.sender
+                    let content: String
+                    switch msg.messageType {
+                    case .text:
+                        let translated = await self.translate(msg.text, autoDetect: true, target: targetLanguage)
+                        content = "- [\(sender)] \(translated)"
+                    case .image:
+                        content = "- [\(sender)] \(labels.image)"
+                    case .file:
+                        content = "- [\(sender)] \(labels.file): \(msg.text)"
+                    case .audio:
+                        content = "- [\(sender)] \(labels.audio)"
+                    case .deleted:
+                        content = "- [\(sender)] \(labels.deleted)"
+                    case .video:
+                        content = "- [\(sender)] \(labels.video)"
+                    }
+                    return (index, content)
+                }
             }
+            var results: [(Int, String)] = []
+            for await result in group {
+                results.append(result)
+            }
+            return results.sorted { $0.0 < $1.0 }.map { $0.1 }
         }
-        let header = "최근 대화 요약 (\(DateFormatter.localizedString(from: Date(), dateStyle: .medium, timeStyle: .short))):\n\n"
+
+        let header = "\(labels.header) (\(DateFormatter.localizedString(from: Date(), dateStyle: .medium, timeStyle: .short))):\n\n"
         return header + lines.joined(separator: "\n")
+    }
+
+    private struct SummaryLabels {
+        let me, image, file, audio, deleted, video, header: String
+    }
+
+    private func summaryLabels(for language: String) -> SummaryLabels {
+        switch language.lowercased() {
+        case "ko":
+            return SummaryLabels(me: "나", image: "이미지 전송", file: "파일", audio: "음성 메시지", deleted: "삭제된 메시지", video: "동영상", header: "최근 대화 요약")
+        case "ja":
+            return SummaryLabels(me: "自分", image: "画像を送信", file: "ファイル", audio: "音声メッセージ", deleted: "削除されたメッセージ", video: "動画", header: "最近の会話まとめ")
+        case "zh-hans":
+            return SummaryLabels(me: "我", image: "发送了图片", file: "文件", audio: "语音消息", deleted: "已删除的消息", video: "视频", header: "最近对话摘要")
+        case "es":
+            return SummaryLabels(me: "Yo", image: "Imagen enviada", file: "Archivo", audio: "Mensaje de voz", deleted: "Mensaje eliminado", video: "Video", header: "Resumen de conversación reciente")
+        default:
+            return SummaryLabels(me: "Me", image: "Image sent", file: "File", audio: "Voice message", deleted: "Deleted message", video: "Video", header: "Recent conversation summary")
+        }
     }
 
     // Very lightweight mock translation: prepend a label and simulate delay

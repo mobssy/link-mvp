@@ -119,6 +119,18 @@ extension ChatView {
         }
     }
 
+    func generateSummary() {
+        guard let messages = viewModel?.messages, !messages.isEmpty else { return }
+        let language = appLanguageCode()
+        Task {
+            let result = await AIService.shared.summarize(messages: messages, targetLanguage: language)
+            await MainActor.run {
+                summaryText = result
+                showingSummarySheet = true
+            }
+        }
+    }
+
     func localizedText(_ key: String) -> String {
         guard let locKey = LocalizationKey(rawValue: key) else { return key }
         let language: Language = languageManager.currentLanguage == .korean ? .korean : .english

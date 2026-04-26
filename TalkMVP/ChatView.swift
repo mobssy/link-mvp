@@ -176,6 +176,14 @@ struct ChatView: View {
                         )
                     }
 
+                    if aiSummaryEnabled {
+                        Button {
+                            generateSummary()
+                        } label: {
+                            Label(languageManager.currentLanguage == .korean ? "대화 요약" : "Summarize", systemImage: "text.quote")
+                        }
+                    }
+
                     if !isFriend && chatRoom.otherUserId != nil {
                         Button {
                             showingAddFriendAlert = true
