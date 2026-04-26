@@ -33,6 +33,9 @@ class ChatRoom {
     // MARK: - 알림 설정
     var notificationsEnabled: Bool = true  // 채팅방 알림 활성화 여부
 
+    // MARK: - 자폭 메시지 설정
+    var disappearingDuration: Int = 0  // 0=off, 60=1분, 3600=1시간, 86400=1일
+
     // MARK: - 배경/테마 커스터마이징
     var backgroundImageData: Data?  // 채팅방 배경 이미지
     var backgroundColor: String?  // 배경색 (hex 코드)
@@ -75,6 +78,7 @@ class ChatRoom {
           self.profileImage = profileImage
 
           // 조직방 확장 기본값 설정
+          self.disappearingDuration = 0
           self.isOrganizationRoom = false
           self.roles = [:]
           self.workingDays = [2, 3, 4, 5, 6]

@@ -62,6 +62,16 @@ struct ChatView: View {
     @State var showingSummarySheet = false
     @State var summaryText: String = ""
 
+    // MARK: - Bookmarks
+    @State var showingBookmarks = false
+
+    // MARK: - Scheduled Send
+    @State var showingSchedulePicker = false
+    @State var scheduledSendDate = Date()
+
+    // MARK: - Disappearing Messages
+    @State var showingDisappearingPicker = false
+
     // MARK: - Contacts Sync
     @StateObject private var contactsSync = ContactsSyncService()
     @State var showingContactsResult = false
@@ -174,6 +184,18 @@ struct ChatView: View {
                                 (languageManager.currentLanguage == .korean ? "알림 켜기" : "Unmute"),
                             systemImage: chatRoom.notificationsEnabled ? "bell.slash.fill" : "bell.fill"
                         )
+                    }
+
+                    Button {
+                        showingBookmarks = true
+                    } label: {
+                        Label(languageManager.currentLanguage == .korean ? "북마크" : "Bookmarks", systemImage: "bookmark")
+                    }
+
+                    Button {
+                        showingDisappearingPicker = true
+                    } label: {
+                        Label(languageManager.currentLanguage == .korean ? "자폭 메시지" : "Disappearing", systemImage: "flame")
                     }
 
                     if aiSummaryEnabled {
@@ -351,6 +373,41 @@ struct ChatView: View {
             .sheet(isPresented: $showingBackgroundSettings) {
                 ChatRoomBackgroundSettings(chatRoom: chatRoom)
                     .environmentObject(languageManager)
+            }
+            .sheet(isPresented: $showingBookmarks) {
+                BookmarkedMessagesSheet(
+                    messages: viewModel?.messages.filter { $0.isBookmarked } ?? [],
+                    chatRoomName: chatRoom.name,
+                    onDismiss: { showingBookmarks = false }
+                )
+                .environmentObject(languageManager)
+            }
+            .sheet(isPresented: $showingDisappearingPicker) {
+                DisappearingMessagePickerSheet(
+                    chatRoom: chatRoom,
+                    onDismiss: { showingDisappearingPicker = false }
+                )
+                .environmentObject(languageManager)
+            }
+            .sheet(isPresented: $showingSchedulePicker) {
+                ScheduledSendSheet(
+                    scheduledDate: $scheduledSendDate,
+                    onConfirm: { date in
+                        if let vm = viewModel {
+                            scheduleMessage(viewModel: vm, sendAt: date)
+                        }
+                        showingSchedulePicker = false
+                    },
+                    onCancel: { showingSchedulePicker = false }
+                )
+                .environmentObject(languageManager)
+            }
+            .task {
+                while !Task.isCancelled {
+                    checkDisappearingMessages()
+                    if let vm = viewModel { checkAndSendScheduled(viewModel: vm) }
+                    try? await Task.sleep(for: .seconds(15))
+                }
             }
     }
 

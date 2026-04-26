@@ -106,9 +106,29 @@ struct MessageBubbleView: View {
                     .foregroundColor(message.isFromCurrentUser ? Color(UIColor.systemBackground) : .primary)
             }
 
-            Text(message.timestamp, style: .time)
-                .font(.caption2)
-                .foregroundColor(.secondary)
+            HStack(spacing: 4) {
+                Text(message.timestamp, style: .time)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+
+                if message.isBookmarked {
+                    Image(systemName: "bookmark.fill")
+                        .font(.caption2)
+                        .foregroundColor(.appPrimary)
+                }
+
+                if message.isDisappearing && message.disappearAfterSeconds > 0 {
+                    Image(systemName: "flame.fill")
+                        .font(.caption2)
+                        .foregroundColor(.orange)
+                }
+
+                if message.isPendingScheduled {
+                    Image(systemName: "clock.fill")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
         }
     }
 

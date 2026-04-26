@@ -48,6 +48,13 @@ class Message {
     var disappearAfterSeconds: Int = 0 // 몇 초 후 사라질지
     var attachmentURL: String? // 첨부 파일 URL (삭제용)
 
+    // 북마크
+    var isBookmarked: Bool = false
+
+    // 예약 발송
+    var scheduledFor: Date? = nil
+    var isPendingScheduled: Bool = false
+
     // 읽음 확인 및 첨부 파일 관련 필드
     var isRead: Bool = false // 읽음 확인
     var videoData: Data? // 동영상 데이터 (작은 동영상용)

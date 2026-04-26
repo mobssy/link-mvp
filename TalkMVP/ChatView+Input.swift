@@ -60,6 +60,19 @@ extension ChatView {
                         sendMessage(viewModel: viewModel)
                     }
 
+                if !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Button {
+                        scheduledSendDate = Date().addingTimeInterval(3600)
+                        showingSchedulePicker = true
+                    } label: {
+                        Image(systemName: "clock")
+                            .foregroundColor(.appPrimary)
+                            .font(.system(size: 22))
+                    }
+                    .accessibilityLabel(languageManager.currentLanguage == .korean ? "예약 발송" : "Schedule send")
+                    .transition(.scale.combined(with: .opacity))
+                }
+
                 Button {
                     sendMessage(viewModel: viewModel)
                 } label: {

@@ -119,6 +119,65 @@ extension ChatView {
         }
     }
 
+    // MARK: - Bookmarks
+
+    func toggleBookmark(_ message: Message) {
+        message.isBookmarked.toggle()
+        try? modelContext.save()
+        let label = message.isBookmarked
+            ? (languageManager.currentLanguage == .korean ? "북마크 추가됨" : "Bookmarked")
+            : (languageManager.currentLanguage == .korean ? "북마크 해제됨" : "Bookmark removed")
+        UIAccessibility.post(notification: .announcement, argument: label)
+    }
+
+    // MARK: - Disappearing Messages
+
+    func checkDisappearingMessages() {
+        guard let messages = viewModel?.messages else { return }
+        let now = Date()
+        for message in messages {
+            guard message.isDisappearing, message.disappearAfterSeconds > 0 else { continue }
+            let expiresAt = message.timestamp.addingTimeInterval(TimeInterval(message.disappearAfterSeconds))
+            if now >= expiresAt {
+                viewModel?.deleteMessage(message, forEveryone: false)
+            }
+        }
+    }
+
+    // MARK: - Scheduled Send
+
+    func scheduleMessage(viewModel: ChatViewModel, sendAt date: Date) {
+        let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        let message = Message(
+            text: text,
+            isFromCurrentUser: true,
+            chatRoomId: chatRoom.id.uuidString
+        )
+        message.scheduledFor = date
+        message.isPendingScheduled = true
+        modelContext.insert(message)
+        try? modelContext.save()
+        inputText = ""
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
+    func checkAndSendScheduled(viewModel: ChatViewModel) {
+        let messages = viewModel.messages.filter { $0.isPendingScheduled }
+        let now = Date()
+        for message in messages {
+            guard let sendAt = message.scheduledFor, now >= sendAt else { continue }
+            message.isPendingScheduled = false
+            message.scheduledFor = nil
+            message.timestamp = now
+            if chatRoom.disappearingDuration > 0 {
+                message.isDisappearing = true
+                message.disappearAfterSeconds = chatRoom.disappearingDuration
+            }
+            try? modelContext.save()
+        }
+    }
+
     func generateSummary() {
         guard let messages = viewModel?.messages, !messages.isEmpty else { return }
         let language = appLanguageCode()

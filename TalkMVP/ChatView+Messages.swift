@@ -108,6 +108,14 @@ extension ChatView {
                     Button(localizedText("add_reaction"), systemImage: "face.smiling") {
                         showReactionPicker(for: message)
                     }
+                    Button(
+                        message.isBookmarked
+                            ? (languageManager.currentLanguage == .korean ? "북마크 해제" : "Remove Bookmark")
+                            : (languageManager.currentLanguage == .korean ? "북마크" : "Bookmark"),
+                        systemImage: message.isBookmarked ? "bookmark.slash" : "bookmark"
+                    ) {
+                        toggleBookmark(message)
+                    }
                     if message.isFromCurrentUser {
                         Button(localizedText("edit"), systemImage: "pencil") {
                             startEditingMessage(message)
