@@ -71,6 +71,7 @@ struct ChatView: View {
 
     // MARK: - Disappearing Messages
     @State var showingDisappearingPicker = false
+    @State var poppingMessageIds: Set<UUID> = []
 
     // MARK: - Contacts Sync
     @StateObject private var contactsSync = ContactsSyncService()

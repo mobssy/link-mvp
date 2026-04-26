@@ -133,13 +133,37 @@ extension ChatView {
     // MARK: - Disappearing Messages
 
     func checkDisappearingMessages() {
-        guard let messages = viewModel?.messages else { return }
+        guard let vm = viewModel else { return }
         let now = Date()
-        for message in messages {
-            guard message.isDisappearing, message.disappearAfterSeconds > 0 else { continue }
-            let expiresAt = message.timestamp.addingTimeInterval(TimeInterval(message.disappearAfterSeconds))
-            if now >= expiresAt {
-                viewModel?.deleteMessage(message, forEveryone: false)
+        let expired = vm.messages.filter { msg in
+            guard msg.isDisappearing, msg.disappearAfterSeconds > 0 else { return false }
+            return now >= msg.timestamp.addingTimeInterval(TimeInterval(msg.disappearAfterSeconds))
+        }
+        guard !expired.isEmpty else { return }
+        let expiredIds = Set(expired.map { $0.id })
+
+        if reduceMotion {
+            vm.messages.removeAll { expiredIds.contains($0.id) }
+            expired.forEach { modelContext.delete($0) }
+            try? modelContext.save()
+            return
+        }
+
+        // Phase 1: bounce up (통통 튀기)
+        withAnimation(.spring(response: 0.12, dampingFraction: 0.35)) {
+            poppingMessageIds.formUnion(expiredIds)
+        }
+
+        // Phase 2: shrink to nothing after bounce peaks
+        Task {
+            try? await Task.sleep(for: .milliseconds(200))
+            await MainActor.run {
+                withAnimation(.easeIn(duration: 0.16)) {
+                    vm.messages.removeAll { expiredIds.contains($0.id) }
+                    poppingMessageIds.subtract(expiredIds)
+                }
+                expired.forEach { modelContext.delete($0) }
+                try? modelContext.save()
             }
         }
     }

@@ -83,10 +83,10 @@ struct DisappearingMessagePickerSheet: View {
     private var options: [(label: String, seconds: Int)] {
         [
             (loc(ko: "끄기", en: "Off", ja: "オフ", zh: "关闭", es: "Desactivar"), 0),
+            (loc(ko: "15초", en: "15 seconds", ja: "15秒", zh: "15秒", es: "15 segundos"), 15),
             (loc(ko: "1분", en: "1 minute", ja: "1分", zh: "1分钟", es: "1 minuto"), 60),
-            (loc(ko: "5분", en: "5 minutes", ja: "5分", zh: "5分钟", es: "5 minutos"), 300),
-            (loc(ko: "1시간", en: "1 hour", ja: "1時間", zh: "1小时", es: "1 hora"), 3600),
-            (loc(ko: "1일", en: "1 day", ja: "1日", zh: "1天", es: "1 día"), 86400)
+            (loc(ko: "10분", en: "10 minutes", ja: "10分", zh: "10分钟", es: "10 minutos"), 600),
+            (loc(ko: "30분", en: "30 minutes", ja: "30分", zh: "30分钟", es: "30 minutos"), 1800)
         ]
     }
 

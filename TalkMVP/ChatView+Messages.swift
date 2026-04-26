@@ -78,6 +78,13 @@ extension ChatView {
                 onAvatarTap: { openFriendProfile() }
             )
                 .id(message.id)
+                .scaleEffect(poppingMessageIds.contains(message.id) ? 1.18 : 1.0)
+                .transition(.asymmetric(
+                    insertion: .opacity,
+                    removal: reduceMotion
+                        ? .opacity
+                        : .scale(scale: 0.01).combined(with: .opacity)
+                ))
                 .accessibilityElement(children: .combine)
                 .accessibilityIdentifier("message_\(message.id)")
                 .accessibilityLabel(accessibilityLabelForMessage(message))
