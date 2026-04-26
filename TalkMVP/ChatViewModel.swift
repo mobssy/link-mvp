@@ -154,6 +154,10 @@ class ChatViewModel: ObservableObject {
             chatRoomId: chatRoom.id.uuidString,
             replyToMessageId: replyingToMessage?.id
         )
+        if chatRoom.disappearingDuration > 0 {
+            message.isDisappearing = true
+            message.disappearAfterSeconds = chatRoom.disappearingDuration
+        }
 
         Task {
             do {
@@ -323,6 +327,10 @@ class ChatViewModel: ObservableObject {
                 sender: chatRoom.name,
                 chatRoomId: chatRoom.id.uuidString
             )
+            if chatRoom.disappearingDuration > 0 {
+                response.isDisappearing = true
+                response.disappearAfterSeconds = chatRoom.disappearingDuration
+            }
 
             do {
                 try await messageRepository.saveMessage(response)

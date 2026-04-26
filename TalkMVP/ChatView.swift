@@ -310,7 +310,7 @@ struct ChatView: View {
                 emergencyTimer = nil
             }
             .dynamicTypeSize(dynamicTypeSize.isAccessibilitySize ? .accessibility3 : dynamicTypeSize)
-            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: localizedText("search_conversation"))
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: localizedText("search_conversation"))
             .sheet(isPresented: $showingSummarySheet) {
                 NavigationStack {
                     ScrollView {

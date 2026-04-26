@@ -158,14 +158,17 @@ extension ChatView {
         message.isPendingScheduled = true
         modelContext.insert(message)
         try? modelContext.save()
+        // Add to viewModel so the timer can find and send it
+        viewModel.messages.append(message)
+        viewModel.messages.sort { $0.timestamp < $1.timestamp }
         inputText = ""
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
     func checkAndSendScheduled(viewModel: ChatViewModel) {
-        let messages = viewModel.messages.filter { $0.isPendingScheduled }
         let now = Date()
-        for message in messages {
+        let pending = viewModel.messages.filter { $0.isPendingScheduled }
+        for message in pending {
             guard let sendAt = message.scheduledFor, now >= sendAt else { continue }
             message.isPendingScheduled = false
             message.scheduledFor = nil
@@ -175,6 +178,8 @@ extension ChatView {
                 message.disappearAfterSeconds = chatRoom.disappearingDuration
             }
             try? modelContext.save()
+            // Re-sort so the message lands in chronological order
+            viewModel.messages.sort { $0.timestamp < $1.timestamp }
         }
     }
 
