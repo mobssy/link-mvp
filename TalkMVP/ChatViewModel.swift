@@ -40,11 +40,27 @@ class ChatViewModel: ObservableObject {
     // Dependencies injected via constructor (Dependency Inversion Principle)
     private let messageRepository: MessageRepositoryProtocol
     private let chatRoomRepository: ChatRoomRepositoryProtocol
+    private let autoResponseService: AutoResponseService
     private var chatRoom: ChatRoom
     private var chatService: ChatServiceProtocol?
     private var cancellables = Set<AnyCancellable>()
     private var typingTimer: Timer?
     private let currentUserId = "currentUser" // 실제 앱에서는 사용자 관리 시스템에서 가져옴
+
+    private var currentAppLanguage: String {
+        if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") { return saved }
+        if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first }
+        return "en"
+    }
+
+    private func localizedVM(ko: String, en: String, ja: String, zh: String, es: String) -> String {
+        let lang = currentAppLanguage
+        if lang.hasPrefix("ko") { return ko }
+        if lang.hasPrefix("ja") { return ja }
+        if lang.hasPrefix("zh") { return zh }
+        if lang.hasPrefix("es") { return es }
+        return en
+    }
 
     init(
         messageRepository: MessageRepositoryProtocol,
@@ -54,6 +70,7 @@ class ChatViewModel: ObservableObject {
     ) {
         self.messageRepository = messageRepository
         self.chatRoomRepository = chatRoomRepository
+        self.autoResponseService = AutoResponseService(messageRepository: messageRepository, chatRoomRepository: chatRoomRepository)
         self.chatRoom = chatRoom
         self.chatService = chatService
 
@@ -211,7 +228,7 @@ class ChatViewModel: ObservableObject {
 
                 try await chatRoomRepository.updateChatRoom(
                     chatRoom,
-                    lastMessage: "사진을 보냈습니다",
+                    lastMessage: localizedVM(ko: "사진을 보냈습니다", en: "Photo sent", ja: "写真を送りました", zh: "发送了照片", es: "Foto enviada"),
                     timestamp: Date()
                 )
 
@@ -305,46 +322,18 @@ class ChatViewModel: ObservableObject {
 
     private func sendAutoResponse() {
         Task {
-            // 실시간 느낌을 위해 랜덤 지연
-            try await Task.sleep(nanoseconds: UInt64(Double.random(in: 2.0...5.0) * 1_000_000_000))
-
-            let responses = [
-                "네 알겠습니다! 👍", "좋은 생각이네요 😊", "그렇네요!",
-                "재미있겠어요 😄", "사진 감사해요! 📸", "파일 잘 받았습니다 📄",
-                "언제 시간 되실 때 연락주세요", "오늘도 좋은 하루 되세요!",
-                "네네 맞습니다", "정말요? 대박이네요! 🎉"
-            ]
-            let randomResponse = responses.randomElement() ?? "네!"
-
-            // 타이핑 인디케이터 먼저 표시
-            otherUserTyping = true
-            try await Task.sleep(nanoseconds: UInt64(Double.random(in: 1.0...2.0) * 1_000_000_000))
-            otherUserTyping = false
-
-            let response = Message(
-                text: randomResponse,
-                isFromCurrentUser: false,
-                sender: chatRoom.name,
-                chatRoomId: chatRoom.id.uuidString
-            )
-            if chatRoom.disappearingDuration > 0 {
-                response.isDisappearing = true
-                response.disappearAfterSeconds = chatRoom.disappearingDuration
-            }
-
             do {
-                try await messageRepository.saveMessage(response)
-
-                messages.append(response)
-                translateIfNeeded(response)
-
-                try await chatRoomRepository.updateChatRoom(
-                    chatRoom,
-                    lastMessage: randomResponse,
-                    timestamp: Date()
+                try await autoResponseService.generateResponse(
+                    for: chatRoom,
+                    onTypingChange: { [weak self] typing in self?.otherUserTyping = typing },
+                    onMessage: { [weak self] message in
+                        guard let self else { return }
+                        messages.append(message)
+                        translateIfNeeded(message)
+                    }
                 )
             } catch {
-                print("❌ [ChatViewModel] Failed to save auto response: \(error)")
+                print("❌ [ChatViewModel] Auto response failed: \(error)")
             }
         }
     }
@@ -482,7 +471,7 @@ class ChatViewModel: ObservableObject {
                 chatService?.deleteMessage(message, in: chatRoom)
             } catch {
                 print("❌ [ChatViewModel] Failed to delete message: \(error)")
-                errorMessage = "메시지 삭제에 실패했습니다."
+                errorMessage = localizedVM(ko: "메시지 삭제에 실패했습니다.", en: "Failed to delete message.", ja: "メッセージの削除に失敗しました。", zh: "删除消息失败。", es: "Error al eliminar el mensaje.")
                 // Rollback UI: add message back at the correct position
                 messages.append(message)
                 messages.sort { $0.timestamp < $1.timestamp }
@@ -505,7 +494,7 @@ class ChatViewModel: ObservableObject {
                 // chatService?.hideMessage(message, for: currentUserId, in: chatRoom)
             } catch {
                 print("❌ [ChatViewModel] Failed to hide message: \(error)")
-                errorMessage = "메시지 숨기기에 실패했습니다."
+                errorMessage = localizedVM(ko: "메시지 숨기기에 실패했습니다.", en: "Failed to hide message.", ja: "メッセージの非表示に失敗しました。", zh: "隐藏消息失败。", es: "Error al ocultar el mensaje.")
                 // Rollback UI
                 messages.append(message)
                 messages.sort { $0.timestamp < $1.timestamp }

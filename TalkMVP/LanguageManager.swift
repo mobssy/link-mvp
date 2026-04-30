@@ -90,32 +90,6 @@ class LanguageManager: ObservableObject {
         }
     }
 
-    // 앱스토어 지역을 고려한 대안 구현 (필요시 위 메서드 대신 사용)
-    private func determineInitialLanguageWithStoreRegion() -> Language {
-        // 기기 시스템 언어 확인
-        let systemLanguage = Locale.preferredLanguages.first ?? "en"
-
-        if systemLanguage.hasPrefix("ko") {
-            // 3. 기기 시스템 언어가 한국어일 경우 → 무조건 한국어
-            return .korean
-        } else if !systemLanguage.hasPrefix("ko") {
-            // 4. 기기 시스템 언어가 한국어가 아닐 경우 → 무조건 영어
-            return .english
-        }
-
-        // 시스템 언어 정보가 불확실한 경우 앱스토어 지역 확인
-        // (실제로는 위의 조건들로 인해 이 부분은 실행되지 않음)
-        let storeRegion = getAppStoreRegion()
-
-        if storeRegion == "KR" {
-            // 1. 한국 앱스토어에서 다운로드한 경우 → 기본 언어는 한국어
-            return .korean
-        } else {
-            // 2. 그 외 해외 앱스토어에서 다운로드한 경우 → 기본 언어는 영어
-            return .english
-        }
-    }
-
     private func getAppStoreRegion() -> String {
         // 앱스토어 지역 확인 방법들
 

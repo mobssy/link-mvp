@@ -110,9 +110,13 @@ extension ChatView {
             let impactFeedback = UIImpactFeedbackGenerator(style: .light)
             impactFeedback.impactOccurred()
 
-            let announcement = languageManager.currentLanguage == .korean ?
-                "반응 \(emoji)를 추가했습니다" :
-                "Added reaction \(emoji)"
+            let announcement = languageManager.localize(
+                ko: "반응 \(emoji)를 추가했습니다",
+                en: "Added reaction \(emoji)",
+                ja: "リアクション \(emoji) を追加しました",
+                zh: "添加了反应 \(emoji)",
+                es: "Reacción \(emoji) añadida"
+            )
             UIAccessibility.post(notification: .announcement, argument: announcement)
         } catch {
             print("❌ [ChatView] Failed to save reaction: \(error)")
@@ -125,8 +129,8 @@ extension ChatView {
         message.isBookmarked.toggle()
         try? modelContext.save()
         let label = message.isBookmarked
-            ? (languageManager.currentLanguage == .korean ? "북마크 추가됨" : "Bookmarked")
-            : (languageManager.currentLanguage == .korean ? "북마크 해제됨" : "Bookmark removed")
+            ? languageManager.localize(ko: "북마크 추가됨", en: "Bookmarked", ja: "ブックマーク済み", zh: "已收藏", es: "Marcado")
+            : languageManager.localize(ko: "북마크 해제됨", en: "Bookmark removed", ja: "ブックマーク解除", zh: "已取消收藏", es: "Marcador eliminado")
         UIAccessibility.post(notification: .announcement, argument: label)
     }
 

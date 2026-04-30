@@ -82,7 +82,7 @@ class Message {
     // 이미지 메시지용 초기화
     init(imageData: Data, isFromCurrentUser: Bool, sender: String = "나", chatRoomId: String = "default") {
         self.id = UUID()
-        self.text = "사진을 보냈습니다"
+        self.text = "📷"
         self.isFromCurrentUser = isFromCurrentUser
         self.timestamp = Date()
         self.sender = sender
@@ -119,12 +119,10 @@ class Message {
 
     // 반응 관련 메서드들
     func addReaction(_ emoji: String, from userId: String) {
-        if reactions[emoji] == nil {
-            reactions[emoji] = [String]()
-        }
-        if !reactions[emoji]!.contains(userId) {
-            reactions[emoji]!.append(userId)
-        }
+        var users = reactions[emoji] ?? []
+        guard !users.contains(userId) else { return }
+        users.append(userId)
+        reactions[emoji] = users
     }
 
     func removeReaction(_ emoji: String, from userId: String) {

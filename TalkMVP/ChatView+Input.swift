@@ -69,7 +69,7 @@ extension ChatView {
                             .foregroundColor(.appPrimary)
                             .font(.system(size: 22))
                     }
-                    .accessibilityLabel(languageManager.currentLanguage == .korean ? "예약 발송" : "Schedule send")
+                    .accessibilityLabel(languageManager.localize(ko: "예약 발송", en: "Schedule send", ja: "予約送信", zh: "定时发送", es: "Envío programado"))
                     .transition(.scale.combined(with: .opacity))
                 }
 
