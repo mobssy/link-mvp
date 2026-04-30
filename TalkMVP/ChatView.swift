@@ -11,7 +11,6 @@ import SwiftData
 import PhotosUI
 import Photos
 import UniformTypeIdentifiers
-import CoreLocation
 import LinkPresentation
 import UIKit
 import Contacts
@@ -90,18 +89,8 @@ struct ChatView: View {
     @State var showingBackgroundSettings = false
     @State var showingLocationPermissionAlert = false
 
-    // MARK: - Emergency / Accessibility Features
-    @State var isEmergencyMessage = false
-    @State var emergencyButtonPressed = false
-    @State var emergencyTimer: Timer?
-    @State var emergencyCountdown = 3
+    // MARK: - Emergency Alert
     @State var showingEmergencyAlert = false
-    @State var healthCondition: HealthCondition = .good
-    @State var showingHealthPicker = false
-    @State var aiSuggestedReplies: [String] = []
-    @State var showingAIReplies = false
-    @State var soundAmplificationMode = false
-    @State var showingExitConfirmation = false
 
     // MARK: - AI Settings
     @AppStorage("aiSummaryEnabled") var aiSummaryEnabled = false
@@ -113,16 +102,6 @@ struct ChatView: View {
     @AppStorage("translationAutoDetect") var translationAutoDetect = true
     @AppStorage("translationTargetLanguage") var translationTargetLanguage = "auto"
     @AppStorage("translationShowOriginal") var translationShowOriginal = true
-
-    // MARK: - Location
-    @StateObject private var locationManager = LocationManager()
-
-    enum HealthCondition: String, CaseIterable {
-        case good = "좋음 😊"
-        case normal = "보통 😐"
-        case tired = "피곤 😴"
-        case sick = "아파요 🤒"
-    }
 
     // MARK: - Date Formatters (cached, internal so extensions can access via Self.)
     static let timeFormatter: DateFormatter = {
@@ -150,7 +129,8 @@ struct ChatView: View {
         if let service = chatService {
             self._chatService = StateObject(wrappedValue: service)
         } else {
-            let tempContext = (try? ModelContainer(for: Message.self).mainContext) ?? ModelContext(try! ModelContainer(for: Message.self))
+            let container = (try? ModelContainer(for: Message.self)) ?? { fatalError("Failed to create ModelContainer for Message") }()
+            let tempContext = container.mainContext
             self._chatService = StateObject(wrappedValue: ChatService(modelContext: tempContext))
         }
     }
@@ -173,7 +153,7 @@ struct ChatView: View {
                     Button {
                         showingBackgroundSettings = true
                     } label: {
-                        Label(languageManager.currentLanguage == .korean ? "배경 설정" : "Background", systemImage: "photo.fill")
+                        Label(languageManager.localize(ko: "배경 설정", en: "Background", ja: "背景設定", zh: "背景设置", es: "Fondo"), systemImage: "photo.fill")
                     }
 
                     Button {
@@ -181,8 +161,8 @@ struct ChatView: View {
                     } label: {
                         Label(
                             chatRoom.notificationsEnabled ?
-                                (languageManager.currentLanguage == .korean ? "알림 끄기" : "Mute") :
-                                (languageManager.currentLanguage == .korean ? "알림 켜기" : "Unmute"),
+                                languageManager.localize(ko: "알림 끄기", en: "Mute", ja: "通知オフ", zh: "静音", es: "Silenciar") :
+                                languageManager.localize(ko: "알림 켜기", en: "Unmute", ja: "通知オン", zh: "取消静音", es: "Activar"),
                             systemImage: chatRoom.notificationsEnabled ? "bell.slash.fill" : "bell.fill"
                         )
                     }
@@ -190,20 +170,20 @@ struct ChatView: View {
                     Button {
                         showingBookmarks = true
                     } label: {
-                        Label(languageManager.currentLanguage == .korean ? "북마크" : "Bookmarks", systemImage: "bookmark")
+                        Label(languageManager.localize(ko: "북마크", en: "Bookmarks", ja: "ブックマーク", zh: "书签", es: "Marcadores"), systemImage: "bookmark")
                     }
 
                     Button {
                         showingDisappearingPicker = true
                     } label: {
-                        Label(languageManager.currentLanguage == .korean ? "자폭 메시지" : "Disappearing", systemImage: "flame")
+                        Label(languageManager.localize(ko: "자폭 메시지", en: "Disappearing", ja: "消えるメッセージ", zh: "阅后即焚", es: "Mensajes efímeros"), systemImage: "flame")
                     }
 
                     if aiSummaryEnabled {
                         Button {
                             generateSummary()
                         } label: {
-                            Label(languageManager.currentLanguage == .korean ? "대화 요약" : "Summarize", systemImage: "text.quote")
+                            Label(languageManager.localize(ko: "대화 요약", en: "Summarize", ja: "会話要約", zh: "对话摘要", es: "Resumir"), systemImage: "text.quote")
                         }
                     }
 
@@ -211,7 +191,7 @@ struct ChatView: View {
                         Button {
                             showingAddFriendAlert = true
                         } label: {
-                            Label(languageManager.currentLanguage == .korean ? "친구 추가" : "Add Friend", systemImage: "person.badge.plus")
+                            Label(languageManager.localize(ko: "친구 추가", en: "Add Friend", ja: "友達追加", zh: "添加好友", es: "Agregar amigo"), systemImage: "person.badge.plus")
                         }
                     }
                 } label: {
@@ -307,8 +287,6 @@ struct ChatView: View {
             .accessibilityIdentifier("chatView")
             .onDisappear {
                 viewModel?.stopTyping()
-                emergencyTimer?.invalidate()
-                emergencyTimer = nil
             }
             .dynamicTypeSize(dynamicTypeSize.isAccessibilitySize ? .accessibility3 : dynamicTypeSize)
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: localizedText("search_conversation"))
