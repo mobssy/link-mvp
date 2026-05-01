@@ -103,7 +103,11 @@ It's the moment of connection — the spark when two people understand each othe
 
 ### Translation
 
-![Translation](Assets/translation1.png)
+![Translation](Assets/translation.png)
+
+### Voice Message
+
+![Voice Message](Assets/voice.png)
 
 ### AI Summary
 
@@ -349,7 +353,11 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ### 번역
 
-![번역](Assets/translation1.png)
+![번역](Assets/translation.png)
+
+### 음성 메시지
+
+![음성 메시지](Assets/voice.png)
 
 ### AI 요약
 
