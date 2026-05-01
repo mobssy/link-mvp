@@ -4,5 +4,7 @@
 <dict>
 	<key>NSContactsUsageDescription</key>
 	<string>We use your contacts (phone/email) to help you find friends. Identifiers are hashed before matching.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access is needed to record and send voice messages.</string>
 </dict>
 </plist>
