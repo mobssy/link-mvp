@@ -16,18 +16,19 @@ struct ChatListView: View {
     @State private var searchText = ""
     @StateObject private var chatService: ChatService
 
-    init() {
+    // Shared in-memory context used only during init — replaced by the environment's
+    // shared context in onAppear before any real I/O happens.
+    private static let initServiceContext: ModelContext = {
         let schema = Schema([Message.self, ChatRoom.self, User.self, Friendship.self])
-        let tempContainer: ModelContainer
-        if let container = try? ModelContainer(for: schema) {
-            tempContainer = container
-        } else if let fallback = try? ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)]) {
-            print("⚠️ [ChatListView] Using in-memory fallback container.")
-            tempContainer = fallback
-        } else {
-            fatalError("Failed to create ModelContainer with any configuration.")
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        guard let container = try? ModelContainer(for: schema, configurations: [config]) else {
+            fatalError("Cannot create ChatService initialization container")
         }
-        self._chatService = StateObject(wrappedValue: ChatService(modelContext: tempContainer.mainContext))
+        return container.mainContext
+    }()
+
+    init() {
+        self._chatService = StateObject(wrappedValue: ChatService(modelContext: Self.initServiceContext))
     }
 
     var filteredChatRooms: [ChatRoom] {
@@ -71,21 +72,21 @@ struct ChatListView: View {
             }
         }
         .onAppear {
+            chatService.modelContext = modelContext
             createSampleDataIfNeeded()
-            // ChatService의 modelContext는 init에서 설정되므로 여기서 변경하지 않음
         }
     }
 
     private func addNewChatRoom() {
         let newRoom = ChatRoom(name: localizedText("new_friend"))
         modelContext.insert(newRoom)
-        try? modelContext.save()
+        do { try modelContext.save() } catch { print("❌ [ChatListView] Failed to save new chat room: \(error)") }
     }
 
     private func addGroupChatRoom() {
         let groupRoom = ChatRoom(name: localizedText("new_group"), profileImage: "person.3.circle.fill")
         modelContext.insert(groupRoom)
-        try? modelContext.save()
+        do { try modelContext.save() } catch { print("❌ [ChatListView] Failed to save group chat room: \(error)") }
     }
 
     private func deleteChatRooms(offsets: IndexSet) {
@@ -93,7 +94,7 @@ struct ChatListView: View {
             for index in offsets {
                 modelContext.delete(filteredChatRooms[index])
             }
-            try? modelContext.save()
+            do { try modelContext.save() } catch { print("❌ [ChatListView] Failed to delete chat rooms: \(error)") }
         }
     }
 
@@ -113,7 +114,7 @@ struct ChatListView: View {
                 modelContext.insert(room)
             }
 
-            try? modelContext.save()
+            do { try modelContext.save() } catch { print("❌ [ChatListView] Failed to save sample data: \(error)") }
         }
     }
 

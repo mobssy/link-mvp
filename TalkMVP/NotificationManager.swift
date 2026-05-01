@@ -236,45 +236,6 @@ class NotificationManager: ObservableObject {
     }
 }
 
-// 알림 델리게이트
-class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
-
-    // 앱이 포어그라운드에 있을 때 알림 표시
-    func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification,
-        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
-    ) {
-        completionHandler([.banner, .sound, .badge])
-    }
-
-    // 알림을 탭했을 때
-    func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse,
-        withCompletionHandler completionHandler: @escaping () -> Void
-    ) {
-        let userInfo = response.notification.request.content.userInfo
-
-        if let type = userInfo["type"] as? String {
-            switch type {
-            case "friend_request":
-                // 친구 요청 화면으로 이동
-                NotificationCenter.default.post(name: .openFriendRequests, object: nil)
-            case "message":
-                // 채팅 화면으로 이동
-                if let friendName = userInfo["friendName"] as? String {
-                    NotificationCenter.default.post(name: .openChat, object: friendName)
-                }
-            default:
-                break
-            }
-        }
-
-        completionHandler()
-    }
-}
-
 // 알림 관련 Notification.Name 확장
 extension Notification.Name {
     static let openFriendRequests = Notification.Name("openFriendRequests")

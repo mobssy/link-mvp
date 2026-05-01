@@ -133,9 +133,8 @@ class ChatService: ObservableObject, ChatServiceProtocol {
     func startConnection() {
         ensureNotificationSetup()
         connectionStatus = .connecting
-
-        // 실제 WebSocket 연결 시뮬레이션
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            guard let self else { return }
             self.connectionStatus = .connected
             self.isConnected = true
             self.startHeartbeat()
@@ -155,9 +154,8 @@ class ChatService: ObservableObject, ChatServiceProtocol {
     func reconnect() {
         disconnect()
         connectionStatus = .reconnecting
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            self.startConnection()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            self?.startConnection()
         }
     }
 

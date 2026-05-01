@@ -126,23 +126,20 @@ struct ChatView: View {
         "apple.com", "google.com", "naver.com", "daum.net", "kakao.com", "youtube.com", "icloud.com"
     ]
 
+    // Shared in-memory context used only during init — replaced by the environment's
+    // shared context in setupViewModelIfNeeded() before any real I/O happens.
+    private static let initServiceContext: ModelContext = {
+        let schema = Schema([Message.self])
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        guard let container = try? ModelContainer(for: schema, configurations: [config]) else {
+            fatalError("Cannot create ChatService initialization container")
+        }
+        return container.mainContext
+    }()
+
     init(chatRoom: ChatRoom, chatService: ChatService? = nil) {
         self.chatRoom = chatRoom
-
-        if let service = chatService {
-            self._chatService = StateObject(wrappedValue: service)
-        } else {
-            let schema = Schema([Message.self])
-            let container: ModelContainer
-            if let c = try? ModelContainer(for: schema) {
-                container = c
-            } else if let fallback = try? ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)]) {
-                container = fallback
-            } else {
-                fatalError("Failed to create ModelContainer with any configuration.")
-            }
-            self._chatService = StateObject(wrappedValue: ChatService(modelContext: container.mainContext))
-        }
+        self._chatService = StateObject(wrappedValue: chatService ?? ChatService(modelContext: Self.initServiceContext))
     }
 
     // MARK: - Summary Sheet
@@ -330,6 +327,7 @@ struct ChatView: View {
             .accessibilityIdentifier("chatView")
             .onDisappear {
                 viewModel?.stopTyping()
+                viewModel?.stopOnlineStatusPolling()
             }
             .dynamicTypeSize(dynamicTypeSize.isAccessibilitySize ? .accessibility3 : dynamicTypeSize)
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: localizedText("search_conversation"))

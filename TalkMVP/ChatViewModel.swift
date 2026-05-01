@@ -45,6 +45,7 @@ class ChatViewModel: ObservableObject {
     private var chatService: ChatServiceProtocol?
     private var cancellables = Set<AnyCancellable>()
     private var typingTimer: Timer?
+    private var onlineStatusTask: Task<Void, Never>?
     private var currentUserId: String {
         UserDefaults.standard.string(forKey: "currentUserId") ?? "currentUser"
     }
@@ -98,6 +99,7 @@ class ChatViewModel: ObservableObject {
     deinit {
         cancellables.removeAll()
         typingTimer?.invalidate()
+        onlineStatusTask?.cancel()
     }
 
     func loadMessages() async {
@@ -349,10 +351,8 @@ class ChatViewModel: ObservableObject {
 
     private func simulateTypingIndicator() {
         otherUserTyping = true
-
-        // 2-3초 후 타이핑 인디케이터 제거
-        DispatchQueue.main.asyncAfter(deadline: .now() + Double.random(in: 1.5...3.0)) {
-            self.otherUserTyping = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + Double.random(in: 1.5...3.0)) { [weak self] in
+            self?.otherUserTyping = false
         }
     }
 
@@ -383,15 +383,19 @@ class ChatViewModel: ObservableObject {
         }
     }
 
-    // 온라인 상태 확인 (시뮬레이션)
-    func checkOnlineStatus() {
-        // 실제 앱에서는 서버에서 사용자 온라인 상태 확인
-        isOnline = Bool.random() // 랜덤하게 온라인/오프라인 시뮬레이션
-
-        // 5초마다 상태 업데이트
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
-            self.checkOnlineStatus()
+    func startOnlineStatusPolling() {
+        stopOnlineStatusPolling()
+        onlineStatusTask = Task { [weak self] in
+            while !Task.isCancelled {
+                self?.isOnline = Bool.random()
+                try? await Task.sleep(for: .seconds(5))
+            }
         }
+    }
+
+    func stopOnlineStatusPolling() {
+        onlineStatusTask?.cancel()
+        onlineStatusTask = nil
     }
 
     // MARK: - 반응(Reactions) 관련 메서드들
@@ -496,19 +500,26 @@ class ChatViewModel: ObservableObject {
     
     /// 메시지를 완전히 삭제 (발신자만 가능)
     private func deleteMessageCompletely(_ message: Message) {
-        if let index = messages.firstIndex(where: { $0.id == message.id }) {
+        let deletedId = message.id
+        if let index = messages.firstIndex(where: { $0.id == deletedId }) {
             messages.remove(at: index)
         }
 
+        // Clear reply references in UI immediately so reply previews don't show a ghost
+        let orphans = messages.filter { $0.replyToMessageId == deletedId }
+        orphans.forEach { $0.replyToMessageId = nil }
+
         Task {
             do {
+                // Persist cleared reply references before deleting the parent
+                for orphan in orphans {
+                    try await messageRepository.updateMessage(orphan)
+                }
                 try await messageRepository.deleteMessage(message)
-
                 chatService?.deleteMessage(message, in: chatRoom)
             } catch {
                 print("❌ [ChatViewModel] Failed to delete message: \(error)")
                 errorMessage = localizedVM(ko: "메시지 삭제에 실패했습니다.", en: "Failed to delete message.", ja: "メッセージの削除に失敗しました。", zh: "删除消息失败。", es: "Error al eliminar el mensaje.")
-                // Rollback UI: add message back at the correct position
                 messages.append(message)
                 messages.sort { $0.timestamp < $1.timestamp }
             }
