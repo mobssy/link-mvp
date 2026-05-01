@@ -71,10 +71,15 @@ It's the moment of connection — the spark when two people understand each othe
 - **Minimal UI** — only what you need to send a message
 - **Auto-translation** — real-time, inline, supports 50+ languages
 - **Multi-language app** — Korean, English, Japanese, Chinese, Spanish
-- **No clutter** — no stories, no reactions, no noise
-- **Instant** — translation appears below the original with zero friction
+- **Voice messages** — hold to record, tap to play, waveform display
+- **Link previews** — rich metadata loaded automatically for URLs
+- **Read receipts** — checkmark icons showing message delivery and read state
+- **AI summary** — on-device conversation summary powered by FoundationModels
+- **Reactions & bookmarks** — emoji reactions and bookmarked messages
+- **Disappearing messages** — auto-delete after a configurable duration
+- **Scheduled send** — queue messages to send at a future time
+- **App lock** — Face ID / Touch ID protection
 - **Accessibility** — dynamic type, high contrast, screen reader support
-- **Trendy design** — clean, modern, and actually enjoyable to use
 
 ---
 
@@ -127,57 +132,102 @@ It's the moment of connection — the spark when two people understand each othe
 ## Project Structure
 
 ```
-L!nk/
+TalkMVP/
 ├── App/
 │   ├── TalkMVPApp.swift
 │   └── ContentView.swift
+│
 ├── Auth/
 │   ├── AuthView.swift
 │   ├── AuthManager.swift
 │   ├── SSOSignInView.swift
 │   └── GoogleOAuthService.swift
+│
 ├── Chat/
-│   ├── ChatView.swift
-│   ├── ChatView+Media.swift
-│   ├── ChatView+Messages.swift
-│   ├── ChatView+Input.swift
-│   ├── ChatView+Friends.swift
-│   ├── ChatView+Helpers.swift
-│   ├── ChatViewModel.swift
-│   ├── ChatListView.swift
-│   ├── MessageBubbleView.swift
-│   ├── ChatRoom.swift
-│   ├── Message.swift
-│   └── TypingIndicatorView.swift
+│   ├── ChatView.swift                  # Root view + scaffold
+│   ├── ChatView+Input.swift            # Text input bar, voice recording
+│   ├── ChatView+Messages.swift         # Message list, translation, search
+│   ├── ChatView+Media.swift            # Photo / video / file send
+│   ├── ChatView+Friends.swift          # Friend state, notifications toggle
+│   ├── ChatView+Helpers.swift          # Bookmark, disappearing, scheduled, summary
+│   ├── ChatView+Sheets.swift           # Sheet presentations
+│   ├── ChatViewAlertModifiers.swift    # Alert modifier composition
+│   ├── ChatViewSupportingViews.swift   # LinkPreviewView, ReactionPicker, etc.
+│   ├── ChatViewModel.swift             # MVVM view model
+│   ├── ChatListView.swift              # Conversation list
+│   ├── MessageBubbleView.swift         # Per-message bubble (text/image/audio/file)
+│   ├── ConnectionStatusView.swift      # Online / offline banner
+│   ├── TypingIndicatorView.swift       # Animated typing dots
+│   ├── ChatRoom.swift                  # ChatRoom SwiftData model
+│   └── Message.swift                  # Message SwiftData model
+│
 ├── Friends/
 │   ├── FriendsView.swift
+│   ├── FriendsListView.swift
 │   ├── FriendProfileView.swift
+│   ├── FriendManagementViews.swift
+│   ├── FriendRowViews.swift
 │   ├── FriendSearchService.swift
 │   └── AddFriendView.swift
+│
 ├── Settings/
 │   ├── SettingsView.swift
+│   ├── SettingsView+Security.swift
+│   ├── SettingsCardComponents.swift
 │   ├── AISettingsView.swift
 │   ├── AccessibilitySettingsView.swift
+│   ├── AppLockSettingsView.swift
+│   ├── AppLockView.swift
+│   ├── ChatRoomBackgroundSettings.swift
+│   ├── ContactsSettingsView.swift
 │   ├── LanguageSettingsView.swift
 │   ├── NotificationSettingsView.swift
 │   ├── SecuritySettingsView.swift
 │   ├── ThemeSettingsView.swift
 │   └── TranslationSettingsView.swift
+│
 ├── Services/
-│   ├── AIService.swift
-│   ├── ChatService.swift
-│   ├── LocalizationService.swift
+│   ├── AIService.swift                 # AI summary (FoundationModels + fallback)
+│   ├── AutoResponseService.swift       # Simulated auto-reply logic
+│   ├── ChatService.swift               # Real-time message simulation
+│   ├── ChatServiceProtocol.swift
+│   ├── VoiceMessageService.swift       # AVAudioRecorder / permission
+│   ├── ContactsSyncService.swift
+│   ├── AttachmentHandler.swift
 │   ├── NotificationManager.swift
-│   └── ContactsSyncService.swift
+│   ├── RealtimeChatManager.swift
+│   └── LocalizationService.swift
+│
 ├── Repositories/
-│   ├── ChatRoomRepository.swift
-│   └── MessageRepository.swift
+│   ├── ChatRoomRepository.swift        # ChatRoom SwiftData CRUD
+│   └── MessageRepository.swift        # Message SwiftData CRUD
+│
 ├── Managers/
 │   ├── AppLockManager.swift
-│   ├── AttachmentHandler.swift
-│   └── LanguageManager.swift
+│   ├── LanguageManager.swift
+│   ├── LanguageManager+Extensions.swift
+│   └── PermissionManager.swift
+│
+├── Models/
+│   ├── User.swift
+│   └── (Friendship — embedded in FriendSearchService)
+│
+├── Profile/
+│   ├── ProfileEditView.swift
+│   └── OnboardingContactsView.swift
+│
+├── Help/
+│   ├── HelpView.swift
+│   ├── AppInfoView.swift
+│   └── TermsPoliciesView.swift
+│
+├── Localization/
+│   ├── L10n.swift                      # Localization key enums
+│   └── Colors+Extensions.swift         # Color tokens, GlassEffect
+│
 └── Resources/
-    └── Assets.xcassets
+    ├── Assets.xcassets
+    └── InfoPlist_Additions.plist       # NSMicrophoneUsageDescription, etc.
 ```
 
 ---
@@ -263,10 +313,15 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 - **미니멀 UI** — 메시지 보내는 데 필요한 것만
 - **자동 번역** — 실시간, 인라인, 50개 이상 언어 지원
 - **다국어 앱** — 한국어, 영어, 일본어, 중국어, 스페인어 지원
-- **노이즈 없음** — 스토리, 리액션, 불필요한 기능 없음
-- **즉각적** — 원문 바로 아래에 번역이 표시
+- **음성 메시지** — 꾹 눌러 녹음, 탭하여 재생, 파형 표시
+- **링크 미리보기** — URL에 대한 풍부한 메타데이터 자동 로드
+- **읽음 확인** — 메시지 전송 및 읽음 상태를 체크마크 아이콘으로 표시
+- **AI 요약** — FoundationModels 기반 온디바이스 대화 요약
+- **리액션 & 북마크** — 이모지 리액션 및 메시지 북마크
+- **자폭 메시지** — 설정한 시간 후 자동 삭제
+- **예약 전송** — 원하는 시간에 메시지 예약 발송
+- **앱 잠금** — Face ID / Touch ID 보호
 - **접근성** — 다이나믹 타입, 고대비, 화면 낭독기 지원
-- **트렌디한 디자인** — 깔끔하고 현대적이며 쓰기 즐거운 앱
 
 ---
 
@@ -319,57 +374,101 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 ## 프로젝트 구조
 
 ```
-L!nk/
+TalkMVP/
 ├── App/
 │   ├── TalkMVPApp.swift
 │   └── ContentView.swift
+│
 ├── Auth/
 │   ├── AuthView.swift
 │   ├── AuthManager.swift
 │   ├── SSOSignInView.swift
 │   └── GoogleOAuthService.swift
+│
 ├── Chat/
-│   ├── ChatView.swift
-│   ├── ChatView+Media.swift
-│   ├── ChatView+Messages.swift
-│   ├── ChatView+Input.swift
-│   ├── ChatView+Friends.swift
-│   ├── ChatView+Helpers.swift
-│   ├── ChatViewModel.swift
-│   ├── ChatListView.swift
-│   ├── MessageBubbleView.swift
-│   ├── ChatRoom.swift
-│   ├── Message.swift
-│   └── TypingIndicatorView.swift
+│   ├── ChatView.swift                  # 루트 뷰 + 스캐폴드
+│   ├── ChatView+Input.swift            # 텍스트 입력바, 음성 녹음
+│   ├── ChatView+Messages.swift         # 메시지 목록, 번역, 검색
+│   ├── ChatView+Media.swift            # 사진 / 동영상 / 파일 전송
+│   ├── ChatView+Friends.swift          # 친구 상태, 알림 토글
+│   ├── ChatView+Helpers.swift          # 북마크, 자폭, 예약, AI 요약
+│   ├── ChatView+Sheets.swift           # 시트 프레젠테이션
+│   ├── ChatViewAlertModifiers.swift    # 알림 모디파이어 조합
+│   ├── ChatViewSupportingViews.swift   # LinkPreviewView, ReactionPicker 등
+│   ├── ChatViewModel.swift             # MVVM 뷰 모델
+│   ├── ChatListView.swift              # 대화 목록
+│   ├── MessageBubbleView.swift         # 메시지 버블 (텍스트/이미지/음성/파일)
+│   ├── ConnectionStatusView.swift      # 온라인/오프라인 배너
+│   ├── TypingIndicatorView.swift       # 입력 중 애니메이션 dots
+│   ├── ChatRoom.swift                  # ChatRoom SwiftData 모델
+│   └── Message.swift                  # Message SwiftData 모델
+│
 ├── Friends/
 │   ├── FriendsView.swift
+│   ├── FriendsListView.swift
 │   ├── FriendProfileView.swift
+│   ├── FriendManagementViews.swift
+│   ├── FriendRowViews.swift
 │   ├── FriendSearchService.swift
 │   └── AddFriendView.swift
+│
 ├── Settings/
 │   ├── SettingsView.swift
+│   ├── SettingsView+Security.swift
+│   ├── SettingsCardComponents.swift
 │   ├── AISettingsView.swift
 │   ├── AccessibilitySettingsView.swift
+│   ├── AppLockSettingsView.swift
+│   ├── AppLockView.swift
+│   ├── ChatRoomBackgroundSettings.swift
+│   ├── ContactsSettingsView.swift
 │   ├── LanguageSettingsView.swift
 │   ├── NotificationSettingsView.swift
 │   ├── SecuritySettingsView.swift
 │   ├── ThemeSettingsView.swift
 │   └── TranslationSettingsView.swift
+│
 ├── Services/
-│   ├── AIService.swift
-│   ├── ChatService.swift
-│   ├── LocalizationService.swift
+│   ├── AIService.swift                 # AI 요약 (FoundationModels + 폴백)
+│   ├── AutoResponseService.swift       # 자동 응답 시뮬레이션
+│   ├── ChatService.swift               # 실시간 메시지 시뮬레이션
+│   ├── ChatServiceProtocol.swift
+│   ├── VoiceMessageService.swift       # AVAudioRecorder / 권한
+│   ├── ContactsSyncService.swift
+│   ├── AttachmentHandler.swift
 │   ├── NotificationManager.swift
-│   └── ContactsSyncService.swift
+│   ├── RealtimeChatManager.swift
+│   └── LocalizationService.swift
+│
 ├── Repositories/
-│   ├── ChatRoomRepository.swift
-│   └── MessageRepository.swift
+│   ├── ChatRoomRepository.swift        # ChatRoom SwiftData CRUD
+│   └── MessageRepository.swift        # Message SwiftData CRUD
+│
 ├── Managers/
 │   ├── AppLockManager.swift
-│   ├── AttachmentHandler.swift
-│   └── LanguageManager.swift
+│   ├── LanguageManager.swift
+│   ├── LanguageManager+Extensions.swift
+│   └── PermissionManager.swift
+│
+├── Models/
+│   └── User.swift
+│
+├── Profile/
+│   ├── ProfileEditView.swift
+│   └── OnboardingContactsView.swift
+│
+├── Help/
+│   ├── HelpView.swift
+│   ├── AppInfoView.swift
+│   └── TermsPoliciesView.swift
+│
+├── Localization/
+│   ├── L10n.swift                      # 로컬라이즈 키 열거형
+│   └── Colors+Extensions.swift         # 컬러 토큰, GlassEffect
+│
 └── Resources/
-    └── Assets.xcassets
+    ├── Assets.xcassets
+    └── InfoPlist_Additions.plist       # NSMicrophoneUsageDescription 등
 ```
 
 ---
