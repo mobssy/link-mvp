@@ -160,20 +160,22 @@ struct ChatView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             ScrollView {
-                summaryTextView
-                    .font(.body)
-                    .foregroundColor(.primary)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(summaryParagraphs, id: \.self) { paragraph in
+                        SummaryParagraphCard(text: paragraph)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 20)
             }
         }
     }
 
-    private var summaryTextView: Text {
-        if let attrStr = try? AttributedString(markdown: summaryText) {
-            return Text(attrStr)
-        }
-        return Text(summaryText)
+    private var summaryParagraphs: [String] {
+        summaryText
+            .components(separatedBy: "\n\n")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
     }
 
     // MARK: - Body

@@ -547,6 +547,43 @@ struct AttachmentPreviewView: View {
     }
 }
 
+// MARK: - Summary Paragraph Card
+
+struct SummaryParagraphCard: View {
+    let text: String
+
+    private var isHeader: Bool {
+        text.hasPrefix("📊") || text.hasPrefix("📝") || text.hasPrefix("🧠")
+    }
+
+    private var renderedText: Text {
+        if let attr = try? AttributedString(markdown: text) {
+            return Text(attr)
+        }
+        return Text(text)
+    }
+
+    var body: some View {
+        if isHeader {
+            renderedText
+                .font(.title3.bold())
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.bottom, 4)
+        } else {
+            renderedText
+                .font(.body)
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color(UIColor.secondarySystemBackground))
+                )
+        }
+    }
+}
+
 // MARK: - Location Manager
 
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
