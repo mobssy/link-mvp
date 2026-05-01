@@ -15,6 +15,7 @@ struct SSOSignInView: View {
         VStack(spacing: 12) {
             orDivider
             appleButton
+            googleButton
         }
     }
 
@@ -62,6 +63,36 @@ struct SSOSignInView: View {
         }
     }
 
+    private var googleButton: some View {
+        let label = languageManager.localize(
+            ko: "Google로 로그인",
+            en: "Sign in with Google",
+            ja: "Googleでサインイン",
+            zh: "通过 Google 登录",
+            es: "Iniciar sesión con Google"
+        )
+
+        return Button(action: triggerGoogleSignIn) {
+            HStack(spacing: 8) {
+                Image("google-logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 20, height: 20)
+                Text(label)
+                    .font(.system(size: 17, weight: .medium))
+            }
+            .foregroundColor(.primary.opacity(0.85))
+            .frame(maxWidth: 360)
+            .frame(height: 50)
+            .background(Color(UIColor.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 25, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 25, style: .continuous)
+                    .stroke(Color(UIColor.separator), lineWidth: 1)
+            )
+        }
+    }
+
     // MARK: - Auth
 
     private func triggerAppleSignIn() {
@@ -72,6 +103,12 @@ struct SSOSignInView: View {
         controller.presentationContextProvider = AppleSignInCoordinator.shared
         AppleSignInCoordinator.shared.onCompletion = handleAppleResult
         controller.performRequests()
+    }
+
+    private func triggerGoogleSignIn() {
+        Task {
+            await authManager.signInWithGoogle()
+        }
     }
 
     private func handleAppleResult(_ result: Result<ASAuthorization, Error>) {
