@@ -15,7 +15,7 @@ _A messenger that gets out of your way — and breaks language barriers while it
 
 <br/>
 
-![L!nk screenshot](TalkMVP/Assets/mainmain.png.png)
+![L!nk screenshot](TalkMVP/Assets/main-03.png)
 
 </div>
 
@@ -71,10 +71,15 @@ It's the moment of connection — the spark when two people understand each othe
 - **Minimal UI** — only what you need to send a message
 - **Auto-translation** — real-time, inline, supports 50+ languages
 - **Multi-language app** — Korean, English, Japanese, Chinese, Spanish
-- **No clutter** — no stories, no reactions, no noise
-- **Instant** — translation appears below the original with zero friction
+- **Voice messages** — hold to record, tap to play, waveform display
+- **Link previews** — rich metadata loaded automatically for URLs
+- **Read receipts** — checkmark icons showing message delivery and read state
+- **AI summary** — on-device conversation summary powered by FoundationModels
+- **Reactions & bookmarks** — emoji reactions and bookmarked messages
+- **Disappearing messages** — auto-delete after a configurable duration
+- **Scheduled send** — queue messages to send at a future time
+- **App lock** — Face ID / Touch ID protection
 - **Accessibility** — dynamic type, high contrast, screen reader support
-- **Trendy design** — clean, modern, and actually enjoyable to use
 
 ---
 
@@ -99,6 +104,10 @@ It's the moment of connection — the spark when two people understand each othe
 ### Translation
 
 ![Translation](TalkMVP/Assets/translation1.png)
+
+### AI Summary
+
+![AI Summary](TalkMVP/Assets/summary.png)
 
 ### Settings
 
@@ -207,7 +216,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 <br/>
 
-![L!nk screenshot](TalkMVP/Assets/mainmain.png.png)
+![L!nk screenshot](TalkMVP/Assets/main-03.png)
 
 </div>
 
@@ -263,10 +272,15 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 - **미니멀 UI** — 메시지 보내는 데 필요한 것만
 - **자동 번역** — 실시간, 인라인, 50개 이상 언어 지원
 - **다국어 앱** — 한국어, 영어, 일본어, 중국어, 스페인어 지원
-- **노이즈 없음** — 스토리, 리액션, 불필요한 기능 없음
-- **즉각적** — 원문 바로 아래에 번역이 표시
+- **음성 메시지** — 꾹 눌러 녹음, 탭하여 재생, 파형 표시
+- **링크 미리보기** — URL에 대한 풍부한 메타데이터 자동 로드
+- **읽음 확인** — 메시지 전송 및 읽음 상태를 체크마크 아이콘으로 표시
+- **AI 요약** — FoundationModels 기반 온디바이스 대화 요약
+- **리액션 & 북마크** — 이모지 리액션 및 메시지 북마크
+- **자폭 메시지** — 설정한 시간 후 자동 삭제
+- **예약 전송** — 원하는 시간에 메시지 예약 발송
+- **앱 잠금** — Face ID / Touch ID 보호
 - **접근성** — 다이나믹 타입, 고대비, 화면 낭독기 지원
-- **트렌디한 디자인** — 깔끔하고 현대적이며 쓰기 즐거운 앱
 
 ---
 
@@ -291,6 +305,10 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 ### 번역
 
 ![번역](TalkMVP/Assets/translation1.png)
+
+### AI 요약
+
+![AI 요약](TalkMVP/Assets/summary.png)
 
 ### 설정
 
