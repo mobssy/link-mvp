@@ -236,7 +236,9 @@ TalkMVP/
 
 ## License
 
-MIT © 2026
+Copyright © 2026 David Song. All rights reserved.
+
+This source code is proprietary and confidential. Unauthorized copying, distribution, or use of this software, in whole or in part, is strictly prohibited.
 
 ---
 
@@ -479,4 +481,6 @@ TalkMVP/
 
 ## 라이선스
 
-MIT © 2026
+Copyright © 2026 David Song. All rights reserved.
+
+이 소스 코드는 독점 소유물이며 기밀입니다. 전체 또는 일부를 무단으로 복사, 배포, 사용하는 것을 엄격히 금지합니다.
