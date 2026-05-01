@@ -132,6 +132,7 @@ struct AuthView: View {
     private var formContent: some View {
         VStack(spacing: 20) {
             authForm
+                .frame(maxWidth: 360)
 
             // 오류 메시지
             if let errorMessage = authManager.errorMessage {
@@ -151,7 +152,7 @@ struct AuthView: View {
                         .fontWeight(.semibold)
                 }
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: 360)
             .frame(height: 50)
             .background(Color.appPrimary)
             .foregroundColor(.white)

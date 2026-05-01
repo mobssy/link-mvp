@@ -55,7 +55,7 @@ struct SSOSignInView: View {
                     .font(.system(size: 17, weight: .medium))
             }
             .foregroundColor(foreground)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: 360)
             .frame(height: 50)
             .background(background)
             .clipShape(RoundedRectangle(cornerRadius: 25, style: .continuous))
