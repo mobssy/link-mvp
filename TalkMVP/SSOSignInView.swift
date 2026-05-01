@@ -56,9 +56,9 @@ struct SSOSignInView: View {
             }
             .foregroundColor(foreground)
             .frame(maxWidth: .infinity)
-            .frame(height: 44)
+            .frame(height: 50)
             .background(background)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 25, style: .continuous))
         }
     }
 
