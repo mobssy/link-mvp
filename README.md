@@ -15,7 +15,7 @@ _A messenger that gets out of your way — and breaks language barriers while it
 
 <br/>
 
-![L!nk screenshot](TalkMVP/Assets/main-03.png)
+![L!nk screenshot](TalkMVP/Assets/main-04.png)
 
 </div>
 
@@ -216,7 +216,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 <br/>
 
-![L!nk screenshot](TalkMVP/Assets/main-03.png)
+![L!nk screenshot](TalkMVP/Assets/main-04.png)
 
 </div>
 
