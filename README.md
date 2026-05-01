@@ -97,17 +97,9 @@ It's the moment of connection — the spark when two people understand each othe
 
 ## Screenshots
 
-### Chat
-
-![Chat](TalkMVP/Assets/chatchat.png.png)
-
 ### Translation
 
 ![Translation](TalkMVP/Assets/translation.png)
-
-### Voice Message
-
-![Voice Message](TalkMVP/Assets/voice.png)
 
 ### AI Summary
 
@@ -117,13 +109,13 @@ It's the moment of connection — the spark when two people understand each othe
 
 ![Settings](TalkMVP/Assets/settings1.png.png)
 
-### Help
-
-![Help](TalkMVP/Assets/help1.png.png)
-
 ### Accessibility
 
 ![Accessibility](TalkMVP/Assets/accessibility1.png.png)
+
+### Voice Message
+
+![Voice Message](TalkMVP/Assets/voice.png)
 
 ---
 
@@ -304,17 +296,9 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ## 스크린샷
 
-### 채팅
-
-![채팅](TalkMVP/Assets/chatchat.png.png)
-
 ### 번역
 
 ![번역](TalkMVP/Assets/translation.png)
-
-### 음성 메시지
-
-![음성 메시지](TalkMVP/Assets/voice.png)
 
 ### AI 요약
 
@@ -324,13 +308,13 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ![설정](TalkMVP/Assets/settings1.png.png)
 
-### 도움말
-
-![도움말](TalkMVP/Assets/help1.png.png)
-
 ### 접근성
 
 ![접근성](TalkMVP/Assets/accessibility1.png.png)
+
+### 음성 메시지
+
+![음성 메시지](TalkMVP/Assets/voice.png)
 
 ---
 
