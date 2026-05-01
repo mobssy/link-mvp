@@ -65,8 +65,7 @@ struct SSOSignInView: View {
 
     private var googleButton: some View {
         let isDark = colorScheme == .dark
-        let background: Color = isDark ? .white : .black
-        let foreground: Color = isDark ? .black : .white
+        let background: Color = isDark ? Color(UIColor.secondarySystemBackground) : .white
         let label = languageManager.localize(
             ko: "Google로 로그인",
             en: "Sign in with Google",
@@ -84,11 +83,15 @@ struct SSOSignInView: View {
                 Text(label)
                     .font(.system(size: 17, weight: .medium))
             }
-            .foregroundColor(foreground)
+            .foregroundColor(.primary)
             .frame(maxWidth: 360)
             .frame(height: 50)
             .background(background)
             .clipShape(RoundedRectangle(cornerRadius: 25, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 25, style: .continuous)
+                    .stroke(Color(UIColor.separator), lineWidth: 1)
+            )
         }
     }
 
