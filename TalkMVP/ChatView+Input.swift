@@ -32,6 +32,10 @@ extension ChatView {
                 .background(Color(UIColor.secondarySystemGroupedBackground))
             }
 
+            if voiceService.isRecording {
+                recordingBannerView
+            }
+
             HStack(spacing: 12) {
                 Menu {
                     Button {
@@ -60,7 +64,9 @@ extension ChatView {
                         sendMessage(viewModel: viewModel)
                     }
 
-                if !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                let hasText = !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
+                if hasText {
                     Button {
                         scheduledSendDate = Date().addingTimeInterval(3600)
                         showingSchedulePicker = true
@@ -71,24 +77,85 @@ extension ChatView {
                     }
                     .accessibilityLabel(languageManager.localize(ko: "예약 발송", en: "Schedule send", ja: "予約送信", zh: "定时发送", es: "Envío programado"))
                     .transition(.scale.combined(with: .opacity))
-                }
 
-                Button {
-                    sendMessage(viewModel: viewModel)
-                } label: {
-                    Image(systemName: "paperplane.fill")
-                        .foregroundColor(.white)
-                        .frame(width: 32, height: 32)
-                        .background(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray : Color.appPrimary)
-                        .clipShape(Circle())
+                    Button {
+                        sendMessage(viewModel: viewModel)
+                    } label: {
+                        Image(systemName: "paperplane.fill")
+                            .foregroundColor(.white)
+                            .frame(width: 32, height: 32)
+                            .background(Color.appPrimary)
+                            .clipShape(Circle())
+                    }
+                    .accessibilityLabel(localizedText("send_message"))
+                    .transition(.scale.combined(with: .opacity))
+                } else {
+                    micButton(viewModel: viewModel)
+                        .transition(.scale.combined(with: .opacity))
                 }
-                .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .accessibilityLabel(localizedText("send_message"))
             }
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: inputText.isEmpty)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
         .background(Color(UIColor.systemGroupedBackground))
+    }
+
+    private var recordingBannerView: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(Color.red)
+                .frame(width: 8, height: 8)
+                .opacity(voiceService.isRecording ? 1 : 0)
+                .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: voiceService.isRecording)
+            Text(languageManager.localize(ko: "녹음 중...", en: "Recording...", ja: "録音中...", zh: "录音中...", es: "Grabando..."))
+                .font(.caption)
+                .foregroundColor(.red)
+            Spacer()
+            Text(formatRecordingDuration(voiceService.recordingDuration))
+                .font(.caption.monospacedDigit())
+                .foregroundColor(.secondary)
+            Button(languageManager.localize(ko: "취소", en: "Cancel", ja: "キャンセル", zh: "取消", es: "Cancelar")) {
+                voiceService.cancelRecording()
+            }
+            .font(.caption)
+            .foregroundColor(.red)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color.red.opacity(0.08))
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
+    private func micButton(viewModel: ChatViewModel) -> some View {
+        Image(systemName: voiceService.isRecording ? "waveform.circle.fill" : "mic.circle.fill")
+            .foregroundColor(.white)
+            .frame(width: 32, height: 32)
+            .background(voiceService.isRecording ? Color.red : Color.appPrimary)
+            .clipShape(Circle())
+            .scaleEffect(voiceService.isRecording ? 1.1 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: voiceService.isRecording)
+            .accessibilityLabel(languageManager.localize(ko: "음성 메시지 녹음 (길게 누르기)", en: "Hold to record voice message", ja: "長押しで録音", zh: "长按录音", es: "Mantén para grabar"))
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        guard !voiceService.isRecording else { return }
+                        Task { _ = await voiceService.startRecording() }
+                    }
+                    .onEnded { _ in
+                        guard voiceService.isRecording else { return }
+                        if let (data, duration) = voiceService.stopRecording(), duration > 0.5 {
+                            viewModel.sendVoiceMessage(audioData: data, duration: duration)
+                        } else {
+                            voiceService.cancelRecording()
+                        }
+                    }
+            )
+    }
+
+    private func formatRecordingDuration(_ seconds: TimeInterval) -> String {
+        let s = Int(seconds)
+        return String(format: "%d:%02d", s / 60, s % 60)
     }
 
     func sendMessage(viewModel: ChatViewModel) {

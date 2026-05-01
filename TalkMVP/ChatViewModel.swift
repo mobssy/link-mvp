@@ -247,6 +247,40 @@ class ChatViewModel: ObservableObject {
         sendAutoResponse()
     }
 
+    func sendVoiceMessage(audioData: Data, duration: Double) {
+        let message = Message(
+            audioData: audioData,
+            duration: duration,
+            isFromCurrentUser: true,
+            chatRoomId: chatRoom.id.uuidString
+        )
+        if chatRoom.disappearingDuration > 0 {
+            message.isDisappearing = true
+            message.disappearAfterSeconds = chatRoom.disappearingDuration
+        }
+
+        Task {
+            do {
+                try await messageRepository.saveMessage(message)
+                messages.append(message)
+                try await chatRoomRepository.updateChatRoom(
+                    chatRoom,
+                    lastMessage: localizedVM(ko: "음성 메시지", en: "Voice message", ja: "音声メッセージ", zh: "语音消息", es: "Mensaje de voz"),
+                    timestamp: Date()
+                )
+                chatService?.sendMessage(message, to: chatRoom)
+            } catch {
+                print("❌ [ChatViewModel] Failed to send voice message: \(error)")
+                errorMessage = "Failed to send voice message. Please try again."
+                if let index = messages.lastIndex(where: { $0.id == message.id }) {
+                    messages.remove(at: index)
+                }
+            }
+        }
+
+        sendAutoResponse()
+    }
+
     func sendFile(fileName: String, fileExtension: String, fileSize: Int) {
         let message = Message(
             fileName: fileName,

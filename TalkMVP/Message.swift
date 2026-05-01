@@ -61,6 +61,10 @@ class Message {
     var videoURL: String? // 동영상 로컬 파일 경로 (큰 동영상용)
     var fileURL: String? // 파일 로컬 경로
 
+    // 음성 메시지
+    var audioData: Data?
+    var audioDuration: Double = 0
+
     init(text: String, isFromCurrentUser: Bool, sender: String = "나", chatRoomId: String = "default", messageType: MessageType = .text, replyToMessageId: UUID? = nil) {
         self.id = UUID()
         self.text = text
@@ -111,6 +115,27 @@ class Message {
         self.fileName = fileName
         self.fileExtension = fileExtension
         self.fileSize = fileSize
+        self.reactions = [:]
+        self.replyToMessageId = nil
+        self.isEdited = false
+        self.editedAt = nil
+    }
+
+    // 음성 메시지용 초기화
+    init(audioData: Data, duration: Double, isFromCurrentUser: Bool, sender: String = "나", chatRoomId: String = "default") {
+        self.id = UUID()
+        self.text = "🎤"
+        self.isFromCurrentUser = isFromCurrentUser
+        self.timestamp = Date()
+        self.sender = sender
+        self.chatRoomId = chatRoomId
+        self.messageType = .audio
+        self.audioData = audioData
+        self.audioDuration = duration
+        self.imageData = nil
+        self.fileName = nil
+        self.fileExtension = nil
+        self.fileSize = nil
         self.reactions = [:]
         self.replyToMessageId = nil
         self.isEdited = false

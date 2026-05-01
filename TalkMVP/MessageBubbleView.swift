@@ -8,6 +8,7 @@
 import SwiftUI
 import Combine
 import SwiftData
+import AVFoundation
 
 struct MessageBubbleView: View {
     let message: Message
@@ -21,6 +22,8 @@ struct MessageBubbleView: View {
     @State private var friendAlertMessage = ""
     @State private var showingFullScreenImage = false
     @State private var fullScreenImage: UIImage? = nil
+    @State private var audioPlayer: AVAudioPlayer?
+    @State private var isPlayingAudio = false
 
     private enum FriendState { case unknown, notFriend, pending, isFriend }
 
@@ -87,24 +90,15 @@ struct MessageBubbleView: View {
                 }
             }
 
-            HStack(spacing: 8) {
-                // 읽음 표시 (내가 보낸 메시지의 왼쪽에만)
-                if message.isFromCurrentUser {
-                    Circle()
-                        .fill(message.isRead ? Color.green : Color.red)
-                        .frame(width: 8, height: 8)
-                }
-
-                // 메시지 타입에 따른 콘텐츠
-                messageContent
-                    .padding(.horizontal, message.messageType == .image ? 4 : 16)
-                    .padding(.vertical, message.messageType == .image ? 4 : 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(bubbleBackground)
-                    )
-                    .foregroundColor(message.isFromCurrentUser ? Color(UIColor.systemBackground) : .primary)
-            }
+            // 메시지 타입에 따른 콘텐츠
+            messageContent
+                .padding(.horizontal, message.messageType == .image ? 4 : 16)
+                .padding(.vertical, message.messageType == .image ? 4 : 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(bubbleBackground)
+                )
+                .foregroundColor(message.isFromCurrentUser ? Color(UIColor.systemBackground) : .primary)
 
             HStack(spacing: 4) {
                 Text(message.timestamp, style: .time)
@@ -127,6 +121,13 @@ struct MessageBubbleView: View {
                     Image(systemName: "clock.fill")
                         .font(.caption2)
                         .foregroundColor(.secondary)
+                }
+
+                if message.isFromCurrentUser {
+                    Image(systemName: message.isRead ? "checkmark.circle.fill" : "checkmark.circle")
+                        .font(.caption2)
+                        .foregroundColor(message.isRead ? .appPrimary : .secondary)
+                        .transition(.scale.combined(with: .opacity))
                 }
             }
         }
@@ -241,19 +242,25 @@ struct MessageBubbleView: View {
             .frame(minWidth: 150)
 
         case .audio:
-            HStack {
-                Image(systemName: "waveform")
-                    .foregroundColor(.appPrimary)
-                Text(localizedText("audio_message"))
-                Spacer()
-                Button(action: {
-                    // 음성 재생 (추후 구현)
-                }) {
-                    Image(systemName: "play.fill")
-                        .foregroundColor(.appPrimary)
+            HStack(spacing: 10) {
+                Button {
+                    toggleAudioPlayback()
+                } label: {
+                    Image(systemName: isPlayingAudio ? "pause.circle.fill" : "play.circle.fill")
+                        .font(.system(size: 30))
+                        .foregroundColor(message.isFromCurrentUser ? .white : .appPrimary)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Image(systemName: "waveform")
+                        .font(.system(size: 14))
+                        .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.8) : .secondary)
+                    Text(formatAudioDuration(message.audioDuration))
+                        .font(.caption2.monospacedDigit())
+                        .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.7) : .secondary)
                 }
             }
-            .frame(minWidth: 150)
+            .frame(minWidth: 120)
 
         case .deleted:
             HStack {
@@ -283,6 +290,30 @@ struct MessageBubbleView: View {
         default:
             return "doc.fill"
         }
+    }
+
+    private func toggleAudioPlayback() {
+        if isPlayingAudio {
+            audioPlayer?.stop()
+            isPlayingAudio = false
+            return
+        }
+        guard let data = message.audioData,
+              let player = try? AVAudioPlayer(data: data) else { return }
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+        try? AVAudioSession.sharedInstance().setActive(true)
+        audioPlayer = player
+        player.play()
+        isPlayingAudio = true
+        Task {
+            try? await Task.sleep(for: .seconds(player.duration + 0.2))
+            await MainActor.run { isPlayingAudio = false }
+        }
+    }
+
+    private func formatAudioDuration(_ seconds: Double) -> String {
+        let s = Int(seconds)
+        return String(format: "%d:%02d", s / 60, s % 60)
     }
 
     private func formatFileSize(_ bytes: Int) -> String {

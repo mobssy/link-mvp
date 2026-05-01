@@ -72,6 +72,9 @@ struct ChatView: View {
     @State var showingDisappearingPicker = false
     @State var poppingMessageIds: Set<UUID> = []
 
+    // MARK: - Voice Recording
+    @StateObject var voiceService = VoiceMessageService()
+
     // MARK: - Contacts Sync
     @StateObject private var contactsSync = ContactsSyncService()
     @State var showingContactsResult = false

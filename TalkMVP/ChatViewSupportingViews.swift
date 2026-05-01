@@ -132,11 +132,28 @@ struct ReactionPickerView: View {
 struct LinkPreviewView: UIViewRepresentable {
     let url: URL
 
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
     func makeUIView(context: Context) -> LPLinkView {
-        LPLinkView(url: url)
+        let view = LPLinkView(url: url)
+        view.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        context.coordinator.fetch(url: url, into: view)
+        return view
     }
 
     func updateUIView(_ uiView: LPLinkView, context: Context) {}
+
+    final class Coordinator {
+        private var provider: LPMetadataProvider?
+
+        func fetch(url: URL, into view: LPLinkView) {
+            provider = LPMetadataProvider()
+            provider?.startFetchingMetadata(for: url) { metadata, error in
+                guard let metadata, error == nil else { return }
+                DispatchQueue.main.async { view.metadata = metadata }
+            }
+        }
+    }
 }
 
 // MARK: - Translated Text View
