@@ -126,7 +126,6 @@ class LanguageManager: ObservableObject {
 
     private func applyLanguage() {
         UserDefaults.standard.set([currentLanguage.rawValue], forKey: "AppleLanguages")
-        UserDefaults.standard.synchronize()
     }
 
     // 5개 언어를 인라인으로 분기하는 편의 메서드 (번체 중국어는 간체로 폴백)

@@ -45,7 +45,9 @@ class ChatViewModel: ObservableObject {
     private var chatService: ChatServiceProtocol?
     private var cancellables = Set<AnyCancellable>()
     private var typingTimer: Timer?
-    private let currentUserId = "currentUser" // 실제 앱에서는 사용자 관리 시스템에서 가져옴
+    private var currentUserId: String {
+        UserDefaults.standard.string(forKey: "currentUserId") ?? "currentUser"
+    }
 
     private var currentAppLanguage: String {
         if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") { return saved }

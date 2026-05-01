@@ -442,7 +442,7 @@ struct FullScreenImageView: View {
                     .foregroundStyle(.white, .black.opacity(0.5))
                     .padding(16)
             }
-            .accessibilityLabel(Text("닫기 / Close"))
+            .accessibilityLabel(Text(NSLocalizedString("close", comment: "Close button")))
         }
     }
 }

@@ -58,16 +58,6 @@ struct GlassEffect: ViewModifier {
     }
 }
 
-extension GlassEffect.GlassStyle {
-    func tint(_ color: Color) -> GlassEffect.GlassStyle {
-        return self
-    }
-
-    func interactive() -> GlassEffect.GlassStyle {
-        return self
-    }
-}
-
 extension View {
     func glassEffect(_ style: GlassEffect.GlassStyle = .regular, in shape: GlassEffect.GlassShape = .rect(cornerRadius: 12)) -> some View {
         self.modifier(GlassEffect(style: style, shape: shape))

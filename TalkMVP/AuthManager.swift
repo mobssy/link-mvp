@@ -112,11 +112,19 @@ class AuthManager: ObservableObject {
             clearCurrentUser()
 
             // 새 사용자 생성
+            let lang = currentLanguageCode()
+            let defaultStatus: String
+            if lang.hasPrefix("ko") { defaultStatus = "안녕하세요!" }
+            else if lang.hasPrefix("ja") { defaultStatus = "よろしくお願いします！" }
+            else if lang.hasPrefix("zh") { defaultStatus = "你好！" }
+            else if lang.hasPrefix("es") { defaultStatus = "¡Hola!" }
+            else { defaultStatus = "Hey there!" }
+
             let newUser = User(
                 username: username,
                 displayName: displayName,
                 email: email,
-                statusMessage: "안녕하세요!",
+                statusMessage: defaultStatus,
                 isCurrentUser: true
             )
 
@@ -125,6 +133,7 @@ class AuthManager: ObservableObject {
 
             currentUser = newUser
             isAuthenticated = true
+            UserDefaults.standard.set(newUser.id.uuidString, forKey: "currentUserId")
 
             // 샘플 친구들 추가
             createSampleFriends(for: newUser)
@@ -163,6 +172,7 @@ class AuthManager: ObservableObject {
 
                 currentUser = user
                 isAuthenticated = true
+                UserDefaults.standard.set(user.id.uuidString, forKey: "currentUserId")
             } else {
                 errorMessage = loc("signin_not_found")
             }
@@ -177,6 +187,7 @@ class AuthManager: ObservableObject {
         clearCurrentUser()
         currentUser = nil
         isAuthenticated = false
+        UserDefaults.standard.removeObject(forKey: "currentUserId")
     }
 
     private func clearCurrentUser() {

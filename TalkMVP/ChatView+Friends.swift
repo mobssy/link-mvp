@@ -98,7 +98,11 @@ extension ChatView {
 
     func toggleChatNotifications() {
         chatRoom.notificationsEnabled.toggle()
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            print("❌ [ChatView] Failed to save notification setting: \(error)")
+        }
     }
 
     func blockUser() {

@@ -39,7 +39,8 @@ extension ChatView {
     }
 
     func sendImageMessage(data: Data) async {
-        let message = Message(imageData: data, isFromCurrentUser: true, sender: "나", chatRoomId: chatRoom.id.uuidString)
+        let senderName = languageManager.localize(ko: "나", en: "Me", ja: "私", zh: "我", es: "Yo")
+        let message = Message(imageData: data, isFromCurrentUser: true, sender: senderName, chatRoomId: chatRoom.id.uuidString)
 
         await MainActor.run {
             modelContext.insert(message)
@@ -57,7 +58,8 @@ extension ChatView {
 
     func sendVideoMessage(data: Data) async {
         let sentVideoText = localizedText("sent_video")
-        let message = Message(text: sentVideoText, isFromCurrentUser: true, sender: "나", chatRoomId: chatRoom.id.uuidString, messageType: .video)
+        let senderName = languageManager.localize(ko: "나", en: "Me", ja: "私", zh: "我", es: "Yo")
+        let message = Message(text: sentVideoText, isFromCurrentUser: true, sender: senderName, chatRoomId: chatRoom.id.uuidString, messageType: .video)
         message.videoData = data
 
         await MainActor.run {
@@ -99,13 +101,14 @@ extension ChatView {
     func sendFileMessage(fileName: String, fileURL: String, fileSize: Int) {
         let nameWithoutExt = (fileName as NSString).deletingPathExtension
         let ext = (fileName as NSString).pathExtension
+        let senderName = languageManager.localize(ko: "나", en: "Me", ja: "私", zh: "我", es: "Yo")
 
         let message = Message(
             fileName: nameWithoutExt,
             fileExtension: ext,
             fileSize: fileSize,
             isFromCurrentUser: true,
-            sender: "나",
+            sender: senderName,
             chatRoomId: chatRoom.id.uuidString
         )
         message.fileURL = fileURL

@@ -17,12 +17,15 @@ struct ChatListView: View {
     @StateObject private var chatService: ChatService
 
     init() {
-        // 임시 컨텍스트로 초기화, onAppear에서 실제 컨텍스트로 재설정
+        let schema = Schema([Message.self, ChatRoom.self, User.self, Friendship.self])
         let tempContainer: ModelContainer
-        do {
-            tempContainer = try ModelContainer(for: Message.self, ChatRoom.self, User.self, Friendship.self)
-        } catch {
-            fatalError("Failed to create ModelContainer: \(error)")
+        if let container = try? ModelContainer(for: schema) {
+            tempContainer = container
+        } else if let fallback = try? ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)]) {
+            print("⚠️ [ChatListView] Using in-memory fallback container.")
+            tempContainer = fallback
+        } else {
+            fatalError("Failed to create ModelContainer with any configuration.")
         }
         self._chatService = StateObject(wrappedValue: ChatService(modelContext: tempContainer.mainContext))
     }

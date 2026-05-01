@@ -31,13 +31,16 @@ struct LinkMVPApp: App {
             User.self,
             Friendship.self
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+        // Try persistent store first; fall back to in-memory so the app stays alive
+        // even if the on-disk store is corrupted (e.g. after a schema migration failure).
+        if let container = try? ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)]) {
+            return container
         }
+        print("⚠️ [App] Persistent store unavailable — falling back to in-memory store. Data will not persist this session.")
+        if let container = try? ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)]) {
+            return container
+        }
+        fatalError("Could not create ModelContainer with any configuration.")
     }()
 
     private func dynamicTypeSizeForStep(_ step: Int) -> DynamicTypeSize {

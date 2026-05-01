@@ -17,6 +17,17 @@ class NotificationManager: ObservableObject {
 
     private var notificationsEnabled: Bool { UserDefaults.standard.bool(forKey: "notificationsEnabled") }
 
+    private func loc(ko: String, en: String, ja: String, zh: String, es: String) -> String {
+        let lang = UserDefaults.standard.string(forKey: "selectedLanguage")
+            ?? (UserDefaults.standard.array(forKey: "AppleLanguages") as? [String])?.first
+            ?? "en"
+        if lang.hasPrefix("ko") { return ko }
+        if lang.hasPrefix("ja") { return ja }
+        if lang.hasPrefix("zh") { return zh }
+        if lang.hasPrefix("es") { return es }
+        return en
+    }
+
     init() {
         Task {
             await checkPermission()
@@ -28,7 +39,7 @@ class NotificationManager: ObservableObject {
             let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound])
             hasPermission = granted
         } catch {
-            print("알림 권한 요청 실패: \(error)")
+            print("❌ [NotificationManager] Permission request failed: \(error)")
         }
     }
 
@@ -43,8 +54,8 @@ class NotificationManager: ObservableObject {
         guard notificationsEnabled else { return }
 
         let content = UNMutableNotificationContent()
-        content.title = "새 친구 요청"
-        content.body = "\(friendName)님이 친구 요청을 보냈습니다"
+        content.title = loc(ko: "새 친구 요청", en: "New Friend Request", ja: "新しい友達リクエスト", zh: "新的好友请求", es: "Nueva solicitud de amistad")
+        content.body = loc(ko: "\(friendName)님이 친구 요청을 보냈습니다", en: "\(friendName) sent you a friend request", ja: "\(friendName)さんから友達リクエストが届きました", zh: "\(friendName)发送了好友请求", es: "\(friendName) te envió una solicitud de amistad")
         content.sound = .default
         content.badge = 1
 
@@ -65,7 +76,7 @@ class NotificationManager: ObservableObject {
 
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("알림 스케줄링 실패: \(error)")
+                print("❌ [NotificationManager] Friend request notification failed: \(error)")
             }
         }
     }
@@ -95,7 +106,7 @@ class NotificationManager: ObservableObject {
 
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("메시지 알림 스케줄링 실패: \(error)")
+                print("❌ [NotificationManager] Message notification failed: \(error)")
             }
         }
     }
@@ -106,20 +117,26 @@ class NotificationManager: ObservableObject {
         guard notificationsEnabled else { return }
 
         let content = UNMutableNotificationContent()
-        content.title = "💝 \(friendName)님이 메시지를 보냈어요!"
+        content.title = loc(
+            ko: "💝 \(friendName)님이 메시지를 보냈어요!",
+            en: "💝 \(friendName) sent you a message!",
+            ja: "💝 \(friendName)さんからメッセージが届きました！",
+            zh: "💝 \(friendName)给您发来消息！",
+            es: "💝 ¡\(friendName) te envió un mensaje!"
+        )
         content.body = "📱 \(message)"
 
-        // 더 큰 소리와 반복 알림을 위한 설정
         content.sound = UNNotificationSound(named: UNNotificationSoundName("strong_notification.wav"))
         content.badge = 1
         content.categoryIdentifier = "MESSAGE_CATEGORY"
 
-        // 친근한 알림 텍스트
-        if friendName.contains("손주") || friendName.contains("가족") {
-            content.subtitle = "🥰 사랑하는 가족이 연락했어요!"
-        } else {
-            content.subtitle = "😊 소중한 사람이 메시지를 보냈어요!"
-        }
+        content.subtitle = loc(
+            ko: "😊 소중한 사람이 메시지를 보냈어요!",
+            en: "😊 Someone special sent you a message!",
+            ja: "😊 大切な方からメッセージです！",
+            zh: "😊 重要的人给您发来消息！",
+            es: "😊 ¡Alguien especial te escribió!"
+        )
 
         content.userInfo = [
             "type": "message",
@@ -138,9 +155,7 @@ class NotificationManager: ObservableObject {
 
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("중요 메시지 알림 스케줄링 실패: \(error)")
-            } else {
-                print("💪 강력한 알림 설정 완료: \(friendName)")
+                print("❌ [NotificationManager] Strong notification failed: \(error)")
             }
         }
 
@@ -151,8 +166,8 @@ class NotificationManager: ObservableObject {
     // 리마인더 알림 (3초 후)
     private func scheduleReminderNotification(from friendName: String, message: String) {
         let content = UNMutableNotificationContent()
-        content.title = "🔔 메시지를 확인해주세요!"
-        content.body = "\(friendName)님이 기다리고 있어요"
+        content.title = loc(ko: "🔔 메시지를 확인해주세요!", en: "🔔 Please check your messages!", ja: "🔔 メッセージを確認してください！", zh: "🔔 请查看您的消息！", es: "🔔 ¡Revisa tus mensajes!")
+        content.body = loc(ko: "\(friendName)님이 기다리고 있어요", en: "\(friendName) is waiting for you", ja: "\(friendName)さんが待っています", zh: "\(friendName)在等您", es: "\(friendName) te está esperando")
         content.sound = .defaultRingtone
         content.badge = 1
 
@@ -165,7 +180,7 @@ class NotificationManager: ObservableObject {
 
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("리마인더 알림 실패: \(error)")
+                print("❌ [NotificationManager] Reminder notification failed: \(error)")
             }
         }
     }
@@ -175,8 +190,8 @@ class NotificationManager: ObservableObject {
         guard notificationsEnabled else { return }
 
         let content = UNMutableNotificationContent()
-        content.title = "📞 음성 알림"
-        content.body = "\(friendName)님이 메시지를 보냈어요. 확인해주세요!"
+        content.title = loc(ko: "📞 음성 알림", en: "📞 Voice Alert", ja: "📞 音声通知", zh: "📞 语音提醒", es: "📞 Alerta de voz")
+        content.body = loc(ko: "\(friendName)님이 메시지를 보냈어요. 확인해주세요!", en: "\(friendName) sent you a message. Please check it!", ja: "\(friendName)さんからメッセージが届きました。確認してください！", zh: "\(friendName)给您发来消息，请查看！", es: "¡\(friendName) te envió un mensaje. Por favor revísalo!")
         content.sound = .default
         content.userInfo = ["shouldSpeak": true, "friendName": friendName]
 

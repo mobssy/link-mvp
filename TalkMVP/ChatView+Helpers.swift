@@ -127,7 +127,11 @@ extension ChatView {
 
     func toggleBookmark(_ message: Message) {
         message.isBookmarked.toggle()
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            print("❌ [ChatView] Failed to save bookmark: \(error)")
+        }
         let label = message.isBookmarked
             ? languageManager.localize(ko: "북마크 추가됨", en: "Bookmarked", ja: "ブックマーク済み", zh: "已收藏", es: "Marcado")
             : languageManager.localize(ko: "북마크 해제됨", en: "Bookmark removed", ja: "ブックマーク解除", zh: "已取消收藏", es: "Marcador eliminado")
@@ -149,7 +153,11 @@ extension ChatView {
         if reduceMotion {
             vm.messages.removeAll { expiredIds.contains($0.id) }
             expired.forEach { modelContext.delete($0) }
-            try? modelContext.save()
+            do {
+                try modelContext.save()
+            } catch {
+                print("❌ [ChatView] Failed to delete expired messages: \(error)")
+            }
             return
         }
 
@@ -167,7 +175,11 @@ extension ChatView {
                     poppingMessageIds.subtract(expiredIds)
                 }
                 expired.forEach { modelContext.delete($0) }
-                try? modelContext.save()
+                do {
+                    try modelContext.save()
+                } catch {
+                    print("❌ [ChatView] Failed to delete animated expired messages: \(error)")
+                }
             }
         }
     }
@@ -185,7 +197,11 @@ extension ChatView {
         message.scheduledFor = date
         message.isPendingScheduled = true
         modelContext.insert(message)
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            print("❌ [ChatView] Failed to save scheduled message: \(error)")
+        }
         // Add to viewModel so the timer can find and send it
         viewModel.messages.append(message)
         viewModel.messages.sort { $0.timestamp < $1.timestamp }
@@ -205,7 +221,11 @@ extension ChatView {
                 message.isDisappearing = true
                 message.disappearAfterSeconds = chatRoom.disappearingDuration
             }
-            try? modelContext.save()
+            do {
+                try modelContext.save()
+            } catch {
+                print("❌ [ChatView] Failed to send scheduled message: \(error)")
+            }
             // Re-sort so the message lands in chronological order
             viewModel.messages.sort { $0.timestamp < $1.timestamp }
         }

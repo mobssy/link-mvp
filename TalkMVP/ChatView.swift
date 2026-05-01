@@ -14,7 +14,6 @@ import UniformTypeIdentifiers
 import LinkPresentation
 import UIKit
 import Contacts
-import NaturalLanguage
 
 struct ChatView: View {
     @Environment(\.modelContext) var modelContext
@@ -133,9 +132,16 @@ struct ChatView: View {
         if let service = chatService {
             self._chatService = StateObject(wrappedValue: service)
         } else {
-            let container = (try? ModelContainer(for: Message.self)) ?? { fatalError("Failed to create ModelContainer for Message") }()
-            let tempContext = container.mainContext
-            self._chatService = StateObject(wrappedValue: ChatService(modelContext: tempContext))
+            let schema = Schema([Message.self])
+            let container: ModelContainer
+            if let c = try? ModelContainer(for: schema) {
+                container = c
+            } else if let fallback = try? ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)]) {
+                container = fallback
+            } else {
+                fatalError("Failed to create ModelContainer with any configuration.")
+            }
+            self._chatService = StateObject(wrappedValue: ChatService(modelContext: container.mainContext))
         }
     }
 
