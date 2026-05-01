@@ -17,57 +17,180 @@ actor AIService {
     func summarize(messages: [Message], limit: Int = 30, targetLanguage: String = "en") async -> String {
         let last = Array(messages.suffix(limit))
         let labels = summaryLabels(for: targetLanguage)
+        guard !last.isEmpty else { return labels.noMessages }
 
-        let lines: [String] = await withTaskGroup(of: (Int, String).self) { group in
-            for (index, msg) in last.enumerated() {
-                group.addTask {
-                    let sender = msg.isFromCurrentUser ? labels.me : msg.sender
-                    let content: String
-                    switch msg.messageType {
-                    case .text:
-                        let translated = await self.translate(msg.text, autoDetect: true, target: targetLanguage)
-                        content = "- [\(sender)] \(translated)"
-                    case .image:
-                        content = "- [\(sender)] \(labels.image)"
-                    case .file:
-                        content = "- [\(sender)] \(labels.file): \(msg.text)"
-                    case .audio:
-                        content = "- [\(sender)] \(labels.audio)"
-                    case .deleted:
-                        content = "- [\(sender)] \(labels.deleted)"
-                    case .video:
-                        content = "- [\(sender)] \(labels.video)"
-                    }
-                    return (index, content)
-                }
-            }
-            var results: [(Int, String)] = []
-            for await result in group {
-                results.append(result)
-            }
-            return results.sorted { $0.0 < $1.0 }.map { $0.1 }
+        let textMessages = last.filter { $0.messageType == .text }
+        let participants = Set(last.map { $0.isFromCurrentUser ? labels.me : $0.sender })
+        let participantList = participants.sorted().joined(separator: ", ")
+        let fromMe = last.filter { $0.isFromCurrentUser }.count
+        let fromOther = last.count - fromMe
+        let dateStr = DateFormatter.localizedString(from: Date(), dateStyle: .medium, timeStyle: .short)
+
+        let transcriptLines = textMessages.map { "\($0.isFromCurrentUser ? labels.me : $0.sender): \($0.text)" }
+        let transcript = transcriptLines.joined(separator: "\n")
+
+        #if canImport(FoundationModels)
+        if #available(iOS 18.0, *) {
+            if let aiResult = await generateAISummary(
+                transcript: transcript, labels: labels, language: targetLanguage,
+                participants: participantList, messageCount: last.count, dateStr: dateStr
+            ) { return aiResult }
+        }
+        #endif
+
+        return generateFallbackSummary(
+            messages: last, textMessages: textMessages, labels: labels,
+            participantList: participantList, fromMe: fromMe, fromOther: fromOther, dateStr: dateStr
+        )
+    }
+
+    #if canImport(FoundationModels)
+    @available(iOS 18.0, *)
+    private func generateAISummary(
+        transcript: String, labels: SummaryLabels, language: String,
+        participants: String, messageCount: Int, dateStr: String
+    ) async -> String? {
+        let model = SystemLanguageModel.default
+        guard case .available = model.availability, !transcript.isEmpty else { return nil }
+
+        let langName = languageName(for: language)
+        let instructions = """
+        You are an expert conversation analyst. Summarize chat conversations clearly and insightfully.
+        Always respond in \(langName).
+        Structure your response exactly like this (use the exact section headers provided):
+
+        [Write 2–3 sentences summarizing the overall conversation]
+
+        **\(labels.keyTopics)**
+        • [key topic 1]
+        • [key topic 2]
+        • [key topic 3]
+
+        **\(labels.decisions)**
+        • [any decisions or action items — omit this section entirely if none]
+        """
+
+        let prompt = "Summarize this chat (\(messageCount) messages, participants: \(participants)):\n\n\(transcript)"
+
+        do {
+            let session = LanguageModelSession(instructions: instructions)
+            let response = try await session.respond(to: prompt)
+            let content = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !content.isEmpty else { return nil }
+            return "✨ **\(labels.header)**\n\(dateStr)\n\n\(content)"
+        } catch {
+            print("⚠️ [AIService] Summary generation failed: \(error)")
+            return nil
+        }
+    }
+    #endif
+
+    private func generateFallbackSummary(
+        messages: [Message], textMessages: [Message], labels: SummaryLabels,
+        participantList: String, fromMe: Int, fromOther: Int, dateStr: String
+    ) -> String {
+        var parts: [String] = []
+
+        parts.append("📊 **\(labels.header)**")
+        parts.append(dateStr)
+        parts.append("")
+
+        parts.append("**\(labels.statsHeader)**")
+        parts.append("• \(labels.participants): \(participantList)")
+        parts.append("• \(labels.totalMessages): \(messages.count) (\(labels.me): \(fromMe), \(labels.other): \(fromOther))")
+
+        let imageCount = messages.filter { $0.messageType == .image }.count
+        let fileCount  = messages.filter { $0.messageType == .file }.count
+        let audioCount = messages.filter { $0.messageType == .audio }.count
+        if imageCount > 0 { parts.append("• 🖼️ \(labels.image): \(imageCount)") }
+        if fileCount  > 0 { parts.append("• 📄 \(labels.file): \(fileCount)") }
+        if audioCount > 0 { parts.append("• 🎤 \(labels.audio): \(audioCount)") }
+
+        let keywords = extractKeywords(from: textMessages.map { $0.text }.joined(separator: " "), limit: 6)
+        if !keywords.isEmpty {
+            parts.append("")
+            parts.append("**\(labels.keywordsHeader)**")
+            parts.append(keywords.map { "• \($0)" }.joined(separator: "\n"))
         }
 
-        let header = "\(labels.header) (\(DateFormatter.localizedString(from: Date(), dateStyle: .medium, timeStyle: .short))):\n\n"
-        return header + lines.joined(separator: "\n")
+        let recent = textMessages.suffix(3)
+        if !recent.isEmpty {
+            parts.append("")
+            parts.append("**\(labels.recentHeader)**")
+            for msg in recent {
+                let sender = msg.isFromCurrentUser ? labels.me : msg.sender
+                let preview = msg.text.count > 60 ? String(msg.text.prefix(60)) + "…" : msg.text
+                parts.append("• [\(sender)] \(preview)")
+            }
+        }
+
+        return parts.joined(separator: "\n")
+    }
+
+    private func extractKeywords(from text: String, limit: Int) -> [String] {
+        let tagger = NLTagger(tagSchemes: [.lexicalClass])
+        tagger.string = text
+        var wordFreq: [String: Int] = [:]
+        let options: NLTagger.Options = [.omitWhitespace, .omitPunctuation, .omitOther]
+
+        tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .lexicalClass, options: options) { tag, range in
+            guard let tag, tag == .noun || tag == .verb || tag == .adjective else { return true }
+            let word = String(text[range])
+            if word.count > 1 { wordFreq[word, default: 0] += 1 }
+            return true
+        }
+
+        return wordFreq.sorted { $0.value > $1.value }.prefix(limit).map { $0.key }
     }
 
     private struct SummaryLabels {
         let me, image, file, audio, deleted, video, header: String
+        let noMessages, statsHeader, participants, totalMessages: String
+        let other, keywordsHeader, recentHeader, keyTopics, decisions: String
     }
 
     private func summaryLabels(for language: String) -> SummaryLabels {
         switch language.lowercased() {
         case "ko":
-            return SummaryLabels(me: "나", image: "이미지 전송", file: "파일", audio: "음성 메시지", deleted: "삭제된 메시지", video: "동영상", header: "최근 대화 요약")
+            return SummaryLabels(
+                me: "나", image: "이미지", file: "파일", audio: "음성 메시지", deleted: "삭제된 메시지", video: "동영상",
+                header: "대화 요약", noMessages: "요약할 메시지가 없습니다.",
+                statsHeader: "대화 통계", participants: "참여자", totalMessages: "총 메시지",
+                other: "상대방", keywordsHeader: "주요 키워드", recentHeader: "최근 대화",
+                keyTopics: "주요 내용", decisions: "결정 사항"
+            )
         case "ja":
-            return SummaryLabels(me: "自分", image: "画像を送信", file: "ファイル", audio: "音声メッセージ", deleted: "削除されたメッセージ", video: "動画", header: "最近の会話まとめ")
+            return SummaryLabels(
+                me: "自分", image: "画像", file: "ファイル", audio: "音声メッセージ", deleted: "削除済み", video: "動画",
+                header: "会話まとめ", noMessages: "要約するメッセージがありません。",
+                statsHeader: "会話統計", participants: "参加者", totalMessages: "合計メッセージ",
+                other: "相手", keywordsHeader: "キーワード", recentHeader: "最近の会話",
+                keyTopics: "主なトピック", decisions: "決定事項"
+            )
         case "zh-hans":
-            return SummaryLabels(me: "我", image: "发送了图片", file: "文件", audio: "语音消息", deleted: "已删除的消息", video: "视频", header: "最近对话摘要")
+            return SummaryLabels(
+                me: "我", image: "图片", file: "文件", audio: "语音消息", deleted: "已删除", video: "视频",
+                header: "对话摘要", noMessages: "没有可摘要的消息。",
+                statsHeader: "对话统计", participants: "参与者", totalMessages: "消息总数",
+                other: "对方", keywordsHeader: "关键词", recentHeader: "最近对话",
+                keyTopics: "主要话题", decisions: "决定事项"
+            )
         case "es":
-            return SummaryLabels(me: "Yo", image: "Imagen enviada", file: "Archivo", audio: "Mensaje de voz", deleted: "Mensaje eliminado", video: "Video", header: "Resumen de conversación reciente")
+            return SummaryLabels(
+                me: "Yo", image: "Imagen", file: "Archivo", audio: "Mensaje de voz", deleted: "Eliminado", video: "Video",
+                header: "Resumen de conversación", noMessages: "No hay mensajes para resumir.",
+                statsHeader: "Estadísticas", participants: "Participantes", totalMessages: "Total de mensajes",
+                other: "Otro", keywordsHeader: "Palabras clave", recentHeader: "Mensajes recientes",
+                keyTopics: "Temas principales", decisions: "Decisiones"
+            )
         default:
-            return SummaryLabels(me: "Me", image: "Image sent", file: "File", audio: "Voice message", deleted: "Deleted message", video: "Video", header: "Recent conversation summary")
+            return SummaryLabels(
+                me: "Me", image: "Image", file: "File", audio: "Voice message", deleted: "Deleted", video: "Video",
+                header: "Conversation Summary", noMessages: "No messages to summarize.",
+                statsHeader: "Statistics", participants: "Participants", totalMessages: "Total messages",
+                other: "Other", keywordsHeader: "Keywords", recentHeader: "Recent messages",
+                keyTopics: "Key Topics", decisions: "Decisions"
+            )
         }
     }
 

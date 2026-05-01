@@ -214,11 +214,14 @@ extension ChatView {
     func generateSummary() {
         guard let messages = viewModel?.messages, !messages.isEmpty else { return }
         let language = appLanguageCode()
+        isSummaryLoading = true
+        summaryText = ""
+        showingSummarySheet = true
         Task {
             let result = await AIService.shared.summarize(messages: messages, targetLanguage: language)
             await MainActor.run {
                 summaryText = result
-                showingSummarySheet = true
+                isSummaryLoading = false
             }
         }
     }

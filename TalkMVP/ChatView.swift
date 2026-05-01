@@ -60,6 +60,7 @@ struct ChatView: View {
     @State var searchText: String = ""
     @State var showingSummarySheet = false
     @State var summaryText: String = ""
+    @State var isSummaryLoading = false
 
     // MARK: - Bookmarks
     @State var showingBookmarks = false
@@ -136,6 +137,37 @@ struct ChatView: View {
             let tempContext = container.mainContext
             self._chatService = StateObject(wrappedValue: ChatService(modelContext: tempContext))
         }
+    }
+
+    // MARK: - Summary Sheet
+
+    @ViewBuilder
+    private var summarySheetContent: some View {
+        if isSummaryLoading {
+            VStack(spacing: 16) {
+                ProgressView()
+                    .scaleEffect(1.5)
+                Text(languageManager.localize(ko: "요약 생성 중...", en: "Generating summary...", ja: "要約を生成中...", zh: "正在生成摘要...", es: "Generando resumen..."))
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            ScrollView {
+                summaryTextView
+                    .font(.body)
+                    .foregroundColor(.primary)
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private var summaryTextView: Text {
+        if let attrStr = try? AttributedString(markdown: summaryText) {
+            return Text(attrStr)
+        }
+        return Text(summaryText)
     }
 
     // MARK: - Body
@@ -295,20 +327,14 @@ struct ChatView: View {
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: localizedText("search_conversation"))
             .sheet(isPresented: $showingSummarySheet) {
                 NavigationStack {
-                    ScrollView {
-                        Text(summaryText)
-                            .font(.body)
-                            .foregroundColor(.primary)
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .navigationTitle(localizedText("conversation_summary"))
-                    .navigationBarTitleDisplayMode(.large)
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button(localizedText("done")) { showingSummarySheet = false }
+                    summarySheetContent
+                        .navigationTitle(localizedText("conversation_summary"))
+                        .navigationBarTitleDisplayMode(.large)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button(localizedText("done")) { showingSummarySheet = false }
+                            }
                         }
-                    }
                 }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
