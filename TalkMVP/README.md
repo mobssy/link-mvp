@@ -139,9 +139,7 @@ TalkMVP/
 │
 ├── Auth/
 │   ├── AuthView.swift
-│   ├── AuthManager.swift
-│   ├── SSOSignInView.swift
-│   └── GoogleOAuthService.swift
+│   └── AuthManager.swift
 │
 ├── Chat/
 │   ├── ChatView.swift                  # Root view + scaffold
@@ -381,9 +379,7 @@ TalkMVP/
 │
 ├── Auth/
 │   ├── AuthView.swift
-│   ├── AuthManager.swift
-│   ├── SSOSignInView.swift
-│   └── GoogleOAuthService.swift
+│   └── AuthManager.swift
 │
 ├── Chat/
 │   ├── ChatView.swift                  # 루트 뷰 + 스캐폴드
