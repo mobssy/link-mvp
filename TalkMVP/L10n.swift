@@ -588,6 +588,20 @@ enum L10n {
     static func friends(_ language: AppLanguage) -> String { text("friends", language) }
     static func friendsList(_ language: AppLanguage) -> String { text("friends_list", language) }
     static func searchPlaceholder(_ language: AppLanguage) -> String { text("search_friends_placeholder", language) }
+
+    // Overload accepting LanguageManager.Language so call sites can pass currentLanguage directly
+    static func text(_ key: String, _ language: LanguageManager.Language) -> String {
+        let mapped: AppLanguage
+        switch language {
+        case .korean:            mapped = .korean
+        case .english:           mapped = .english
+        case .japanese:          mapped = .japanese
+        case .chinese,
+             .chineseTraditional: mapped = .chinese
+        case .spanish:           mapped = .spanish
+        }
+        return text(key, mapped)
+    }
 }
 
 /// Minimal protocol to read the current app language without importing the app's LanguageManager here.

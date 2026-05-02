@@ -20,9 +20,9 @@ struct BlockedFriendsView: View {
             List {
                 if blockedFriends.isEmpty {
                     ContentUnavailableView(
-                        L10n.text("no_blocked_friends", languageManager.currentLanguage == .korean ? .korean : .english),
+                        L10n.text("no_blocked_friends", languageManager.currentLanguage),
                         systemImage: "person.slash",
-                        description: Text(L10n.text("no_blocked_friends", languageManager.currentLanguage == .korean ? .korean : .english))
+                        description: Text(L10n.text("no_blocked_friends", languageManager.currentLanguage))
                     )
                 } else {
                     ForEach(blockedFriends, id: \.id) { friendship in
@@ -30,11 +30,11 @@ struct BlockedFriendsView: View {
                     }
                 }
             }
-            .navigationTitle(L10n.text("blocked_list", languageManager.currentLanguage == .korean ? .korean : .english))
+            .navigationTitle(L10n.text("blocked_list", languageManager.currentLanguage))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(L10n.text("close", languageManager.currentLanguage == .korean ? .korean : .english)) {
+                    Button(L10n.text("close", languageManager.currentLanguage)) {
                         dismiss()
                     }
                 }
@@ -61,27 +61,27 @@ struct BlockedFriendRow: View {
                     .font(.headline)
                     .foregroundColor(.primary)
 
-                Text(L10n.text("blocked", languageManager.currentLanguage == .korean ? .korean : .english))
+                Text(L10n.text("blocked", languageManager.currentLanguage))
                     .font(.caption)
                     .foregroundColor(.red)
             }
 
             Spacer()
 
-            Button(L10n.text("unblock", languageManager.currentLanguage == .korean ? .korean : .english)) {
+            Button(L10n.text("unblock", languageManager.currentLanguage)) {
                 showingUnblockAlert = true
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
         }
         .padding(.vertical, 4)
-        .alert(L10n.text("unblock_friend", languageManager.currentLanguage == .korean ? .korean : .english), isPresented: $showingUnblockAlert) {
-            Button(L10n.text("cancel", languageManager.currentLanguage == .korean ? .korean : .english), role: .cancel) { }
-            Button(L10n.text("unblock", languageManager.currentLanguage == .korean ? .korean : .english), role: .destructive) {
+        .alert(L10n.text("unblock_friend", languageManager.currentLanguage), isPresented: $showingUnblockAlert) {
+            Button(L10n.text("cancel", languageManager.currentLanguage), role: .cancel) { }
+            Button(L10n.text("unblock", languageManager.currentLanguage), role: .destructive) {
                 unblockFriend()
             }
         } message: {
-            Text(String(format: L10n.text("unblock_message", languageManager.currentLanguage == .korean ? .korean : .english), friendship.friendName))
+            Text(String(format: L10n.text("unblock_message", languageManager.currentLanguage), friendship.friendName))
         }
     }
 
@@ -102,12 +102,12 @@ struct ManageFriendsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section(header: Text(L10n.text("hidden_list", languageManager.currentLanguage == .korean ? .korean : .english))) {
+                Section(header: Text(L10n.text("hidden_list", languageManager.currentLanguage))) {
                     if hiddenFriends.isEmpty {
                         ContentUnavailableView(
-                            L10n.text("no_hidden_friends", languageManager.currentLanguage == .korean ? .korean : .english),
+                            L10n.text("no_hidden_friends", languageManager.currentLanguage),
                             systemImage: "eye.slash",
-                            description: Text(L10n.text("no_hidden_friends", languageManager.currentLanguage == .korean ? .korean : .english))
+                            description: Text(L10n.text("no_hidden_friends", languageManager.currentLanguage))
                         )
                     } else {
                         ForEach(hiddenFriends, id: \.id) { friendship in
@@ -116,12 +116,12 @@ struct ManageFriendsView: View {
                     }
                 }
 
-                Section(header: Text(L10n.text("blocked_list", languageManager.currentLanguage == .korean ? .korean : .english))) {
+                Section(header: Text(L10n.text("blocked_list", languageManager.currentLanguage))) {
                     if blockedFriends.isEmpty {
                         ContentUnavailableView(
-                            L10n.text("no_blocked_friends", languageManager.currentLanguage == .korean ? .korean : .english),
+                            L10n.text("no_blocked_friends", languageManager.currentLanguage),
                             systemImage: "hand.raised.slash",
-                            description: Text(L10n.text("no_blocked_friends", languageManager.currentLanguage == .korean ? .korean : .english))
+                            description: Text(L10n.text("no_blocked_friends", languageManager.currentLanguage))
                         )
                     } else {
                         ForEach(blockedFriends, id: \.id) { friendship in
@@ -130,11 +130,11 @@ struct ManageFriendsView: View {
                     }
                 }
             }
-            .navigationTitle(L10n.text("manage_hidden_blocked", languageManager.currentLanguage == .korean ? .korean : .english))
+            .navigationTitle(L10n.text("manage_hidden_blocked", languageManager.currentLanguage))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(L10n.text("close", languageManager.currentLanguage == .korean ? .korean : .english)) {
+                    Button(L10n.text("close", languageManager.currentLanguage)) {
                         dismiss()
                     }
                 }
@@ -161,27 +161,27 @@ struct HiddenFriendRow: View {
                     .font(.headline)
                     .foregroundColor(.primary)
 
-                Text(L10n.text("hidden", languageManager.currentLanguage == .korean ? .korean : .english))
+                Text(L10n.text("hidden", languageManager.currentLanguage))
                     .font(.caption)
                     .foregroundColor(.gray)
             }
 
             Spacer()
 
-            Button(L10n.text("unhide", languageManager.currentLanguage == .korean ? .korean : .english)) {
+            Button(L10n.text("unhide", languageManager.currentLanguage)) {
                 showingUnhideAlert = true
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
         }
         .padding(.vertical, 4)
-        .alert(L10n.text("unhide_friend", languageManager.currentLanguage == .korean ? .korean : .english), isPresented: $showingUnhideAlert) {
-            Button(L10n.text("cancel", languageManager.currentLanguage == .korean ? .korean : .english), role: .cancel) { }
-            Button(L10n.text("unhide", languageManager.currentLanguage == .korean ? .korean : .english), role: .destructive) {
+        .alert(L10n.text("unhide_friend", languageManager.currentLanguage), isPresented: $showingUnhideAlert) {
+            Button(L10n.text("cancel", languageManager.currentLanguage), role: .cancel) { }
+            Button(L10n.text("unhide", languageManager.currentLanguage), role: .destructive) {
                 unhideFriend()
             }
         } message: {
-            Text(String(format: L10n.text("unhide_message", languageManager.currentLanguage == .korean ? .korean : .english), friendship.friendName))
+            Text(String(format: L10n.text("unhide_message", languageManager.currentLanguage), friendship.friendName))
         }
     }
 

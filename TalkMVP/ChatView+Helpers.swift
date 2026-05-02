@@ -39,7 +39,7 @@ extension ChatView {
     func accessibilityLabelForMessage(_ message: Message) -> String {
         let sender = message.isFromCurrentUser ? localizedText("me") : chatRoom.name
         let time = Self.timeFormatter.string(from: message.timestamp)
-        let lang: Language = languageManager.currentLanguage == .korean ? .korean : .english
+        let lang: Language = languageManager.currentLanguage.asLocalizationLanguage
         let svc = LocalizationService.shared
 
         let contentLabel: String
@@ -248,7 +248,7 @@ extension ChatView {
 
     func localizedText(_ key: String) -> String {
         guard let locKey = LocalizationKey(rawValue: key) else { return key }
-        let language: Language = languageManager.currentLanguage == .korean ? .korean : .english
+        let language: Language = languageManager.currentLanguage.asLocalizationLanguage
         return LocalizationService.shared.text(for: locKey, language: language)
     }
 }

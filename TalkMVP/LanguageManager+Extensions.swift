@@ -7,6 +7,20 @@
 
 import Foundation
 
+extension LanguageManager.Language {
+    /// Converts to the LocalizationService.Language type used in ChatView helpers.
+    var asLocalizationLanguage: Language {
+        switch self {
+        case .korean:            return .korean
+        case .english:           return .english
+        case .japanese:          return .japanese
+        case .chinese,
+             .chineseTraditional: return .chinese
+        case .spanish:           return .spanish
+        }
+    }
+}
+
 extension LanguageManager {
     /// Convenience flag for checking if the current app language is Korean.
     var isKorean: Bool { currentLanguage == .korean }

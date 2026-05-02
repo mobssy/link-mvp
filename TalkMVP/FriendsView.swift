@@ -120,7 +120,7 @@ struct FriendsView: View {
                 }
 
                 if showNewFriendsSection && newFriendsCount > 0 {
-                    Section(header: Text(String(format: L10n.text("new_friends", languageManager.currentLanguage == .korean ? .korean : .english), newFriendsCount))) {
+                    Section(header: Text(String(format: L10n.text("new_friends", languageManager.currentLanguage), newFriendsCount))) {
                         ForEach(newFriends, id: \.id) { friendship in
                             FriendRow(friendship: friendship, onDataChanged: loadFriendships, onOpened: { markFriendAsSeen(friendship) })
                         }
@@ -130,7 +130,7 @@ struct FriendsView: View {
 
                 // Received Friend Requests
                 if !receivedRequests.isEmpty {
-                    Section(String(format: L10n.text("received_requests", languageManager.currentLanguage == .korean ? .korean : .english), receivedRequests.count)) {
+                    Section(String(format: L10n.text("received_requests", languageManager.currentLanguage), receivedRequests.count)) {
                         ForEach(receivedRequests, id: \.id) { friendship in
                             ReceivedRequestRow(
                                 friendship: friendship,
@@ -158,7 +158,7 @@ struct FriendsView: View {
                     } header: {
                         HStack(spacing: 6) {
                             Image(systemName: "person.badge.plus")
-                            Text(String(format: L10n.text("sent_requests", languageManager.currentLanguage == .korean ? .korean : .english), pendingRequests.count))
+                            Text(String(format: L10n.text("sent_requests", languageManager.currentLanguage), pendingRequests.count))
                         }
                     }
                     .headerProminence(.increased)
@@ -174,14 +174,14 @@ struct FriendsView: View {
                         HStack(spacing: 6) {
                             Image(systemName: "star.fill")
                                 .foregroundColor(.yellow)
-                            Text(L10n.text("favorites", languageManager.currentLanguage == .korean ? .korean : .english))
+                            Text(L10n.text("favorites", languageManager.currentLanguage))
                         }
                     }
                     .headerProminence(.increased)
                 }
 
                 // Friends List
-                Section(String(format: L10n.text("friends_list", languageManager.currentLanguage == .korean ? .korean : .english), regularFriends.count)) {
+                Section(String(format: L10n.text("friends_list", languageManager.currentLanguage), regularFriends.count)) {
                     if regularFriends.isEmpty && !searchText.isEmpty {
                         ContentUnavailableView(
                             NSLocalizedString("no_search_results", comment: ""),
@@ -194,12 +194,12 @@ struct FriendsView: View {
                                 .font(.system(size: 60))
                                 .foregroundColor(.gray)
 
-                            Text(L10n.text("no_friends_yet", languageManager.currentLanguage == .korean ? .korean : .english))
+                            Text(L10n.text("no_friends_yet", languageManager.currentLanguage))
                                 .font(.title2)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.primary)
 
-                            Text(L10n.text("add_friends_suggestion", languageManager.currentLanguage == .korean ? .korean : .english))
+                            Text(L10n.text("add_friends_suggestion", languageManager.currentLanguage))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
 
@@ -208,7 +208,7 @@ struct FriendsView: View {
                             }) {
                                 HStack {
                                     Image(systemName: "person.badge.plus")
-                                    Text(L10n.text("add_friend_by_email", languageManager.currentLanguage == .korean ? .korean : .english))
+                                    Text(L10n.text("add_friend_by_email", languageManager.currentLanguage))
                                 }
                                 .font(.headline)
                                 .foregroundColor(.white)
@@ -249,8 +249,8 @@ struct FriendsView: View {
                 .headerProminence(.increased)
             }
             .listStyle(.insetGrouped)
-            .navigationTitle(L10n.text("friends", languageManager.currentLanguage == .korean ? .korean : .english))
-            .searchable(text: $searchText, prompt: L10n.text("search_friends_placeholder", languageManager.currentLanguage == .korean ? .korean : .english))
+            .navigationTitle(L10n.text("friends", languageManager.currentLanguage))
+            .searchable(text: $searchText, prompt: L10n.text("search_friends_placeholder", languageManager.currentLanguage))
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -258,19 +258,19 @@ struct FriendsView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
-                    .accessibilityLabel(L10n.text("add_friend", languageManager.currentLanguage == .korean ? .korean : .english))
+                    .accessibilityLabel(L10n.text("add_friend", languageManager.currentLanguage))
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button {
                             activeSheet = .manageHiddenBlocked
                         } label: {
-                            Label(L10n.text("manage_hidden_blocked", languageManager.currentLanguage == .korean ? .korean : .english), systemImage: "eye.slash")
+                            Label(L10n.text("manage_hidden_blocked", languageManager.currentLanguage), systemImage: "eye.slash")
                         }
                         Button {
                             activeSheet = .settings
                         } label: {
-                            Label(L10n.text("settings", languageManager.currentLanguage == .korean ? .korean : .english), systemImage: "gearshape")
+                            Label(L10n.text("settings", languageManager.currentLanguage), systemImage: "gearshape")
                         }
                     } label: {
                         Image(systemName: "gearshape")

@@ -242,7 +242,14 @@ struct CompoundAlertModifier: ViewModifier {
     @EnvironmentObject private var languageManager: LanguageManager
 
     private var language: Language {
-        languageManager.currentLanguage == .korean ? .korean : .english
+        switch languageManager.currentLanguage {
+        case .korean:            return .korean
+        case .english:           return .english
+        case .japanese:          return .japanese
+        case .chinese,
+             .chineseTraditional: return .chinese
+        case .spanish:           return .spanish
+        }
     }
 
     func body(content: Content) -> some View {

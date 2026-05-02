@@ -52,7 +52,7 @@ struct FriendsListView: View {
 
     private var trailingAddFriend: some ToolbarContent {
         ToolbarItem(placement: .navigationBarTrailing) {
-            let appLanguage: AppLanguage = languageManager.currentLanguage == .korean ? .korean : .english
+            let appLanguage = languageManager.appLanguage
             let label = L10n.text("add_friend", appLanguage)
             Button(action: addSampleFriend) {
                 Image(systemName: "plus")
@@ -65,7 +65,7 @@ struct FriendsListView: View {
     @ViewBuilder
     private var emptyStateView: some View {
         VStack(spacing: 12) {
-            let appLanguage: AppLanguage = languageManager.currentLanguage == .korean ? .korean : .english
+            let appLanguage = languageManager.appLanguage
             Text(L10n.text("friends_empty", appLanguage))
                 .foregroundColor(.secondary)
             Button(L10n.text("add_sample_friend", appLanguage)) { addSampleFriend() }
@@ -80,14 +80,14 @@ struct FriendsListView: View {
                 FriendsListRow(name: room.name, idString: room.id.uuidString)
             }
             .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                let appLanguage: AppLanguage = languageManager.currentLanguage == .korean ? .korean : .english
+                let appLanguage = languageManager.appLanguage
                 let isPinned = pinnedIDs.contains(room.id.uuidString)
                 Button(L10n.text(isPinned ? "unpin" : "pin_to_top", appLanguage)) {
                     togglePin(for: room)
                 }.tint(.yellow)
             }
             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                let appLanguage: AppLanguage = languageManager.currentLanguage == .korean ? .korean : .english
+                let appLanguage = languageManager.appLanguage
                 Button(role: .destructive) {
                     delete(room)
                 } label: {
@@ -108,14 +108,14 @@ struct FriendsListView: View {
                 }
             }
             .navigationTitle({
-                let appLanguage: AppLanguage = languageManager.currentLanguage == .korean ? .korean : .english
+                let appLanguage = languageManager.appLanguage
                 return L10n.text("friends", appLanguage)
             }())
             .toolbar {
                 trailingAddFriend
             }
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: {
-                let appLanguage: AppLanguage = languageManager.currentLanguage == .korean ? .korean : .english
+                let appLanguage = languageManager.appLanguage
                 return L10n.text("search_friends_placeholder", appLanguage)
             }())
             .onAppear {

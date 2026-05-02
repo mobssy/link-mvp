@@ -118,7 +118,7 @@ struct ReactionPickerView: View {
     }
 
     private var currentLanguage: Language {
-        languageManager.currentLanguage == .korean ? .korean : .english
+        languageManager.currentLanguage.asLocalizationLanguage
     }
 
     private func reactionLabel(_ emoji: String) -> String {
@@ -191,7 +191,7 @@ struct TranslatedTextView: View {
     }
 
     private var currentLanguage: Language {
-        languageManager.currentLanguage == .korean ? .korean : .english
+        languageManager.currentLanguage.asLocalizationLanguage
     }
 
     private func translate() {
@@ -282,7 +282,7 @@ struct OrgRoomSettingsView: View {
     }
 
     private var currentLanguage: Language {
-        languageManager.currentLanguage == .korean ? .korean : .english
+        languageManager.currentLanguage.asLocalizationLanguage
     }
 
     private func modeText(_ mode: WeekdayMode) -> String {
@@ -387,7 +387,7 @@ struct MiniProfileSheet: View {
     }
 
     private var currentLanguage: Language {
-        languageManager.currentLanguage == .korean ? .korean : .english
+        languageManager.currentLanguage.asLocalizationLanguage
     }
 }
 
@@ -543,7 +543,7 @@ struct AttachmentPreviewView: View {
     }
 
     private var currentLanguage: Language {
-        languageManager.currentLanguage == .korean ? .korean : .english
+        languageManager.currentLanguage.asLocalizationLanguage
     }
 }
 
