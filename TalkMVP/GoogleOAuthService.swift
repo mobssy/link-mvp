@@ -90,14 +90,7 @@ enum GoogleOAuthError: LocalizedError {
     }
 
     private static func loc(ko: String, en: String, ja: String, zh: String, es: String) -> String {
-        let lang: String
-        if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") {
-            lang = saved
-        } else if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first {
-            lang = first
-        } else {
-            lang = "en"
-        }
+        let lang = LanguageManager.currentLanguageCode
         if lang.hasPrefix("ko") { return ko }
         if lang.hasPrefix("ja") { return ja }
         if lang.hasPrefix("zh") { return zh }

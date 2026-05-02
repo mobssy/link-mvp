@@ -22,6 +22,14 @@ extension LanguageManager.Language {
 }
 
 extension LanguageManager {
+    /// Reads the persisted language code from UserDefaults.
+    /// Use this in non-View contexts (ViewModels, services) that cannot access the @EnvironmentObject.
+    static var currentLanguageCode: String {
+        if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") { return saved }
+        if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first }
+        return "en"
+    }
+
     /// Convenience flag for checking if the current app language is Korean.
     var isKorean: Bool { currentLanguage == .korean }
 

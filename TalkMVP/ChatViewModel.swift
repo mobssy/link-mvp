@@ -31,10 +31,7 @@ class ChatViewModel: ObservableObject {
     private var translationTargetLanguage: String {
         let stored = UserDefaults.standard.string(forKey: "translationTargetLanguage") ?? "auto"
         guard stored == "auto" else { return stored }
-        // Resolve "auto" to the current app language instead of hardcoding English
-        if let lang = UserDefaults.standard.string(forKey: "selectedLanguage") { return lang }
-        if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first }
-        return "en"
+        return LanguageManager.currentLanguageCode
     }
 
     // Dependencies injected via constructor (Dependency Inversion Principle)
@@ -50,14 +47,8 @@ class ChatViewModel: ObservableObject {
         UserDefaults.standard.string(forKey: "currentUserId") ?? "currentUser"
     }
 
-    private var currentAppLanguage: String {
-        if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") { return saved }
-        if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first }
-        return "en"
-    }
-
     private func localizedVM(ko: String, en: String, ja: String, zh: String, es: String) -> String {
-        let lang = currentAppLanguage
+        let lang = LanguageManager.currentLanguageCode
         if lang.hasPrefix("ko") { return ko }
         if lang.hasPrefix("ja") { return ja }
         if lang.hasPrefix("zh") { return zh }
@@ -107,7 +98,7 @@ class ChatViewModel: ObservableObject {
             messages = try await messageRepository.fetchMessages(for: chatRoom.id.uuidString)
         } catch {
             print("❌ [ChatViewModel] Failed to load messages: \(error)")
-            errorMessage = "Failed to load messages. Please try again."
+            errorMessage = localizedVM(ko: "메시지를 불러오지 못했습니다.", en: "Failed to load messages.", ja: "メッセージの読み込みに失敗しました。", zh: "加载消息失败。", es: "Error al cargar los mensajes.")
         }
     }
 
@@ -118,11 +109,7 @@ class ChatViewModel: ObservableObject {
         guard !trimmed.isEmpty else { return }
         guard translations[message.id] == nil else { return }
 
-        let currentLanguage: String = {
-            if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") { return saved }
-            if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first }
-            return "en"
-        }()
+        let currentLanguage = LanguageManager.currentLanguageCode
         // Show a user-friendly placeholder while translating
         let translatingText: String
         if currentLanguage.hasPrefix("ja") {
@@ -201,7 +188,7 @@ class ChatViewModel: ObservableObject {
 
             } catch {
                 print("❌ [ChatViewModel] Failed to send message: \(error)")
-                errorMessage = "Failed to send message. Please try again."
+                errorMessage = localizedVM(ko: "메시지 전송에 실패했습니다.", en: "Failed to send message.", ja: "メッセージの送信に失敗しました。", zh: "发送消息失败。", es: "Error al enviar el mensaje.")
                 // Rollback UI: remove the optimistically added message
                 if let index = messages.lastIndex(where: { $0.id == message.id }) {
                     messages.remove(at: index)
@@ -240,7 +227,7 @@ class ChatViewModel: ObservableObject {
 
             } catch {
                 print("❌ [ChatViewModel] Failed to send image: \(error)")
-                errorMessage = "Failed to send image. Please try again."
+                errorMessage = localizedVM(ko: "사진 전송에 실패했습니다.", en: "Failed to send image.", ja: "画像の送信に失敗しました。", zh: "发送图片失败。", es: "Error al enviar la imagen.")
                 // Rollback UI
                 if let index = messages.lastIndex(where: { $0.id == message.id }) {
                     messages.remove(at: index)
@@ -275,7 +262,7 @@ class ChatViewModel: ObservableObject {
                 chatService?.sendMessage(message, to: chatRoom)
             } catch {
                 print("❌ [ChatViewModel] Failed to send voice message: \(error)")
-                errorMessage = "Failed to send voice message. Please try again."
+                errorMessage = localizedVM(ko: "음성 메시지 전송에 실패했습니다.", en: "Failed to send voice message.", ja: "音声メッセージの送信に失敗しました。", zh: "发送语音消息失败。", es: "Error al enviar el mensaje de voz.")
                 if let index = messages.lastIndex(where: { $0.id == message.id }) {
                     messages.remove(at: index)
                 }
@@ -310,7 +297,7 @@ class ChatViewModel: ObservableObject {
 
             } catch {
                 print("❌ [ChatViewModel] Failed to send file: \(error)")
-                errorMessage = "Failed to send file. Please try again."
+                errorMessage = localizedVM(ko: "파일 전송에 실패했습니다.", en: "Failed to send file.", ja: "ファイルの送信に失敗しました。", zh: "发送文件失败。", es: "Error al enviar el archivo.")
                 // Rollback UI
                 if let index = messages.lastIndex(where: { $0.id == message.id }) {
                     messages.remove(at: index)

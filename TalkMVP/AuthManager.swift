@@ -34,18 +34,8 @@ class AuthManager: ObservableObject {
     var modelContext: ModelContext
 
     // MARK: - Lightweight localization for non-View layer
-    private func currentLanguageCode() -> String {
-        if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") {
-            return saved
-        }
-        if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first {
-            return first
-        }
-        return "en"
-    }
-
     private func loc(_ key: String, _ param: String = "") -> String {
-        let lang = currentLanguageCode()
+        let lang = LanguageManager.currentLanguageCode
         let isKo = lang.hasPrefix("ko")
         let isJa = lang.hasPrefix("ja")
         let isZh = lang.hasPrefix("zh")
@@ -138,7 +128,7 @@ class AuthManager: ObservableObject {
             clearCurrentUser()
 
             // 새 사용자 생성
-            let lang = currentLanguageCode()
+            let lang = LanguageManager.currentLanguageCode
             let defaultStatus: String
             if lang.hasPrefix("ko") { defaultStatus = "안녕하세요!" }
             else if lang.hasPrefix("ja") { defaultStatus = "よろしくお願いします！" }
