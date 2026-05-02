@@ -44,18 +44,44 @@ class AuthManager: ObservableObject {
         return "en"
     }
 
-    private func isKorean() -> Bool { currentLanguageCode().hasPrefix("ko") }
-
     private func loc(_ key: String, _ param: String = "") -> String {
+        let lang = currentLanguageCode()
+        let isKo = lang.hasPrefix("ko")
+        let isJa = lang.hasPrefix("ja")
+        let isZh = lang.hasPrefix("zh")
+        let isEs = lang.hasPrefix("es")
+
         switch key {
         case "signup_exists":
-            return isKorean() ? "이미 존재하는 사용자명 또는 이메일입니다." : "Username or email already exists."
+            if isKo { return "이미 존재하는 사용자명 또는 이메일입니다." }
+            if isJa { return "既に存在するユーザー名またはメールアドレスです。" }
+            if isZh { return "用户名或电子邮件已存在。" }
+            if isEs { return "El nombre de usuario o correo electrónico ya existe." }
+            return "Username or email already exists."
         case "signup_error_prefix":
-            return isKorean() ? "회원가입 중 오류가 발생했습니다: " : "An error occurred during sign up: "
+            if isKo { return "회원가입 중 오류가 발생했습니다: " }
+            if isJa { return "会員登録中にエラーが発生しました: " }
+            if isZh { return "注册时发生错误: " }
+            if isEs { return "Se produjo un error durante el registro: " }
+            return "An error occurred during sign up: "
         case "signin_not_found":
-            return isKorean() ? "존재하지 않는 사용자입니다." : "User not found."
+            if isKo { return "존재하지 않는 사용자입니다." }
+            if isJa { return "ユーザーが見つかりません。" }
+            if isZh { return "用户不存在。" }
+            if isEs { return "Usuario no encontrado." }
+            return "User not found."
         case "signin_error_prefix":
-            return isKorean() ? "로그인 중 오류가 발생했습니다: " : "An error occurred during sign in: "
+            if isKo { return "로그인 중 오류가 발생했습니다: " }
+            if isJa { return "ログイン中にエラーが発生しました: " }
+            if isZh { return "登录时发生错误: " }
+            if isEs { return "Se produjo un error durante el inicio de sesión: " }
+            return "An error occurred during sign in: "
+        case "apple_signin_error":
+            if isKo { return "Apple 로그인 중 오류가 발생했습니다." }
+            if isJa { return "Apple サインイン中にエラーが発生しました。" }
+            if isZh { return "Apple登录时发生错误。" }
+            if isEs { return "Se produjo un error durante el inicio de sesión con Apple." }
+            return "An error occurred during Apple sign in."
         default:
             return param.isEmpty ? key : "\(key) \(param)"
         }
@@ -288,9 +314,7 @@ class AuthManager: ObservableObject {
             currentUser = user
             isAuthenticated = true
         } catch {
-            errorMessage = isKorean()
-                ? "Apple 로그인 중 오류가 발생했습니다."
-                : "An error occurred during Apple sign in."
+            errorMessage = loc("apple_signin_error")
         }
 
         isLoading = false

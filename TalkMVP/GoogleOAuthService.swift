@@ -47,16 +47,62 @@ enum GoogleOAuthError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notConfigured:
-            return "Google 로그인 설정이 필요합니다. GoogleOAuthConfig에서 Client ID를 설정해주세요."
+            return Self.loc(
+                ko: "Google 로그인 설정이 필요합니다. GoogleOAuthConfig에서 Client ID를 설정해주세요.",
+                en: "Google Sign-In is not configured. Please set your Client ID in GoogleOAuthConfig.",
+                ja: "Google ログインの設定が必要です。GoogleOAuthConfigでClient IDを設定してください。",
+                zh: "需要配置Google登录。请在GoogleOAuthConfig中设置Client ID。",
+                es: "Google Sign-In no está configurado. Configura el Client ID en GoogleOAuthConfig."
+            )
         case .invalidURL:
-            return "잘못된 인증 URL입니다."
+            return Self.loc(
+                ko: "잘못된 인증 URL입니다.",
+                en: "Invalid authentication URL.",
+                ja: "無効な認証URLです。",
+                zh: "无效的认证URL。",
+                es: "URL de autenticación no válida."
+            )
         case .noAuthCode:
-            return "인증 코드를 받지 못했습니다."
+            return Self.loc(
+                ko: "인증 코드를 받지 못했습니다.",
+                en: "Failed to receive authentication code.",
+                ja: "認証コードを受け取れませんでした。",
+                zh: "未能收到认证码。",
+                es: "No se pudo recibir el código de autenticación."
+            )
         case .tokenExchangeFailed:
-            return "토큰 교환에 실패했습니다."
+            return Self.loc(
+                ko: "토큰 교환에 실패했습니다.",
+                en: "Token exchange failed.",
+                ja: "トークンの交換に失敗しました。",
+                zh: "令牌交换失败。",
+                es: "Error al intercambiar el token."
+            )
         case .invalidToken:
-            return "유효하지 않은 토큰입니다."
+            return Self.loc(
+                ko: "유효하지 않은 토큰입니다.",
+                en: "Invalid token.",
+                ja: "無効なトークンです。",
+                zh: "无效的令牌。",
+                es: "Token no válido."
+            )
         }
+    }
+
+    private static func loc(ko: String, en: String, ja: String, zh: String, es: String) -> String {
+        let lang: String
+        if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") {
+            lang = saved
+        } else if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first {
+            lang = first
+        } else {
+            lang = "en"
+        }
+        if lang.hasPrefix("ko") { return ko }
+        if lang.hasPrefix("ja") { return ja }
+        if lang.hasPrefix("zh") { return zh }
+        if lang.hasPrefix("es") { return es }
+        return en
     }
 }
 
