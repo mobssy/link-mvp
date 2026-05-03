@@ -151,15 +151,6 @@ class LanguageManager: ObservableObject {
         }
     }
 
-    // 지역화된 문자열을 가져오는 헬퍼 메서드
-    func localizedString(for key: String, defaultValue: String = "") -> String {
-        guard let path = Bundle.main.path(forResource: currentLanguage.rawValue, ofType: "lproj"),
-              let bundle = Bundle(path: path) else {
-            return NSLocalizedString(key, comment: "")
-        }
-        return bundle.localizedString(forKey: key, value: defaultValue, table: nil)
-    }
-
     // 디버깅을 위한 언어 설정 정보 제공
     func getLanguageInfo() -> [String: String] {
         let systemLanguage = Locale.preferredLanguages.first ?? "unknown"

@@ -13,14 +13,11 @@ import Combine
 @MainActor
 class NotificationManager: ObservableObject {
     @Published var hasPermission = false
-    @Published var pendingRequests: [UNNotificationRequest] = []
 
     private var notificationsEnabled: Bool { UserDefaults.standard.bool(forKey: "notificationsEnabled") }
 
     private func loc(ko: String, en: String, ja: String, zh: String, es: String) -> String {
-        let lang = UserDefaults.standard.string(forKey: "selectedLanguage")
-            ?? (UserDefaults.standard.array(forKey: "AppleLanguages") as? [String])?.first
-            ?? "en"
+        let lang = LanguageManager.currentLanguageCode
         if lang.hasPrefix("ko") { return ko }
         if lang.hasPrefix("ja") { return ja }
         if lang.hasPrefix("zh") { return zh }
