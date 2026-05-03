@@ -352,7 +352,8 @@ struct ChatScreen: View {
 }
 
 #Preview {
-    let container = try! ModelContainer(for: ChatRoom.self, Message.self)
+    let container = (try? ModelContainer(for: ChatRoom.self, Message.self))
+        ?? (try! ModelContainer(for: ChatRoom.self, Message.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true)))
 
     ChatListView()
         .modelContainer(container)
