@@ -115,7 +115,9 @@ struct GoogleOAuthService {
     // MARK: - Private
 
     private static func requestAuthCode(codeChallenge: String) async throws -> String {
-        var components = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")!
+        guard var components = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth") else {
+            throw GoogleOAuthError.invalidURL
+        }
         components.queryItems = [
             .init(name: "client_id",             value: GoogleOAuthConfig.clientID),
             .init(name: "redirect_uri",          value: GoogleOAuthConfig.redirectURI),
@@ -159,7 +161,10 @@ struct GoogleOAuthService {
             enum CodingKeys: String, CodingKey { case idToken = "id_token" }
         }
 
-        var request = URLRequest(url: URL(string: "https://oauth2.googleapis.com/token")!)
+        guard let tokenURL = URL(string: "https://oauth2.googleapis.com/token") else {
+            throw GoogleOAuthError.invalidURL
+        }
+        var request = URLRequest(url: tokenURL)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
 

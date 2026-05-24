@@ -50,7 +50,9 @@ final class VoiceMessageService: NSObject, ObservableObject, AVAudioRecorderDele
         recordingDuration = 0
 
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            DispatchQueue.main.async { self?.recordingDuration += 0.1 }
+            Task { @MainActor [weak self] in
+                self?.recordingDuration += 0.1
+            }
         }
         return true
     }

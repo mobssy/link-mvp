@@ -16,6 +16,7 @@ class RealtimeChatManager: ObservableObject {
     @Published var onlineUsers: Set<String> = []
 
     private var simulationTimer: Timer?
+    private var onlineUsersTimer: Timer?
     private var modelContext: ModelContext
     private var currentUserId: String?
 
@@ -69,6 +70,8 @@ class RealtimeChatManager: ObservableObject {
         isConnected = false
         simulationTimer?.invalidate()
         simulationTimer = nil
+        onlineUsersTimer?.invalidate()
+        onlineUsersTimer = nil
         onlineUsers.removeAll()
     }
 
@@ -83,25 +86,20 @@ class RealtimeChatManager: ObservableObject {
     }
 
     private func startSimulation() {
-        // 실시간 채팅 시뮬레이션
-        simulationTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { _ in
+        simulationTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
+            guard let self else { return }
             Task {
                 await self.simulateIncomingMessage()
             }
         }
-
-        // 온라인 사용자 시뮬레이션
         simulateOnlineUsers()
     }
 
     private func simulateOnlineUsers() {
         let sampleUsers = ["friend1", "friend2", "friend3", "friend4"]
-
-        // 랜덤하게 사용자들을 온라인/오프라인 상태로 변경
-        Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
-            Task { @MainActor in
-                let randomUser = sampleUsers.randomElement()!
-
+        onlineUsersTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, let randomUser = sampleUsers.randomElement() else { return }
                 if self.onlineUsers.contains(randomUser) {
                     self.onlineUsers.remove(randomUser)
                 } else {
@@ -138,7 +136,7 @@ class RealtimeChatManager: ObservableObject {
             "맛있는 식당 알아요? 🍽️"
         ]
 
-        let randomMessage = incomingMessages.randomElement()!
+        guard let randomMessage = incomingMessages.randomElement() else { return }
         let message = Message(
             text: randomMessage,
             isFromCurrentUser: false,
@@ -188,5 +186,6 @@ class RealtimeChatManager: ObservableObject {
 
     deinit {
         simulationTimer?.invalidate()
+        onlineUsersTimer?.invalidate()
     }
 }
