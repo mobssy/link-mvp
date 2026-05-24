@@ -7,7 +7,6 @@
 ![Swift](https://img.shields.io/badge/Swift-5.9+-F05138?style=flat-square&logo=swift&logoColor=white)
 ![Xcode](https://img.shields.io/badge/Xcode-15+-147EFB?style=flat-square&logo=xcode&logoColor=white)
 ![iOS](https://img.shields.io/badge/iOS-17+-000000?style=flat-square&logo=apple&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)
 
 <br/>
 
@@ -206,7 +205,6 @@ This source code is proprietary and confidential. Unauthorized copying, distribu
 ![Swift](https://img.shields.io/badge/Swift-5.9+-F05138?style=flat-square&logo=swift&logoColor=white)
 ![Xcode](https://img.shields.io/badge/Xcode-15+-147EFB?style=flat-square&logo=xcode&logoColor=white)
 ![iOS](https://img.shields.io/badge/iOS-17+-000000?style=flat-square&logo=apple&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)
 
 <br/>
 
