@@ -237,7 +237,7 @@ final class GoogleOAuthPresenter: NSObject, ASWebAuthenticationPresentationConte
         let windowScenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
         let activeScene = windowScenes.first(where: { $0.activationState == .foregroundActive }) ?? windowScenes.first
         guard let scene = activeScene else {
-            preconditionFailure("No window scene available")
+            return UIWindow()
         }
         return scene.windows.first(where: { $0.isKeyWindow }) ?? UIWindow(windowScene: scene)
     }

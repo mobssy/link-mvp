@@ -8,6 +8,9 @@
 import Foundation
 import Combine
 import SwiftData
+import os
+
+private let realtimeLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "RealtimeChatManager")
 
 @MainActor
 class RealtimeChatManager: ObservableObject {
@@ -151,7 +154,11 @@ class RealtimeChatManager: ObservableObject {
         randomRoom.timestamp = Date()
         randomRoom.unreadCount += 1
 
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            realtimeLogger.error("Failed to save simulated message: \(error)")
+        }
 
         // 실시간 알림 시뮬레이션
         sendNotification(from: randomRoom.name, message: randomMessage)

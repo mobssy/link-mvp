@@ -9,6 +9,7 @@ import Foundation
 import SwiftData
 import Combine
 import UserNotifications
+import os
 
 @ModelActor
 private actor AuthStoreActor {
@@ -23,6 +24,8 @@ private actor AuthStoreActor {
         return users.first != nil
     }
 }
+
+private let authLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "AuthManager")
 
 @MainActor
 class AuthManager: ObservableObject {
@@ -262,7 +265,11 @@ class AuthManager: ObservableObject {
             modelContext.insert(receivedRequest)
         }
 
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            authLogger.error("Failed to save sample friends: \(error)")
+        }
     }
 
     // MARK: - SSO Sign-In

@@ -283,10 +283,11 @@ fileprivate extension LanguageManager {
 }
 
 #Preview {
-    let container = try! ModelContainer(for: Message.self, ChatRoom.self, User.self, Friendship.self)
-    let context = ModelContext(container)
-    let auth = AuthManager(modelContext: context)
-    ContentView()
-        .environmentObject(auth)
-        .modelContainer(container)
+    if let container = try? ModelContainer(for: Message.self, ChatRoom.self, User.self, Friendship.self) {
+        ContentView()
+            .environmentObject(AuthManager(modelContext: ModelContext(container)))
+            .modelContainer(container)
+    } else {
+        Text("Preview unavailable")
+    }
 }

@@ -271,7 +271,7 @@ struct ChatScreen: View {
         }
         let name = room.name
         let descriptor = FetchDescriptor<Friendship>(predicate: #Predicate<Friendship> { f in
-            f.ownerUserId == currentUserId && f.userId == currentUserId && f.friendName == name
+            f.ownerUserId == currentUserId && f.friendName == name
         })
         do {
             let results = try modelContext.fetch(descriptor)

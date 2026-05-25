@@ -273,10 +273,11 @@ struct CustomTextField: View {
 }
 
 #Preview {
-    let container = try! ModelContainer(for: User.self)
-    let context = ModelContext(container)
-    let auth = AuthManager(modelContext: context)
-    return AuthView()
-        .environmentObject(auth)
-        .environmentObject(LanguageManager())
+    if let container = try? ModelContainer(for: User.self) {
+        AuthView()
+            .environmentObject(AuthManager(modelContext: ModelContext(container)))
+            .environmentObject(LanguageManager())
+    } else {
+        Text("Preview unavailable")
+    }
 }
