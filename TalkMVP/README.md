@@ -15,7 +15,7 @@ _A messenger that gets out of your way — and breaks language barriers while it
 
 <br/>
 
-![L!nk screenshot](Assets/main-04.png)
+![L!nk screenshot](Assets/main.png)
 
 </div>
 
@@ -107,11 +107,11 @@ It's the moment of connection — the spark when two people understand each othe
 
 ### Settings
 
-![Settings](Assets/settings1.png.png)
+![Settings](Assets/settings.png)
 
 ### Accessibility
 
-![Accessibility](Assets/accessibility1.png.png)
+![Accessibility](Assets/accessibility.png)
 
 ### Voice Message
 
@@ -257,7 +257,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 <br/>
 
-![L!nk screenshot](Assets/main-04.png)
+![L!nk screenshot](Assets/main.png)
 
 </div>
 
@@ -349,11 +349,11 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ### 설정
 
-![설정](Assets/settings1.png.png)
+![설정](Assets/settings.png)
 
 ### 접근성
 
-![접근성](Assets/accessibility1.png.png)
+![접근성](Assets/accessibility.png)
 
 ### 음성 메시지
 
