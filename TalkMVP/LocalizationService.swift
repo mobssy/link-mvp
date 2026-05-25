@@ -40,6 +40,9 @@ enum LocalizationKey: String {
     case networkError = "network_error", tryAgain = "try_again"
     case muteNotifications = "mute_notifications"
     case unmuteNotifications = "unmute_notifications"
+    case errorTitle = "error_title"
+    case friendRequestFailed = "friend_request_failed"
+    case blockFailed = "block_failed"
 
     // Permissions
     case permissionRequired = "permission_required", openSettings = "open_settings"
@@ -1086,6 +1089,30 @@ class LocalizationService: LocalizationServiceProtocol {
             case .japanese: return "もっと見る"
             case .chinese: return "更多选项"
             case .spanish: return "Más opciones"
+            }
+        case .errorTitle:
+            switch language {
+            case .korean: return "오류"
+            case .english: return "Error"
+            case .japanese: return "エラー"
+            case .chinese: return "错误"
+            case .spanish: return "Error"
+            }
+        case .friendRequestFailed:
+            switch language {
+            case .korean: return "친구 요청을 보내지 못했습니다. 다시 시도해주세요."
+            case .english: return "Failed to send friend request. Please try again."
+            case .japanese: return "友達リクエストの送信に失敗しました。もう一度お試しください。"
+            case .chinese: return "发送好友请求失败，请重试。"
+            case .spanish: return "Error al enviar solicitud de amistad. Inténtalo de nuevo."
+            }
+        case .blockFailed:
+            switch language {
+            case .korean: return "사용자를 차단하지 못했습니다. 다시 시도해주세요."
+            case .english: return "Failed to block user. Please try again."
+            case .japanese: return "ユーザーのブロックに失敗しました。もう一度お試しください。"
+            case .chinese: return "屏蔽用户失败，请重试。"
+            case .spanish: return "Error al bloquear al usuario. Inténtalo de nuevo."
             }
         }
     }

@@ -6,6 +6,9 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import os
+
+private let helpersLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ChatView")
 
 extension ChatView {
     func isWithinWorkingHours(for room: ChatRoom, now: Date = Date()) -> Bool {
@@ -25,9 +28,9 @@ extension ChatView {
     func setupViewModelIfNeeded() {
         chatService.modelContext = modelContext
 
-        if viewModel == nil {
+        if box.viewModel == nil {
             let vm = ChatViewModel(modelContext: modelContext, chatRoom: chatRoom, chatService: chatService)
-            self.viewModel = vm
+            box.install(vm)
             vm.startOnlineStatusPolling()
         } else {
             Task {
@@ -119,7 +122,7 @@ extension ChatView {
             )
             UIAccessibility.post(notification: .announcement, argument: announcement)
         } catch {
-            print("❌ [ChatView] Failed to save reaction: \(error)")
+            helpersLogger.error("Failed to save reaction: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -130,7 +133,7 @@ extension ChatView {
         do {
             try modelContext.save()
         } catch {
-            print("❌ [ChatView] Failed to save bookmark: \(error)")
+            helpersLogger.error("Failed to save bookmark: \(error.localizedDescription, privacy: .public)")
         }
         let label = message.isBookmarked
             ? languageManager.localize(ko: "북마크 추가됨", en: "Bookmarked", ja: "ブックマーク済み", zh: "已收藏", es: "Marcado")
@@ -156,7 +159,7 @@ extension ChatView {
             do {
                 try modelContext.save()
             } catch {
-                print("❌ [ChatView] Failed to delete expired messages: \(error)")
+                helpersLogger.error("Failed to delete expired messages: \(error.localizedDescription, privacy: .public)")
             }
             return
         }
@@ -178,7 +181,7 @@ extension ChatView {
                 do {
                     try modelContext.save()
                 } catch {
-                    print("❌ [ChatView] Failed to delete animated expired messages: \(error)")
+                    helpersLogger.error("Failed to delete animated expired messages: \(error.localizedDescription, privacy: .public)")
                 }
             }
         }
@@ -200,7 +203,7 @@ extension ChatView {
         do {
             try modelContext.save()
         } catch {
-            print("❌ [ChatView] Failed to save scheduled message: \(error)")
+            helpersLogger.error("Failed to save scheduled message: \(error.localizedDescription, privacy: .public)")
         }
         // Add to viewModel so the timer can find and send it
         viewModel.messages.append(message)
@@ -224,7 +227,7 @@ extension ChatView {
             do {
                 try modelContext.save()
             } catch {
-                print("❌ [ChatView] Failed to send scheduled message: \(error)")
+                helpersLogger.error("Failed to send scheduled message: \(error.localizedDescription, privacy: .public)")
             }
             // Re-sort so the message lands in chronological order
             viewModel.messages.sort { $0.timestamp < $1.timestamp }

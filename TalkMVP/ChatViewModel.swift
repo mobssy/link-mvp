@@ -10,6 +10,9 @@ import Combine
 import SwiftData
 import UIKit
 import SwiftUI
+import os
+
+private let vmLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ChatViewModel")
 
 @MainActor
 class ChatViewModel: ObservableObject {
@@ -20,6 +23,11 @@ class ChatViewModel: ObservableObject {
     @Published var isOnline = true
     @Published var replyingToMessage: Message?
     @Published var errorMessage: String?
+
+    // MARK: - Pagination
+    private static let pageSize = 50
+    @Published private(set) var hasMoreMessages = true
+    private var isLoadingMore = false
 
     // Translation state (no placeholder text while translating)
     @Published var translations: [UUID: String] = [:]
@@ -95,10 +103,38 @@ class ChatViewModel: ObservableObject {
 
     func loadMessages() async {
         do {
-            messages = try await messageRepository.fetchMessages(for: chatRoom.id.uuidString)
+            let fetched = try await messageRepository.fetchMessages(
+                for: chatRoom.id.uuidString,
+                limit: Self.pageSize,
+                before: nil
+            )
+            messages = fetched
+            hasMoreMessages = fetched.count == Self.pageSize
         } catch {
-            print("❌ [ChatViewModel] Failed to load messages: \(error)")
+            vmLogger.error("Failed to load messages: \(error.localizedDescription, privacy: .public)")
             errorMessage = localizedVM(ko: "메시지를 불러오지 못했습니다.", en: "Failed to load messages.", ja: "メッセージの読み込みに失敗しました。", zh: "加载消息失败。", es: "Error al cargar los mensajes.")
+        }
+    }
+
+    func loadMoreMessages() async {
+        guard hasMoreMessages, !isLoadingMore else { return }
+        isLoadingMore = true
+        defer { isLoadingMore = false }
+
+        let oldestTimestamp = messages.first?.timestamp
+        do {
+            let older = try await messageRepository.fetchMessages(
+                for: chatRoom.id.uuidString,
+                limit: Self.pageSize,
+                before: oldestTimestamp
+            )
+            // Prepend older messages; avoid duplicates at the seam
+            let existingIds = Set(messages.map { $0.id })
+            let unique = older.filter { !existingIds.contains($0.id) }
+            messages = unique + messages
+            hasMoreMessages = older.count == Self.pageSize
+        } catch {
+            vmLogger.error("Failed to load more messages: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -187,7 +223,7 @@ class ChatViewModel: ObservableObject {
                 chatService?.sendMessage(message, to: chatRoom)
 
             } catch {
-                print("❌ [ChatViewModel] Failed to send message: \(error)")
+                vmLogger.error("Failed to send message: \(error.localizedDescription, privacy: .public)")
                 errorMessage = localizedVM(ko: "메시지 전송에 실패했습니다.", en: "Failed to send message.", ja: "メッセージの送信に失敗しました。", zh: "发送消息失败。", es: "Error al enviar el mensaje.")
                 // Rollback UI: remove the optimistically added message
                 if let index = messages.lastIndex(where: { $0.id == message.id }) {
@@ -226,7 +262,7 @@ class ChatViewModel: ObservableObject {
                 chatService?.sendMessage(message, to: chatRoom)
 
             } catch {
-                print("❌ [ChatViewModel] Failed to send image: \(error)")
+                vmLogger.error("Failed to send image: \(error.localizedDescription, privacy: .public)")
                 errorMessage = localizedVM(ko: "사진 전송에 실패했습니다.", en: "Failed to send image.", ja: "画像の送信に失敗しました。", zh: "发送图片失败。", es: "Error al enviar la imagen.")
                 // Rollback UI
                 if let index = messages.lastIndex(where: { $0.id == message.id }) {
@@ -261,7 +297,7 @@ class ChatViewModel: ObservableObject {
                 )
                 chatService?.sendMessage(message, to: chatRoom)
             } catch {
-                print("❌ [ChatViewModel] Failed to send voice message: \(error)")
+                vmLogger.error("Failed to send voice message: \(error.localizedDescription, privacy: .public)")
                 errorMessage = localizedVM(ko: "음성 메시지 전송에 실패했습니다.", en: "Failed to send voice message.", ja: "音声メッセージの送信に失敗しました。", zh: "发送语音消息失败。", es: "Error al enviar el mensaje de voz.")
                 if let index = messages.lastIndex(where: { $0.id == message.id }) {
                     messages.remove(at: index)
@@ -296,7 +332,7 @@ class ChatViewModel: ObservableObject {
                 chatService?.sendMessage(message, to: chatRoom)
 
             } catch {
-                print("❌ [ChatViewModel] Failed to send file: \(error)")
+                vmLogger.error("Failed to send file: \(error.localizedDescription, privacy: .public)")
                 errorMessage = localizedVM(ko: "파일 전송에 실패했습니다.", en: "Failed to send file.", ja: "ファイルの送信に失敗しました。", zh: "发送文件失败。", es: "Error al enviar el archivo.")
                 // Rollback UI
                 if let index = messages.lastIndex(where: { $0.id == message.id }) {
@@ -356,7 +392,7 @@ class ChatViewModel: ObservableObject {
                     }
                 )
             } catch {
-                print("❌ [ChatViewModel] Auto response failed: \(error)")
+                vmLogger.error("Auto response failed: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -366,7 +402,7 @@ class ChatViewModel: ObservableObject {
             try await chatRoomRepository.updateUnreadCount(for: chatRoom.id, count: 0)
             chatService?.markAsRead(chatRoom: chatRoom)
         } catch {
-            print("❌ [ChatViewModel] Failed to mark as read: \(error)")
+            vmLogger.error("Failed to mark as read: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -399,7 +435,7 @@ class ChatViewModel: ObservableObject {
                 // Send to server
                 chatService?.sendReaction(emoji, to: message, in: chatRoom)
             } catch {
-                print("❌ [ChatViewModel] Failed to save reaction: \(error)")
+                vmLogger.error("Failed to save reaction: \(error.localizedDescription, privacy: .public)")
                 errorMessage = "Failed to add reaction. Please try again."
                 // Rollback UI: remove the reaction from the message
                 message.removeReaction(emoji, from: currentUserId)
@@ -418,7 +454,7 @@ class ChatViewModel: ObservableObject {
 
                 chatService?.removeReaction(emoji, from: message, in: chatRoom)
             } catch {
-                print("❌ [ChatViewModel] Failed to remove reaction: \(error)")
+                vmLogger.error("Failed to remove reaction: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -461,7 +497,7 @@ class ChatViewModel: ObservableObject {
 
                 chatService?.editMessage(message, in: chatRoom)
             } catch {
-                print("❌ [ChatViewModel] Failed to edit message: \(error)")
+                vmLogger.error("Failed to edit message: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -505,7 +541,7 @@ class ChatViewModel: ObservableObject {
                 try await messageRepository.deleteMessage(message)
                 chatService?.deleteMessage(message, in: chatRoom)
             } catch {
-                print("❌ [ChatViewModel] Failed to delete message: \(error)")
+                vmLogger.error("Failed to delete message: \(error.localizedDescription, privacy: .public)")
                 errorMessage = localizedVM(ko: "메시지 삭제에 실패했습니다.", en: "Failed to delete message.", ja: "メッセージの削除に失敗しました。", zh: "删除消息失败。", es: "Error al eliminar el mensaje.")
                 messages.append(message)
                 messages.sort { $0.timestamp < $1.timestamp }
@@ -527,7 +563,7 @@ class ChatViewModel: ObservableObject {
                 // 서버에는 숨김 처리 요청 전송 (실제 구현 시)
                 // chatService?.hideMessage(message, for: currentUserId, in: chatRoom)
             } catch {
-                print("❌ [ChatViewModel] Failed to hide message: \(error)")
+                vmLogger.error("Failed to hide message: \(error.localizedDescription, privacy: .public)")
                 errorMessage = localizedVM(ko: "메시지 숨기기에 실패했습니다.", en: "Failed to hide message.", ja: "メッセージの非表示に失敗しました。", zh: "隐藏消息失败。", es: "Error al ocultar el mensaje.")
                 // Rollback UI
                 messages.append(message)

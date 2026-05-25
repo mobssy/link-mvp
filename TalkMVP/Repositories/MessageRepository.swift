@@ -7,12 +7,19 @@
 
 import Foundation
 import SwiftData
+import os
+
+private let repoLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "MessageRepository")
 
 /// Protocol defining message data operations
 /// This abstraction allows easy replacement with Firebase later
 protocol MessageRepositoryProtocol {
-    /// Fetch messages for a specific chat room
-    func fetchMessages(for chatRoomId: String) async throws -> [Message]
+    /// Fetch a page of messages for a chat room, sorted oldest-first.
+    /// - Parameters:
+    ///   - chatRoomId: The room to query.
+    ///   - limit: Maximum number of messages to return.
+    ///   - before: If non-nil, only messages older than this timestamp are returned (enables pagination).
+    func fetchMessages(for chatRoomId: String, limit: Int, before: Date?) async throws -> [Message]
 
     /// Save a new message
     func saveMessage(_ message: Message) async throws
@@ -37,18 +44,23 @@ class LocalMessageRepository: MessageRepositoryProtocol {
         self.modelContext = modelContext
     }
 
-    func fetchMessages(for chatRoomId: String) async throws -> [Message] {
-        let descriptor = FetchDescriptor<Message>(
-            predicate: #Predicate { message in
-                message.chatRoomId == chatRoomId
+    func fetchMessages(for chatRoomId: String, limit: Int, before: Date?) async throws -> [Message] {
+        // When `before` is nil we want all messages, so we use distantFuture as the upper bound.
+        let cutoff = before ?? Date.distantFuture
+        var descriptor = FetchDescriptor<Message>(
+            predicate: #Predicate<Message> { message in
+                message.chatRoomId == chatRoomId && message.timestamp < cutoff
             },
-            sortBy: [SortDescriptor(\Message.timestamp)]
+            // Fetch newest-first so fetchLimit discards the oldest, then we reverse.
+            sortBy: [SortDescriptor(\Message.timestamp, order: .reverse)]
         )
+        descriptor.fetchLimit = limit
 
         do {
-            return try modelContext.fetch(descriptor)
+            let fetched = try modelContext.fetch(descriptor)
+            return fetched.reversed() // Return chronological (oldest → newest)
         } catch {
-            print("❌ [MessageRepository] Failed to fetch messages: \(error)")
+            repoLogger.error("Failed to fetch messages: \(error.localizedDescription, privacy: .public)")
             throw RepositoryError.fetchFailed(error)
         }
     }
@@ -58,7 +70,7 @@ class LocalMessageRepository: MessageRepositoryProtocol {
             modelContext.insert(message)
             try modelContext.save()
         } catch {
-            print("❌ [MessageRepository] Failed to save message: \(error)")
+            repoLogger.error("Failed to save message: \(error.localizedDescription, privacy: .public)")
             throw RepositoryError.saveFailed(error)
         }
     }
@@ -67,7 +79,7 @@ class LocalMessageRepository: MessageRepositoryProtocol {
         do {
             try modelContext.save()
         } catch {
-            print("❌ [MessageRepository] Failed to update message: \(error)")
+            repoLogger.error("Failed to update message: \(error.localizedDescription, privacy: .public)")
             throw RepositoryError.updateFailed(error)
         }
     }
@@ -77,7 +89,7 @@ class LocalMessageRepository: MessageRepositoryProtocol {
             modelContext.delete(message)
             try modelContext.save()
         } catch {
-            print("❌ [MessageRepository] Failed to delete message: \(error)")
+            repoLogger.error("Failed to delete message: \(error.localizedDescription, privacy: .public)")
             throw RepositoryError.deleteFailed(error)
         }
     }

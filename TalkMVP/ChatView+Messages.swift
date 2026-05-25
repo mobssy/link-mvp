@@ -22,6 +22,16 @@ extension ChatView {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(spacing: 8) {
+                    // Pagination trigger: appears when the user scrolls to the top
+                    if viewModel.hasMoreMessages {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .onAppear {
+                                Task { await viewModel.loadMoreMessages() }
+                            }
+                    }
+
                     messagesList(viewModel: viewModel)
 
                     if viewModel.otherUserTyping {

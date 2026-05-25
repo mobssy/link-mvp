@@ -5,6 +5,9 @@
 
 import SwiftUI
 import SwiftData
+import os
+
+private let friendsLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ChatView.Friends")
 
 extension ChatView {
     func checkIfFriend() {
@@ -23,7 +26,7 @@ extension ChatView {
             let friendships = try modelContext.fetch(descriptor)
             isFriend = !friendships.isEmpty
         } catch {
-            print("❌ [ChatView] Failed to check friendship: \(error)")
+            friendsLogger.error("Failed to check friendship: \(error.localizedDescription, privacy: .public)")
             isFriend = false
         }
     }
@@ -38,7 +41,7 @@ extension ChatView {
         do {
             try modelContext.save()
         } catch {
-            print("❌ [ChatView] Failed to mark messages as read: \(error)")
+            friendsLogger.error("Failed to mark messages as read: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -46,7 +49,7 @@ extension ChatView {
         guard let otherUserId = chatRoom.otherUserId,
               let otherUserEmail = chatRoom.otherUserEmail,
               let currentUserId = getCurrentUserId() else {
-            print("❌ [ChatView] Missing user information for friend request")
+            friendsLogger.warning("Missing user information for friend request")
             return
         }
 
@@ -80,7 +83,8 @@ extension ChatView {
             isFriend = true
             NotificationCenter.default.post(name: .friendshipPendingCreated, object: nil, userInfo: ["friendId": otherUserId])
         } catch {
-            print("❌ [ChatView] Failed to send friend request: \(error)")
+            friendsLogger.error("Failed to send friend request: \(error.localizedDescription, privacy: .public)")
+            box.viewModel?.errorMessage = localizedText("friend_request_failed")
         }
     }
 
@@ -91,7 +95,7 @@ extension ChatView {
         do {
             return try modelContext.fetch(descriptor).first?.id.uuidString
         } catch {
-            print("❌ [ChatView] Failed to get current user: \(error)")
+            friendsLogger.error("Failed to get current user: \(error.localizedDescription, privacy: .public)")
             return nil
         }
     }
@@ -101,14 +105,14 @@ extension ChatView {
         do {
             try modelContext.save()
         } catch {
-            print("❌ [ChatView] Failed to save notification setting: \(error)")
+            friendsLogger.error("Failed to save notification setting: \(error.localizedDescription, privacy: .public)")
         }
     }
 
     func blockUser() {
         guard let otherUserId = chatRoom.otherUserId,
               let currentUserId = getCurrentUserId() else {
-            print("❌ [ChatView] Missing user information for blocking")
+            friendsLogger.warning("Missing user information for blocking")
             return
         }
 
@@ -126,7 +130,8 @@ extension ChatView {
                 NotificationCenter.default.post(name: .friendshipStatusChanged, object: nil, userInfo: ["friendId": otherUserId])
             }
         } catch {
-            print("❌ [ChatView] Failed to block user: \(error)")
+            friendsLogger.error("Failed to block user: \(error.localizedDescription, privacy: .public)")
+            box.viewModel?.errorMessage = localizedText("block_failed")
         }
     }
 

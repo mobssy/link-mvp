@@ -15,6 +15,22 @@ import LinkPresentation
 import UIKit
 import Contacts
 
+// Wraps ChatViewModel as @StateObject so ChatView re-renders on every @Published change.
+// Direct @StateObject for an optional is not supported in SwiftUI — this box bridges the gap.
+@MainActor
+final class ChatViewModelContainer: ObservableObject {
+    @Published private(set) var viewModel: ChatViewModel?
+    private var cancellable: AnyCancellable?
+
+    func install(_ vm: ChatViewModel) {
+        viewModel = vm
+        // Forward the viewModel's objectWillChange into this container so
+        // any @Published mutation in ChatViewModel triggers a ChatView redraw.
+        cancellable = vm.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+    }
+}
+
 struct ChatView: View {
     @Environment(\.modelContext) var modelContext
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -26,7 +42,9 @@ struct ChatView: View {
     let chatRoom: ChatRoom
 
     // MARK: - View Model
-    @State var viewModel: ChatViewModel?
+    // box is internal (not private) so ChatView extensions in other files can call box.install()
+    @StateObject var box = ChatViewModelContainer()
+    var viewModel: ChatViewModel? { box.viewModel }
     @StateObject var chatService: ChatService
 
     // MARK: - Input
@@ -328,6 +346,17 @@ struct ChatView: View {
             .onDisappear {
                 viewModel?.stopTyping()
                 viewModel?.stopOnlineStatusPolling()
+            }
+            .alert(
+                localizedText("error_title"),
+                isPresented: Binding(
+                    get: { box.viewModel?.errorMessage != nil },
+                    set: { if !$0 { box.viewModel?.errorMessage = nil } }
+                )
+            ) {
+                Button(localizedText("ok")) { box.viewModel?.errorMessage = nil }
+            } message: {
+                Text(box.viewModel?.errorMessage ?? "")
             }
             .dynamicTypeSize(dynamicTypeSize.isAccessibilitySize ? .accessibility3 : dynamicTypeSize)
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: localizedText("search_conversation"))
