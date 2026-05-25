@@ -1,6 +1,6 @@
 //
 //  ChatRoomBackgroundSettings.swift
-//  L!nkMVP
+//  TalkMVP
 //
 //  Chat room background customization view
 //

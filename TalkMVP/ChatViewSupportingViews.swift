@@ -1,6 +1,6 @@
 //
 //  ChatViewSupportingViews.swift
-//  L!nkMVP
+//  TalkMVP
 //
 //  Created by Claude Code
 //

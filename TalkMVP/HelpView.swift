@@ -121,7 +121,7 @@ struct HelpView: View {
 
         // Notifications
         case "faq_notifs_not_coming_q": return languageManager.localize(ko: "알림이 오지 않아요", en: "I'm not receiving notifications", ja: "通知が届きません", zh: "收不到通知", es: "No recibo notificaciones")
-        case "faq_notifs_not_coming_a1": return languageManager.localize(ko: "설정 → 알림에서 L!nkMVP 알림이 허용되어 있는지 확인하세요.", en: "Check Settings → Notifications and ensure L!nkMVP notifications are enabled.", ja: "設定 → 通知でL!nkMVPの通知が許可されているか確認してください。", zh: "检查设置 → 通知，确保L!nkMVP的通知已启用。", es: "Verifica en Ajustes → Notificaciones que las notificaciones de L!nkMVP estén activadas.")
+        case "faq_notifs_not_coming_a1": return languageManager.localize(ko: "설정 → 알림에서 TalkMVP 알림이 허용되어 있는지 확인하세요.", en: "Check Settings → Notifications and ensure TalkMVP notifications are enabled.", ja: "設定 → 通知でTalkMVPの通知が許可されているか確認してください。", zh: "检查设置 → 通知，确保TalkMVP的通知已启用。", es: "Verifica en Ajustes → Notificaciones que las notificaciones de TalkMVP estén activadas.")
         case "faq_notifs_not_coming_a2": return languageManager.localize(ko: "집중 모드나 방해 금지 모드를 확인하세요.", en: "Check Focus mode or Do Not Disturb settings.", ja: "集中モードまたはおやすみモードを確認してください。", zh: "检查专注模式或勿扰模式设置。", es: "Verifica el modo Concentración o No molestar.")
         case "faq_mute_chat_q": return languageManager.localize(ko: "특정 채팅방 알림을 끄려면?", en: "How do I mute a specific chat?", ja: "特定のチャットの通知をオフにするには？", zh: "如何关闭特定聊天的通知？", es: "¿Cómo silencio un chat específico?")
         case "faq_mute_chat_a": return languageManager.localize(ko: "채팅방 우측 상단의 종 아이콘을 탭하여 알림을 끄거나 켤 수 있습니다.", en: "Tap the bell icon at the top right of the chat to toggle notifications.", ja: "チャット右上のベルアイコンをタップして通知のオン・オフを切り替えてください。", zh: "点击聊天右上角的铃铛图标来切换通知。", es: "Toca el ícono de campana en la parte superior derecha del chat para activar o desactivar notificaciones.")
@@ -266,11 +266,11 @@ struct HelpView: View {
     private func sendEmail() {
         let email = "support@linkmvp.com"
         let subject = languageManager.localize(
-            ko: "L!nkMVP 지원 요청",
-            en: "L!nkMVP Support Request",
-            ja: "L!nkMVP サポートリクエスト",
-            zh: "L!nkMVP 支持请求",
-            es: "Solicitud de soporte L!nkMVP"
+            ko: "TalkMVP 지원 요청",
+            en: "TalkMVP Support Request",
+            ja: "TalkMVP サポートリクエスト",
+            zh: "TalkMVP 支持请求",
+            es: "Solicitud de soporte TalkMVP"
         )
         let body = languageManager.localize(
             ko: "문의 내용을 입력해주세요:\n\n앱 버전: \(getAppVersion())",

@@ -1,6 +1,6 @@
 //
 //  ChatService.swift
-//  L!nkMVP
+//  TalkMVP
 //
 //  Created by David Song on 9/26/25.
 //

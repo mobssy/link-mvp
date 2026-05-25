@@ -1,6 +1,6 @@
 //
 //  FriendsView.swift
-//  L!nkMVP
+//  TalkMVP
 //
 //  Main friends view orchestration following SOLID principles
 //

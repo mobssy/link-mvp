@@ -1,5 +1,5 @@
 //  SettingsView+Main.swift
-//  L!nkMVP
+//  TalkMVP
 //
 //  Restored main SettingsView definition so the existing extension compiles.
 
