@@ -137,6 +137,9 @@ struct LinkPreviewView: UIViewRepresentable {
     func makeUIView(context: Context) -> LPLinkView {
         let view = LPLinkView(url: url)
         view.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        view.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        view.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        view.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         context.coordinator.fetch(url: url, into: view)
         return view
     }

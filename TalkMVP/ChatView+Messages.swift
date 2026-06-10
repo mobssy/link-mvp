@@ -165,6 +165,8 @@ extension ChatView {
                 }
             if message.messageType == .text, let url = firstURL(in: message.text) {
                 LinkPreviewView(url: url)
+                    .frame(maxWidth: 280, maxHeight: 140)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                     .frame(maxWidth: .infinity, alignment: message.isFromCurrentUser ? Alignment.trailing : Alignment.leading)
                     .padding(.horizontal, 2)
             }
