@@ -451,8 +451,9 @@ class ChatViewModel: ObservableObject {
         stopOnlineStatusPolling()
         onlineStatusTask = Task { [weak self] in
             while !Task.isCancelled {
-                self?.isOnline = Bool.random()
-                try? await Task.sleep(for: .seconds(5))
+                // Simulate realistic presence: 80% chance online, brief offline spikes
+                self?.isOnline = Int.random(in: 1...10) <= 8
+                try? await Task.sleep(for: .seconds(30))
             }
         }
     }

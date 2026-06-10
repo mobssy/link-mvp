@@ -97,6 +97,7 @@ struct ChatView: View {
 
     // MARK: - Location
     @StateObject var locationManager = LocationManager()
+    @State var pendingLocationSend = false
 
     // MARK: - Contacts Sync
     @StateObject private var contactsSync = ContactsSyncService()
@@ -461,6 +462,14 @@ struct ChatView: View {
                 )
                 .environmentObject(languageManager)
             }
+            .onChange(of: locationManager.currentLocation) { _, location in
+                guard pendingLocationSend, let location else { return }
+                pendingLocationSend = false
+                viewModel?.sendLocationMessage(
+                    latitude: location.coordinate.latitude,
+                    longitude: location.coordinate.longitude
+                )
+            }
             .task {
                 while !Task.isCancelled {
                     checkDisappearingMessages()
@@ -482,11 +491,11 @@ struct ChatView: View {
                 HStack(spacing: 4) {
                     Circle()
                         .fill(vm.isOnline ? Color.green : Color.gray)
-                        .frame(width: 6, height: 6)
+                        .frame(width: 8, height: 8)
                     Text(vm.isOnline
                         ? languageManager.localize(ko: "온라인", en: "Online", ja: "オンライン", zh: "在线", es: "En línea")
                         : languageManager.localize(ko: "오프라인", en: "Offline", ja: "オフライン", zh: "离线", es: "Sin conexión"))
-                        .font(.caption2)
+                        .font(.caption)
                         .foregroundColor(vm.isOnline ? .green : .secondary)
                 }
                 .animation(.easeInOut(duration: 0.4), value: vm.isOnline)

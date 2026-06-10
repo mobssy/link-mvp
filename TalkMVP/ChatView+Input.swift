@@ -189,11 +189,16 @@ extension ChatView {
             showingLocationPermissionAlert = true
         case .authorizedWhenInUse, .authorizedAlways:
             if let location = locationManager.currentLocation {
-                viewModel?.sendLocationMessage(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
+                viewModel?.sendLocationMessage(
+                    latitude: location.coordinate.latitude,
+                    longitude: location.coordinate.longitude
+                )
             } else {
+                pendingLocationSend = true
                 locationManager.requestLocation()
             }
         default:
+            pendingLocationSend = true
             locationManager.requestLocation()
         }
     }
