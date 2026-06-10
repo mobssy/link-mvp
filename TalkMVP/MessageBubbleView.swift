@@ -270,6 +270,37 @@ struct MessageBubbleView: View {
                     .foregroundColor(.secondary)
                     .italic()
             }
+
+        case .location:
+            if let lat = message.locationLatitude, let lon = message.locationLongitude {
+                Button {
+                    if let url = URL(string: "maps://?ll=\(lat),\(lon)&q=\(lat),\(lon)") {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "location.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(message.isFromCurrentUser ? .white : .appPrimary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(languageManager.localize(ko: "현재 위치", en: "Current Location", ja: "現在地", zh: "当前位置", es: "Ubicación actual"))
+                                .font(.subheadline.bold())
+                            Text(String(format: "%.5f, %.5f", lat, lon))
+                                .font(.caption2.monospacedDigit())
+                                .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.8) : .secondary)
+                        }
+                    }
+                    .frame(minWidth: 160)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(languageManager.localize(ko: "위치 공유 - 탭하여 지도 열기", en: "Location shared — tap to open map", ja: "位置情報共有 — タップして地図を開く", zh: "位置共享 — 点击打开地图", es: "Ubicación compartida — toca para abrir el mapa"))
+            } else {
+                HStack {
+                    Image(systemName: "location.slash")
+                    Text(languageManager.localize(ko: "위치 정보 없음", en: "Location unavailable", ja: "位置情報なし", zh: "位置不可用", es: "Ubicación no disponible"))
+                }
+                .foregroundColor(.secondary)
+            }
         }
     }
 

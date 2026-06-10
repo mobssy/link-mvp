@@ -60,6 +60,8 @@ extension ChatView {
             contentLabel = "\(svc.text(for: .fileMessage, language: lang)): \(fileName)"
         case .deleted:
             contentLabel = svc.text(for: .deletedMessageLabel, language: lang)
+        case .location:
+            contentLabel = svc.text(for: .locationMessageLabel, language: lang)
         }
 
         let readStatus: String

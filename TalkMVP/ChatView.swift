@@ -68,6 +68,8 @@ struct ChatView: View {
 
     // MARK: - Friends
     @State var isFriend = false
+    @State var friendRequestSent = false
+    @State var isBlocked = false
     @State var showingAddFriendAlert = false
     @State var addFriendEmail = ""
     @State var showingFriendProfile = false
@@ -92,6 +94,9 @@ struct ChatView: View {
 
     // MARK: - Voice Recording
     @StateObject var voiceService = VoiceMessageService()
+
+    // MARK: - Location
+    @StateObject var locationManager = LocationManager()
 
     // MARK: - Contacts Sync
     @StateObject private var contactsSync = ContactsSyncService()
@@ -245,11 +250,19 @@ struct ChatView: View {
                         }
                     }
 
-                    if !isFriend && chatRoom.otherUserId != nil {
+                    if !isFriend && !friendRequestSent && chatRoom.otherUserId != nil {
                         Button {
                             showingAddFriendAlert = true
                         } label: {
                             Label(languageManager.localize(ko: "친구 추가", en: "Add Friend", ja: "友達追加", zh: "添加好友", es: "Agregar amigo"), systemImage: "person.badge.plus")
+                        }
+                    }
+
+                    if isBlocked && chatRoom.otherUserId != nil {
+                        Button {
+                            unblockUser()
+                        } label: {
+                            Label(languageManager.localize(ko: "차단 해제", en: "Unblock", ja: "ブロック解除", zh: "解除屏蔽", es: "Desbloquear"), systemImage: "hand.raised.slash")
                         }
                     }
                 } label: {

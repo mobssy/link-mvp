@@ -15,6 +15,7 @@ enum MessageType: String, Codable {
     case file
     case audio
     case deleted // 자폭 메시지로 삭제된 메시지
+    case location
 }
 
 enum AttachmentType: String, Codable {
@@ -64,6 +65,10 @@ class Message {
     // 음성 메시지
     var audioData: Data?
     var audioDuration: Double = 0
+
+    // 위치 공유
+    var locationLatitude: Double? = nil
+    var locationLongitude: Double? = nil
 
     init(text: String, isFromCurrentUser: Bool, sender: String = "나", chatRoomId: String = "default", messageType: MessageType = .text, replyToMessageId: UUID? = nil) {
         self.id = UUID()
@@ -132,6 +137,27 @@ class Message {
         self.messageType = .audio
         self.audioData = audioData
         self.audioDuration = duration
+        self.imageData = nil
+        self.fileName = nil
+        self.fileExtension = nil
+        self.fileSize = nil
+        self.reactions = [:]
+        self.replyToMessageId = nil
+        self.isEdited = false
+        self.editedAt = nil
+    }
+
+    // 위치 메시지용 초기화
+    init(latitude: Double, longitude: Double, isFromCurrentUser: Bool, sender: String = "나", chatRoomId: String = "default") {
+        self.id = UUID()
+        self.text = "📍"
+        self.isFromCurrentUser = isFromCurrentUser
+        self.timestamp = Date()
+        self.sender = sender
+        self.chatRoomId = chatRoomId
+        self.messageType = .location
+        self.locationLatitude = latitude
+        self.locationLongitude = longitude
         self.imageData = nil
         self.fileName = nil
         self.fileExtension = nil

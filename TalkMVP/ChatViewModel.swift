@@ -387,12 +387,53 @@ class ChatViewModel: ObservableObject {
                     onTypingChange: { [weak self] typing in self?.otherUserTyping = typing },
                     onMessage: { [weak self] message in
                         guard let self else { return }
+                        markSentMessagesAsRead()
                         messages.append(message)
                         translateIfNeeded(message)
                     }
                 )
             } catch {
                 vmLogger.error("Auto response failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
+    func markSentMessagesAsRead() {
+        let unread = messages.filter { $0.isFromCurrentUser && !$0.isRead }
+        guard !unread.isEmpty else { return }
+        unread.forEach { $0.isRead = true }
+        Task {
+            for msg in unread {
+                try? await messageRepository.updateMessage(msg)
+            }
+            objectWillChange.send()
+        }
+    }
+
+    func sendLocationMessage(latitude: Double, longitude: Double) {
+        let message = Message(
+            latitude: latitude,
+            longitude: longitude,
+            isFromCurrentUser: true,
+            chatRoomId: chatRoom.id.uuidString
+        )
+
+        Task {
+            do {
+                try await messageRepository.saveMessage(message)
+                messages.append(message)
+                try await chatRoomRepository.updateChatRoom(
+                    chatRoom,
+                    lastMessage: localizedVM(ko: "위치를 공유했습니다", en: "Location shared", ja: "位置情報を共有しました", zh: "共享了位置", es: "Ubicación compartida"),
+                    timestamp: Date()
+                )
+                chatService?.sendMessage(message, to: chatRoom)
+            } catch {
+                vmLogger.error("Failed to send location: \(error.localizedDescription, privacy: .public)")
+                errorMessage = localizedVM(ko: "위치 전송에 실패했습니다.", en: "Failed to send location.", ja: "位置情報の送信に失敗しました。", zh: "发送位置失败。", es: "Error al enviar ubicación.")
+                if let index = messages.lastIndex(where: { $0.id == message.id }) {
+                    messages.remove(at: index)
+                }
             }
         }
     }

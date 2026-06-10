@@ -128,6 +128,8 @@ enum LocalizationKey: String {
     case loading
     case copiedMessage = "copied_message"
     case moreOptions = "more_options"
+    case locationMessageLabel = "location_message_label"
+    case shareLocation = "share_location"
 }
 
 enum Language {
@@ -1113,6 +1115,22 @@ class LocalizationService: LocalizationServiceProtocol {
             case .japanese: return "ユーザーのブロックに失敗しました。もう一度お試しください。"
             case .chinese: return "屏蔽用户失败，请重试。"
             case .spanish: return "Error al bloquear al usuario. Inténtalo de nuevo."
+            }
+        case .locationMessageLabel:
+            switch language {
+            case .korean: return "위치 공유"
+            case .english: return "Location shared"
+            case .japanese: return "位置情報共有"
+            case .chinese: return "位置共享"
+            case .spanish: return "Ubicación compartida"
+            }
+        case .shareLocation:
+            switch language {
+            case .korean: return "위치 공유"
+            case .english: return "Share Location"
+            case .japanese: return "位置情報を共有"
+            case .chinese: return "共享位置"
+            case .spanish: return "Compartir ubicación"
             }
         }
     }

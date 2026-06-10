@@ -5,6 +5,7 @@
 
 import SwiftUI
 import UIKit
+import CoreLocation
 
 extension ChatView {
     @ViewBuilder
@@ -48,6 +49,12 @@ extension ChatView {
                         showingDocumentPicker = true
                     } label: {
                         Label(localizedText("file"), systemImage: "doc")
+                    }
+
+                    Button {
+                        sendLocation()
+                    } label: {
+                        Label(languageManager.localize(ko: "위치 공유", en: "Share Location", ja: "位置情報を共有", zh: "共享位置", es: "Compartir ubicación"), systemImage: "location")
                     }
                 } label: {
                     Image(systemName: "plus.circle.fill")
@@ -174,5 +181,20 @@ extension ChatView {
         inputText = ""
         replyingToMessage = nil
         isTextFieldFocused = false
+    }
+
+    func sendLocation() {
+        switch locationManager.authorizationStatus {
+        case .denied, .restricted:
+            showingLocationPermissionAlert = true
+        case .authorizedWhenInUse, .authorizedAlways:
+            if let location = locationManager.currentLocation {
+                viewModel?.sendLocationMessage(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
+            } else {
+                locationManager.requestLocation()
+            }
+        default:
+            locationManager.requestLocation()
+        }
     }
 }

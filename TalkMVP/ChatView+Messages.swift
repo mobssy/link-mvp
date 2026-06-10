@@ -152,8 +152,14 @@ extension ChatView {
                         Button(localizedText("report"), systemImage: "exclamationmark.bubble") {
                             showingReportAlert = true
                         }
-                        Button(localizedText("block"), systemImage: "hand.raised") {
-                            showingBlockAlert = true
+                        if isBlocked {
+                            Button(localizedText("unblock"), systemImage: "hand.raised.slash") {
+                                unblockUser()
+                            }
+                        } else {
+                            Button(localizedText("block"), systemImage: "hand.raised") {
+                                showingBlockAlert = true
+                            }
                         }
                     }
                 }
@@ -235,7 +241,7 @@ extension ChatView {
             switch msg.messageType {
             case .text, .file:
                 return msg.text.lowercased().contains(query)
-            case .image, .audio, .video:
+            case .image, .audio, .video, .location:
                 return false
             case .deleted:
                 return false
