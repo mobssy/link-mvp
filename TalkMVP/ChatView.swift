@@ -211,6 +211,9 @@ struct ChatView: View {
         .navigationTitle(chatRoom.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                onlineStatusTitleView
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button {
@@ -465,6 +468,35 @@ struct ChatView: View {
                     try? await Task.sleep(for: .seconds(15))
                 }
             }
+    }
+
+    // MARK: - Online Status Title
+
+    @ViewBuilder
+    private var onlineStatusTitleView: some View {
+        if let vm = box.viewModel {
+            VStack(spacing: 1) {
+                Text(chatRoom.name)
+                    .font(.headline)
+
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(vm.isOnline ? Color.green : Color.gray)
+                        .frame(width: 6, height: 6)
+                    Text(vm.isOnline
+                        ? languageManager.localize(ko: "온라인", en: "Online", ja: "オンライン", zh: "在线", es: "En línea")
+                        : languageManager.localize(ko: "오프라인", en: "Offline", ja: "オフライン", zh: "离线", es: "Sin conexión"))
+                        .font(.caption2)
+                        .foregroundColor(vm.isOnline ? .green : .secondary)
+                }
+                .animation(.easeInOut(duration: 0.4), value: vm.isOnline)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(chatRoom.name), \(vm.isOnline ? languageManager.localize(ko: "온라인", en: "Online", ja: "オンライン", zh: "在线", es: "En línea") : languageManager.localize(ko: "오프라인", en: "Offline", ja: "オフライン", zh: "离线", es: "Sin conexión"))")
+        } else {
+            Text(chatRoom.name)
+                .font(.headline)
+        }
     }
 
     // MARK: - Background
