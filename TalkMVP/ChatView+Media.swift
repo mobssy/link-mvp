@@ -39,20 +39,8 @@ extension ChatView {
     }
 
     func sendImageMessage(data: Data) async {
-        let senderName = languageManager.localize(ko: "나", en: "Me", ja: "私", zh: "我", es: "Yo")
-        let message = Message(imageData: data, isFromCurrentUser: true, sender: senderName, chatRoomId: chatRoom.id.uuidString)
-
         await MainActor.run {
-            modelContext.insert(message)
-            chatRoom.messages.append(message)
-            chatRoom.lastMessage = localizedText("sent_photo")
-            chatRoom.timestamp = Date()
-
-            do {
-                try modelContext.save()
-            } catch {
-                print("❌ [ChatView] Failed to send image: \(error)")
-            }
+            viewModel?.sendImage(data)
         }
     }
 
@@ -71,7 +59,7 @@ extension ChatView {
             do {
                 try modelContext.save()
             } catch {
-                print("❌ [ChatView] Failed to send video: \(error)")
+                viewModel?.errorMessage = languageManager.localize(ko: "동영상 전송에 실패했습니다.", en: "Failed to send video.", ja: "動画の送信に失敗しました。", zh: "发送视频失败。", es: "Error al enviar el vídeo.")
             }
         }
     }
@@ -94,7 +82,7 @@ extension ChatView {
             pendingAttachment = .document(data, fileName, fileSize, fileExtension)
             showingAttachmentPreview = true
         } catch {
-            print("❌ [ChatView] Failed to handle document: \(error)")
+            viewModel?.errorMessage = languageManager.localize(ko: "파일을 열지 못했습니다.", en: "Failed to open file.", ja: "ファイルを開けませんでした。", zh: "无法打开文件。", es: "No se pudo abrir el archivo.")
         }
     }
 
@@ -121,7 +109,7 @@ extension ChatView {
         do {
             try modelContext.save()
         } catch {
-            print("❌ [ChatView] Failed to save file message: \(error)")
+            viewModel?.errorMessage = languageManager.localize(ko: "파일 전송에 실패했습니다.", en: "Failed to send file.", ja: "ファイルの送信に失敗しました。", zh: "发送文件失败。", es: "Error al enviar el archivo.")
         }
     }
 
@@ -148,7 +136,9 @@ extension ChatView {
                         sendFileMessage(fileName: fileName, fileURL: destinationURL.path, fileSize: fileSize)
                     }
                 } catch {
-                    print("❌ Failed to save file: \(error)")
+                    await MainActor.run {
+                        viewModel?.errorMessage = languageManager.localize(ko: "파일 저장에 실패했습니다.", en: "Failed to save file.", ja: "ファイルの保存に失敗しました。", zh: "保存文件失败。", es: "Error al guardar el archivo.")
+                    }
                 }
             }
 
@@ -170,7 +160,9 @@ extension ChatView {
         if item.itemProvider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
             item.itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, error in
                 guard let url = url, error == nil else {
-                    print("❌ Failed to load video: \(error?.localizedDescription ?? "unknown error")")
+                    Task { @MainActor in
+                        self.viewModel?.errorMessage = self.languageManager.localize(ko: "동영상 로드에 실패했습니다.", en: "Failed to load video.", ja: "動画の読み込みに失敗しました。", zh: "加载视频失败。", es: "Error al cargar el vídeo.")
+                    }
                     return
                 }
 
@@ -181,13 +173,18 @@ extension ChatView {
                         self.showingAttachmentPreview = true
                     }
                 } catch {
-                    print("❌ Failed to read video data: \(error)")
+                    Task { @MainActor in
+                        self.viewModel?.errorMessage = self.languageManager.localize(ko: "동영상 데이터를 읽지 못했습니다.", en: "Failed to read video data.", ja: "動画データの読み取りに失敗しました。", zh: "无法读取视频数据。", es: "Error al leer datos de vídeo.")
+                    }
                 }
             }
         } else {
             item.itemProvider.loadObject(ofClass: UIImage.self) { reading, error in
                 if let error = error {
-                    print("❌ Failed to load image: \(error.localizedDescription)")
+                    Task { @MainActor in
+                        self.viewModel?.errorMessage = self.languageManager.localize(ko: "이미지 로드에 실패했습니다.", en: "Failed to load image.", ja: "画像の読み込みに失敗しました。", zh: "加载图片失败。", es: "Error al cargar la imagen.")
+                    }
+                    _ = error
                     return
                 }
 

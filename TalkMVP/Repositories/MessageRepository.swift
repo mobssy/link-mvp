@@ -95,8 +95,21 @@ class LocalMessageRepository: MessageRepositoryProtocol {
     }
 
     func markMessagesAsRead(in chatRoomId: String) async throws {
-        // Implementation would mark all unread messages as read
-        // For now, this is handled by ChatRoom.unreadCount
+        let descriptor = FetchDescriptor<Message>(
+            predicate: #Predicate<Message> { message in
+                message.chatRoomId == chatRoomId && !message.isFromCurrentUser && !message.isRead
+            }
+        )
+        do {
+            let unread = try modelContext.fetch(descriptor)
+            guard !unread.isEmpty else { return }
+            unread.forEach { $0.isRead = true }
+            try modelContext.save()
+            repoLogger.info("Marked \(unread.count) messages as read in room \(chatRoomId, privacy: .private)")
+        } catch {
+            repoLogger.error("Failed to mark messages as read: \(error.localizedDescription, privacy: .public)")
+            throw RepositoryError.updateFailed(error)
+        }
     }
 }
 

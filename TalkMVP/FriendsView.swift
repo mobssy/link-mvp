@@ -9,6 +9,9 @@ import SwiftUI
 import UIKit
 import SwiftData
 import UserNotifications
+import os
+
+private let friendsLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "FriendsView")
 
 // MARK: - Friends View
 struct FriendsView: View {
@@ -137,9 +140,7 @@ struct FriendsView: View {
                                 modelContext: modelContext,
                                 onDataChanged: loadFriendships,
                                 onAccepted: { accepted in
-                                    var ids = Set(newFriendIDsStorage.split(separator: ",").map { String($0) })
-                                    ids.insert(accepted.id.uuidString)
-                                    newFriendIDsStorage = ids.joined(separator: ",")
+                                    insertNewFriendID(accepted.id.uuidString)
                                     NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
                                 }
                             )
@@ -280,7 +281,6 @@ struct FriendsView: View {
         }
         .badge(newFriendsCount)
         .sheet(item: $activeSheet, onDismiss: {
-            print("📋 Sheet dismissed, reloading friendships...")
             loadFriendships()
             activeSheet = nil
         }) { sheet in
@@ -306,7 +306,6 @@ struct FriendsView: View {
             }
         }
         .onAppear {
-            print("🔵 FriendsView appeared")
             loadFriendships()
             attemptSeedAfterLoad()
 
@@ -315,17 +314,14 @@ struct FriendsView: View {
                     forName: .friendshipPendingCreated,
                     object: nil,
                     queue: .main
-                ) { notification in
-                    print("🔔 Received friendshipPendingCreated notification: \(notification)")
+                ) { _ in
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        print("🔄 Reloading friendships after notification...")
                         loadFriendships()
                     }
                 }
             }
         }
         .onDisappear {
-            print("🔴 FriendsView disappeared")
             if let observer = notificationObserver {
                 NotificationCenter.default.removeObserver(observer)
                 notificationObserver = nil
@@ -340,20 +336,27 @@ struct FriendsView: View {
     }
 
     private func markFriendAsSeen(_ friendship: Friendship) {
-        var ids = Set(newFriendIDsStorage.split(separator: ",").map { String($0) })
-        if ids.remove(friendship.id.uuidString) != nil {
-            newFriendIDsStorage = ids.joined(separator: ",")
-            NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
-        }
+        guard newFriendIDs.contains(friendship.id.uuidString) else { return }
+        removeNewFriendID(friendship.id.uuidString)
+        NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
     }
 
     private func markLatestPendingAsNew() {
-        if let newest = allAccepted.first(where: { !newFriendIDs.contains($0.id.uuidString) }) {
-            var ids = Set(newFriendIDsStorage.split(separator: ",").map { String($0) })
-            ids.insert(newest.id.uuidString)
-            newFriendIDsStorage = ids.joined(separator: ",")
-            NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
-        }
+        guard let newest = allAccepted.first(where: { !newFriendIDs.contains($0.id.uuidString) }) else { return }
+        insertNewFriendID(newest.id.uuidString)
+        NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
+    }
+
+    private func insertNewFriendID(_ id: String) {
+        var ids = newFriendIDs
+        ids.insert(id)
+        newFriendIDsStorage = ids.sorted().joined(separator: ",")
+    }
+
+    private func removeNewFriendID(_ id: String) {
+        var ids = newFriendIDs
+        ids.remove(id)
+        newFriendIDsStorage = ids.sorted().joined(separator: ",")
     }
 
     private func attemptSeedAfterLoad() {
@@ -402,13 +405,7 @@ struct FriendsView: View {
     private func loadFriendships() {
         let fetchDescriptor = FetchDescriptor<Friendship>()
         friendships = (try? modelContext.fetch(fetchDescriptor)) ?? []
-
-        print("📱 [FriendsView] Loaded \(friendships.count) friendships")
-        print("   - Accepted: \(allAccepted.count)")
-        print("   - Pending: \(pendingRequests.count)")
-        print("   - Received: \(receivedRequests.count)")
-        print("   - Favorites: \(favoriteFriends.count)")
-
+        friendsLogger.info("Loaded \(self.friendships.count) friendships (accepted: \(self.allAccepted.count), pending: \(self.pendingRequests.count), received: \(self.receivedRequests.count))")
         NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
     }
 

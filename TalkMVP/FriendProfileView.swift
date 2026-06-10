@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct FriendProfileView: View {
     let friendship: Friendship
@@ -16,6 +17,7 @@ struct FriendProfileView: View {
     @State private var showingChatView = false
     @State private var showingBlockAlert = false
     @State private var showingUnblockAlert = false
+    @State private var showingReportConfirm = false
     @AppStorage("lastActivityEnabled") private var lastActivityEnabled = true
     @State private var lastActiveText: String?
     @State private var lastActiveIconColor: Color = .gray
@@ -197,6 +199,18 @@ struct FriendProfileView: View {
             Text(String(format: localizedText("unblock_message"), friendship.friendName))
         }
         .onAppear { computeLastActivity() }
+        .alert(localizedText("report"), isPresented: $showingReportConfirm) {
+            Button(localizedText("cancel"), role: .cancel) {}
+            Button(localizedText("report"), role: .destructive) {}
+        } message: {
+            Text(languageManager.localize(
+                ko: "\(friendship.friendName)님을 신고하시겠습니까?",
+                en: "Report \(friendship.friendName)?",
+                ja: "\(friendship.friendName)さんを報告しますか？",
+                zh: "举报\(friendship.friendName)？",
+                es: "¿Reportar a \(friendship.friendName)?"
+            ))
+        }
     }
 
     private func computeLastActivity() {
@@ -316,13 +330,16 @@ struct FriendProfileView: View {
     }
 
     private func shareProfile() {
-        // 프로필 공유 기능 (실제 앱에서 구현)
-        print("프로필 공유: \(friendship.friendName)")
+        let profileText = "\(friendship.friendName) (\(friendship.friendEmail))"
+        let activityVC = UIActivityViewController(activityItems: [profileText], applicationActivities: nil)
+        guard let scene = UIApplication.shared.connectedScenes
+            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+              let rootVC = scene.keyWindow?.rootViewController else { return }
+        rootVC.present(activityVC, animated: true)
     }
 
     private func reportUser() {
-        // 사용자 신고 기능 (실제 앱에서 구현)
-        print("사용자 신고: \(friendship.friendName)")
+        showingReportConfirm = true
     }
 
     private func localizedText(_ key: String) -> String {
