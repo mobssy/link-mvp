@@ -78,7 +78,7 @@ extension ChatView {
                         scheduledSendDate = Date().addingTimeInterval(3600)
                         showingSchedulePicker = true
                     } label: {
-                        Image(systemName: "clock")
+                        Image(systemName: "clock.fill")
                             .foregroundColor(.appPrimary)
                             .font(.system(size: 22))
                     }

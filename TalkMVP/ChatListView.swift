@@ -257,7 +257,7 @@ struct ChatScreen: View {
             Label(localizedText("request_pending"), systemImage: "clock")
                 .foregroundColor(.secondary)
         case .isFriend:
-            Label(localizedText("friend"), systemImage: "checkmark.seal")
+            Label(localizedText("friend"), systemImage: "checkmark.seal.fill")
                 .foregroundColor(.green)
         default:
             EmptyView()

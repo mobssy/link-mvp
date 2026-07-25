@@ -316,7 +316,7 @@ struct ChatRoomBackgroundSettings: View {
                 showingPhotoPicker = true
             } label: {
                 HStack {
-                    Image(systemName: "photo")
+                    Image(systemName: "photo.fill")
                         .foregroundColor(.appPrimary)
                     Text(localizedText("choose_image"))
                         .foregroundColor(.primary)

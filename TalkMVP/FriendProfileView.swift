@@ -90,7 +90,7 @@ struct FriendProfileView: View {
                             Button(action: {
                                 showingChatView = true
                             }) {
-                                Label(localizedText("start_chat"), systemImage: "bubble.left.and.bubble.right")
+                                Label(localizedText("start_chat"), systemImage: "bubble.left.and.bubble.right.fill")
                                     .frame(maxWidth: .infinity)
                                     .padding()
                                     .background(Color.appPrimary)
