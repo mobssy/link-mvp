@@ -130,59 +130,41 @@ It's the moment of connection — the spark when two people understand each othe
 
 ## Project Structure
 
+The app target has no feature subfolders yet — almost every view/service/model file sits flat inside `TalkMVP/`, with `Repositories/` as the one exception. Five Settings screens also currently live at the repo root rather than inside `TalkMVP/`. This tree reflects the real, current layout:
+
 ```
-L!NK/
-├── App/
-│   ├── TalkMVPApp.swift
-│   └── ContentView.swift
-├── Auth/
-│   ├── AuthView.swift
-│   ├── AuthManager.swift
-│   ├── SSOSignInView.swift
-│   └── GoogleOAuthService.swift
-├── Chat/
-│   ├── ChatView.swift
-│   ├── ChatView+Media.swift
-│   ├── ChatView+Messages.swift
-│   ├── ChatView+Input.swift
-│   ├── ChatView+Friends.swift
-│   ├── ChatView+Helpers.swift
-│   ├── ChatViewModel.swift
-│   ├── ChatListView.swift
-│   ├── MessageBubbleView.swift
-│   ├── ChatRoom.swift
-│   ├── Message.swift
-│   └── TypingIndicatorView.swift
-├── Friends/
-│   ├── FriendsView.swift
-│   ├── FriendProfileView.swift
-│   ├── FriendSearchService.swift
-│   └── AddFriendView.swift
-├── Settings/
-│   ├── SettingsView.swift
-│   ├── AISettingsView.swift
-│   ├── AccessibilitySettingsView.swift
-│   ├── LanguageSettingsView.swift
-│   ├── NotificationSettingsView.swift
-│   ├── SecuritySettingsView.swift
-│   ├── ThemeSettingsView.swift
-│   └── TranslationSettingsView.swift
-├── Services/
-│   ├── AIService.swift
-│   ├── ChatService.swift
-│   ├── LocalizationService.swift
-│   ├── NotificationManager.swift
-│   └── ContactsSyncService.swift
-├── Repositories/
-│   ├── ChatRoomRepository.swift
-│   └── MessageRepository.swift
-├── Managers/
-│   ├── AppLockManager.swift
-│   ├── AttachmentHandler.swift
-│   └── LanguageManager.swift
-└── Resources/
-    └── Assets.xcassets
+link-mvp/
+├── TalkMVP.xcodeproj/
+├── TalkMVP/
+│   ├── *.swift                  # ~60 files, flat (grouped by feature below)
+│   ├── Repositories/
+│   │   ├── ChatRoomRepository.swift
+│   │   └── MessageRepository.swift
+│   ├── Assets.xcassets/         # App icon, color sets, image assets
+│   └── Assets/                  # Screenshots used in this README
+├── AISettingsView.swift         # ⚠ Settings screens below live at repo root, not inside TalkMVP/
+├── NotificationSettingsView.swift
+├── SecuritySettingsView.swift
+├── SettingsView+Main.swift
+├── TranslationSettingsView.swift
+├── TalkMVPTests/
+│   └── TalkMVPTests.swift
+└── TalkMVPUITests/
+    ├── TalkMVPUITests.swift
+    └── TalkMVPUITestsLaunchTests.swift
 ```
+
+**By feature** (logical grouping, not physical folders):
+
+- **App**: `TalkMVPApp`, `ContentView`
+- **Auth & App Lock**: `AuthView`, `AuthManager`, `SSOSignInView`, `GoogleOAuthService`, `AppLockView`, `AppLockManager`, `AppLockSettingsView`
+- **Chat**: `ChatView` (+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `TypingIndicatorView`, `ConnectionStatusView`
+- **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendsListView`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
+- **Settings**: `SettingsView`(+`Security`), `SettingsCardComponents`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`, plus the 5 root-level screens above
+- **Services & Managers**: `AIService`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `VoiceMessageService`, `RealtimeChatManager`, `PermissionManager`, `AttachmentHandler`
+- **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
+- **Data Layer**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `User`
+- **Shared**: `Colors+Extensions`
 
 ---
 
@@ -190,7 +172,7 @@ L!NK/
 
 Copyright © 2026 David Song. All rights reserved.
 
-This source code is proprietary and confidential. Unauthorized copying, distribution, or use of this software, in whole or in part, is strictly prohibited.
+This repository is shared publicly as a portfolio piece. The source code is not licensed for reuse, redistribution, or derivative works — feel free to read through it, but please reach out if you'd like to discuss using any part of it.
 
 ---
 
@@ -328,59 +310,41 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ## 프로젝트 구조
 
+아직 기능별 하위 폴더는 없고, `Repositories/`를 제외한 거의 모든 view/service/model 파일이 `TalkMVP/` 밑에 flat하게 있습니다. Settings 화면 5개는 `TalkMVP/` 밖, 저장소 루트에 위치합니다. 아래는 실제 배치 그대로입니다:
+
 ```
-L!NK/
-├── App/
-│   ├── TalkMVPApp.swift
-│   └── ContentView.swift
-├── Auth/
-│   ├── AuthView.swift
-│   ├── AuthManager.swift
-│   ├── SSOSignInView.swift
-│   └── GoogleOAuthService.swift
-├── Chat/
-│   ├── ChatView.swift
-│   ├── ChatView+Media.swift
-│   ├── ChatView+Messages.swift
-│   ├── ChatView+Input.swift
-│   ├── ChatView+Friends.swift
-│   ├── ChatView+Helpers.swift
-│   ├── ChatViewModel.swift
-│   ├── ChatListView.swift
-│   ├── MessageBubbleView.swift
-│   ├── ChatRoom.swift
-│   ├── Message.swift
-│   └── TypingIndicatorView.swift
-├── Friends/
-│   ├── FriendsView.swift
-│   ├── FriendProfileView.swift
-│   ├── FriendSearchService.swift
-│   └── AddFriendView.swift
-├── Settings/
-│   ├── SettingsView.swift
-│   ├── AISettingsView.swift
-│   ├── AccessibilitySettingsView.swift
-│   ├── LanguageSettingsView.swift
-│   ├── NotificationSettingsView.swift
-│   ├── SecuritySettingsView.swift
-│   ├── ThemeSettingsView.swift
-│   └── TranslationSettingsView.swift
-├── Services/
-│   ├── AIService.swift
-│   ├── ChatService.swift
-│   ├── LocalizationService.swift
-│   ├── NotificationManager.swift
-│   └── ContactsSyncService.swift
-├── Repositories/
-│   ├── ChatRoomRepository.swift
-│   └── MessageRepository.swift
-├── Managers/
-│   ├── AppLockManager.swift
-│   ├── AttachmentHandler.swift
-│   └── LanguageManager.swift
-└── Resources/
-    └── Assets.xcassets
+link-mvp/
+├── TalkMVP.xcodeproj/
+├── TalkMVP/
+│   ├── *.swift                  # 약 60개 파일, flat (기능별 분류는 아래 참고)
+│   ├── Repositories/
+│   │   ├── ChatRoomRepository.swift
+│   │   └── MessageRepository.swift
+│   ├── Assets.xcassets/         # 앱 아이콘, 색상, 이미지 에셋
+│   └── Assets/                  # 이 README에 쓰인 스크린샷
+├── AISettingsView.swift         # ⚠ 아래 Settings 화면들은 TalkMVP/가 아닌 저장소 루트에 있음
+├── NotificationSettingsView.swift
+├── SecuritySettingsView.swift
+├── SettingsView+Main.swift
+├── TranslationSettingsView.swift
+├── TalkMVPTests/
+│   └── TalkMVPTests.swift
+└── TalkMVPUITests/
+    ├── TalkMVPUITests.swift
+    └── TalkMVPUITestsLaunchTests.swift
 ```
+
+**기능별 분류** (실제 폴더가 아닌 논리적 그룹입니다):
+
+- **App**: `TalkMVPApp`, `ContentView`
+- **Auth & 앱 잠금**: `AuthView`, `AuthManager`, `SSOSignInView`, `GoogleOAuthService`, `AppLockView`, `AppLockManager`, `AppLockSettingsView`
+- **Chat**: `ChatView`(+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `TypingIndicatorView`, `ConnectionStatusView`
+- **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendsListView`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
+- **Settings**: `SettingsView`(+`Security`), `SettingsCardComponents`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`, 그리고 위의 루트 소재 5개
+- **Services & Managers**: `AIService`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `VoiceMessageService`, `RealtimeChatManager`, `PermissionManager`, `AttachmentHandler`
+- **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
+- **데이터 레이어**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `User`
+- **공용**: `Colors+Extensions`
 
 ---
 
@@ -388,4 +352,4 @@ L!NK/
 
 Copyright © 2026 David Song. All rights reserved.
 
-이 소스 코드는 독점 소유물이며 기밀입니다. 전체 또는 일부를 무단으로 복사, 배포, 사용하는 것을 엄격히 금지합니다.
+이 저장소는 포트폴리오 목적으로 공개되어 있습니다. 소스 코드의 재사용, 재배포, 2차 저작물 제작은 허용되지 않습니다. 코드를 살펴보시는 것은 자유지만, 일부라도 활용하고 싶으시다면 먼저 연락 주세요.
