@@ -7,6 +7,7 @@
 ![Swift](https://img.shields.io/badge/Swift-5.9+-F05138?style=flat-square&logo=swift&logoColor=white)
 ![Xcode](https://img.shields.io/badge/Xcode-15+-147EFB?style=flat-square&logo=xcode&logoColor=white)
 ![iOS](https://img.shields.io/badge/iOS-17+-000000?style=flat-square&logo=apple&logoColor=white)
+![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
 
 <br/>
 
@@ -172,7 +173,7 @@ link-mvp/
 
 Copyright © 2026 David Song. All rights reserved.
 
-This repository is shared publicly as a portfolio piece. The source code is not licensed for reuse, redistribution, or derivative works — feel free to read through it, but please reach out if you'd like to discuss using any part of it.
+This repository is published on GitHub for portfolio purposes. Being able to view the source does not grant any license to use it — no permission is given to copy, modify, distribute, or reuse this code, in whole or in part, without prior written permission. See [LICENSE](LICENSE).
 
 ---
 
@@ -187,6 +188,7 @@ This repository is shared publicly as a portfolio piece. The source code is not 
 ![Swift](https://img.shields.io/badge/Swift-5.9+-F05138?style=flat-square&logo=swift&logoColor=white)
 ![Xcode](https://img.shields.io/badge/Xcode-15+-147EFB?style=flat-square&logo=xcode&logoColor=white)
 ![iOS](https://img.shields.io/badge/iOS-17+-000000?style=flat-square&logo=apple&logoColor=white)
+![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
 
 <br/>
 
@@ -352,4 +354,4 @@ link-mvp/
 
 Copyright © 2026 David Song. All rights reserved.
 
-이 저장소는 포트폴리오 목적으로 공개되어 있습니다. 소스 코드의 재사용, 재배포, 2차 저작물 제작은 허용되지 않습니다. 코드를 살펴보시는 것은 자유지만, 일부라도 활용하고 싶으시다면 먼저 연락 주세요.
+이 저장소는 포트폴리오 목적으로 GitHub에 공개되어 있습니다. 소스를 열람할 수 있다는 것이 사용 권한을 의미하지는 않습니다 — 사전 서면 허가 없이 이 코드의 전체 또는 일부를 복사, 수정, 배포, 재사용하는 것은 허용되지 않습니다. 자세한 내용은 [LICENSE](LICENSE)를 참고하세요.
