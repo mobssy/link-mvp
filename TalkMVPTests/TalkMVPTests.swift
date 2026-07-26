@@ -49,6 +49,12 @@ struct AttachmentHandlerTests {
         #expect(!AttachmentHandler.formatFileSize(1024).isEmpty)
         #expect(!AttachmentHandler.formatFileSize(5 * 1024 * 1024).isEmpty)
     }
+
+    @Test("Gigabyte-scale sizes are formatted using the GB unit")
+    func formatFileSizeGigabyteScale() {
+        let result = AttachmentHandler.formatFileSize(2 * 1024 * 1024 * 1024)
+        #expect(result.contains("GB"))
+    }
 }
 
 // MARK: - L10n
