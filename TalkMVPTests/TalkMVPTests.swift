@@ -263,3 +263,117 @@ struct ChatRoomRepositoryTests {
         #expect(rooms.isEmpty)
     }
 }
+
+// MARK: - FriendSearchService
+
+@Suite("FriendSearchService")
+struct FriendSearchServiceTests {
+
+    @Test("Email validation accepts well-formed addresses and rejects malformed ones", arguments: [
+        ("user@example.com", true),
+        ("first.last+tag@sub.example.co", true),
+        ("no-at-sign.com", false),
+        ("missing-domain@", false),
+        ("@missing-local.com", false),
+        ("spaces in@email.com", false),
+        ("", false)
+    ])
+    func emailValidation(email: String, expectedValid: Bool) {
+        #expect(isValidEmail(email) == expectedValid)
+    }
+
+    @Test("Searching with an invalid email returns no results")
+    func searchUsersWithInvalidEmailReturnsEmpty() async throws {
+        let results = try await FriendSearchService.searchUsers(by: "not-an-email")
+        #expect(results.isEmpty)
+    }
+
+    @Test("Searching with a valid email returns a result derived from it")
+    func searchUsersWithValidEmailReturnsResult() async throws {
+        let results = try await FriendSearchService.searchUsers(by: "  Jordan@Example.com  ")
+
+        #expect(results.count == 1)
+        #expect(results.first?.email == "Jordan@Example.com")
+        #expect(results.first?.username == "Jordan")
+    }
+
+    @Test("Sending a friend request reports success")
+    func sendFriendRequestSucceeds() async throws {
+        let sent = try await FriendSearchService.sendFriendRequest(from: "user-1", to: "user-2")
+        #expect(sent == true)
+    }
+}
+
+// MARK: - LocalizationService
+
+@MainActor
+@Suite("LocalizationService")
+struct LocalizationServiceTests {
+
+    @Test("Known key resolves per language", arguments: [
+        (Language.korean, "취소"),
+        (Language.english, "Cancel"),
+        (Language.japanese, "キャンセル"),
+        (Language.chinese, "取消"),
+        (Language.spanish, "Cancelar")
+    ])
+    func cancelKeyPerLanguage(language: Language, expected: String) {
+        #expect(LocalizationService.shared.text(for: .cancel, language: language) == expected)
+    }
+
+    @Test("String-keyed bridging resolves a known key through LanguageManager")
+    func localizedTextResolvesKnownKey() {
+        let manager = LanguageManager()
+        manager.setLanguage(.english)
+        #expect(LocalizationService.shared.localizedText("save", languageManager: manager) == "Save")
+    }
+
+    @Test("String-keyed bridging returns the raw key when it doesn't match any LocalizationKey")
+    func localizedTextFallsBackToRawKeyWhenUnknown() {
+        let manager = LanguageManager()
+        manager.setLanguage(.english)
+        #expect(LocalizationService.shared.localizedText("not_a_real_localization_key", languageManager: manager) == "not_a_real_localization_key")
+    }
+
+    @Test("Traditional Chinese currently falls back to Simplified Chinese text, same as L10n")
+    func traditionalChineseFallsBackToSimplified() {
+        let manager = LanguageManager()
+        manager.setLanguage(.chineseTraditional)
+        #expect(LocalizationService.shared.localizedText("cancel", languageManager: manager) == "取消")
+    }
+}
+
+// MARK: - ContactsSyncService
+
+@Suite("ContactsSyncService")
+struct ContactsSyncServiceTests {
+
+    @Test("Phone normalization keeps a leading plus and strips other non-digits", arguments: [
+        ("+1 (555) 123-4567", "+15551234567"),
+        ("010-1234-5678", "01012345678"),
+        ("(02) 1234.5678", "0212345678"),
+        ("+82 10 1234 5678", "+821012345678"),
+        ("", "")
+    ])
+    func normalizePhone(input: String, expected: String) {
+        #expect(ContactsSyncService.normalizePhone(input) == expected)
+    }
+
+    @Test("Phone normalization only keeps a plus sign when it leads the string")
+    func normalizePhoneIgnoresEmbeddedPlus() {
+        #expect(ContactsSyncService.normalizePhone("555+123") == "555123")
+    }
+
+    @Test("SHA-256 hashing is deterministic and matches a known digest")
+    func sha256IsDeterministic() {
+        let first = ContactsSyncService.sha256("test@example.com")
+        let second = ContactsSyncService.sha256("test@example.com")
+        #expect(first == second)
+        #expect(first.count == 64) // SHA-256 hex digest length
+    }
+
+    @Test("SHA-256 hashing produces different digests for different input")
+    func sha256DiffersForDifferentInput() {
+        #expect(ContactsSyncService.sha256("a") != ContactsSyncService.sha256("b"))
+    }
+}

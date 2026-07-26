@@ -134,7 +134,7 @@ final class ContactsSyncService: ObservableObject {
    }
 
    // MARK: - Helpers
-   private static func normalizePhone(_ input: String) -> String {
+   static func normalizePhone(_ input: String) -> String {
        // Keep leading '+' if present, and digits only.
        var result = ""
        var hasPlus = false
@@ -149,7 +149,7 @@ final class ContactsSyncService: ObservableObject {
        return result
    }
 
-   private static func sha256(_ input: String) -> String {
+   static func sha256(_ input: String) -> String {
        let data = Data(input.utf8)
        let digest = SHA256.hash(data: data)
        return digest.compactMap { String(format: "%02x", $0) }.joined()
