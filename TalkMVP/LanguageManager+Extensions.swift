@@ -24,7 +24,8 @@ extension LanguageManager.Language {
 extension LanguageManager {
     /// Reads the persisted language code from UserDefaults.
     /// Use this in non-View contexts (ViewModels, services) that cannot access the @EnvironmentObject.
-    static var currentLanguageCode: String {
+    /// `nonisolated` because it only touches UserDefaults and must stay callable from non-MainActor services (e.g. GoogleOAuthService).
+    nonisolated static var currentLanguageCode: String {
         if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") { return saved }
         if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first }
         return "en"

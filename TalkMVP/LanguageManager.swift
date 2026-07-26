@@ -10,6 +10,7 @@ import Foundation
 import Combine
 import StoreKit
 
+@MainActor
 class LanguageManager: ObservableObject {
     @Published var currentLanguage: Language = .korean
 

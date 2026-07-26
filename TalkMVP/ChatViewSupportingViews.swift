@@ -589,6 +589,7 @@ struct SummaryParagraphCard: View {
 
 // MARK: - Location Manager
 
+@MainActor
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     @Published var currentLocation: CLLocation?
