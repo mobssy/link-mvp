@@ -427,6 +427,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSContactsUsageDescription = "We need access to your contacts so you can easily find friends and start conversations.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Face ID is used to unlock the app when App Lock is turned on.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is only used when you choose to share it in a chat.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is needed to record and send voice messages.";
 				INFOPLIST_KEY_UILaunchScreen_ColorName = "";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -465,6 +467,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSContactsUsageDescription = "We need access to your contacts so you can easily find friends and start conversations.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Face ID is used to unlock the app when App Lock is turned on.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is only used when you choose to share it in a chat.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is needed to record and send voice messages.";
 				INFOPLIST_KEY_UILaunchScreen_ColorName = "";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
