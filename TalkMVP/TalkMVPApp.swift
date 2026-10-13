@@ -20,7 +20,10 @@ struct LinkMVPApp: App {
     @AppStorage("inAppTextSizeStep") private var textSizeStep = 2
 
     init() {
-        let context = ModelContext(sharedModelContainer)
+        // Use the container's main context: it is the same context `.modelContainer(_:)`
+        // injects into the view hierarchy, so models AuthManager hands out (currentUser)
+        // can be edited and saved from any view.
+        let context = sharedModelContainer.mainContext
         _authManager = StateObject(wrappedValue: AuthManager(modelContext: context))
     }
 

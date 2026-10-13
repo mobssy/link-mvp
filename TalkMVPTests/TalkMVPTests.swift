@@ -378,3 +378,173 @@ struct ContactsSyncServiceTests {
         #expect(ContactsSyncService.sha256("a") != ContactsSyncService.sha256("b"))
     }
 }
+
+// MARK: - AuthManager
+
+@MainActor
+@Suite("AuthManager")
+struct AuthManagerTests {
+
+    /// Each test gets its own in-memory store. A context created from the container keeps
+    /// the container alive; `container.mainContext` would not once the container goes out of scope.
+    private func makeContext() throws -> ModelContext {
+        let container = try ModelContainer(
+            for: Message.self, ChatRoom.self, User.self, Friendship.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        return ModelContext(container)
+    }
+
+    private func makeManager(_ context: ModelContext) -> AuthManager {
+        AuthManager(modelContext: context, simulatedLatency: .zero)
+    }
+
+    private func currentUsers(in context: ModelContext) throws -> [User] {
+        try context.fetch(FetchDescriptor<User>(predicate: #Predicate { $0.isCurrentUser == true }))
+    }
+
+    @Test("A fresh store starts signed out")
+    func startsSignedOut() throws {
+        let context = try makeContext()
+        let manager = makeManager(context)
+
+        #expect(manager.isAuthenticated == false)
+        #expect(manager.currentUser == nil)
+    }
+
+    @Test("The persisted current user is restored on launch, including the user object")
+    func restoresPersistedSession() throws {
+        let context = try makeContext()
+        let saved = User(username: "jordan", displayName: "Jordan", email: "jordan@example.com", isCurrentUser: true)
+        context.insert(saved)
+        try context.save()
+
+        let manager = makeManager(context)
+
+        #expect(manager.isAuthenticated)
+        #expect(manager.currentUser?.id == saved.id)
+    }
+
+    @Test("Sign-up creates the account, signs it in and seeds sample friends")
+    func signUpCreatesAndActivatesUser() async throws {
+        let context = try makeContext()
+        let manager = makeManager(context)
+
+        await manager.signUp(username: "jordan", displayName: "Jordan", email: "jordan@example.com", password: "secret1")
+
+        #expect(manager.errorMessage == nil)
+        #expect(manager.isAuthenticated)
+        #expect(manager.currentUser?.username == "jordan")
+        #expect(try currentUsers(in: context).map(\.username) == ["jordan"])
+        #expect(try context.fetchCount(FetchDescriptor<Friendship>()) == 6)
+    }
+
+    @Test("Sign-up refuses a username or email that is already taken")
+    func signUpRejectsDuplicates() async throws {
+        let context = try makeContext()
+        context.insert(User(username: "jordan", displayName: "Jordan", email: "jordan@example.com"))
+        try context.save()
+        let manager = makeManager(context)
+
+        await manager.signUp(username: "someone-else", displayName: "J", email: "jordan@example.com", password: "secret1")
+
+        #expect(manager.errorMessage != nil)
+        #expect(manager.isAuthenticated == false)
+        #expect(try context.fetchCount(FetchDescriptor<User>()) == 1)
+    }
+
+    @Test("Signing in with an unknown username reports an error and stays signed out")
+    func signInUnknownUserFails() async throws {
+        let context = try makeContext()
+        let manager = makeManager(context)
+
+        await manager.signIn(username: "nobody", password: "secret1")
+
+        #expect(manager.errorMessage != nil)
+        #expect(manager.isAuthenticated == false)
+    }
+
+    @Test("Signing in moves the current-user flag to the new account")
+    func signInSwitchesCurrentUser() async throws {
+        let context = try makeContext()
+        let first = User(username: "first", displayName: "First", email: "first@example.com", isCurrentUser: true)
+        let second = User(username: "second", displayName: "Second", email: "second@example.com")
+        context.insert(first)
+        context.insert(second)
+        try context.save()
+        let manager = makeManager(context)
+
+        await manager.signIn(username: "second@example.com", password: "secret1")
+
+        #expect(manager.currentUser?.id == second.id)
+        #expect(first.isCurrentUser == false)
+        #expect(second.isCurrentUser)
+    }
+
+    @Test("Signing out ends the session and is not undone by a relaunch")
+    func signOutClearsPersistedSession() async throws {
+        let context = try makeContext()
+        let manager = makeManager(context)
+        await manager.signUp(username: "jordan", displayName: "Jordan", email: "jordan@example.com", password: "secret1")
+
+        manager.signOut()
+
+        #expect(manager.isAuthenticated == false)
+        #expect(try currentUsers(in: context).isEmpty)
+        #expect(makeManager(context).isAuthenticated == false)
+    }
+
+    @Test("Apple sign-in reuses the account created by an earlier Apple sign-in")
+    func appleSignInReusesAccount() async throws {
+        let context = try makeContext()
+        let manager = makeManager(context)
+        var name = PersonNameComponents()
+        name.givenName = "Jordan"
+
+        await manager.signInWithApple(userId: "001234.abcdef", email: "j@example.com", fullName: name)
+        let firstID = manager.currentUser?.id
+        manager.signOut()
+        await manager.signInWithApple(userId: "001234.abcdef", email: nil, fullName: nil)
+
+        #expect(manager.currentUser?.id == firstID)
+        #expect(manager.currentUser?.displayName == "Jordan")
+        #expect(try context.fetchCount(FetchDescriptor<User>()) == 1)
+    }
+
+    @Test("Test mode signs in a tester account with the given friends")
+    func startTestSessionSeedsFriends() throws {
+        let context = try makeContext()
+        let manager = makeManager(context)
+
+        manager.startTestSession(
+            displayName: "Tester",
+            statusMessage: "Trying things out",
+            friends: [(name: "A", email: "a@example.com"), (name: "B", email: "b@example.com")]
+        )
+
+        let testerID = try #require(manager.currentUser?.id.uuidString)
+        let friendships = try context.fetch(FetchDescriptor<Friendship>())
+        #expect(manager.currentUser?.username == "tester")
+        #expect(friendships.count == 2)
+        #expect(friendships.allSatisfy { $0.ownerUserId == testerID && $0.status == .accepted })
+    }
+
+    @Test("Deleting the account wipes local data and ends the session")
+    func deleteAccountWipesLocalData() async throws {
+        let context = try makeContext()
+        let manager = makeManager(context)
+        await manager.signUp(username: "jordan", displayName: "Jordan", email: "jordan@example.com", password: "secret1")
+        let room = ChatRoom(name: "Room")
+        context.insert(room)
+        context.insert(Message(text: "hi", isFromCurrentUser: true, chatRoomId: room.id.uuidString))
+        try context.save()
+
+        await manager.deleteAccount()
+
+        #expect(manager.isAuthenticated == false)
+        #expect(try context.fetchCount(FetchDescriptor<User>()) == 0)
+        #expect(try context.fetchCount(FetchDescriptor<Friendship>()) == 0)
+        #expect(try context.fetchCount(FetchDescriptor<ChatRoom>()) == 0)
+        #expect(try context.fetchCount(FetchDescriptor<Message>()) == 0)
+    }
+}

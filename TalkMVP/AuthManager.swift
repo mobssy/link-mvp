@@ -11,30 +11,22 @@ import Combine
 import UserNotifications
 import os
 
-@ModelActor
-private actor AuthStoreActor {
-    func hasCurrentUser() throws -> Bool {
-        var descriptor = FetchDescriptor<User>(
-            predicate: #Predicate<User> { user in
-                user.isCurrentUser == true
-            }
-        )
-        descriptor.fetchLimit = 1
-        let users = try modelContext.fetch(descriptor)
-        return users.first != nil
-    }
-}
-
 private let authLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "AuthManager")
 
+/// Owns the signed-in session. The persisted source of truth is the single `User`
+/// flagged `isCurrentUser`; every sign-in path goes through `activate(_:)` and every
+/// sign-out path through `endSession()`, so the flag and `currentUser` never disagree.
 @MainActor
 class AuthManager: ObservableObject {
-    @Published var currentUser: User?
-    @Published var isAuthenticated = false
-    @Published var isLoading = false
+    @Published private(set) var currentUser: User?
+    @Published private(set) var isLoading = false
     @Published var errorMessage: String?
 
-    var modelContext: ModelContext
+    var isAuthenticated: Bool { currentUser != nil }
+
+    private let modelContext: ModelContext
+    /// Stand-in for a server round trip on sign-up / sign-in. Tests pass `.zero`.
+    private let simulatedLatency: Duration
 
     // MARK: - Lightweight localization for non-View layer
     private func loc(_ key: String, _ param: String = "") -> String {
@@ -80,37 +72,37 @@ class AuthManager: ObservableObject {
         }
     }
 
-    init(modelContext: ModelContext) {
+    init(modelContext: ModelContext, simulatedLatency: Duration = .seconds(1)) {
         self.modelContext = modelContext
-        loadCurrentUser()
+        self.simulatedLatency = simulatedLatency
+        restoreSession()
     }
 
-    func loadCurrentUser() {
-        // Perform database fetch on a SwiftData model actor to avoid main-thread I/O during launch.
-        let store = AuthStoreActor(modelContainer: modelContext.container)
-        Task(priority: .userInitiated) {
-            let isLoggedIn: Bool
-            do {
-                isLoggedIn = try await store.hasCurrentUser()
-            } catch {
-                print("Failed to load current user (background): \(error)")
-                isLoggedIn = false
+    /// Picks up the user that was signed in when the app last ran.
+    /// A single indexed fetch, so it runs synchronously: the first frame already
+    /// shows the right screen instead of flashing the sign-in form.
+    private func restoreSession() {
+        var descriptor = FetchDescriptor<User>(
+            predicate: #Predicate<User> { user in
+                user.isCurrentUser == true
             }
-
-            // Back on the main actor to update UI state
-            self.isAuthenticated = isLoggedIn
-            if !isLoggedIn {
-                self.currentUser = nil
-            }
+        )
+        descriptor.fetchLimit = 1
+        do {
+            currentUser = try modelContext.fetch(descriptor).first
+        } catch {
+            authLogger.error("Failed to restore session: \(error.localizedDescription, privacy: .public)")
+            currentUser = nil
         }
     }
 
     func signUp(username: String, displayName: String, email: String, password: String) async {
         isLoading = true
         errorMessage = nil
+        defer { isLoading = false }
 
         // 실제 앱에서는 서버 API 호출
-        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1초 시뮬레이션
+        try? await Task.sleep(for: simulatedLatency)
 
         // 사용자명 중복 검사
         let existingUserDescriptor = FetchDescriptor<User>(
@@ -123,14 +115,9 @@ class AuthManager: ObservableObject {
             let existingUsers = try modelContext.fetch(existingUserDescriptor)
             if !existingUsers.isEmpty {
                 errorMessage = loc("signup_exists")
-                isLoading = false
                 return
             }
 
-            // 기존 현재 사용자 해제
-            clearCurrentUser()
-
-            // 새 사용자 생성
             let lang = LanguageManager.currentLanguageCode
             let defaultStatus: String
             if lang.hasPrefix("ko") { defaultStatus = "안녕하세요!" }
@@ -143,33 +130,25 @@ class AuthManager: ObservableObject {
                 username: username,
                 displayName: displayName,
                 email: email,
-                statusMessage: defaultStatus,
-                isCurrentUser: true
+                statusMessage: defaultStatus
             )
-
             modelContext.insert(newUser)
-            try modelContext.save()
-
-            currentUser = newUser
-            isAuthenticated = true
-            UserDefaults.standard.set(newUser.id.uuidString, forKey: "currentUserId")
+            try activate(newUser)
 
             // 샘플 친구들 추가
             createSampleFriends(for: newUser)
-
         } catch {
             errorMessage = loc("signup_error_prefix") + error.localizedDescription
         }
-
-        isLoading = false
     }
 
     func signIn(username: String, password: String) async {
         isLoading = true
         errorMessage = nil
+        defer { isLoading = false }
 
         // 실제 앱에서는 서버 API 호출
-        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1초 시뮬레이션
+        try? await Task.sleep(for: simulatedLatency)
 
         let descriptor = FetchDescriptor<User>(
             predicate: #Predicate<User> { user in
@@ -178,52 +157,71 @@ class AuthManager: ObservableObject {
         )
 
         do {
-            let users = try modelContext.fetch(descriptor)
-            if let user = users.first {
-                // 기존 현재 사용자 해제
-                clearCurrentUser()
-
-                // 로그인한 사용자를 현재 사용자로 설정
-                user.isCurrentUser = true
-                user.lastActiveAt = Date()
-
-                try modelContext.save()
-
-                currentUser = user
-                isAuthenticated = true
-                UserDefaults.standard.set(user.id.uuidString, forKey: "currentUserId")
-            } else {
+            guard let user = try modelContext.fetch(descriptor).first else {
                 errorMessage = loc("signin_not_found")
+                return
             }
+            try activate(user)
         } catch {
             errorMessage = loc("signin_error_prefix") + error.localizedDescription
         }
+    }
 
-        isLoading = false
+    /// Starts the credential-free demo session ("test mode") as a fresh local tester account.
+    func startTestSession(displayName: String, statusMessage: String, friends: [(name: String, email: String)]) {
+        errorMessage = nil
+        let tester = User(
+            username: "tester",
+            displayName: displayName,
+            email: "test@example.com",
+            statusMessage: statusMessage
+        )
+        modelContext.insert(tester)
+        for friend in friends {
+            modelContext.insert(Friendship(
+                userId: tester.id.uuidString,
+                friendId: UUID().uuidString,
+                friendName: friend.name,
+                friendEmail: friend.email,
+                status: .accepted
+            ))
+        }
+
+        do {
+            try activate(tester)
+        } catch {
+            authLogger.error("Failed to start test session: \(error.localizedDescription, privacy: .public)")
+            errorMessage = error.localizedDescription
+        }
     }
 
     func signOut() {
-        clearCurrentUser()
+        do {
+            try clearCurrentUserFlags()
+            try modelContext.save()
+        } catch {
+            authLogger.error("Failed to persist sign-out: \(error.localizedDescription, privacy: .public)")
+        }
         currentUser = nil
-        isAuthenticated = false
-        UserDefaults.standard.removeObject(forKey: "currentUserId")
     }
 
-    private func clearCurrentUser() {
+    /// Marks `user` as the one signed-in account and publishes it.
+    private func activate(_ user: User) throws {
+        try clearCurrentUserFlags()
+        user.isCurrentUser = true
+        user.lastActiveAt = Date()
+        try modelContext.save()
+        currentUser = user
+    }
+
+    private func clearCurrentUserFlags() throws {
         let descriptor = FetchDescriptor<User>(
             predicate: #Predicate<User> { user in
                 user.isCurrentUser == true
             }
         )
-
-        do {
-            let users = try modelContext.fetch(descriptor)
-            for user in users {
-                user.isCurrentUser = false
-            }
-            try modelContext.save()
-        } catch {
-            print("Failed to clear current user: \(error)")
+        for user in try modelContext.fetch(descriptor) {
+            user.isCurrentUser = false
         }
     }
 
@@ -277,85 +275,59 @@ class AuthManager: ObservableObject {
     func signInWithApple(userId: String, email: String?, fullName: PersonNameComponents?) async {
         isLoading = true
         errorMessage = nil
+        defer { isLoading = false }
 
-        let identifier = "apple_\(String(userId.prefix(8)))"
         let name = [fullName?.givenName, fullName?.familyName]
             .compactMap { $0 }
             .joined(separator: " ")
 
         do {
-            let descriptor = FetchDescriptor<User>(
-                predicate: #Predicate<User> { user in user.username == identifier }
+            try signInWithSSO(
+                identifier: "apple_\(String(userId.prefix(8)))",
+                displayName: name.isEmpty ? "Apple User" : name,
+                email: email ?? ""
             )
-            let existing = try modelContext.fetch(descriptor)
-            clearCurrentUser()
-
-            let user: User
-            if let existingUser = existing.first {
-                existingUser.isCurrentUser = true
-                existingUser.lastActiveAt = Date()
-                user = existingUser
-            } else {
-                let newUser = User(
-                    username: identifier,
-                    displayName: name.isEmpty ? "Apple User" : name,
-                    email: email ?? "",
-                    statusMessage: "안녕하세요!",
-                    isCurrentUser: true
-                )
-                modelContext.insert(newUser)
-                user = newUser
-            }
-
-            try modelContext.save()
-            currentUser = user
-            isAuthenticated = true
         } catch {
             errorMessage = loc("apple_signin_error")
         }
-
-        isLoading = false
     }
 
     func signInWithGoogle() async {
         isLoading = true
         errorMessage = nil
+        defer { isLoading = false }
 
         do {
             let info = try await GoogleOAuthService.signIn()
-            let identifier = "google_\(String(info.userId.prefix(8)))"
-
-            let descriptor = FetchDescriptor<User>(
-                predicate: #Predicate<User> { user in user.username == identifier }
+            try signInWithSSO(
+                identifier: "google_\(String(info.userId.prefix(8)))",
+                displayName: info.displayName,
+                email: info.email
             )
-            let existing = try modelContext.fetch(descriptor)
-            clearCurrentUser()
-
-            let user: User
-            if let existingUser = existing.first {
-                existingUser.isCurrentUser = true
-                existingUser.lastActiveAt = Date()
-                user = existingUser
-            } else {
-                let newUser = User(
-                    username: identifier,
-                    displayName: info.displayName,
-                    email: info.email,
-                    statusMessage: "안녕하세요!",
-                    isCurrentUser: true
-                )
-                modelContext.insert(newUser)
-                user = newUser
-            }
-
-            try modelContext.save()
-            currentUser = user
-            isAuthenticated = true
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
 
-        isLoading = false
+    /// Reuses the local account created by an earlier sign-in with the same provider identity,
+    /// or creates it on first use.
+    private func signInWithSSO(identifier: String, displayName: String, email: String) throws {
+        let descriptor = FetchDescriptor<User>(
+            predicate: #Predicate<User> { user in user.username == identifier }
+        )
+        let user: User
+        if let existingUser = try modelContext.fetch(descriptor).first {
+            user = existingUser
+        } else {
+            user = User(
+                username: identifier,
+                displayName: displayName,
+                email: email,
+                statusMessage: "안녕하세요!"
+            )
+            modelContext.insert(user)
+        }
+        try activate(user)
     }
 
     func updateProfile(displayName: String, statusMessage: String, profileImageData: Data?) {
@@ -370,44 +342,39 @@ class AuthManager: ObservableObject {
         try? modelContext.save()
     }
 
+    /// Deletes the account. With no backend yet, that means wiping everything stored on
+    /// this device — conversations, friendships and local accounts — then ending the session.
     func deleteAccount() async {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
-        guard let user = currentUser else { return }
 
-        // 실제 앱에서는 서버에 계정 삭제 요청
-        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5초 시뮬레이션
-
-        let uid = user.id.uuidString
-
-        // 관련 친구 관계 삭제
-        let friendshipDescriptor = FetchDescriptor<Friendship>()
         do {
-            let allFriendships = try modelContext.fetch(friendshipDescriptor)
-            for friendship in allFriendships where friendship.userId == uid || friendship.friendId == uid {
+            for message in try modelContext.fetch(FetchDescriptor<Message>()) {
+                modelContext.delete(message)
+            }
+            for chatRoom in try modelContext.fetch(FetchDescriptor<ChatRoom>()) {
+                modelContext.delete(chatRoom)
+            }
+            for friendship in try modelContext.fetch(FetchDescriptor<Friendship>()) {
                 modelContext.delete(friendship)
             }
-        } catch {
-            print("Failed to fetch friendships for deletion: \(error)")
-        }
-
-        // 사용자 삭제
-        modelContext.delete(user)
-
-        do {
+            for user in try modelContext.fetch(FetchDescriptor<User>()) {
+                modelContext.delete(user)
+            }
             try modelContext.save()
         } catch {
-            print("Failed to save context after account deletion: \(error)")
+            authLogger.error("Failed to delete account data: \(error.localizedDescription, privacy: .public)")
+            errorMessage = error.localizedDescription
+            return
         }
 
         // 알림 정리
-        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
-        try? await UNUserNotificationCenter.current().setBadgeCount(0)
+        let center = UNUserNotificationCenter.current()
+        center.removeAllPendingNotificationRequests()
+        center.removeAllDeliveredNotifications()
+        try? await center.setBadgeCount(0)
 
-        // 로컬 세션 종료
         currentUser = nil
-        isAuthenticated = false
     }
 }

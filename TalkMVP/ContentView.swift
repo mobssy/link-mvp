@@ -9,7 +9,6 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var authManager: AuthManager
     @EnvironmentObject private var languageManager: LanguageManager
     @State private var selectedTab = 0
@@ -17,14 +16,11 @@ struct ContentView: View {
     @AppStorage("contactsOnboardingShown") private var contactsOnboardingShown = false
     @State private var showContactsOnboarding = false
 
-    // 테스트 모드 플래그
-    @State private var isTestMode = false
+    // 테스트 모드 플래그 (재실행 후에도 체험 세션이면 배지를 유지)
+    @AppStorage("testModeActive") private var isTestMode = false
 
     var body: some View {
         mainContent()
-            .onAppear {
-                authManager.modelContext = modelContext
-            }
             .alert(languageManager.localizedText("test_mode_title"), isPresented: $showTestModeAlert) {
                 Button(languageManager.localizedText("cancel"), role: .cancel) { }
                 Button(languageManager.localizedText("start_test")) { enterTestMode() }
@@ -38,19 +34,25 @@ struct ContentView: View {
                 OnboardingContactsView()
                     .environmentObject(languageManager)
             }
-            .onChange(of: authManager.isAuthenticated) { _, newValue in
-                if newValue && !contactsOnboardingShown {
-                    showContactsOnboarding = true
+            .onChange(of: authManager.isAuthenticated) { _, isAuthenticated in
+                if isAuthenticated {
+                    if !contactsOnboardingShown {
+                        showContactsOnboarding = true
+                    }
+                } else {
+                    // Signed out or account deleted: next session starts fresh on the first tab.
+                    isTestMode = false
+                    selectedTab = 0
                 }
             }
     }
 
     @ViewBuilder
     private func mainContent() -> some View {
-        if isTestMode {
+        if authManager.isAuthenticated {
             AuthenticatedTabsView(
                 selectedTab: $selectedTab,
-                showTestModeIndicator: true
+                showTestModeIndicator: isTestMode
             )
         } else {
             UnauthenticatedView(
@@ -60,55 +62,12 @@ struct ContentView: View {
     }
 
     private func enterTestMode() {
-        let testUser = User(
-            username: "tester",
+        authManager.startTestSession(
             displayName: languageManager.localize(ko: "테스터", en: "Tester", ja: "テスター", zh: "测试用户", es: "Tester"),
-            email: "test@example.com",
             statusMessage: languageManager.localize(ko: "테스트 모드로 체험 중입니다", en: "Experiencing in test mode", ja: "テストモードを体験中", zh: "正在体验测试模式", es: "Explorando en modo de prueba"),
-            isCurrentUser: true
+            friends: TestData.friends
         )
-
-        let descriptor = FetchDescriptor<User>(
-            predicate: #Predicate<User> { user in
-                user.isCurrentUser == true
-            }
-        )
-
-        do {
-            let users = try modelContext.fetch(descriptor)
-            for user in users {
-                user.isCurrentUser = false
-            }
-        } catch {
-            print("Failed to clear current users: \(error)")
-        }
-
-        modelContext.insert(testUser)
-        try? modelContext.save()
-
-        authManager.currentUser = testUser
-        authManager.isAuthenticated = true
-        isTestMode = true
-
-        createTestFriends(for: testUser)
-    }
-
-    private func createTestFriends(for user: User) {
-        let testFriends = TestData.friends
-
-        for (name, email) in testFriends {
-            let friendship = Friendship(
-                userId: user.id.uuidString,
-                friendId: UUID().uuidString,
-                friendName: name,
-                friendEmail: email,
-                status: .accepted
-            )
-
-            modelContext.insert(friendship)
-        }
-
-        try? modelContext.save()
+        isTestMode = authManager.isAuthenticated
     }
 }
 
@@ -238,7 +197,7 @@ struct TestModeIndicatorView: View {
 // MARK: - Test Data
 
 enum TestData {
-    static let friends: [(String, String)] = [
+    static let friends: [(name: String, email: String)] = [
         ("권지용", "peaceminusone@example.com"),
         ("한소희", "sohee@example.com"),
         ("강호동", "kang@example.com"),
@@ -283,9 +242,13 @@ fileprivate extension LanguageManager {
 }
 
 #Preview {
-    if let container = try? ModelContainer(for: Message.self, ChatRoom.self, User.self, Friendship.self) {
+    if let container = try? ModelContainer(
+        for: Message.self, ChatRoom.self, User.self, Friendship.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    ) {
         ContentView()
-            .environmentObject(AuthManager(modelContext: ModelContext(container)))
+            .environmentObject(AuthManager(modelContext: container.mainContext))
+            .environmentObject(LanguageManager())
             .modelContainer(container)
     } else {
         Text("Preview unavailable")
