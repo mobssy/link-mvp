@@ -213,7 +213,7 @@ struct MessageBubbleView: View {
                     }
                     .allowsHitTesting(false)
 
-                    Text("\(languageManager.localize(ko: "동영상", en: "Video", ja: "動画", zh: "视频", es: "Video")) (\(formatFileSize(videoData.count)))")
+                    Text("\(languageManager.localize(ko: "동영상", en: "Video", ja: "動画", zh: "视频", es: "Video")) (\(AttachmentHandler.formatFileSize(videoData.count)))")
                         .font(.caption)
                         .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.9) : .secondary)
                 }
@@ -227,13 +227,13 @@ struct MessageBubbleView: View {
 
         case .file:
             HStack {
-                Image(systemName: fileIcon(for: message.fileExtension ?? ""))
+                Image(systemName: AttachmentHandler.fileIcon(for: message.fileExtension ?? ""))
                     .foregroundColor(message.isFromCurrentUser ? .white : .appPrimary)
                 VStack(alignment: .leading) {
                     Text(message.fileName ?? localizedText("file"))
                         .font(.headline)
                     if let fileSize = message.fileSize {
-                        Text(formatFileSize(fileSize))
+                        Text(AttachmentHandler.formatFileSize(fileSize))
                             .font(.caption)
                             .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.8) : .secondary)
                     }
@@ -305,25 +305,6 @@ struct MessageBubbleView: View {
         }
     }
 
-    private func fileIcon(for fileExtension: String) -> String {
-        switch fileExtension.lowercased() {
-        case "pdf":
-            return "doc.text.fill"
-        case "doc", "docx":
-            return "doc.fill"
-        case "txt":
-            return "text.justify"
-        case "zip", "rar":
-            return "doc.zipper"
-        case "mp3", "wav":
-            return "music.note"
-        case "mp4", "mov":
-            return "video.fill"
-        default:
-            return "doc.fill"
-        }
-    }
-
     private func toggleAudioPlayback() {
         if isPlayingAudio {
             audioPlayer?.stop()
@@ -346,13 +327,6 @@ struct MessageBubbleView: View {
     private func formatAudioDuration(_ seconds: Double) -> String {
         let s = Int(seconds)
         return String(format: "%d:%02d", s / 60, s % 60)
-    }
-
-    private func formatFileSize(_ bytes: Int) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useKB, .useMB, .useGB]
-        formatter.countStyle = .file
-        return formatter.string(fromByteCount: Int64(bytes))
     }
 
     private func localizedText(_ key: String, _ param: String = "") -> String {

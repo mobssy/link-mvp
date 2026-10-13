@@ -17,7 +17,7 @@ private let friendsLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "T
 struct FriendsView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var languageManager: LanguageManager
-    @StateObject private var authManager: AuthManager
+    @ObservedObject var authManager: AuthManager
     @StateObject private var notificationManager = NotificationManager()
     @AppStorage("themeMode") private var themeMode: String = "system"
 
@@ -79,10 +79,6 @@ struct FriendsView: View {
     }
 
     private var newFriendsCount: Int { newFriends.count }
-
-    init(authManager: AuthManager) {
-        self._authManager = StateObject(wrappedValue: authManager)
-    }
 
     var pendingRequests: [Friendship] {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
