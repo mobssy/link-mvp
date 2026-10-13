@@ -16,8 +16,10 @@ class ChatService: ObservableObject, ChatServiceProtocol {
 
     private var notificationsEnabled: Bool { UserDefaults.standard.bool(forKey: "notificationsEnabled") }
 
-    private var timer: Timer?
+    private var heartbeatTimer: Timer?
     private var randomMessageTimer: Timer?
+    /// Simulated handshake time before the connection reports `.connected`.
+    private let connectDelay: TimeInterval
     private var hasStartedConnection = false
     private var hasRequestedNotificationAuth = false
     var modelContext: ModelContext {
@@ -28,7 +30,6 @@ class ChatService: ObservableObject, ChatServiceProtocol {
             }
         }
     }
-    private var cancellables = Set<AnyCancellable>()
 
     enum ConnectionStatus {
         case disconnected
@@ -81,16 +82,17 @@ class ChatService: ObservableObject, ChatServiceProtocol {
         }
     }
 
-    init(modelContext: ModelContext) {
+    init(modelContext: ModelContext, connectDelay: TimeInterval = 2.0) {
         self.modelContext = modelContext
+        self.connectDelay = connectDelay
         // Connection will start when a proper modelContext is attached by the view.
     }
 
     deinit {
-        // Only perform non-actor-isolated cleanup in deinit
-        timer?.invalidate()
+        // The timers hold this service only weakly, so deinit does run once the
+        // owning view goes away; stop them so the run loop doesn't keep firing.
+        heartbeatTimer?.invalidate()
         randomMessageTimer?.invalidate()
-        randomMessageTimer = nil
     }
 
     private func ensureNotificationSetup() {
@@ -113,7 +115,7 @@ class ChatService: ObservableObject, ChatServiceProtocol {
     func startConnection() {
         ensureNotificationSetup()
         connectionStatus = .connecting
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + connectDelay) { [weak self] in
             guard let self else { return }
             self.connectionStatus = .connected
             self.startHeartbeat()
@@ -123,8 +125,8 @@ class ChatService: ObservableObject, ChatServiceProtocol {
 
     func disconnect() {
         connectionStatus = .disconnected
-        timer?.invalidate()
-        timer = nil
+        heartbeatTimer?.invalidate()
+        heartbeatTimer = nil
         randomMessageTimer?.invalidate()
         randomMessageTimer = nil
     }
@@ -138,7 +140,8 @@ class ChatService: ObservableObject, ChatServiceProtocol {
     }
 
     private func startHeartbeat() {
-        timer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { _ in
+        heartbeatTimer?.invalidate()
+        heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { _ in
             // 실제 앱에서는 서버로 heartbeat 전송
             print("Heartbeat sent")
         }
@@ -148,12 +151,14 @@ class ChatService: ObservableObject, ChatServiceProtocol {
     private func startRandomMessageSimulation() {
         randomMessageTimer?.invalidate()
         let interval = Double.random(in: 15...45)
-        randomMessageTimer = Timer.scheduledTimer(timeInterval: interval, target: self, selector: #selector(randomMessageTimerFired(_:)), userInfo: nil, repeats: true)
-    }
-
-    @objc private func randomMessageTimerFired(_ timer: Timer) {
-        // As ChatService is @MainActor and the timer runs on the main run loop, this is safe.
-        simulateIncomingMessage()
+        // Block-based and weak: a target/selector timer retains its target until it is
+        // invalidated, which kept every chat screen's service simulating messages forever.
+        randomMessageTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+            // Scheduled from the main actor, so the timer fires on the main run loop.
+            MainActor.assumeIsolated {
+                self?.simulateIncomingMessage()
+            }
+        }
     }
 
     private func simulateIncomingMessage() {

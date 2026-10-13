@@ -548,3 +548,46 @@ struct AuthManagerTests {
         #expect(try context.fetchCount(FetchDescriptor<Message>()) == 0)
     }
 }
+
+// MARK: - ChatService
+
+@MainActor
+@Suite("ChatService")
+struct ChatServiceTests {
+
+    @Test("A connected service is released once its owner lets go of it")
+    func connectedServiceIsReleased() async throws {
+        let container = try ModelContainer(
+            for: Message.self, ChatRoom.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        weak var weakService: ChatService?
+
+        do {
+            let service = ChatService(modelContext: ModelContext(container), connectDelay: 0)
+            weakService = service
+            service.startConnection()
+            // Let the simulated handshake finish so the repeating timers are scheduled.
+            try await Task.sleep(for: .milliseconds(200))
+            #expect(service.connectionStatus == .connected)
+        }
+
+        // The repeating timers must not keep the service (and its message simulation) alive.
+        #expect(weakService == nil)
+    }
+
+    @Test("Disconnecting reports the disconnected state")
+    func disconnectUpdatesStatus() async throws {
+        let container = try ModelContainer(
+            for: Message.self, ChatRoom.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let service = ChatService(modelContext: ModelContext(container), connectDelay: 0)
+        service.startConnection()
+        try await Task.sleep(for: .milliseconds(200))
+
+        service.disconnect()
+
+        #expect(service.connectionStatus == .disconnected)
+    }
+}
