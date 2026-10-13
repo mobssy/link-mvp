@@ -453,14 +453,14 @@ extension Color {
     }
 
     func toHex() -> String {
-        guard let components = UIColor(self).cgColor.components else { return "#FFFFFF" }
-        let r = components[0]
-        let g = components[1]
-        let b = components[2]
-        return String(format: "#%02X%02X%02X",
-                     Int(r * 255),
-                     Int(g * 255),
-                     Int(b * 255))
+        // getRed(_:green:blue:alpha:) converts from any color space, unlike indexing
+        // cgColor.components, which assumes at least three components.
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        guard UIColor(self).getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return "#FFFFFF" }
+        // Round rather than truncate: 0x12 / 255 * 255 can come back as 17.999…, which
+        // truncation would save as 0x11, shifting the color a step on every save.
+        func byte(_ component: CGFloat) -> Int { Int((min(max(component, 0), 1) * 255).rounded()) }
+        return String(format: "#%02X%02X%02X", byte(red), byte(green), byte(blue))
     }
 }
 

@@ -8,6 +8,7 @@
 import Testing
 import Foundation
 import SwiftData
+import SwiftUI
 @testable import TalkMVP
 
 // MARK: - AttachmentHandler
@@ -713,5 +714,33 @@ struct ChatViewModelTests {
         #expect(sent.fileSize == 2048)
         #expect(sent.fileURL == "/tmp/report.pdf")
         #expect(!room.lastMessage.isEmpty)
+    }
+}
+
+// MARK: - Color hex conversion
+
+@MainActor
+@Suite("Color hex conversion")
+struct ColorHexTests {
+
+    @Test("Hex strings survive a round trip through Color", arguments: [
+        "#FF0000", "#00FF00", "#0000FF", "#123456", "#99CCFF", "#FFFFFF", "#000000"
+    ])
+    func roundTrip(hex: String) throws {
+        let color = try #require(Color(hex: hex))
+        #expect(color.toHex() == hex)
+    }
+
+    @Test("Grayscale system colors convert instead of crashing", arguments: [
+        (Color.white, "#FFFFFF"),
+        (Color.black, "#000000")
+    ])
+    func grayscaleColors(color: Color, expected: String) {
+        #expect(color.toHex() == expected)
+    }
+
+    @Test("Strings of the wrong length are rejected", arguments: ["", "#12", "#12345"])
+    func wrongLengthIsRejected(hex: String) {
+        #expect(Color(hex: hex) == nil)
     }
 }
