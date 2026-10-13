@@ -118,12 +118,12 @@ struct AddFriendView: View {
     private func searchForUsers() {
         let email = friendEmail.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !email.isEmpty else {
-            alertMessage = NSLocalizedString("enter_email_message", comment: "")
+            alertMessage = L10n.text("enter_email_message", languageManager.currentLanguage)
             showingAlert = true
             return
         }
         guard isValidEmail(email) else {
-            alertMessage = NSLocalizedString("invalid_email_format", comment: "")
+            alertMessage = L10n.text("invalid_email_format", languageManager.currentLanguage)
             showingAlert = true
             return
         }
@@ -143,7 +143,7 @@ struct AddFriendView: View {
             } catch {
                 await MainActor.run {
                     print("검색 오류: \(error.localizedDescription)")
-                    self.alertMessage = NSLocalizedString("search_error_prefix", comment: "") + error.localizedDescription
+                    self.alertMessage = L10n.text("search_error_prefix", languageManager.currentLanguage) + error.localizedDescription
                     self.showingAlert = true
                     self.isSearching = false
                 }

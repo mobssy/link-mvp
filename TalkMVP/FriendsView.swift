@@ -185,9 +185,9 @@ struct FriendsView: View {
                 Section(String(format: L10n.text("friends_list", languageManager.currentLanguage), regularFriends.count)) {
                     if regularFriends.isEmpty && !searchText.isEmpty {
                         ContentUnavailableView(
-                            NSLocalizedString("no_search_results", comment: ""),
+                            L10n.text("no_search_results", languageManager.currentLanguage),
                             systemImage: "magnifyingglass",
-                            description: Text(String(format: NSLocalizedString("no_match_for", comment: ""), searchText))
+                            description: Text(String(format: L10n.text("no_match_for", languageManager.currentLanguage), searchText))
                         )
                     } else if regularFriends.isEmpty {
                         VStack(spacing: 20) {
@@ -231,7 +231,7 @@ struct FriendsView: View {
                                         try? modelContext.save()
                                         loadFriendships()
                                     } label: {
-                                        Label(NSLocalizedString("hide", comment: ""), systemImage: "eye.slash")
+                                        Label(L10n.text("hide", languageManager.currentLanguage), systemImage: "eye.slash")
                                     }.tint(.gray)
 
                                     Button(role: .destructive) {
@@ -240,7 +240,7 @@ struct FriendsView: View {
                                         try? modelContext.save()
                                         loadFriendships()
                                     } label: {
-                                        Label(NSLocalizedString("block", comment: ""), systemImage: "person.fill.xmark")
+                                        Label(L10n.text("block", languageManager.currentLanguage), systemImage: "person.fill.xmark")
                                     }
                                 }
                         }

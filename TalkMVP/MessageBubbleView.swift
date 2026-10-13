@@ -54,6 +54,7 @@ struct MessageBubbleView: View {
         .sheet(isPresented: $showingFullScreenImage) {
             if let uiImage = fullScreenImage {
                 FullScreenImageView(image: uiImage)
+                    .environmentObject(languageManager)
             }
         }
     }
@@ -453,6 +454,7 @@ struct MessageBubbleView: View {
 struct FullScreenImageView: View {
     let image: UIImage
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var languageManager: LanguageManager
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -471,7 +473,7 @@ struct FullScreenImageView: View {
                     .foregroundStyle(.white, .black.opacity(0.5))
                     .padding(16)
             }
-            .accessibilityLabel(Text(NSLocalizedString("close", comment: "Close button")))
+            .accessibilityLabel(L10n.text("close", languageManager.currentLanguage))
         }
     }
 }

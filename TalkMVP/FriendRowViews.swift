@@ -60,7 +60,7 @@ struct MyProfileRow: View {
     private func localizedDisplayName() -> String {
         let raw = (authManager.currentUser?.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if raw.isEmpty {
-            return NSLocalizedString("user", comment: "")
+            return L10n.text("user", languageManager.currentLanguage)
         }
         if raw == "테스터" || raw == "Tester" {
             return languageManager.localize(ko: "테스터", en: "Tester", ja: "テスター", zh: "测试员", es: "Tester")
@@ -71,7 +71,7 @@ struct MyProfileRow: View {
     private func localizedStatusMessage() -> String {
         let raw = (authManager.currentUser?.statusMessage ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if raw.isEmpty {
-            return NSLocalizedString("status_message", comment: "")
+            return L10n.text("status_message", languageManager.currentLanguage)
         }
         if raw == "테스트 모드로 체험 중입니다" || raw == "Experiencing in test mode" {
             return languageManager.localize(

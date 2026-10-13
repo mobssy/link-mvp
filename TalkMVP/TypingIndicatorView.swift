@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TypingIndicatorView: View {
     let senderName: String
+    @EnvironmentObject private var languageManager: LanguageManager
     @State private var animationAmount = 0.5
 
     var body: some View {
@@ -19,7 +20,7 @@ struct TypingIndicatorView: View {
                     .foregroundColor(.secondary)
 
                 HStack {
-                    Text("타이핑 중")
+                    Text(languageManager.localize(ko: "타이핑 중", en: "Typing", ja: "入力中", zh: "正在输入", es: "Escribiendo"))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
 
@@ -63,4 +64,5 @@ struct TypingIndicatorView: View {
         Spacer()
     }
     .padding()
+    .environmentObject(LanguageManager())
 }

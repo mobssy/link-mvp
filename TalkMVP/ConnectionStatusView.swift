@@ -10,6 +10,7 @@ import SwiftData
 
 struct ConnectionStatusView: View {
     @ObservedObject var chatService: ChatService
+    @EnvironmentObject private var languageManager: LanguageManager
     @State private var isVisible = false
     @State private var isPulsing = false
 
@@ -30,7 +31,7 @@ struct ConnectionStatusView: View {
                     Spacer()
 
                     if chatService.connectionStatus == .disconnected {
-                        Button("재연결") {
+                        Button(languageManager.localize(ko: "재연결", en: "Reconnect", ja: "再接続", zh: "重新连接", es: "Reconectar")) {
                             chatService.reconnect()
                         }
                         .font(.caption)
@@ -104,7 +105,10 @@ struct ConnectionStatusView: View {
 }
 
 #Preview {
-    let container = try! ModelContainer(for: Message.self)
-    let context = ModelContext(container)
-    return ConnectionStatusView(chatService: ChatService(modelContext: context))
+    if let container = try? ModelContainer(for: Message.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true)) {
+        ConnectionStatusView(chatService: ChatService(modelContext: ModelContext(container)))
+            .environmentObject(LanguageManager())
+    } else {
+        Text("Preview unavailable")
+    }
 }
