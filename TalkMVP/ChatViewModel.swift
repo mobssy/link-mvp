@@ -208,10 +208,11 @@ class ChatViewModel: ObservableObject {
                 messages.append(message)
                 translateIfNeeded(message)
 
-                // Update chat room's last message
+                // Update chat room's last message. Use the message's own text:
+                // newMessageText has already been cleared by the time this task runs.
                 try await chatRoomRepository.updateChatRoom(
                     chatRoom,
-                    lastMessage: newMessageText,
+                    lastMessage: message.text,
                     timestamp: Date()
                 )
 

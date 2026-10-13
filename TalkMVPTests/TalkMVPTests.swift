@@ -591,3 +591,71 @@ struct ChatServiceTests {
         #expect(service.connectionStatus == .disconnected)
     }
 }
+
+// MARK: - ChatViewModel
+
+/// Stands in for the simulated reply so a test doesn't receive a message seconds later.
+@MainActor
+private struct SilentAutoResponder: AutoResponding {
+    func generateResponse(
+        for chatRoom: ChatRoom,
+        onTypingChange: @escaping (Bool) -> Void,
+        onMessage: @escaping (Message) -> Void
+    ) async throws {}
+}
+
+@MainActor
+@Suite("ChatViewModel")
+struct ChatViewModelTests {
+
+    private func makeContext() throws -> ModelContext {
+        let container = try ModelContainer(
+            for: Message.self, ChatRoom.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        return ModelContext(container)
+    }
+
+    private func makeRoom(in context: ModelContext) throws -> ChatRoom {
+        let room = ChatRoom(name: "Room")
+        context.insert(room)
+        try context.save()
+        return room
+    }
+
+    private func makeViewModel(_ context: ModelContext, room: ChatRoom) -> ChatViewModel {
+        ChatViewModel(
+            messageRepository: LocalMessageRepository(modelContext: context),
+            chatRoomRepository: LocalChatRoomRepository(modelContext: context),
+            chatRoom: room,
+            autoResponder: SilentAutoResponder()
+        )
+    }
+
+    @Test("Sending text shows it in the conversation and as the chat list preview")
+    func sendMessageUpdatesConversationAndPreview() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        let viewModel = makeViewModel(context, room: room)
+
+        viewModel.newMessageText = "See you at 7"
+        let task = try #require(viewModel.sendMessage())
+        await task.value
+
+        #expect(viewModel.messages.map(\.text) == ["See you at 7"])
+        #expect(room.lastMessage == "See you at 7")
+        #expect(viewModel.newMessageText.isEmpty)
+    }
+
+    @Test("Whitespace-only input is not sent")
+    func blankMessageIsIgnored() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        let viewModel = makeViewModel(context, room: room)
+
+        viewModel.newMessageText = "   \n"
+
+        #expect(viewModel.sendMessage() == nil)
+        #expect(try context.fetchCount(FetchDescriptor<Message>()) == 0)
+    }
+}
