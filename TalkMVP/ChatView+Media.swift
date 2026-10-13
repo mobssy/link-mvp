@@ -4,7 +4,6 @@
 //
 
 import SwiftUI
-import SwiftData
 import PhotosUI
 import UniformTypeIdentifiers
 
@@ -12,32 +11,6 @@ extension ChatView {
     /// PHPickerViewController runs out of process, so no photo-library permission is needed.
     func openPhotosAttachment() {
         showingPhotosPicker = true
-    }
-
-    func sendImageMessage(data: Data) async {
-        await MainActor.run {
-            viewModel?.sendImage(data)
-        }
-    }
-
-    func sendVideoMessage(data: Data) async {
-        let sentVideoText = localizedText("sent_video")
-        let senderName = languageManager.localize(ko: "나", en: "Me", ja: "私", zh: "我", es: "Yo")
-        let message = Message(text: sentVideoText, isFromCurrentUser: true, sender: senderName, chatRoomId: chatRoom.id.uuidString, messageType: .video)
-        message.videoData = data
-
-        await MainActor.run {
-            modelContext.insert(message)
-            chatRoom.messages.append(message)
-            chatRoom.lastMessage = sentVideoText
-            chatRoom.timestamp = Date()
-
-            do {
-                try modelContext.save()
-            } catch {
-                viewModel?.errorMessage = languageManager.localize(ko: "동영상 전송에 실패했습니다.", en: "Failed to send video.", ja: "動画の送信に失敗しました。", zh: "发送视频失败。", es: "Error al enviar el vídeo.")
-            }
-        }
     }
 
     func handleDocumentSelection(_ url: URL) {
@@ -62,67 +35,39 @@ extension ChatView {
         }
     }
 
-    func sendFileMessage(fileName: String, fileURL: String, fileSize: Int) {
-        let nameWithoutExt = (fileName as NSString).deletingPathExtension
-        let ext = (fileName as NSString).pathExtension
-        let senderName = languageManager.localize(ko: "나", en: "Me", ja: "私", zh: "我", es: "Yo")
-
-        let message = Message(
-            fileName: nameWithoutExt,
-            fileExtension: ext,
-            fileSize: fileSize,
-            isFromCurrentUser: true,
-            sender: senderName,
-            chatRoomId: chatRoom.id.uuidString
-        )
-        message.fileURL = fileURL
-
-        modelContext.insert(message)
-        chatRoom.messages.append(message)
-        chatRoom.lastMessage = localizedText("sent_file")
-        chatRoom.timestamp = Date()
-
-        do {
-            try modelContext.save()
-        } catch {
-            viewModel?.errorMessage = languageManager.localize(ko: "파일 전송에 실패했습니다.", en: "Failed to send file.", ja: "ファイルの送信に失敗しました。", zh: "发送文件失败。", es: "Error al enviar el archivo.")
-        }
-    }
-
+    // Attachments go through the view model like text and voice messages, so the
+    // sent message shows up in the conversation right away.
     func sendPendingAttachment() {
         guard let attachment = pendingAttachment else { return }
 
-        Task {
-            switch attachment {
-            case .image(let image):
-                if let data = image.jpegData(compressionQuality: 0.8) {
-                    await sendImageMessage(data: data)
-                }
-            case .video(let data, _):
-                await sendVideoMessage(data: data)
-            case .document(let data, let fileName, let fileSize, _):
-                let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                let destinationURL = documentsPath
-                    .appendingPathComponent(UUID().uuidString)
-                    .appendingPathExtension((fileName as NSString).pathExtension)
-
-                do {
-                    try data.write(to: destinationURL)
-                    await MainActor.run {
-                        sendFileMessage(fileName: fileName, fileURL: destinationURL.path, fileSize: fileSize)
-                    }
-                } catch {
-                    await MainActor.run {
-                        viewModel?.errorMessage = languageManager.localize(ko: "파일 저장에 실패했습니다.", en: "Failed to save file.", ja: "ファイルの保存に失敗しました。", zh: "保存文件失败。", es: "Error al guardar el archivo.")
-                    }
-                }
+        switch attachment {
+        case .image(let image):
+            if let data = image.jpegData(compressionQuality: 0.8) {
+                viewModel?.sendImage(data)
             }
+        case .video(let data, _):
+            viewModel?.sendVideo(data)
+        case .document(let data, let fileName, let fileSize, _):
+            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let destinationURL = documentsPath
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathExtension((fileName as NSString).pathExtension)
 
-            await MainActor.run {
-                pendingAttachment = nil
-                showingAttachmentPreview = false
+            do {
+                try data.write(to: destinationURL)
+                viewModel?.sendFile(
+                    fileName: (fileName as NSString).deletingPathExtension,
+                    fileExtension: (fileName as NSString).pathExtension,
+                    fileSize: fileSize,
+                    fileURL: destinationURL.path
+                )
+            } catch {
+                viewModel?.errorMessage = languageManager.localize(ko: "파일 저장에 실패했습니다.", en: "Failed to save file.", ja: "ファイルの保存に失敗しました。", zh: "保存文件失败。", es: "Error al guardar el archivo.")
             }
         }
+
+        pendingAttachment = nil
+        showingAttachmentPreview = false
     }
 
     func cancelPendingAttachment() {

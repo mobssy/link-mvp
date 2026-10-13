@@ -658,4 +658,38 @@ struct ChatViewModelTests {
         #expect(viewModel.sendMessage() == nil)
         #expect(try context.fetchCount(FetchDescriptor<Message>()) == 0)
     }
+
+    @Test("A sent video appears in the conversation immediately and is persisted")
+    func sendVideoAppearsImmediately() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        let viewModel = makeViewModel(context, room: room)
+        let videoData = Data([0x00, 0x01, 0x02])
+
+        await viewModel.sendVideo(videoData).value
+
+        let sent = try #require(viewModel.messages.last)
+        #expect(viewModel.messages.count == 1)
+        #expect(sent.messageType == .video)
+        #expect(sent.videoData == videoData)
+        #expect(room.lastMessage == sent.text)
+        #expect(try context.fetchCount(FetchDescriptor<Message>()) == 1)
+    }
+
+    @Test("A sent file appears in the conversation immediately with its stored path")
+    func sendFileAppearsImmediately() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        let viewModel = makeViewModel(context, room: room)
+
+        await viewModel.sendFile(fileName: "report", fileExtension: "pdf", fileSize: 2048, fileURL: "/tmp/report.pdf").value
+
+        let sent = try #require(viewModel.messages.last)
+        #expect(sent.messageType == .file)
+        #expect(sent.fileName == "report")
+        #expect(sent.fileExtension == "pdf")
+        #expect(sent.fileSize == 2048)
+        #expect(sent.fileURL == "/tmp/report.pdf")
+        #expect(!room.lastMessage.isEmpty)
+    }
 }

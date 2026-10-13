@@ -310,7 +310,7 @@ class ChatViewModel: ObservableObject {
     }
 
     @discardableResult
-    func sendFile(fileName: String, fileExtension: String, fileSize: Int) -> Task<Void, Never> {
+    func sendFile(fileName: String, fileExtension: String, fileSize: Int, fileURL: String? = nil) -> Task<Void, Never> {
         let message = Message(
             fileName: fileName,
             fileExtension: fileExtension,
@@ -318,6 +318,7 @@ class ChatViewModel: ObservableObject {
             isFromCurrentUser: true,
             chatRoomId: chatRoom.id.uuidString
         )
+        message.fileURL = fileURL
 
         let task = Task {
             do {
@@ -327,7 +328,7 @@ class ChatViewModel: ObservableObject {
 
                 try await chatRoomRepository.updateChatRoom(
                     chatRoom,
-                    lastMessage: "\(fileName).\(fileExtension)",
+                    lastMessage: localizedVM(ko: "파일을 보냈습니다", en: "Sent a file", ja: "ファイルを送りました", zh: "发送了一个文件", es: "Envió un archivo"),
                     timestamp: Date()
                 )
 
@@ -337,6 +338,36 @@ class ChatViewModel: ObservableObject {
                 vmLogger.error("Failed to send file: \(error.localizedDescription, privacy: .public)")
                 errorMessage = localizedVM(ko: "파일 전송에 실패했습니다.", en: "Failed to send file.", ja: "ファイルの送信に失敗しました。", zh: "发送文件失败。", es: "Error al enviar el archivo.")
                 // Rollback UI
+                if let index = messages.lastIndex(where: { $0.id == message.id }) {
+                    messages.remove(at: index)
+                }
+            }
+        }
+
+        sendAutoResponse()
+        return task
+    }
+
+    @discardableResult
+    func sendVideo(_ videoData: Data) -> Task<Void, Never> {
+        let preview = localizedVM(ko: "동영상을 보냈습니다", en: "Sent a video", ja: "動画を送りました", zh: "发送了一个视频", es: "Envió un video")
+        let message = Message(
+            text: preview,
+            isFromCurrentUser: true,
+            chatRoomId: chatRoom.id.uuidString,
+            messageType: .video
+        )
+        message.videoData = videoData
+
+        let task = Task {
+            do {
+                try await messageRepository.saveMessage(message)
+                messages.append(message)
+                try await chatRoomRepository.updateChatRoom(chatRoom, lastMessage: preview, timestamp: Date())
+                chatService?.sendMessage(message, to: chatRoom)
+            } catch {
+                vmLogger.error("Failed to send video: \(error.localizedDescription, privacy: .public)")
+                errorMessage = localizedVM(ko: "동영상 전송에 실패했습니다.", en: "Failed to send video.", ja: "動画の送信に失敗しました。", zh: "发送视频失败。", es: "Error al enviar el vídeo.")
                 if let index = messages.lastIndex(where: { $0.id == message.id }) {
                     messages.remove(at: index)
                 }
