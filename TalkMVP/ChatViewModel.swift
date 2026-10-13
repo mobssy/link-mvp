@@ -194,10 +194,7 @@ class ChatViewModel: ObservableObject {
             chatRoomId: chatRoom.id.uuidString,
             replyToMessageId: replyingToMessage?.id
         )
-        if chatRoom.disappearingDuration > 0 {
-            message.isDisappearing = true
-            message.disappearAfterSeconds = chatRoom.disappearingDuration
-        }
+        applyRoomSettings(to: message)
 
         let task = Task {
             do {
@@ -244,6 +241,7 @@ class ChatViewModel: ObservableObject {
             isFromCurrentUser: true,
             chatRoomId: chatRoom.id.uuidString
         )
+        applyRoomSettings(to: message)
 
         let task = Task {
             do {
@@ -281,10 +279,7 @@ class ChatViewModel: ObservableObject {
             isFromCurrentUser: true,
             chatRoomId: chatRoom.id.uuidString
         )
-        if chatRoom.disappearingDuration > 0 {
-            message.isDisappearing = true
-            message.disappearAfterSeconds = chatRoom.disappearingDuration
-        }
+        applyRoomSettings(to: message)
 
         let task = Task {
             do {
@@ -319,6 +314,7 @@ class ChatViewModel: ObservableObject {
             chatRoomId: chatRoom.id.uuidString
         )
         message.fileURL = fileURL
+        applyRoomSettings(to: message)
 
         let task = Task {
             do {
@@ -358,6 +354,7 @@ class ChatViewModel: ObservableObject {
             messageType: .video
         )
         message.videoData = videoData
+        applyRoomSettings(to: message)
 
         let task = Task {
             do {
@@ -376,6 +373,14 @@ class ChatViewModel: ObservableObject {
 
         sendAutoResponse()
         return task
+    }
+
+    /// Applies the room's per-chat options to an outgoing message. Currently that's the
+    /// disappearing-message timer, which covers every message type sent while it is on.
+    private func applyRoomSettings(to message: Message) {
+        guard chatRoom.disappearingDuration > 0 else { return }
+        message.isDisappearing = true
+        message.disappearAfterSeconds = chatRoom.disappearingDuration
     }
 
     private func simulateTypingIndicator() {
@@ -429,6 +434,7 @@ class ChatViewModel: ObservableObject {
             isFromCurrentUser: true,
             chatRoomId: chatRoom.id.uuidString
         )
+        applyRoomSettings(to: message)
 
         let task = Task {
             do {

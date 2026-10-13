@@ -676,6 +676,28 @@ struct ChatViewModelTests {
         #expect(try context.fetchCount(FetchDescriptor<Message>()) == 1)
     }
 
+    @Test("The room's disappearing timer applies to every kind of message sent")
+    func disappearingTimerAppliesToAllMessageTypes() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        room.disappearingDuration = 60
+        let viewModel = makeViewModel(context, room: room)
+
+        viewModel.newMessageText = "hello"
+        await viewModel.sendMessage()?.value
+        await viewModel.sendImage(Data([0x01])).value
+        await viewModel.sendVideo(Data([0x02])).value
+        await viewModel.sendVoiceMessage(audioData: Data([0x03]), duration: 1).value
+        await viewModel.sendFile(fileName: "a", fileExtension: "txt", fileSize: 1).value
+        await viewModel.sendLocationMessage(latitude: 37.5, longitude: 127.0).value
+
+        #expect(viewModel.messages.count == 6)
+        for message in viewModel.messages {
+            #expect(message.isDisappearing, "\(message.messageType) should disappear")
+            #expect(message.disappearAfterSeconds == 60, "\(message.messageType) should use the room's timer")
+        }
+    }
+
     @Test("A sent file appears in the conversation immediately with its stored path")
     func sendFileAppearsImmediately() async throws {
         let context = try makeContext()
