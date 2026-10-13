@@ -27,6 +27,7 @@ class AuthManager: ObservableObject {
     private let modelContext: ModelContext
     /// Stand-in for a server round trip on sign-up / sign-in. Tests pass `.zero`.
     private let simulatedLatency: Duration
+    private let attachmentFiles: AttachmentFileStoring
 
     // MARK: - Lightweight localization for non-View layer
     private func loc(_ key: String, _ param: String = "") -> String {
@@ -72,9 +73,14 @@ class AuthManager: ObservableObject {
         }
     }
 
-    init(modelContext: ModelContext, simulatedLatency: Duration = .seconds(1)) {
+    init(
+        modelContext: ModelContext,
+        simulatedLatency: Duration = .seconds(1),
+        attachmentFiles: AttachmentFileStoring = DiskAttachmentFileStore()
+    ) {
         self.modelContext = modelContext
         self.simulatedLatency = simulatedLatency
+        self.attachmentFiles = attachmentFiles
         restoreSession()
     }
 
@@ -343,7 +349,8 @@ class AuthManager: ObservableObject {
     }
 
     /// Deletes the account. With no backend yet, that means wiping everything stored on
-    /// this device — conversations, friendships and local accounts — then ending the session.
+    /// this device — conversations and their attachment files, friendships and local
+    /// accounts — then ending the session.
     func deleteAccount() async {
         isLoading = true
         errorMessage = nil
@@ -368,6 +375,7 @@ class AuthManager: ObservableObject {
             errorMessage = error.localizedDescription
             return
         }
+        attachmentFiles.removeFiles(keeping: [])
 
         // 알림 정리
         let center = UNUserNotificationCenter.current()

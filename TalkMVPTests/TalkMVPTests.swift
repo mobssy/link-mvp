@@ -11,6 +11,14 @@ import SwiftData
 import SwiftUI
 @testable import TalkMVP
 
+/// A throwaway Documents folder, so file-store tests never touch the app's real one.
+private func makeTemporaryDocuments() throws -> URL {
+    let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent("TalkMVPTests-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    return url
+}
+
 // MARK: - AttachmentHandler
 
 @Suite("AttachmentHandler")
@@ -179,6 +187,20 @@ struct MessageRepositoryTests {
 
         #expect(fetched.isEmpty)
     }
+
+    @Test("Deleting a file message also deletes its file on disk")
+    func deleteMessageRemovesAttachmentFile() async throws {
+        let files = DiskAttachmentFileStore(documentsDirectory: try makeTemporaryDocuments())
+        let repo = LocalMessageRepository(modelContext: try makeContext(), attachmentFiles: files)
+        let path = try files.save(Data("report".utf8), fileExtension: "pdf")
+        let message = Message(fileName: "report", fileExtension: "pdf", fileSize: 6, isFromCurrentUser: true, chatRoomId: "room-1")
+        message.fileURL = path
+        try await repo.saveMessage(message)
+
+        try await repo.deleteMessage(message)
+
+        #expect(!FileManager.default.fileExists(atPath: path))
+    }
 }
 
 // MARK: - ChatRoomRepository
@@ -281,6 +303,94 @@ struct ChatRoomRepositoryTests {
 
         let remaining = try context.fetch(FetchDescriptor<Message>())
         #expect(remaining.map(\.text) == ["keep me"])
+    }
+
+    @Test("Deleting a chat room deletes its messages' files and leaves other rooms' files")
+    func deleteChatRoomRemovesItsAttachmentFiles() async throws {
+        let context = try makeContext()
+        let files = DiskAttachmentFileStore(documentsDirectory: try makeTemporaryDocuments())
+        let repo = LocalChatRoomRepository(modelContext: context, attachmentFiles: files)
+        let doomed = ChatRoom(name: "To Delete")
+        let kept = ChatRoom(name: "Kept")
+        try await repo.saveChatRoom(doomed)
+        try await repo.saveChatRoom(kept)
+        let doomedPath = try files.save(Data("a".utf8), fileExtension: "txt")
+        let keptPath = try files.save(Data("b".utf8), fileExtension: "txt")
+        for (room, path) in [(doomed, doomedPath), (kept, keptPath)] {
+            let message = Message(fileName: "f", fileExtension: "txt", fileSize: 1, isFromCurrentUser: true, chatRoomId: room.id.uuidString)
+            message.fileURL = path
+            context.insert(message)
+        }
+        try context.save()
+
+        try await repo.deleteChatRoom(doomed)
+
+        #expect(!FileManager.default.fileExists(atPath: doomedPath))
+        #expect(FileManager.default.fileExists(atPath: keptPath))
+    }
+}
+
+// MARK: - DiskAttachmentFileStore
+
+@MainActor
+@Suite("DiskAttachmentFileStore")
+struct DiskAttachmentFileStoreTests {
+
+    @Test("Saved data is written under Attachments and removed by its stored path")
+    func saveThenRemove() throws {
+        let documents = try makeTemporaryDocuments()
+        let store = DiskAttachmentFileStore(documentsDirectory: documents)
+
+        let path = try store.save(Data("hello".utf8), fileExtension: "txt")
+
+        #expect(path.hasPrefix(documents.appendingPathComponent("Attachments").path))
+        #expect(FileManager.default.contents(atPath: path) == Data("hello".utf8))
+        store.removeFile(atStoredPath: path)
+        #expect(!FileManager.default.fileExists(atPath: path))
+    }
+
+    @Test("A path saved under an old app container still finds the file by name")
+    func removeFileWithStaleContainerPath() throws {
+        let store = DiskAttachmentFileStore(documentsDirectory: try makeTemporaryDocuments())
+        let path = try store.save(Data("x".utf8), fileExtension: "txt")
+        let name = (path as NSString).lastPathComponent
+        let stale = "/var/mobile/Containers/Data/Application/OLD-CONTAINER/Documents/Attachments/\(name)"
+
+        store.removeFile(atStoredPath: stale)
+
+        #expect(!FileManager.default.fileExists(atPath: path))
+    }
+
+    @Test("Files earlier builds wrote straight into Documents are removed too")
+    func removeLegacyFile() throws {
+        let documents = try makeTemporaryDocuments()
+        let store = DiskAttachmentFileStore(documentsDirectory: documents)
+        let legacy = documents.appendingPathComponent("\(UUID().uuidString).pdf")
+        try Data("old".utf8).write(to: legacy)
+
+        store.removeFile(atStoredPath: legacy.path)
+
+        #expect(!FileManager.default.fileExists(atPath: legacy.path))
+    }
+
+    @Test("Sweeping keeps referenced files and unrelated Documents files, removes the rest")
+    func removeUnreferencedFiles() throws {
+        let documents = try makeTemporaryDocuments()
+        let store = DiskAttachmentFileStore(documentsDirectory: documents)
+        let referenced = try store.save(Data("keep".utf8), fileExtension: "txt")
+        let unreferenced = try store.save(Data("drop".utf8), fileExtension: "txt")
+        let legacyUnreferenced = documents.appendingPathComponent("\(UUID().uuidString).pdf")
+        try Data("old".utf8).write(to: legacyUnreferenced)
+        let unrelated = documents.appendingPathComponent("notes.txt")
+        try Data("not an attachment".utf8).write(to: unrelated)
+
+        let removed = store.removeFiles(keeping: [referenced])
+
+        #expect(removed == 2)
+        #expect(FileManager.default.fileExists(atPath: referenced))
+        #expect(!FileManager.default.fileExists(atPath: unreferenced))
+        #expect(!FileManager.default.fileExists(atPath: legacyUnreferenced.path))
+        #expect(FileManager.default.fileExists(atPath: unrelated.path))
     }
 }
 
@@ -415,8 +525,14 @@ struct AuthManagerTests {
         return ModelContext(container)
     }
 
+    private let attachmentFiles: DiskAttachmentFileStore
+
+    init() throws {
+        attachmentFiles = DiskAttachmentFileStore(documentsDirectory: try makeTemporaryDocuments())
+    }
+
     private func makeManager(_ context: ModelContext) -> AuthManager {
-        AuthManager(modelContext: context, simulatedLatency: .zero)
+        AuthManager(modelContext: context, simulatedLatency: .zero, attachmentFiles: attachmentFiles)
     }
 
     private func currentUsers(in context: ModelContext) throws -> [User] {
@@ -549,7 +665,7 @@ struct AuthManagerTests {
         #expect(friendships.allSatisfy { $0.ownerUserId == testerID && $0.status == .accepted })
     }
 
-    @Test("Deleting the account wipes local data and ends the session")
+    @Test("Deleting the account wipes local data and attachment files and ends the session")
     func deleteAccountWipesLocalData() async throws {
         let context = try makeContext()
         let manager = makeManager(context)
@@ -557,10 +673,15 @@ struct AuthManagerTests {
         let room = ChatRoom(name: "Room")
         context.insert(room)
         context.insert(Message(text: "hi", isFromCurrentUser: true, chatRoomId: room.id.uuidString))
+        let filePath = try attachmentFiles.save(Data("doc".utf8), fileExtension: "pdf")
+        let fileMessage = Message(fileName: "doc", fileExtension: "pdf", fileSize: 3, isFromCurrentUser: true, chatRoomId: room.id.uuidString)
+        fileMessage.fileURL = filePath
+        context.insert(fileMessage)
         try context.save()
 
         await manager.deleteAccount()
 
+        #expect(!FileManager.default.fileExists(atPath: filePath))
         #expect(manager.isAuthenticated == false)
         #expect(try context.fetchCount(FetchDescriptor<User>()) == 0)
         #expect(try context.fetchCount(FetchDescriptor<Friendship>()) == 0)
@@ -643,10 +764,16 @@ struct ChatViewModelTests {
         return room
     }
 
+    private let attachmentFiles: DiskAttachmentFileStore
+
+    init() throws {
+        attachmentFiles = DiskAttachmentFileStore(documentsDirectory: try makeTemporaryDocuments())
+    }
+
     private func makeViewModel(_ context: ModelContext, room: ChatRoom) -> ChatViewModel {
         ChatViewModel(
-            messageRepository: LocalMessageRepository(modelContext: context),
-            chatRoomRepository: LocalChatRoomRepository(modelContext: context),
+            messageRepository: LocalMessageRepository(modelContext: context, attachmentFiles: attachmentFiles),
+            chatRoomRepository: LocalChatRoomRepository(modelContext: context, attachmentFiles: attachmentFiles),
             chatRoom: room,
             autoResponder: SilentAutoResponder()
         )
@@ -733,6 +860,24 @@ struct ChatViewModelTests {
         #expect(sent.fileSize == 2048)
         #expect(sent.fileURL == "/tmp/report.pdf")
         #expect(!room.lastMessage.isEmpty)
+    }
+
+    @Test("Expired disappearing messages leave the conversation, the store and the disk")
+    func deleteExpiredMessagesRemovesEverywhere() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        let viewModel = makeViewModel(context, room: room)
+        let path = try attachmentFiles.save(Data("doc".utf8), fileExtension: "pdf")
+        await viewModel.sendFile(fileName: "doc", fileExtension: "pdf", fileSize: 3, fileURL: path).value
+        viewModel.newMessageText = "stays"
+        await viewModel.sendMessage()?.value
+        let expired = viewModel.messages.filter { $0.messageType == .file }
+
+        await viewModel.deleteExpiredMessages(expired).value
+
+        #expect(viewModel.messages.map(\.text) == ["stays"])
+        #expect(try context.fetch(FetchDescriptor<Message>()).map(\.text) == ["stays"])
+        #expect(!FileManager.default.fileExists(atPath: path))
     }
 }
 

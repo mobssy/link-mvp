@@ -48,18 +48,14 @@ extension ChatView {
         case .video(let data, _):
             viewModel?.sendVideo(data)
         case .document(let data, let fileName, let fileSize, _):
-            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let destinationURL = documentsPath
-                .appendingPathComponent(UUID().uuidString)
-                .appendingPathExtension((fileName as NSString).pathExtension)
-
+            let fileExtension = (fileName as NSString).pathExtension
             do {
-                try data.write(to: destinationURL)
+                let storedPath = try DiskAttachmentFileStore().save(data, fileExtension: fileExtension)
                 viewModel?.sendFile(
                     fileName: (fileName as NSString).deletingPathExtension,
-                    fileExtension: (fileName as NSString).pathExtension,
+                    fileExtension: fileExtension,
                     fileSize: fileSize,
-                    fileURL: destinationURL.path
+                    fileURL: storedPath
                 )
             } catch {
                 viewModel?.errorMessage = languageManager.localize(ko: "파일 저장에 실패했습니다.", en: "Failed to save file.", ja: "ファイルの保存に失敗しました。", zh: "保存文件失败。", es: "Error al guardar el archivo.")

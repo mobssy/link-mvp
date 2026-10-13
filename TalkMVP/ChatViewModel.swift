@@ -354,6 +354,21 @@ class ChatViewModel: ObservableObject {
         }
     }
 
+    /// Drops disappearing messages whose time is up, from the conversation and the store.
+    /// Callers that animate the removal may already have taken them out of `messages`.
+    @discardableResult
+    func deleteExpiredMessages(_ expired: [Message]) -> Task<Void, Never> {
+        let expiredIds = Set(expired.map(\.id))
+        messages.removeAll { expiredIds.contains($0.id) }
+        return Task {
+            do {
+                try await messageRepository.deleteMessages(expired)
+            } catch {
+                vmLogger.error("Failed to delete expired messages: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
     /// 메시지 삭제
     /// - Parameter message: 삭제할 메시지
     /// - Parameter forEveryone: true면 완전 삭제, false면 본인만 숨김 처리

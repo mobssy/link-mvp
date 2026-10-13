@@ -142,13 +142,7 @@ extension ChatView {
         let expiredIds = Set(expired.map { $0.id })
 
         if reduceMotion {
-            vm.messages.removeAll { expiredIds.contains($0.id) }
-            expired.forEach { modelContext.delete($0) }
-            do {
-                try modelContext.save()
-            } catch {
-                helpersLogger.error("Failed to delete expired messages: \(error.localizedDescription, privacy: .public)")
-            }
+            vm.deleteExpiredMessages(expired)
             return
         }
 
@@ -165,12 +159,7 @@ extension ChatView {
                     vm.messages.removeAll { expiredIds.contains($0.id) }
                     poppingMessageIds.subtract(expiredIds)
                 }
-                expired.forEach { modelContext.delete($0) }
-                do {
-                    try modelContext.save()
-                } catch {
-                    helpersLogger.error("Failed to delete animated expired messages: \(error.localizedDescription, privacy: .public)")
-                }
+                vm.deleteExpiredMessages(expired)
             }
         }
     }

@@ -33,9 +33,11 @@ protocol ChatRoomRepositoryProtocol {
 @MainActor
 class LocalChatRoomRepository: ChatRoomRepositoryProtocol {
     private let modelContext: ModelContext
+    private let attachmentFiles: AttachmentFileStoring
 
-    init(modelContext: ModelContext) {
+    init(modelContext: ModelContext, attachmentFiles: AttachmentFileStoring = DiskAttachmentFileStore()) {
         self.modelContext = modelContext
+        self.attachmentFiles = attachmentFiles
     }
 
     func fetchChatRooms() async throws -> [ChatRoom] {
@@ -103,7 +105,12 @@ class LocalChatRoomRepository: ChatRoomRepositoryProtocol {
         // Messages belong to a room through `chatRoomId`, not a SwiftData relationship,
         // so they have to be deleted explicitly or they outlive the room.
         let roomId = chatRoom.id.uuidString
+        let filePaths: [String]
         do {
+            let withFiles = FetchDescriptor<Message>(
+                predicate: #Predicate { $0.chatRoomId == roomId && $0.fileURL != nil }
+            )
+            filePaths = try modelContext.fetch(withFiles).compactMap(\.fileURL)
             try modelContext.delete(model: Message.self, where: #Predicate { $0.chatRoomId == roomId })
             modelContext.delete(chatRoom)
             try modelContext.save()
@@ -111,5 +118,6 @@ class LocalChatRoomRepository: ChatRoomRepositoryProtocol {
             print("❌ [ChatRoomRepository] Failed to delete chat room: \(error)")
             throw RepositoryError.deleteFailed(error)
         }
+        filePaths.forEach(attachmentFiles.removeFile(atStoredPath:))
     }
 }

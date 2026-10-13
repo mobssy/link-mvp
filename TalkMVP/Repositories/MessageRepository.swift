@@ -27,8 +27,11 @@ protocol MessageRepositoryProtocol {
     /// Update an existing message
     func updateMessage(_ message: Message) async throws
 
-    /// Delete a message
+    /// Delete a message, along with its attachment file
     func deleteMessage(_ message: Message) async throws
+
+    /// Delete several messages in one save, along with their attachment files
+    func deleteMessages(_ messages: [Message]) async throws
 
     /// Mark messages as read in a chat room
     func markMessagesAsRead(in chatRoomId: String) async throws
@@ -39,9 +42,11 @@ protocol MessageRepositoryProtocol {
 @MainActor
 class LocalMessageRepository: MessageRepositoryProtocol {
     private let modelContext: ModelContext
+    private let attachmentFiles: AttachmentFileStoring
 
-    init(modelContext: ModelContext) {
+    init(modelContext: ModelContext, attachmentFiles: AttachmentFileStoring = DiskAttachmentFileStore()) {
         self.modelContext = modelContext
+        self.attachmentFiles = attachmentFiles
     }
 
     func fetchMessages(for chatRoomId: String, limit: Int, before: Date?) async throws -> [Message] {
@@ -85,13 +90,21 @@ class LocalMessageRepository: MessageRepositoryProtocol {
     }
 
     func deleteMessage(_ message: Message) async throws {
+        try await deleteMessages([message])
+    }
+
+    func deleteMessages(_ messages: [Message]) async throws {
+        guard !messages.isEmpty else { return }
+        let filePaths = messages.compactMap(\.fileURL)
         do {
-            modelContext.delete(message)
+            messages.forEach(modelContext.delete)
             try modelContext.save()
         } catch {
-            repoLogger.error("Failed to delete message: \(error.localizedDescription, privacy: .public)")
+            repoLogger.error("Failed to delete messages: \(error.localizedDescription, privacy: .public)")
             throw RepositoryError.deleteFailed(error)
         }
+        // Only once the deletion is saved, so a failed save never leaves a message without its file.
+        filePaths.forEach(attachmentFiles.removeFile(atStoredPath:))
     }
 
     func markMessagesAsRead(in chatRoomId: String) async throws {
