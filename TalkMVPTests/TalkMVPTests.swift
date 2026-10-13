@@ -266,6 +266,7 @@ struct ChatRoomRepositoryTests {
 
 // MARK: - FriendSearchService
 
+@MainActor
 @Suite("FriendSearchService")
 struct FriendSearchServiceTests {
 

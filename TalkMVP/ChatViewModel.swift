@@ -380,22 +380,27 @@ class ChatViewModel: ObservableObject {
     }
 
     private func sendAutoResponse() {
-        Task {
+        // Capture the dependencies up front so the pending reply (a few seconds away)
+        // doesn't keep this view model alive after the chat screen has closed.
+        let service = autoResponseService
+        let room = chatRoom
+        Task { [weak self] in
             do {
-                try await autoResponseService.generateResponse(
-                    for: chatRoom,
-                    onTypingChange: { [weak self] typing in self?.otherUserTyping = typing },
-                    onMessage: { [weak self] message in
-                        guard let self else { return }
-                        markSentMessagesAsRead()
-                        messages.append(message)
-                        translateIfNeeded(message)
-                    }
+                try await service.generateResponse(
+                    for: room,
+                    onTypingChange: { typing in self?.otherUserTyping = typing },
+                    onMessage: { message in self?.receiveAutoResponse(message) }
                 )
             } catch {
                 vmLogger.error("Auto response failed: \(error.localizedDescription, privacy: .public)")
             }
         }
+    }
+
+    private func receiveAutoResponse(_ message: Message) {
+        markSentMessagesAsRead()
+        messages.append(message)
+        translateIfNeeded(message)
     }
 
     func markSentMessagesAsRead() {
