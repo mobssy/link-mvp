@@ -48,6 +48,15 @@ struct LinkMVPApp: App {
         fatalError("Could not create ModelContainer with any configuration.")
     }()
 
+    private func cleanUpOrphanedData() {
+        guard OrphanedDataCleaner.shouldRun(for: sharedModelContainer) else { return }
+        do {
+            try OrphanedDataCleaner(modelContext: sharedModelContainer.mainContext).run()
+        } catch {
+            print("⚠️ [App] Orphaned data cleanup failed: \(error)")
+        }
+    }
+
     private func dynamicTypeSizeForStep(_ step: Int) -> DynamicTypeSize {
         switch step {
         case 0: return .small
@@ -77,6 +86,7 @@ struct LinkMVPApp: App {
                 }
                 .task {
                     appLock.updateLockStateOnLaunch()
+                    cleanUpOrphanedData()
                 }
         }
         .modelContainer(sharedModelContainer)

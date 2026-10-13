@@ -394,6 +394,76 @@ struct DiskAttachmentFileStoreTests {
     }
 }
 
+// MARK: - OrphanedDataCleaner
+
+@MainActor
+@Suite("OrphanedDataCleaner")
+struct OrphanedDataCleanerTests {
+
+    private func makeContext() throws -> ModelContext {
+        let container = try ModelContainer(
+            for: Message.self, ChatRoom.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        return ModelContext(container)
+    }
+
+    @Test("Messages of deleted rooms and their files are removed; live rooms keep theirs")
+    func removesOrphansOnly() throws {
+        let context = try makeContext()
+        let files = DiskAttachmentFileStore(documentsDirectory: try makeTemporaryDocuments())
+        let room = ChatRoom(name: "Live")
+        context.insert(room)
+        let livePath = try files.save(Data("a".utf8), fileExtension: "txt")
+        let orphanPath = try files.save(Data("b".utf8), fileExtension: "txt")
+        let live = Message(fileName: "a", fileExtension: "txt", fileSize: 1, isFromCurrentUser: true, chatRoomId: room.id.uuidString)
+        live.fileURL = livePath
+        let orphan = Message(fileName: "b", fileExtension: "txt", fileSize: 1, isFromCurrentUser: true, chatRoomId: UUID().uuidString)
+        orphan.fileURL = orphanPath
+        context.insert(live)
+        context.insert(orphan)
+        context.insert(Message(text: "orphan text", isFromCurrentUser: false, chatRoomId: UUID().uuidString))
+        try context.save()
+
+        let result = try OrphanedDataCleaner(modelContext: context, attachmentFiles: files).run()
+
+        #expect(result == OrphanedDataCleaner.Result(deletedMessages: 2, deletedFiles: 1))
+        #expect(try context.fetch(FetchDescriptor<Message>()).map(\.id) == [live.id])
+        #expect(FileManager.default.fileExists(atPath: livePath))
+        #expect(!FileManager.default.fileExists(atPath: orphanPath))
+    }
+
+    @Test("A store with nothing orphaned is left alone")
+    func nothingToClean() throws {
+        let context = try makeContext()
+        let room = ChatRoom(name: "Live")
+        context.insert(room)
+        context.insert(Message(text: "hi", isFromCurrentUser: true, chatRoomId: room.id.uuidString))
+        try context.save()
+        let files = DiskAttachmentFileStore(documentsDirectory: try makeTemporaryDocuments())
+
+        let result = try OrphanedDataCleaner(modelContext: context, attachmentFiles: files).run()
+
+        #expect(result == OrphanedDataCleaner.Result())
+        #expect(try context.fetchCount(FetchDescriptor<Message>()) == 1)
+    }
+
+    @Test("Never runs against an in-memory store, whose empty message list would wipe real files")
+    func skipsInMemoryStore() throws {
+        let inMemory = try ModelContainer(
+            for: Message.self, ChatRoom.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let onDisk = try ModelContainer(
+            for: Message.self, ChatRoom.self,
+            configurations: ModelConfiguration(url: try makeTemporaryDocuments().appendingPathComponent("test.store"))
+        )
+
+        #expect(OrphanedDataCleaner.shouldRun(for: inMemory) == false)
+        #expect(OrphanedDataCleaner.shouldRun(for: onDisk) == true)
+    }
+}
+
 // MARK: - FriendSearchService
 
 @MainActor
