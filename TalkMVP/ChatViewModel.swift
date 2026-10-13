@@ -135,6 +135,8 @@ class ChatViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
+    // MARK: - Sending
+
     @discardableResult
     func sendMessage() -> Task<Void, Never>? {
         guard !newMessageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
@@ -145,113 +147,32 @@ class ChatViewModel: ObservableObject {
             chatRoomId: chatRoom.id.uuidString,
             replyToMessageId: replyingToMessage?.id
         )
-        applyRoomSettings(to: message)
-
-        let task = Task {
-            do {
-                // Save message via repository
-                try await messageRepository.saveMessage(message)
-
-                // Update UI
-                messages.append(message)
-
-                // Update chat room's last message. Use the message's own text:
-                // newMessageText has already been cleared by the time this task runs.
-                try await chatRoomRepository.updateChatRoom(
-                    chatRoom,
-                    lastMessage: message.text,
-                    timestamp: Date()
-                )
-
-                // Send via real-time service
-                chatService?.sendMessage(message, to: chatRoom)
-
-            } catch {
-                vmLogger.error("Failed to send message: \(error.localizedDescription, privacy: .public)")
-                errorMessage = localizedVM(ko: "메시지 전송에 실패했습니다.", en: "Failed to send message.", ja: "メッセージの送信に失敗しました。", zh: "发送消息失败。", es: "Error al enviar el mensaje.")
-                // Rollback UI: remove the optimistically added message
-                if let index = messages.lastIndex(where: { $0.id == message.id }) {
-                    messages.remove(at: index)
-                }
-            }
-        }
-
         newMessageText = ""
         replyingToMessage = nil
 
-        // Auto response
-        sendAutoResponse()
-        return task
+        return deliver(
+            message,
+            preview: message.text,
+            failureMessage: localizedVM(ko: "메시지 전송에 실패했습니다.", en: "Failed to send message.", ja: "メッセージの送信に失敗しました。", zh: "发送消息失败。", es: "Error al enviar el mensaje.")
+        )
     }
 
     @discardableResult
     func sendImage(_ imageData: Data) -> Task<Void, Never> {
-        let message = Message(
-            imageData: imageData,
-            isFromCurrentUser: true,
-            chatRoomId: chatRoom.id.uuidString
+        deliver(
+            Message(imageData: imageData, isFromCurrentUser: true, chatRoomId: chatRoom.id.uuidString),
+            preview: localizedVM(ko: "사진을 보냈습니다", en: "Photo sent", ja: "写真を送りました", zh: "发送了照片", es: "Foto enviada"),
+            failureMessage: localizedVM(ko: "사진 전송에 실패했습니다.", en: "Failed to send image.", ja: "画像の送信に失敗しました。", zh: "发送图片失败。", es: "Error al enviar la imagen.")
         )
-        applyRoomSettings(to: message)
-
-        let task = Task {
-            do {
-                try await messageRepository.saveMessage(message)
-
-                messages.append(message)
-
-                try await chatRoomRepository.updateChatRoom(
-                    chatRoom,
-                    lastMessage: localizedVM(ko: "사진을 보냈습니다", en: "Photo sent", ja: "写真を送りました", zh: "发送了照片", es: "Foto enviada"),
-                    timestamp: Date()
-                )
-
-                chatService?.sendMessage(message, to: chatRoom)
-
-            } catch {
-                vmLogger.error("Failed to send image: \(error.localizedDescription, privacy: .public)")
-                errorMessage = localizedVM(ko: "사진 전송에 실패했습니다.", en: "Failed to send image.", ja: "画像の送信に失敗しました。", zh: "发送图片失败。", es: "Error al enviar la imagen.")
-                // Rollback UI
-                if let index = messages.lastIndex(where: { $0.id == message.id }) {
-                    messages.remove(at: index)
-                }
-            }
-        }
-
-        sendAutoResponse()
-        return task
     }
 
     @discardableResult
     func sendVoiceMessage(audioData: Data, duration: Double) -> Task<Void, Never> {
-        let message = Message(
-            audioData: audioData,
-            duration: duration,
-            isFromCurrentUser: true,
-            chatRoomId: chatRoom.id.uuidString
+        deliver(
+            Message(audioData: audioData, duration: duration, isFromCurrentUser: true, chatRoomId: chatRoom.id.uuidString),
+            preview: localizedVM(ko: "음성 메시지", en: "Voice message", ja: "音声メッセージ", zh: "语音消息", es: "Mensaje de voz"),
+            failureMessage: localizedVM(ko: "음성 메시지 전송에 실패했습니다.", en: "Failed to send voice message.", ja: "音声メッセージの送信に失敗しました。", zh: "发送语音消息失败。", es: "Error al enviar el mensaje de voz.")
         )
-        applyRoomSettings(to: message)
-
-        let task = Task {
-            do {
-                try await messageRepository.saveMessage(message)
-                messages.append(message)
-                try await chatRoomRepository.updateChatRoom(
-                    chatRoom,
-                    lastMessage: localizedVM(ko: "음성 메시지", en: "Voice message", ja: "音声メッセージ", zh: "语音消息", es: "Mensaje de voz"),
-                    timestamp: Date()
-                )
-                chatService?.sendMessage(message, to: chatRoom)
-            } catch {
-                vmLogger.error("Failed to send voice message: \(error.localizedDescription, privacy: .public)")
-                errorMessage = localizedVM(ko: "음성 메시지 전송에 실패했습니다.", en: "Failed to send voice message.", ja: "音声メッセージの送信に失敗しました。", zh: "发送语音消息失败。", es: "Error al enviar el mensaje de voz.")
-                if let index = messages.lastIndex(where: { $0.id == message.id }) {
-                    messages.remove(at: index)
-                }
-            }
-        }
-
-        sendAutoResponse()
-        return task
     }
 
     @discardableResult
@@ -264,34 +185,11 @@ class ChatViewModel: ObservableObject {
             chatRoomId: chatRoom.id.uuidString
         )
         message.fileURL = fileURL
-        applyRoomSettings(to: message)
-
-        let task = Task {
-            do {
-                try await messageRepository.saveMessage(message)
-
-                messages.append(message)
-
-                try await chatRoomRepository.updateChatRoom(
-                    chatRoom,
-                    lastMessage: localizedVM(ko: "파일을 보냈습니다", en: "Sent a file", ja: "ファイルを送りました", zh: "发送了一个文件", es: "Envió un archivo"),
-                    timestamp: Date()
-                )
-
-                chatService?.sendMessage(message, to: chatRoom)
-
-            } catch {
-                vmLogger.error("Failed to send file: \(error.localizedDescription, privacy: .public)")
-                errorMessage = localizedVM(ko: "파일 전송에 실패했습니다.", en: "Failed to send file.", ja: "ファイルの送信に失敗しました。", zh: "发送文件失败。", es: "Error al enviar el archivo.")
-                // Rollback UI
-                if let index = messages.lastIndex(where: { $0.id == message.id }) {
-                    messages.remove(at: index)
-                }
-            }
-        }
-
-        sendAutoResponse()
-        return task
+        return deliver(
+            message,
+            preview: localizedVM(ko: "파일을 보냈습니다", en: "Sent a file", ja: "ファイルを送りました", zh: "发送了一个文件", es: "Envió un archivo"),
+            failureMessage: localizedVM(ko: "파일 전송에 실패했습니다.", en: "Failed to send file.", ja: "ファイルの送信に失敗しました。", zh: "发送文件失败。", es: "Error al enviar el archivo.")
+        )
     }
 
     @discardableResult
@@ -304,6 +202,33 @@ class ChatViewModel: ObservableObject {
             messageType: .video
         )
         message.videoData = videoData
+        return deliver(
+            message,
+            preview: preview,
+            failureMessage: localizedVM(ko: "동영상 전송에 실패했습니다.", en: "Failed to send video.", ja: "動画の送信に失敗しました。", zh: "发送视频失败。", es: "Error al enviar el vídeo.")
+        )
+    }
+
+    @discardableResult
+    func sendLocationMessage(latitude: Double, longitude: Double) -> Task<Void, Never> {
+        deliver(
+            Message(latitude: latitude, longitude: longitude, isFromCurrentUser: true, chatRoomId: chatRoom.id.uuidString),
+            preview: localizedVM(ko: "위치를 공유했습니다", en: "Location shared", ja: "位置情報を共有しました", zh: "共享了位置", es: "Ubicación compartida"),
+            failureMessage: localizedVM(ko: "위치 전송에 실패했습니다.", en: "Failed to send location.", ja: "位置情報の送信に失敗しました。", zh: "发送位置失败。", es: "Error al enviar ubicación."),
+            requestsReply: false
+        )
+    }
+
+    /// The one path every outgoing message takes: apply the room's options, persist it,
+    /// show it, update the chat list preview and hand it to the real-time service, then
+    /// (unless the caller opts out) trigger the simulated reply. If persisting fails the
+    /// message is taken back out of the conversation and `errorMessage` is set.
+    private func deliver(
+        _ message: Message,
+        preview: String,
+        failureMessage: String,
+        requestsReply: Bool = true
+    ) -> Task<Void, Never> {
         applyRoomSettings(to: message)
 
         let task = Task {
@@ -313,15 +238,17 @@ class ChatViewModel: ObservableObject {
                 try await chatRoomRepository.updateChatRoom(chatRoom, lastMessage: preview, timestamp: Date())
                 chatService?.sendMessage(message, to: chatRoom)
             } catch {
-                vmLogger.error("Failed to send video: \(error.localizedDescription, privacy: .public)")
-                errorMessage = localizedVM(ko: "동영상 전송에 실패했습니다.", en: "Failed to send video.", ja: "動画の送信に失敗しました。", zh: "发送视频失败。", es: "Error al enviar el vídeo.")
+                vmLogger.error("Failed to send \(message.messageType.rawValue, privacy: .public) message: \(error.localizedDescription, privacy: .public)")
+                errorMessage = failureMessage
                 if let index = messages.lastIndex(where: { $0.id == message.id }) {
                     messages.remove(at: index)
                 }
             }
         }
 
-        sendAutoResponse()
+        if requestsReply {
+            sendAutoResponse()
+        }
         return task
     }
 
@@ -373,37 +300,6 @@ class ChatViewModel: ObservableObject {
             }
             objectWillChange.send()
         }
-    }
-
-    @discardableResult
-    func sendLocationMessage(latitude: Double, longitude: Double) -> Task<Void, Never> {
-        let message = Message(
-            latitude: latitude,
-            longitude: longitude,
-            isFromCurrentUser: true,
-            chatRoomId: chatRoom.id.uuidString
-        )
-        applyRoomSettings(to: message)
-
-        let task = Task {
-            do {
-                try await messageRepository.saveMessage(message)
-                messages.append(message)
-                try await chatRoomRepository.updateChatRoom(
-                    chatRoom,
-                    lastMessage: localizedVM(ko: "위치를 공유했습니다", en: "Location shared", ja: "位置情報を共有しました", zh: "共享了位置", es: "Ubicación compartida"),
-                    timestamp: Date()
-                )
-                chatService?.sendMessage(message, to: chatRoom)
-            } catch {
-                vmLogger.error("Failed to send location: \(error.localizedDescription, privacy: .public)")
-                errorMessage = localizedVM(ko: "위치 전송에 실패했습니다.", en: "Failed to send location.", ja: "位置情報の送信に失敗しました。", zh: "发送位置失败。", es: "Error al enviar ubicación.")
-                if let index = messages.lastIndex(where: { $0.id == message.id }) {
-                    messages.remove(at: index)
-                }
-            }
-        }
-        return task
     }
 
     private func markAsRead() async {
