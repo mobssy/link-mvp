@@ -13,7 +13,6 @@ import UIKit
 
 @MainActor
 class ChatService: ObservableObject, ChatServiceProtocol {
-    @Published var isConnected = false
     @Published var connectionStatus: ConnectionStatus = .disconnected
 
     private var notificationsEnabled: Bool { UserDefaults.standard.bool(forKey: "notificationsEnabled") }
@@ -81,15 +80,6 @@ class ChatService: ObservableObject, ChatServiceProtocol {
                 }
             }
         }
-
-        var color: String {
-            switch self {
-            case .disconnected: return "red"
-            case .connecting: return "orange"
-            case .connected: return "green"
-            case .reconnecting: return "orange"
-            }
-        }
     }
 
     init(modelContext: ModelContext) {
@@ -136,7 +126,6 @@ class ChatService: ObservableObject, ChatServiceProtocol {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
             guard let self else { return }
             self.connectionStatus = .connected
-            self.isConnected = true
             self.startHeartbeat()
             self.startRandomMessageSimulation()
         }
@@ -144,7 +133,6 @@ class ChatService: ObservableObject, ChatServiceProtocol {
 
     func disconnect() {
         connectionStatus = .disconnected
-        isConnected = false
         timer?.invalidate()
         timer = nil
         randomMessageTimer?.invalidate()
@@ -290,17 +278,6 @@ class ChatService: ObservableObject, ChatServiceProtocol {
         }
     }
 
-    func sendReaction(_ emoji: String, to message: Message, in chatRoom: ChatRoom) {
-        // 실제 서버로 반응 전송 시뮬레이션
-        print("Sending reaction \(emoji) to message \(message.id) in room \(chatRoom.name)")
-        // ViewModel에서 이미 로컬 모델 업데이트 및 저장을 처리합니다.
-    }
-
-    func removeReaction(_ emoji: String, from message: Message, in chatRoom: ChatRoom) {
-        // 실제 서버로 반응 제거 전송 시뮬레이션
-        print("Removing reaction \(emoji) from message \(message.id) in room \(chatRoom.name)")
-    }
-
     func editMessage(_ message: Message, in chatRoom: ChatRoom) {
         // 실제 서버로 편집 메시지 전송 시뮬레이션
         print("Editing message \(message.id) in room \(chatRoom.name)")
@@ -317,7 +294,6 @@ class ChatService: ObservableObject, ChatServiceProtocol {
 // 알림 확장
 extension Notification.Name {
     static let newMessageReceived = Notification.Name("newMessageReceived")
-    static let messageStatusUpdated = Notification.Name("messageStatusUpdated")
 }
 
 class LocalNotificationDelegate: NSObject, UNUserNotificationCenterDelegate {

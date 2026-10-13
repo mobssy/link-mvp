@@ -11,20 +11,6 @@ import os
 private let helpersLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ChatView")
 
 extension ChatView {
-    func isWithinWorkingHours(for room: ChatRoom, now: Date = Date()) -> Bool {
-        guard room.isOrganizationRoom else { return true }
-        let tz = TimeZone(identifier: room.timeZoneIdentifier) ?? .current
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = tz
-        let comps = cal.dateComponents([.weekday, .hour, .minute], from: now)
-        guard let weekday = comps.weekday, let hour = comps.hour, let minute = comps.minute else { return true }
-        if !room.workingDays.contains(weekday) { return false }
-        let start = room.workStartHour * 60 + room.workStartMinute
-        let end = room.workEndHour * 60 + room.workEndMinute
-        let current = hour * 60 + minute
-        return current >= start && current < end
-    }
-
     func setupViewModelIfNeeded() {
         chatService.modelContext = modelContext
 

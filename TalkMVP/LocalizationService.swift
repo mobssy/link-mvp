@@ -16,14 +16,14 @@ protocol LocalizationServiceProtocol {
 enum LocalizationKey: String {
     // Basic Actions
     case cancel, save, ok, done, close, delete, edit, add, search, settings
-    case profile, logout, signin, signup, `open`, attach, viewProfile, reply
+    case profile, logout, signin, signup, `open`, reply
     case copyText = "copy"
     case addReaction = "add_reaction"
     case send
 
     // Chat Related
     case chat, message, messageInputPlaceholder = "message_input_placeholder"
-    case typing, online, offline
+    case online
     case replyingTo = "replying_to"
     case me
     case conversationSummary = "conversation_summary"
@@ -31,13 +31,11 @@ enum LocalizationKey: String {
 
     // Friends
     case friends, addFriend = "add_friend", friendRequest = "friend_request"
-    case accept, reject, block, unblock
+    case accept, block, unblock
     case addFriendTitle = "add_friend_title"
     case addFriendMessage = "add_friend_message"
 
     // Notifications & Errors
-    case notification, errorOccurred = "error_occurred"
-    case networkError = "network_error", tryAgain = "try_again"
     case muteNotifications = "mute_notifications"
     case unmuteNotifications = "unmute_notifications"
     case errorTitle = "error_title"
@@ -45,11 +43,7 @@ enum LocalizationKey: String {
     case blockFailed = "block_failed"
 
     // Permissions
-    case permissionRequired = "permission_required", openSettings = "open_settings"
-    case contactsPermissionTitle = "contacts_permission_title"
-    case contactsPermissionMessage = "contacts_permission_message"
-    case photoPermissionTitle = "photo_permission_title"
-    case photoPermissionMessage = "photo_permission_message"
+    case openSettings = "open_settings"
     case locationPermissionTitle = "location_permission_title"
     case locationPermissionMessage = "location_permission_message"
 
@@ -58,10 +52,6 @@ enum LocalizationKey: String {
     case messageList = "message_list", scrollMessagesHint = "scroll_messages_hint"
     case connectionStatus = "connection_status"
     case typingIndicator = "typing_indicator"
-
-    // Contacts & Matching
-    case contactsMatchResults = "contacts_match_results"
-    case matchPrefix = "match_prefix"
 
     // Message Actions
     case editedMessageAnnouncement = "edited_message_announcement"
@@ -73,25 +63,6 @@ enum LocalizationKey: String {
     case deleteForMe = "delete_for_me"
     case deleteForEveryone = "delete_for_everyone"
     case report = "report"
-
-    // Links & Security
-    case suspiciousLinkDetected = "suspicious_link_detected"
-    case unverifiedInfo = "unverified_info"
-    case alwaysAllow = "always_allow"
-
-    // Organization Room
-    case organizationRoom = "organization_room"
-    case enableOrgRoom = "enable_org_room"
-    case orgNameOptional = "org_name_optional"
-    case workingHours = "working_hours"
-    case workingHoursFooter = "working_hours_footer"
-    case channelSettings = "channel_settings"
-    case channelTimezone = "channel_timezone"
-    case weekdays, daily, start, end
-
-    // Emergency
-    case emergencyCall = "emergency_call"
-    case emergencyStarted = "emergency_started"
 
     // Translation
     case translatingEllipsis = "translating_ellipsis"
@@ -107,7 +78,6 @@ enum LocalizationKey: String {
     case video
     case photosVideos = "photos_videos"
     case file
-    case sentPhoto = "sent_photo"
     case sentVideo = "sent_video"
     case sentFile = "sent_file"
 
@@ -129,7 +99,6 @@ enum LocalizationKey: String {
     case copiedMessage = "copied_message"
     case moreOptions = "more_options"
     case locationMessageLabel = "location_message_label"
-    case shareLocation = "share_location"
 }
 
 enum Language {
@@ -270,22 +239,6 @@ class LocalizationService: LocalizationServiceProtocol {
             case .chinese: return "打开"
             case .spanish: return "Abrir"
             }
-        case .attach:
-            switch language {
-            case .korean: return "첨부"
-            case .english: return "Attach"
-            case .japanese: return "添付"
-            case .chinese: return "附加"
-            case .spanish: return "Adjuntar"
-            }
-        case .viewProfile:
-            switch language {
-            case .korean: return "프로필 보기"
-            case .english: return "View Profile"
-            case .japanese: return "プロフィールを見る"
-            case .chinese: return "查看资料"
-            case .spanish: return "Ver perfil"
-            }
         case .reply:
             switch language {
             case .korean: return "답장"
@@ -344,14 +297,6 @@ class LocalizationService: LocalizationServiceProtocol {
             case .chinese: return "输入消息"
             case .spanish: return "Escribe un mensaje"
             }
-        case .typing:
-            switch language {
-            case .korean: return "입력 중"
-            case .english: return "Typing"
-            case .japanese: return "入力中"
-            case .chinese: return "正在输入"
-            case .spanish: return "Escribiendo"
-            }
         case .online:
             switch language {
             case .korean: return "온라인"
@@ -359,14 +304,6 @@ class LocalizationService: LocalizationServiceProtocol {
             case .japanese: return "オンライン"
             case .chinese: return "在线"
             case .spanish: return "En línea"
-            }
-        case .offline:
-            switch language {
-            case .korean: return "오프라인"
-            case .english: return "Offline"
-            case .japanese: return "オフライン"
-            case .chinese: return "离线"
-            case .spanish: return "Desconectado"
             }
         case .replyingTo:
             switch language {
@@ -434,14 +371,6 @@ class LocalizationService: LocalizationServiceProtocol {
             case .chinese: return "接受"
             case .spanish: return "Aceptar"
             }
-        case .reject:
-            switch language {
-            case .korean: return "거절"
-            case .english: return "Reject"
-            case .japanese: return "拒否"
-            case .chinese: return "拒绝"
-            case .spanish: return "Rechazar"
-            }
         case .block:
             switch language {
             case .korean: return "차단"
@@ -476,38 +405,6 @@ class LocalizationService: LocalizationServiceProtocol {
             }
 
         // Notifications & Errors
-        case .notification:
-            switch language {
-            case .korean: return "알림"
-            case .english: return "Notification"
-            case .japanese: return "通知"
-            case .chinese: return "通知"
-            case .spanish: return "Notificación"
-            }
-        case .errorOccurred:
-            switch language {
-            case .korean: return "오류가 발생했습니다"
-            case .english: return "An error occurred"
-            case .japanese: return "エラーが発生しました"
-            case .chinese: return "发生了错误"
-            case .spanish: return "Ocurrió un error"
-            }
-        case .networkError:
-            switch language {
-            case .korean: return "네트워크 오류"
-            case .english: return "Network Error"
-            case .japanese: return "ネットワークエラー"
-            case .chinese: return "网络错误"
-            case .spanish: return "Error de red"
-            }
-        case .tryAgain:
-            switch language {
-            case .korean: return "다시 시도해주세요"
-            case .english: return "Please try again"
-            case .japanese: return "もう一度試してください"
-            case .chinese: return "请再试一次"
-            case .spanish: return "Por favor intenta de nuevo"
-            }
         case .muteNotifications:
             switch language {
             case .korean: return "알림 끄기"
@@ -526,14 +423,6 @@ class LocalizationService: LocalizationServiceProtocol {
             }
 
         // Permissions
-        case .permissionRequired:
-            switch language {
-            case .korean: return "권한이 필요합니다"
-            case .english: return "Permission Required"
-            case .japanese: return "権限が必要です"
-            case .chinese: return "需要权限"
-            case .spanish: return "Se requiere permiso"
-            }
         case .openSettings:
             switch language {
             case .korean: return "설정 열기"
@@ -541,38 +430,6 @@ class LocalizationService: LocalizationServiceProtocol {
             case .japanese: return "設定を開く"
             case .chinese: return "打开设置"
             case .spanish: return "Abrir configuración"
-            }
-        case .contactsPermissionTitle:
-            switch language {
-            case .korean: return "연락처 접근 권한 필요"
-            case .english: return "Contacts Permission Required"
-            case .japanese: return "連絡先アクセス権限が必要"
-            case .chinese: return "需要通讯录权限"
-            case .spanish: return "Se requiere permiso de contactos"
-            }
-        case .contactsPermissionMessage:
-            switch language {
-            case .korean: return "친구를 찾기 위해 연락처 접근 권한이 필요합니다. 설정에서 허용해 주세요."
-            case .english: return "Contacts access is required to find friends. Please allow it in Settings."
-            case .japanese: return "友だちを見つけるために連絡先へのアクセスが必要です。設定で許可してください。"
-            case .chinese: return "需要访问通讯录以查找朋友。请在设置中允许。"
-            case .spanish: return "Se requiere acceso a contactos para encontrar amigos. Por favor, permítalo en Configuración."
-            }
-        case .photoPermissionTitle:
-            switch language {
-            case .korean: return "사진 접근 권한 필요"
-            case .english: return "Photos Permission Required"
-            case .japanese: return "写真アクセス権限が必要"
-            case .chinese: return "需要相册权限"
-            case .spanish: return "Se requiere permiso de fotos"
-            }
-        case .photoPermissionMessage:
-            switch language {
-            case .korean: return "사진과 동영상을 첨부하려면 사진 접근 권한이 필요합니다. 설정에서 허용해 주세요."
-            case .english: return "Photos access is required to attach images and videos. Please allow it in Settings."
-            case .japanese: return "画像と動画を添付するために写真へのアクセスが必要です。設定で許可してください。"
-            case .chinese: return "需要访问相册以附加图片和视频。请在设置中允许。"
-            case .spanish: return "Se requiere acceso a fotos para adjuntar imágenes y videos. Por favor, permítalo en Configuración."
             }
         case .locationPermissionTitle:
             switch language {
@@ -642,24 +499,6 @@ class LocalizationService: LocalizationServiceProtocol {
             }
 
         // Contacts & Matching
-        case .contactsMatchResults:
-            switch language {
-            case .korean: return "연락처 매칭 결과"
-            case .english: return "Contacts Match Results"
-            case .japanese: return "連絡先マッチング結果"
-            case .chinese: return "通讯录匹配结果"
-            case .spanish: return "Resultados de coincidencia de contactos"
-            }
-        case .matchPrefix:
-            switch language {
-            case .korean: return "일치: "
-            case .english: return "Match: "
-            case .japanese: return "一致: "
-            case .chinese: return "匹配: "
-            case .spanish: return "Coincidencia: "
-            }
-
-        // Message Actions
         case .editedMessageAnnouncement:
             switch language {
             case .korean: return "메시지를 편집했습니다"
@@ -742,140 +581,6 @@ class LocalizationService: LocalizationServiceProtocol {
             }
 
         // Links & Security
-        case .suspiciousLinkDetected:
-            switch language {
-            case .korean: return "의심스러운 링크가 감지되었습니다"
-            case .english: return "A suspicious link was detected"
-            case .japanese: return "疑わしいリンクが検出されました"
-            case .chinese: return "检测到可疑链接"
-            case .spanish: return "Se detectó un enlace sospechoso"
-            }
-        case .unverifiedInfo:
-            switch language {
-            case .korean: return "확인되지 않은 정보"
-            case .english: return "Unverified Info"
-            case .japanese: return "未確認の情報"
-            case .chinese: return "未经验证的信息"
-            case .spanish: return "Información no verificada"
-            }
-        case .alwaysAllow:
-            switch language {
-            case .korean: return "항상 허용"
-            case .english: return "Always Allow"
-            case .japanese: return "常に許可"
-            case .chinese: return "始终允许"
-            case .spanish: return "Siempre permitir"
-            }
-
-        // Organization Room
-        case .organizationRoom:
-            switch language {
-            case .korean: return "조직방"
-            case .english: return "Organization Room"
-            case .japanese: return "組織ルーム"
-            case .chinese: return "组织房间"
-            case .spanish: return "Sala de organización"
-            }
-        case .enableOrgRoom:
-            switch language {
-            case .korean: return "조직방 활성화"
-            case .english: return "Enable Organization Room"
-            case .japanese: return "組織ルームを有効化"
-            case .chinese: return "启用组织房间"
-            case .spanish: return "Habilitar sala de organización"
-            }
-        case .orgNameOptional:
-            switch language {
-            case .korean: return "조직명(선택)"
-            case .english: return "Organization Name (Optional)"
-            case .japanese: return "組織名（任意）"
-            case .chinese: return "组织名称（可选）"
-            case .spanish: return "Nombre de organización (opcional)"
-            }
-        case .workingHours:
-            switch language {
-            case .korean: return "근무 시간"
-            case .english: return "Working Hours"
-            case .japanese: return "勤務時間"
-            case .chinese: return "工作时间"
-            case .spanish: return "Horario laboral"
-            }
-        case .workingHoursFooter:
-            switch language {
-            case .korean: return "간단히 요일과 시작/종료 시간을 설정하세요"
-            case .english: return "Quickly set weekdays and start/end times"
-            case .japanese: return "曜日と開始/終了時間を簡単に設定"
-            case .chinese: return "快速设置工作日和开始/结束时间"
-            case .spanish: return "Configure días y horarios de inicio/fin"
-            }
-        case .channelSettings:
-            switch language {
-            case .korean: return "채널 설정"
-            case .english: return "Channel Settings"
-            case .japanese: return "チャンネル設定"
-            case .chinese: return "频道设置"
-            case .spanish: return "Configuración de canal"
-            }
-        case .channelTimezone:
-            switch language {
-            case .korean: return "채널 시간대"
-            case .english: return "Channel Timezone"
-            case .japanese: return "チャンネルのタイムゾーン"
-            case .chinese: return "频道时区"
-            case .spanish: return "Zona horaria del canal"
-            }
-        case .weekdays:
-            switch language {
-            case .korean: return "평일"
-            case .english: return "Weekdays"
-            case .japanese: return "平日"
-            case .chinese: return "工作日"
-            case .spanish: return "Días laborables"
-            }
-        case .daily:
-            switch language {
-            case .korean: return "매일"
-            case .english: return "Daily"
-            case .japanese: return "毎日"
-            case .chinese: return "每天"
-            case .spanish: return "Diario"
-            }
-        case .start:
-            switch language {
-            case .korean: return "시작"
-            case .english: return "Start"
-            case .japanese: return "開始"
-            case .chinese: return "开始"
-            case .spanish: return "Inicio"
-            }
-        case .end:
-            switch language {
-            case .korean: return "종료"
-            case .english: return "End"
-            case .japanese: return "終了"
-            case .chinese: return "结束"
-            case .spanish: return "Fin"
-            }
-
-        // Emergency
-        case .emergencyCall:
-            switch language {
-            case .korean: return "긴급 호출"
-            case .english: return "Emergency Call"
-            case .japanese: return "緊急通話"
-            case .chinese: return "紧急呼叫"
-            case .spanish: return "Llamada de emergencia"
-            }
-        case .emergencyStarted:
-            switch language {
-            case .korean: return "긴급 호출이 시작되었습니다"
-            case .english: return "Emergency call started"
-            case .japanese: return "緊急通話が開始されました"
-            case .chinese: return "紧急呼叫已开始"
-            case .spanish: return "Llamada de emergencia iniciada"
-            }
-
-        // Translation
         case .translatingEllipsis:
             switch language {
             case .korean: return "번역 중..."
@@ -937,14 +642,6 @@ class LocalizationService: LocalizationServiceProtocol {
             case .japanese: return "ファイル"
             case .chinese: return "文件"
             case .spanish: return "Archivo"
-            }
-        case .sentPhoto:
-            switch language {
-            case .korean: return "사진을 보냈습니다"
-            case .english: return "Sent a photo"
-            case .japanese: return "写真を送りました"
-            case .chinese: return "发送了一张照片"
-            case .spanish: return "Envió una foto"
             }
         case .sentVideo:
             switch language {
@@ -1123,14 +820,6 @@ class LocalizationService: LocalizationServiceProtocol {
             case .japanese: return "位置情報共有"
             case .chinese: return "位置共享"
             case .spanish: return "Ubicación compartida"
-            }
-        case .shareLocation:
-            switch language {
-            case .korean: return "위치 공유"
-            case .english: return "Share Location"
-            case .japanese: return "位置情報を共有"
-            case .chinese: return "共享位置"
-            case .spanish: return "Compartir ubicación"
             }
         }
     }

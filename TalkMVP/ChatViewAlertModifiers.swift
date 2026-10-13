@@ -61,31 +61,6 @@ struct EditMessageAlertModifier: ViewModifier {
     }
 }
 
-/// 긴급 호출 Alert
-struct EmergencyAlertModifier: ViewModifier {
-    let localizationService: LocalizationServiceProtocol
-    let language: Language
-    @Binding var isPresented: Bool
-
-    init(
-        isPresented: Binding<Bool>,
-        localizationService: LocalizationServiceProtocol = LocalizationService.shared,
-        language: Language
-    ) {
-        self._isPresented = isPresented
-        self.localizationService = localizationService
-        self.language = language
-    }
-
-    func body(content: Content) -> some View {
-        content.alert(localizedAlertText(.emergencyCall, language), isPresented: $isPresented) {
-            Button(localizedAlertText(.ok, language)) {}
-        } message: {
-            Text(localizedAlertText(.emergencyStarted, language))
-        }
-    }
-}
-
 /// 위치 권한 Alert
 struct LocationPermissionAlertModifier: ViewModifier {
     let localizationService: LocalizationServiceProtocol
@@ -177,62 +152,15 @@ struct BlockAlertModifier: ViewModifier {
     }
 }
 
-/// 의심스러운 링크 Alert
-struct SuspiciousLinkAlertModifier: ViewModifier {
-    let localizationService: LocalizationServiceProtocol
-    let language: Language
-    @Binding var isPresented: Bool
-    @Binding var linkToVerify: String?
-    @Binding var ignoredDomains: Set<String>
-    let openURL: (URL) -> Void
-
-    init(
-        isPresented: Binding<Bool>,
-        linkToVerify: Binding<String?>,
-        ignoredDomains: Binding<Set<String>>,
-        openURL: @escaping (URL) -> Void,
-        localizationService: LocalizationServiceProtocol = LocalizationService.shared,
-        language: Language
-    ) {
-        self._isPresented = isPresented
-        self._linkToVerify = linkToVerify
-        self._ignoredDomains = ignoredDomains
-        self.openURL = openURL
-        self.localizationService = localizationService
-        self.language = language
-    }
-
-    func body(content: Content) -> some View {
-        content.alert(localizedAlertText(.unverifiedInfo, language), isPresented: $isPresented) {
-            Button(localizedAlertText(.cancel, language), role: .cancel) {}
-            if let link = linkToVerify, let url = URL(string: link) {
-                Button(localizedAlertText(.open, language)) { openURL(url) }
-                if let host = url.host {
-                    Button(localizedAlertText(.alwaysAllow, language)) {
-                        ignoredDomains.insert(host)
-                        UserDefaults.standard.set(Array(ignoredDomains), forKey: "ignoredDomains")
-                    }
-                }
-            }
-        } message: {
-            Text(linkToVerify ?? localizedAlertText(.suspiciousLinkDetected, language))
-        }
-    }
-}
-
 // MARK: - Compound Alert Modifier
 /// Combines all alert modifiers to reduce type-checking complexity
 struct CompoundAlertModifier: ViewModifier {
     @Binding var showingEditAlert: Bool
     @Binding var editingText: String
     @Binding var editingMessage: Message?
-    @Binding var showingEmergencyAlert: Bool
     @Binding var showingLocationPermissionAlert: Bool
     @Binding var showingReportAlert: Bool
     @Binding var showingBlockAlert: Bool
-    @Binding var suspiciousLinkDetected: Bool
-    @Binding var linkToVerify: String?
-    @Binding var ignoredDomains: Set<String>
 
     let chatRoomName: String
     let openURL: (URL) -> Void
@@ -261,10 +189,6 @@ struct CompoundAlertModifier: ViewModifier {
                 onSave: onEditSave,
                 language: language
             ))
-            .modifier(EmergencyAlertModifier(
-                isPresented: $showingEmergencyAlert,
-                language: language
-            ))
             .modifier(LocationPermissionAlertModifier(
                 isPresented: $showingLocationPermissionAlert,
                 openSettings: {
@@ -283,13 +207,6 @@ struct CompoundAlertModifier: ViewModifier {
                 isPresented: $showingBlockAlert,
                 name: chatRoomName,
                 onBlock: onBlock,
-                language: language
-            ))
-            .modifier(SuspiciousLinkAlertModifier(
-                isPresented: $suspiciousLinkDetected,
-                linkToVerify: $linkToVerify,
-                ignoredDomains: $ignoredDomains,
-                openURL: openURL,
                 language: language
             ))
     }

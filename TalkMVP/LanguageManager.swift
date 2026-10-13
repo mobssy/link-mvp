@@ -32,17 +32,6 @@ class LanguageManager: ObservableObject {
             case .spanish: return "Español"
             }
         }
-
-        var localizedDisplayName: String {
-            switch self {
-            case .korean: return Bundle.localizedString(forKey: "language.korean", value: "한국어", table: nil)
-            case .english: return Bundle.localizedString(forKey: "language.english", value: "English", table: nil)
-            case .japanese: return "日本語"
-            case .chinese: return "中文（简体）"
-            case .chineseTraditional: return "中文（繁體）"
-            case .spanish: return "Español"
-            }
-        }
     }
 
     private let languageKey = "selectedLanguage"
@@ -56,9 +45,6 @@ class LanguageManager: ObservableObject {
         currentLanguage = language
         saveLanguagePreference()
         applyLanguage()
-
-        // 언어 변경을 알리기 위해 NotificationCenter 사용
-        NotificationCenter.default.post(name: .languageChanged, object: language)
     }
 
     private func loadLanguagePreference() {
@@ -173,14 +159,4 @@ class LanguageManager: ObservableObject {
             "hasUserPreference": UserDefaults.standard.string(forKey: languageKey) != nil ? "true" : "false"
         ]
     }
-}
-
-extension Bundle {
-    static func localizedString(forKey key: String, value: String, table: String?) -> String {
-        return Bundle.main.localizedString(forKey: key, value: value, table: table)
-    }
-}
-
-extension Notification.Name {
-    static let languageChanged = Notification.Name("languageChanged")
 }

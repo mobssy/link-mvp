@@ -5,37 +5,13 @@
 
 import SwiftUI
 import SwiftData
-import Photos
 import PhotosUI
 import UniformTypeIdentifiers
 
 extension ChatView {
+    /// PHPickerViewController runs out of process, so no photo-library permission is needed.
     func openPhotosAttachment() {
-        let hasPhotoUsageDescription = Bundle.main.object(forInfoDictionaryKey: "NSPhotoLibraryUsageDescription") != nil
-        if !hasPhotoUsageDescription {
-            showingPhotosPicker = true
-            return
-        }
-
-        let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-        switch status {
-        case .authorized, .limited:
-            showingPhotosPicker = true
-        case .notDetermined:
-            PHPhotoLibrary.requestAuthorization(for: .readWrite) { newStatus in
-                DispatchQueue.main.async {
-                    if newStatus == .authorized || newStatus == .limited {
-                        self.showingPhotosPicker = true
-                    } else {
-                        self.showingPhotosPermissionAlert = true
-                    }
-                }
-            }
-        case .denied, .restricted:
-            showingPhotosPermissionAlert = true
-        @unknown default:
-            showingPhotosPermissionAlert = true
-        }
+        showingPhotosPicker = true
     }
 
     func sendImageMessage(data: Data) async {
@@ -180,11 +156,10 @@ extension ChatView {
             }
         } else {
             item.itemProvider.loadObject(ofClass: UIImage.self) { reading, error in
-                if let error = error {
+                if error != nil {
                     Task { @MainActor in
                         self.viewModel?.errorMessage = self.languageManager.localize(ko: "이미지 로드에 실패했습니다.", en: "Failed to load image.", ja: "画像の読み込みに失敗しました。", zh: "加载图片失败。", es: "Error al cargar la imagen.")
                     }
-                    _ = error
                     return
                 }
 

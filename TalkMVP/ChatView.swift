@@ -13,7 +13,6 @@ import Photos
 import UniformTypeIdentifiers
 import LinkPresentation
 import UIKit
-import Contacts
 
 // Wraps ChatViewModel as @StateObject so ChatView re-renders on every @Published change.
 // Direct @StateObject for an optional is not supported in SwiftUI — this box bridges the gap.
@@ -34,7 +33,6 @@ final class ChatViewModelContainer: ObservableObject {
 struct ChatView: View {
     @Environment(\.modelContext) var modelContext
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     @Environment(\.openURL) private var openURL
     @EnvironmentObject var languageManager: LanguageManager
@@ -63,7 +61,6 @@ struct ChatView: View {
     @State var pendingAttachment: PendingAttachment?
     @State var showingAttachmentPreview = false
     @State var showingPhotosPicker = false
-    @State var showingPhotosPermissionAlert = false
     @State var showingDocumentPicker = false
 
     // MARK: - Friends
@@ -99,25 +96,13 @@ struct ChatView: View {
     @StateObject var locationManager = LocationManager()
     @State var pendingLocationSend = false
 
-    // MARK: - Contacts Sync
-    @StateObject private var contactsSync = ContactsSyncService()
-    @State var showingContactsResult = false
-    @State var matchedUsers: [MatchedUser] = []
-    @State var showingContactsPermissionAlert = false
-
     // MARK: - Moderation
     @State var showingReportAlert = false
     @State var showingBlockAlert = false
-    @State var suspiciousLinkDetected = false
-    @State var linkToVerify: String?
-    @State var ignoredDomains: Set<String> = []
 
     // MARK: - Background & Presentation
     @State var showingBackgroundSettings = false
     @State var showingLocationPermissionAlert = false
-
-    // MARK: - Emergency Alert
-    @State var showingEmergencyAlert = false
 
     // MARK: - AI Settings
     @AppStorage("aiSummaryEnabled") var aiSummaryEnabled = false
@@ -137,18 +122,6 @@ struct ChatView: View {
         formatter.timeStyle = .short
         return formatter
     }()
-
-    static let dateTimeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale.current
-        formatter.dateStyle = .short
-        formatter.timeStyle = .short
-        return formatter
-    }()
-
-    static let safeDomains: Set<String> = [
-        "apple.com", "google.com", "naver.com", "daum.net", "kakao.com", "youtube.com", "icloud.com"
-    ]
 
     // Shared in-memory context used only during init — replaced by the environment's
     // shared context in setupViewModelIfNeeded() before any real I/O happens.
@@ -281,9 +254,6 @@ struct ChatView: View {
             setupViewModelIfNeeded()
             checkIfFriend()
             markMessagesAsRead()
-            if let saved = UserDefaults.standard.array(forKey: "ignoredDomains") as? [String] {
-                ignoredDomains = Set(saved)
-            }
         }
         .sheet(isPresented: $showingDocumentPicker) {
             DocumentPicker { url in
@@ -309,13 +279,9 @@ struct ChatView: View {
             showingEditAlert: $showingEditAlert,
             editingText: $editingText,
             editingMessage: $editingMessage,
-            showingEmergencyAlert: $showingEmergencyAlert,
             showingLocationPermissionAlert: $showingLocationPermissionAlert,
             showingReportAlert: $showingReportAlert,
             showingBlockAlert: $showingBlockAlert,
-            suspiciousLinkDetected: $suspiciousLinkDetected,
-            linkToVerify: $linkToVerify,
-            ignoredDomains: $ignoredDomains,
             chatRoomName: chatRoom.name,
             openURL: { url in openURL(url) },
             onEditSave: { message, newText in
@@ -330,24 +296,6 @@ struct ChatView: View {
     var body: some View {
         baseScaffold
             .modifier(allAlertModifiers)
-            .alert(localizedText("contacts_permission_title"), isPresented: $showingContactsPermissionAlert) {
-                Button(localizedText("cancel"), role: .cancel) {}
-                Button(localizedText("open_settings")) {
-                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
-                }
-            } message: {
-                Text(localizedText("contacts_permission_message"))
-            }
-            .alert(localizedText("photo_permission_title"), isPresented: $showingPhotosPermissionAlert) {
-                Button(localizedText("cancel"), role: .cancel) {}
-                Button(localizedText("open_settings")) {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        openURL(url)
-                    }
-                }
-            } message: {
-                Text(localizedText("photo_permission_message"))
-            }
             .alert(localizedText("add_friend_title"), isPresented: $showingAddFriendAlert) {
                 Button(localizedText("cancel"), role: .cancel) {}
                 Button(localizedText("add")) {
@@ -361,7 +309,6 @@ struct ChatView: View {
             .accessibilityHint(String(format: localizedText("chat_screen_hint"), chatRoom.name))
             .accessibilityIdentifier("chatView")
             .onDisappear {
-                viewModel?.stopTyping()
                 viewModel?.stopOnlineStatusPolling()
             }
             .alert(
@@ -397,24 +344,6 @@ struct ChatView: View {
                 } else {
                     MiniProfileSheet(name: chatRoom.name, symbol: chatRoom.profileImage)
                         .environmentObject(languageManager)
-                }
-            }
-            .sheet(isPresented: $showingContactsResult) {
-                NavigationStack {
-                    List(matchedUsers) { user in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(user.displayName).font(.body)
-                            Text(localizedText("match_prefix") + user.matchedBy)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .navigationTitle(localizedText("contacts_match_results"))
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button(localizedText("close")) { showingContactsResult = false }
-                        }
-                    }
                 }
             }
             .sheet(isPresented: $showingPhotosPicker) {

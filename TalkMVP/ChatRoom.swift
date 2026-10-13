@@ -8,14 +8,6 @@
 import Foundation
 import SwiftData
 
-// 조직 역할 정의
-enum OrgRole: String, Codable, CaseIterable {
-    case admin
-    case manager
-    case oncall
-    case member
-}
-
 @Model
 class ChatRoom {
     @Attribute(.unique) var id: UUID
@@ -89,18 +81,4 @@ class ChatRoom {
           self.timeZoneIdentifier = TimeZone.current.identifier
           self.emergencyAllowedRoles = ["admin", "oncall"]  // 직접 문자열 사용
       }
-
-    func updateLastMessage() {
-        if let lastMsg = messages.sorted(by: { $0.timestamp > $1.timestamp }).first {
-            self.lastMessage = lastMsg.text
-            self.timestamp = lastMsg.timestamp
-        }
-    }
-
-    func role(for userId: String) -> OrgRole {
-        if let raw = roles[userId], let role = OrgRole(rawValue: raw) {
-            return role
-        }
-        return .member
-    }
 }

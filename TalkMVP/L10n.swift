@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 /// Centralized localization helper to avoid scattering `localizedText` across views.
-/// - Usage: `L10n.friends(language)` or `L10n.text("friends", language)`
+/// - Usage: `L10n.text("friends", language)`
 enum L10n {
     /// Returns the localized string for a known key with built-in Korean/English/Japanese/Chinese/Spanish mapping.
     /// If you later add Localizable.strings, you can migrate calls to String(localized:),
@@ -583,11 +583,6 @@ enum L10n {
             return key.replacingOccurrences(of: "_", with: " ").capitalized
         }
     }
-
-    // Convenience helpers per commonly used keys
-    static func friends(_ language: AppLanguage) -> String { text("friends", language) }
-    static func friendsList(_ language: AppLanguage) -> String { text("friends_list", language) }
-    static func searchPlaceholder(_ language: AppLanguage) -> String { text("search_friends_placeholder", language) }
 
     // Overload accepting LanguageManager.Language so call sites can pass currentLanguage directly
     static func text(_ key: String, _ language: LanguageManager.Language) -> String {

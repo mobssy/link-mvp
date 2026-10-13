@@ -18,7 +18,6 @@ private let vmLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMV
 class ChatViewModel: ObservableObject {
     @Published var messages: [Message] = []
     @Published var newMessageText: String = ""
-    @Published var isTyping = false
     @Published var otherUserTyping = false
     @Published var isOnline = true
     @Published var replyingToMessage: Message?
@@ -49,11 +48,7 @@ class ChatViewModel: ObservableObject {
     private var chatRoom: ChatRoom
     private var chatService: ChatServiceProtocol?
     private var cancellables = Set<AnyCancellable>()
-    private var typingTimer: Timer?
     private var onlineStatusTask: Task<Void, Never>?
-    private var currentUserId: String {
-        UserDefaults.standard.string(forKey: "currentUserId") ?? "currentUser"
-    }
 
     private func localizedVM(ko: String, en: String, ja: String, zh: String, es: String) -> String {
         let lang = LanguageManager.currentLanguageCode
@@ -97,7 +92,6 @@ class ChatViewModel: ObservableObject {
 
     deinit {
         cancellables.removeAll()
-        typingTimer?.invalidate()
         onlineStatusTask?.cancel()
     }
 
@@ -234,7 +228,6 @@ class ChatViewModel: ObservableObject {
 
         newMessageText = ""
         replyingToMessage = nil
-        stopTyping()
 
         // Auto response
         sendAutoResponse()
@@ -344,34 +337,6 @@ class ChatViewModel: ObservableObject {
         sendAutoResponse()
     }
 
-    // 타이핑 상태 관리
-    func startTyping() {
-        // 항상 타이핑 상태로 전환하고 타이머를 리셋합니다.
-        isTyping = true
-
-        // 실제 앱에서는 서버로 타이핑 시작 이벤트 전송
-        print("User started typing in chat: \(chatRoom.name)")
-
-        // 타이핑 타이머 리셋 (selector 기반으로 @Sendable 캡처 회피)
-        typingTimer?.invalidate()
-        typingTimer = Timer.scheduledTimer(timeInterval: 3.0, target: self, selector: #selector(typingTimerFired(_:)), userInfo: nil, repeats: false)
-    }
-
-    @objc private func typingTimerFired(_ timer: Timer) {
-        stopTyping()
-    }
-
-    func stopTyping() {
-        guard isTyping else { return }
-        isTyping = false
-
-        // 실제 앱에서는 서버로 타이핑 중단 이벤트 전송
-        print("User stopped typing in chat: \(chatRoom.name)")
-
-        typingTimer?.invalidate()
-        typingTimer = nil
-    }
-
     private func simulateTypingIndicator() {
         otherUserTyping = true
         DispatchQueue.main.asyncAfter(deadline: .now() + Double.random(in: 1.5...3.0)) { [weak self] in
@@ -468,64 +433,10 @@ class ChatViewModel: ObservableObject {
         onlineStatusTask = nil
     }
 
-    // MARK: - 반응(Reactions) 관련 메서드들
-
-    func addReaction(_ emoji: String, to message: Message) {
-        message.addReaction(emoji, from: currentUserId)
-
-        Task {
-            do {
-                try await messageRepository.updateMessage(message)
-                // UI update trigger
-                objectWillChange.send()
-
-                // Send to server
-                chatService?.sendReaction(emoji, to: message, in: chatRoom)
-            } catch {
-                vmLogger.error("Failed to save reaction: \(error.localizedDescription, privacy: .public)")
-                errorMessage = "Failed to add reaction. Please try again."
-                // Rollback UI: remove the reaction from the message
-                message.removeReaction(emoji, from: currentUserId)
-                objectWillChange.send()
-            }
-        }
-    }
-
-    func removeReaction(_ emoji: String, from message: Message) {
-        message.removeReaction(emoji, from: currentUserId)
-
-        Task {
-            do {
-                try await messageRepository.updateMessage(message)
-                objectWillChange.send()
-
-                chatService?.removeReaction(emoji, from: message, in: chatRoom)
-            } catch {
-                vmLogger.error("Failed to remove reaction: \(error.localizedDescription, privacy: .public)")
-            }
-        }
-    }
-
-    func toggleReaction(_ emoji: String, for message: Message) {
-        if message.hasReaction(emoji, from: currentUserId) {
-            removeReaction(emoji, from: message)
-        } else {
-            addReaction(emoji, to: message)
-        }
-    }
-
     // MARK: - 답장 관련 메서드들
 
     func setReplyMessage(_ message: Message?) {
         replyingToMessage = message
-    }
-
-    func clearReplyMessage() {
-        replyingToMessage = nil
-    }
-
-    func getRepliedMessage(for messageId: UUID) -> Message? {
-        return messages.first { $0.id == messageId }
     }
 
     // MARK: - 메시지 편집/삭제 메서드들

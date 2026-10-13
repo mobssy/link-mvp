@@ -18,12 +18,6 @@ enum MessageType: String, Codable {
     case location
 }
 
-enum AttachmentType: String, Codable {
-    case image
-    case video
-    case file
-}
-
 @Model
 class Message {
     @Attribute(.unique) var id: UUID
@@ -186,24 +180,4 @@ class Message {
     func hasReaction(_ emoji: String, from userId: String) -> Bool {
         return reactions[emoji]?.contains(userId) == true
     }
-
-    func getReactionCount(_ emoji: String) -> Int {
-        return reactions[emoji]?.count ?? 0
-    }
-}
-
-// 샘플 데이터용 구조체 (SwiftData 모델과 별도)
-struct MessageData {
-    let text: String
-    let isFromCurrentUser: Bool
-    let sender: String
-
-    static let sampleMessages: [MessageData] = [
-        MessageData(text: "안녕하세요!", isFromCurrentUser: false, sender: "친구"),
-        MessageData(text: "안녕하세요! 반갑습니다 😊", isFromCurrentUser: true, sender: "나"),
-        MessageData(text: "오늘 날씨가 정말 좋네요", isFromCurrentUser: false, sender: "친구"),
-        MessageData(text: "네 맞아요! 산책하기 좋을 것 같아요", isFromCurrentUser: true, sender: "나"),
-        MessageData(text: "같이 카페 가실래요?", isFromCurrentUser: false, sender: "친구"),
-        MessageData(text: "좋아요! 몇 시에 만날까요?", isFromCurrentUser: true, sender: "나")
-    ]
 }

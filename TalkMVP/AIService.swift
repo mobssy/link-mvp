@@ -144,7 +144,7 @@ actor AIService {
     }
 
     private struct SummaryLabels {
-        let me, image, file, audio, deleted, video, header: String
+        let me, image, file, audio, header: String
         let noMessages, statsHeader, participants, totalMessages: String
         let other, keywordsHeader, recentHeader, keyTopics, decisions: String
     }
@@ -153,7 +153,7 @@ actor AIService {
         switch language.lowercased() {
         case "ko":
             return SummaryLabels(
-                me: "나", image: "이미지", file: "파일", audio: "음성 메시지", deleted: "삭제된 메시지", video: "동영상",
+                me: "나", image: "이미지", file: "파일", audio: "음성 메시지",
                 header: "대화 요약", noMessages: "요약할 메시지가 없습니다.",
                 statsHeader: "대화 통계", participants: "참여자", totalMessages: "총 메시지",
                 other: "상대방", keywordsHeader: "주요 키워드", recentHeader: "최근 대화",
@@ -161,7 +161,7 @@ actor AIService {
             )
         case "ja":
             return SummaryLabels(
-                me: "自分", image: "画像", file: "ファイル", audio: "音声メッセージ", deleted: "削除済み", video: "動画",
+                me: "自分", image: "画像", file: "ファイル", audio: "音声メッセージ",
                 header: "会話まとめ", noMessages: "要約するメッセージがありません。",
                 statsHeader: "会話統計", participants: "参加者", totalMessages: "合計メッセージ",
                 other: "相手", keywordsHeader: "キーワード", recentHeader: "最近の会話",
@@ -169,7 +169,7 @@ actor AIService {
             )
         case "zh-hans":
             return SummaryLabels(
-                me: "我", image: "图片", file: "文件", audio: "语音消息", deleted: "已删除", video: "视频",
+                me: "我", image: "图片", file: "文件", audio: "语音消息",
                 header: "对话摘要", noMessages: "没有可摘要的消息。",
                 statsHeader: "对话统计", participants: "参与者", totalMessages: "消息总数",
                 other: "对方", keywordsHeader: "关键词", recentHeader: "最近对话",
@@ -177,7 +177,7 @@ actor AIService {
             )
         case "es":
             return SummaryLabels(
-                me: "Yo", image: "Imagen", file: "Archivo", audio: "Mensaje de voz", deleted: "Eliminado", video: "Video",
+                me: "Yo", image: "Imagen", file: "Archivo", audio: "Mensaje de voz",
                 header: "Resumen de conversación", noMessages: "No hay mensajes para resumir.",
                 statsHeader: "Estadísticas", participants: "Participantes", totalMessages: "Total de mensajes",
                 other: "Otro", keywordsHeader: "Palabras clave", recentHeader: "Mensajes recientes",
@@ -185,7 +185,7 @@ actor AIService {
             )
         default:
             return SummaryLabels(
-                me: "Me", image: "Image", file: "File", audio: "Voice message", deleted: "Deleted", video: "Video",
+                me: "Me", image: "Image", file: "File", audio: "Voice message",
                 header: "Conversation Summary", noMessages: "No messages to summarize.",
                 statsHeader: "Statistics", participants: "Participants", totalMessages: "Total messages",
                 other: "Other", keywordsHeader: "Keywords", recentHeader: "Recent messages",
