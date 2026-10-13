@@ -4,9 +4,9 @@
 
 **Messaging without borders. Minimal by design. Universal by nature.**
 
-![Swift](https://img.shields.io/badge/Swift-5.9+-F05138?style=flat-square&logo=swift&logoColor=white)
-![Xcode](https://img.shields.io/badge/Xcode-15+-147EFB?style=flat-square&logo=xcode&logoColor=white)
-![iOS](https://img.shields.io/badge/iOS-17+-000000?style=flat-square&logo=apple&logoColor=white)
+![Swift](https://img.shields.io/badge/Swift-6.2+-F05138?style=flat-square&logo=swift&logoColor=white)
+![Xcode](https://img.shields.io/badge/Xcode-26+-147EFB?style=flat-square&logo=xcode&logoColor=white)
+![iOS](https://img.shields.io/badge/iOS-26+-000000?style=flat-square&logo=apple&logoColor=white)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
 
 <br/>
@@ -85,13 +85,15 @@ It's the moment of connection — the spark when two people understand each othe
 
 ## Tech Stack
 
-| Layer          | Technology                  |
-| -------------- | --------------------------- |
-| Language       | Swift 5.9+                  |
-| UI Framework   | SwiftUI                     |
-| Architecture   | MVVM                        |
-| Translation    | Apple Translation Framework |
-| Minimum Target | iOS 17+                     |
+| Layer          | Technology                                     |
+| -------------- | ---------------------------------------------- |
+| Language       | Swift 6.2 toolchain (targets use Swift 5 mode) |
+| UI Framework   | SwiftUI                                        |
+| Architecture   | MVVM + repositories                            |
+| Persistence    | SwiftData                                      |
+| On-device AI   | FoundationModels, Apple Translation Framework  |
+| Tests          | Swift Testing                                  |
+| Minimum Target | iOS 26+                                        |
 
 ---
 
@@ -123,15 +125,28 @@ It's the moment of connection — the spark when two people understand each othe
 
 ### Requirements
 
-- Xcode 15+
-- iOS 17+
-- Swift 5.9+
+- Xcode 26+
+- iOS 26+ (simulator or device)
+
+### Run on an iPhone
+
+1. Open `TalkMVP.xcodeproj`, select the **TalkMVP** target → **Signing & Capabilities**, and choose your team. With a free Apple ID, also change the bundle identifier to something unique.
+2. Connect the iPhone, pick it as the run destination and press **Run**.
+3. With a free (personal) team, iOS blocks the first launch until you trust the developer: **Settings → General → VPN & Device Management → your Apple ID → Trust**. Free provisioning profiles expire after 7 days; running from Xcode again renews them.
+4. On the sign-in screen, **Try Test Mode** opens the app with sample friends and chats — no account needed.
+
+### Tests
+
+```bash
+xcodebuild test -project TalkMVP.xcodeproj -scheme TalkMVP \
+  -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:TalkMVPTests
+```
 
 ---
 
 ## Project Structure
 
-The app target has no feature subfolders yet — almost every view/service/model file sits flat inside `TalkMVP/`, with `Repositories/` as the one exception. Five Settings screens also currently live at the repo root rather than inside `TalkMVP/`. This tree reflects the real, current layout:
+The app target has no feature subfolders yet — every view/service/model file sits flat inside `TalkMVP/` (a folder Xcode synchronizes into the target), with `Repositories/` as the one exception. This tree reflects the real, current layout:
 
 ```
 link-mvp/
@@ -141,28 +156,22 @@ link-mvp/
 │   ├── Repositories/
 │   │   ├── ChatRoomRepository.swift
 │   │   └── MessageRepository.swift
-│   ├── Assets.xcassets/         # App icon, color sets, image assets
-│   └── Assets/                  # Screenshots used in this README
-├── AISettingsView.swift         # ⚠ Settings screens below live at repo root, not inside TalkMVP/
-├── NotificationSettingsView.swift
-├── SecuritySettingsView.swift
-├── SettingsView+Main.swift
-├── TranslationSettingsView.swift
+│   └── Assets.xcassets/         # App icon, color sets, image assets
 ├── TalkMVPTests/
-│   └── TalkMVPTests.swift
-└── TalkMVPUITests/
-    ├── TalkMVPUITests.swift
-    └── TalkMVPUITestsLaunchTests.swift
+│   └── TalkMVPTests.swift       # Swift Testing suites
+├── TalkMVPUITests/
+└── docs/
+    └── screenshots/             # Images used in this README (kept out of the app bundle)
 ```
 
 **By feature** (logical grouping, not physical folders):
 
 - **App**: `TalkMVPApp`, `ContentView`
-- **Auth & App Lock**: `AuthView`, `AuthManager`, `SSOSignInView`, `GoogleOAuthService`, `AppLockView`, `AppLockManager`, `AppLockSettingsView`
+- **Auth & App Lock**: `AuthView`, `AuthManager`, `SSOSignInView`, `GoogleOAuthService`, `AppLockView`, `AppLockManager`
 - **Chat**: `ChatView` (+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `TypingIndicatorView`, `ConnectionStatusView`
-- **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendsListView`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
-- **Settings**: `SettingsView`(+`Security`), `SettingsCardComponents`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`, plus the 5 root-level screens above
-- **Services & Managers**: `AIService`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `VoiceMessageService`, `RealtimeChatManager`, `PermissionManager`, `AttachmentHandler`
+- **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
+- **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
+- **Services & Managers**: `AIService`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `VoiceMessageService`, `AttachmentHandler`
 - **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
 - **Data Layer**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `User`
 - **Shared**: `Colors+Extensions`
@@ -185,9 +194,9 @@ This repository is published on GitHub for portfolio purposes. Being able to vie
 
 **언어의 경계 없이. 미니멀하게 설계된. 모두를 위한 메신저.**
 
-![Swift](https://img.shields.io/badge/Swift-5.9+-F05138?style=flat-square&logo=swift&logoColor=white)
-![Xcode](https://img.shields.io/badge/Xcode-15+-147EFB?style=flat-square&logo=xcode&logoColor=white)
-![iOS](https://img.shields.io/badge/iOS-17+-000000?style=flat-square&logo=apple&logoColor=white)
+![Swift](https://img.shields.io/badge/Swift-6.2+-F05138?style=flat-square&logo=swift&logoColor=white)
+![Xcode](https://img.shields.io/badge/Xcode-26+-147EFB?style=flat-square&logo=xcode&logoColor=white)
+![iOS](https://img.shields.io/badge/iOS-26+-000000?style=flat-square&logo=apple&logoColor=white)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
 
 <br/>
@@ -266,13 +275,15 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ## 기술 스택
 
-| 레이어        | 기술                        |
-| ------------- | --------------------------- |
-| 언어          | Swift 5.9+                  |
-| UI 프레임워크 | SwiftUI                     |
-| 아키텍처      | MVVM                        |
-| 번역          | Apple Translation Framework |
-| 최소 타겟     | iOS 17+                     |
+| 레이어        | 기술                                           |
+| ------------- | ---------------------------------------------- |
+| 언어          | Swift 6.2 툴체인 (타깃은 Swift 5 모드)         |
+| UI 프레임워크 | SwiftUI                                        |
+| 아키텍처      | MVVM + 리포지토리                              |
+| 저장소        | SwiftData                                      |
+| 온디바이스 AI | FoundationModels, Apple Translation Framework  |
+| 테스트        | Swift Testing                                  |
+| 최소 타겟     | iOS 26+                                        |
 
 ---
 
@@ -304,15 +315,28 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ### 요구사항
 
-- Xcode 15+
-- iOS 17+
-- Swift 5.9+
+- Xcode 26+
+- iOS 26+ (시뮬레이터 또는 실기기)
+
+### 아이폰에서 실행하기
+
+1. `TalkMVP.xcodeproj`를 열고 **TalkMVP** 타깃 → **Signing & Capabilities**에서 팀을 선택합니다. 무료 Apple ID라면 번들 ID도 고유한 값으로 바꿔 주세요.
+2. 아이폰을 연결하고 실행 대상으로 선택한 뒤 **Run**을 누릅니다.
+3. 무료(개인) 팀은 첫 실행 전에 기기에서 개발자를 신뢰해야 합니다: **설정 → 일반 → VPN 및 기기 관리 → 내 Apple ID → 신뢰**. 무료 프로비저닝 프로파일은 7일 후 만료되며, Xcode에서 다시 실행하면 갱신됩니다.
+4. 로그인 화면의 **테스트 모드로 체험하기**를 누르면 계정 없이 샘플 친구·채팅과 함께 앱을 둘러볼 수 있습니다.
+
+### 테스트
+
+```bash
+xcodebuild test -project TalkMVP.xcodeproj -scheme TalkMVP \
+  -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:TalkMVPTests
+```
 
 ---
 
 ## 프로젝트 구조
 
-아직 기능별 하위 폴더는 없고, `Repositories/`를 제외한 거의 모든 view/service/model 파일이 `TalkMVP/` 밑에 flat하게 있습니다. Settings 화면 5개는 `TalkMVP/` 밖, 저장소 루트에 위치합니다. 아래는 실제 배치 그대로입니다:
+아직 기능별 하위 폴더는 없고, `Repositories/`를 제외한 모든 view/service/model 파일이 `TalkMVP/`(Xcode가 타깃에 자동 동기화하는 폴더) 밑에 flat하게 있습니다. 아래는 실제 배치 그대로입니다:
 
 ```
 link-mvp/
@@ -322,28 +346,22 @@ link-mvp/
 │   ├── Repositories/
 │   │   ├── ChatRoomRepository.swift
 │   │   └── MessageRepository.swift
-│   ├── Assets.xcassets/         # 앱 아이콘, 색상, 이미지 에셋
-│   └── Assets/                  # 이 README에 쓰인 스크린샷
-├── AISettingsView.swift         # ⚠ 아래 Settings 화면들은 TalkMVP/가 아닌 저장소 루트에 있음
-├── NotificationSettingsView.swift
-├── SecuritySettingsView.swift
-├── SettingsView+Main.swift
-├── TranslationSettingsView.swift
+│   └── Assets.xcassets/         # 앱 아이콘, 색상, 이미지 에셋
 ├── TalkMVPTests/
-│   └── TalkMVPTests.swift
-└── TalkMVPUITests/
-    ├── TalkMVPUITests.swift
-    └── TalkMVPUITestsLaunchTests.swift
+│   └── TalkMVPTests.swift       # Swift Testing 스위트
+├── TalkMVPUITests/
+└── docs/
+    └── screenshots/             # 이 README에 쓰인 이미지 (앱 번들에는 포함되지 않음)
 ```
 
 **기능별 분류** (실제 폴더가 아닌 논리적 그룹입니다):
 
 - **App**: `TalkMVPApp`, `ContentView`
-- **Auth & 앱 잠금**: `AuthView`, `AuthManager`, `SSOSignInView`, `GoogleOAuthService`, `AppLockView`, `AppLockManager`, `AppLockSettingsView`
+- **Auth & 앱 잠금**: `AuthView`, `AuthManager`, `SSOSignInView`, `GoogleOAuthService`, `AppLockView`, `AppLockManager`
 - **Chat**: `ChatView`(+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `TypingIndicatorView`, `ConnectionStatusView`
-- **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendsListView`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
-- **Settings**: `SettingsView`(+`Security`), `SettingsCardComponents`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`, 그리고 위의 루트 소재 5개
-- **Services & Managers**: `AIService`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `VoiceMessageService`, `RealtimeChatManager`, `PermissionManager`, `AttachmentHandler`
+- **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
+- **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
+- **Services & Managers**: `AIService`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `VoiceMessageService`, `AttachmentHandler`
 - **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
 - **데이터 레이어**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `User`
 - **공용**: `Colors+Extensions`
