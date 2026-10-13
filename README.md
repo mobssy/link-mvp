@@ -15,7 +15,7 @@ _A messenger that gets out of your way — and breaks language barriers while it
 
 <br/>
 
-![L!nk screenshot](TalkMVP/Assets/main.png)
+![L!nk screenshot](docs/screenshots/main.png)
 
 </div>
 
@@ -99,23 +99,23 @@ It's the moment of connection — the spark when two people understand each othe
 
 ### Translation
 
-![Translation](TalkMVP/Assets/translation.png)
+![Translation](docs/screenshots/translation.png)
 
 ### AI Summary
 
-![AI Summary](TalkMVP/Assets/summary.png)
+![AI Summary](docs/screenshots/summary.png)
 
 ### Settings
 
-![Settings](TalkMVP/Assets/settings.png)
+![Settings](docs/screenshots/settings.png)
 
 ### Accessibility
 
-![Accessibility](TalkMVP/Assets/accessibility.png)
+![Accessibility](docs/screenshots/accessibility.png)
 
 ### Voice Message
 
-![Voice Message](TalkMVP/Assets/voice.png)
+![Voice Message](docs/screenshots/voice.png)
 
 ---
 
@@ -196,7 +196,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 <br/>
 
-![L!nk screenshot](TalkMVP/Assets/main.png)
+![L!nk screenshot](docs/screenshots/main.png)
 
 </div>
 
@@ -280,23 +280,23 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ### 번역
 
-![번역](TalkMVP/Assets/translation.png)
+![번역](docs/screenshots/translation.png)
 
 ### AI 요약
 
-![AI 요약](TalkMVP/Assets/summary.png)
+![AI 요약](docs/screenshots/summary.png)
 
 ### 설정
 
-![설정](TalkMVP/Assets/settings.png)
+![설정](docs/screenshots/settings.png)
 
 ### 접근성
 
-![접근성](TalkMVP/Assets/accessibility.png)
+![접근성](docs/screenshots/accessibility.png)
 
 ### 음성 메시지
 
-![음성 메시지](TalkMVP/Assets/voice.png)
+![음성 메시지](docs/screenshots/voice.png)
 
 ---
 
