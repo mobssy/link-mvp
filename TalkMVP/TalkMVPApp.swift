@@ -34,9 +34,11 @@ struct LinkMVPApp: App {
             User.self,
             Friendship.self
         ])
+        // UI tests pass this flag so every run starts signed out with an empty store.
+        let inMemoryOnly = ProcessInfo.processInfo.arguments.contains("-UITestingInMemoryStore")
         // Try persistent store first; fall back to in-memory so the app stays alive
         // even if the on-disk store is corrupted (e.g. after a schema migration failure).
-        if let container = try? ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)]) {
+        if let container = try? ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemoryOnly)]) {
             return container
         }
         print("⚠️ [App] Persistent store unavailable — falling back to in-memory store. Data will not persist this session.")
