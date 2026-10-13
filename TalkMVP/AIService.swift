@@ -1,15 +1,14 @@
 //  AIService.swift
 //  TalkMVP
 //
-//  Lightweight mock AI service for summarization and translation.
+//  Conversation summaries and message translation using on-device models,
+//  with offline fallbacks when Apple Intelligence or a language pack is unavailable.
 
 import Foundation
 import NaturalLanguage
 import Translation
 
-#if canImport(FoundationModels)
 import FoundationModels
-#endif
 
 actor AIService {
     static let shared = AIService()
@@ -29,14 +28,10 @@ actor AIService {
         let transcriptLines = textMessages.map { "\($0.isFromCurrentUser ? labels.me : $0.sender): \($0.text)" }
         let transcript = transcriptLines.joined(separator: "\n")
 
-        #if canImport(FoundationModels)
-        if #available(iOS 18.0, *) {
-            if let aiResult = await generateAISummary(
-                transcript: transcript, labels: labels, language: targetLanguage,
-                participants: participantList, messageCount: last.count, dateStr: dateStr
-            ) { return aiResult }
-        }
-        #endif
+        if let aiResult = await generateAISummary(
+            transcript: transcript, labels: labels, language: targetLanguage,
+            participants: participantList, messageCount: last.count, dateStr: dateStr
+        ) { return aiResult }
 
         return generateFallbackSummary(
             messages: last, textMessages: textMessages, labels: labels,
@@ -44,8 +39,6 @@ actor AIService {
         )
     }
 
-    #if canImport(FoundationModels)
-    @available(iOS 18.0, *)
     private func generateAISummary(
         transcript: String, labels: SummaryLabels, language: String,
         participants: String, messageCount: Int, dateStr: String
@@ -83,7 +76,6 @@ actor AIService {
             return nil
         }
     }
-    #endif
 
     private func generateFallbackSummary(
         messages: [Message], textMessages: [Message], labels: SummaryLabels,
@@ -194,7 +186,7 @@ actor AIService {
         }
     }
 
-    // Very lightweight mock translation: prepend a label and simulate delay
+    // Translation pipeline: on-device model → Translation framework → offline phrasebook/label.
     func translate(_ text: String, autoDetect: Bool, target: String) async -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "" }
@@ -202,56 +194,49 @@ actor AIService {
         let targetCode = target.lowercased()
         let targetName = languageName(for: targetCode)
 
-        // Prefer on-device Apple Intelligence when available (iOS 18+ and supported devices)
-        #if canImport(FoundationModels)
-        if #available(iOS 18.0, *) {
-            let model = SystemLanguageModel.default
-            switch model.availability {
-            case .available:
-                do {
-                    let instructions = """
-                    You are a professional translation engine.
-                    - Translate any input to \(targetName).
-                    - Return only the translated text with no quotes or extra commentary.
-                    - Preserve emojis and basic punctuation.
-                    - Keep the tone natural and concise.
+        // Prefer on-device Apple Intelligence on supported devices
+        let model = SystemLanguageModel.default
+        switch model.availability {
+        case .available:
+            do {
+                let instructions = """
+                You are a professional translation engine.
+                - Translate any input to \(targetName).
+                - Return only the translated text with no quotes or extra commentary.
+                - Preserve emojis and basic punctuation.
+                - Keep the tone natural and concise.
+                """
+                let session = LanguageModelSession(instructions: instructions)
+                let prompt: String
+                if autoDetect {
+                    prompt = """
+                    Translate the following text to \(targetName). Detect the source language automatically. Return only the translation.\n\n\(trimmed)
                     """
-                    let session = LanguageModelSession(instructions: instructions)
-                    let prompt: String
-                    if autoDetect {
-                        prompt = """
-                        Translate the following text to \(targetName). Detect the source language automatically. Return only the translation.\n\n\(trimmed)
-                        """
-                    } else {
-                        prompt = """
-                        Translate to \(targetName). Return only the translation.\n\n\(trimmed)
-                        """
-                    }
-
-                    let response = try await session.respond(to: prompt)
-                    let output = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !output.isEmpty { return output }
-                } catch {
-                    // Fall through to fallback
+                } else {
+                    prompt = """
+                    Translate to \(targetName). Return only the translation.\n\n\(trimmed)
+                    """
                 }
-            default:
-                break
-            }
-        }
-        #endif
 
-        // Fallback: Use Apple's Translation framework (iOS 15+)
-        if #available(iOS 15.0, *) {
-            if let translated = await translateWithNLTranslation(trimmed, targetCode: targetCode) {
-                return translated
+                let response = try await session.respond(to: prompt)
+                let output = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !output.isEmpty { return output }
+            } catch {
+                // Fall through to fallback
             }
+        default:
+            break
+        }
+
+        // Fallback: detect the source language and use Apple's Translation framework
+        if let translated = await translateWithNLTranslation(trimmed, targetCode: targetCode) {
+            return translated
         }
 
         // Last resort fallback: lightweight label with original text
         return "[→ \(targetName)] \(trimmed)"
     }
     
-    @available(iOS 15.0, *)
     private func translateWithNLTranslation(_ text: String, targetCode: String) async -> String? {
         // Detect source language
         let recognizer = NLLanguageRecognizer()
@@ -269,18 +254,15 @@ actor AIService {
             return text
         }
         
-        // Try Apple's Translation framework (iOS 17.4+)
-        if #available(iOS 17.4, *) {
-            if let appleTranslation = await translateWithAppleFramework(text, from: sourceCode, to: normalizedTarget) {
-                return appleTranslation
-            }
+        // Try Apple's Translation framework
+        if let appleTranslation = await translateWithAppleFramework(text, from: sourceCode, to: normalizedTarget) {
+            return appleTranslation
         }
         
         // Fallback to mock translation
         return performMockTranslation(text, from: sourceCode, to: normalizedTarget)
     }
     
-    @available(iOS 17.4, *)
     private func translateWithAppleFramework(_ text: String, from sourceCode: String, to targetCode: String) async -> String? {
         // Convert language codes to Locale.Language
         guard let sourceLanguage = languageCodeToLocaleLanguage(sourceCode),
@@ -301,7 +283,6 @@ actor AIService {
         }
     }
     
-    @available(iOS 17.4, *)
     private func languageCodeToLocaleLanguage(_ code: String) -> Locale.Language? {
         switch code {
         case "ko": return Locale.Language(identifier: "ko")

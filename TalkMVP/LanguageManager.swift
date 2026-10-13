@@ -8,7 +8,6 @@
 import SwiftUI
 import Foundation
 import Combine
-import StoreKit
 
 @MainActor
 class LanguageManager: ObservableObject {
@@ -78,33 +77,9 @@ class LanguageManager: ObservableObject {
     }
 
     private func getAppStoreRegion() -> String {
-        // 앱스토어 지역 확인 방법들
-
-        // 1. iOS 18+에서는 Storefront.current 사용 (async이므로 동기적으로는 사용 불가)
-        // 대신 기존 방식과 Locale을 조합하여 사용
-        if #available(iOS 18.0, *) {
-            // iOS 18+에서는 Storefront.current가 async이므로 동기 함수에서는 사용할 수 없음
-            // 대신 기기 지역 정보를 우선 사용
-        } else {
-            // iOS 18 미만에서는 기존 방식 사용
-            if let storeCountry = SKPaymentQueue.default().storefront?.countryCode {
-                return storeCountry
-            }
-        }
-
-        // 2. 기기의 현재 지역 설정으로 fallback
-        if #available(iOS 16.0, *) {
-            if let region = Locale.current.region {
-                return region.identifier
-            }
-        } else {
-            if let regionCode = Locale.current.regionCode {
-                return regionCode
-            }
-        }
-
-        // 3. 기본값
-        return "US"
+        // StoreKit's Storefront.current is async, so this synchronous debug helper
+        // reports the device region instead.
+        Locale.current.region?.identifier ?? "US"
     }
 
     private func saveLanguagePreference() {
@@ -143,13 +118,7 @@ class LanguageManager: ObservableObject {
         let systemLanguage = Locale.preferredLanguages.first ?? "unknown"
         let storeRegion = getAppStoreRegion()
 
-        // iOS 16+에서는 region.identifier 사용, 그 이전에는 regionCode 사용
-        let currentRegion: String
-        if #available(iOS 16.0, *) {
-            currentRegion = Locale.current.region?.identifier ?? "unknown"
-        } else {
-            currentRegion = Locale.current.regionCode ?? "unknown"
-        }
+        let currentRegion = Locale.current.region?.identifier ?? "unknown"
 
         return [
             "currentLanguage": currentLanguage.rawValue,

@@ -17,15 +17,7 @@ final class VoiceMessageService: NSObject, ObservableObject, AVAudioRecorderDele
     private var tempURL: URL?
 
     func startRecording() async -> Bool {
-        let granted: Bool
-        if #available(iOS 17.0, *) {
-            granted = await AVAudioApplication.requestRecordPermission()
-        } else {
-            granted = await withCheckedContinuation { cont in
-                AVAudioSession.sharedInstance().requestRecordPermission { cont.resume(returning: $0) }
-            }
-        }
-        guard granted else { return false }
+        guard await AVAudioApplication.requestRecordPermission() else { return false }
 
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
