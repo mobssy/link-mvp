@@ -28,19 +28,6 @@ class ChatViewModel: ObservableObject {
     @Published private(set) var hasMoreMessages = true
     private var isLoadingMore = false
 
-    // Translation state (no placeholder text while translating)
-    @Published var translations: [UUID: String] = [:]
-    @Published var translating: Set<UUID> = []
-
-    // Read translation settings from UserDefaults to avoid @AppStorage dependency in non-View types
-    private var translationEnabled: Bool { UserDefaults.standard.bool(forKey: "translationEnabled") }
-    private var translationAutoDetect: Bool { UserDefaults.standard.bool(forKey: "translationAutoDetect") }
-    private var translationTargetLanguage: String {
-        let stored = UserDefaults.standard.string(forKey: "translationTargetLanguage") ?? "auto"
-        guard stored == "auto" else { return stored }
-        return LanguageManager.currentLanguageCode
-    }
-
     // Dependencies injected via constructor (Dependency Inversion Principle)
     private let messageRepository: MessageRepositoryProtocol
     private let chatRoomRepository: ChatRoomRepositoryProtocol
@@ -133,41 +120,6 @@ class ChatViewModel: ObservableObject {
         }
     }
 
-    func translateIfNeeded(_ message: Message) {
-        // Only translate text messages when translation is enabled
-        guard translationEnabled else { return }
-        let trimmed = message.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        guard translations[message.id] == nil else { return }
-
-        let currentLanguage = LanguageManager.currentLanguageCode
-        // Show a user-friendly placeholder while translating
-        let translatingText: String
-        if currentLanguage.hasPrefix("ja") {
-            translatingText = "翻訳中..."
-        } else if currentLanguage.hasPrefix("zh") {
-            translatingText = "翻译中..."
-        } else if currentLanguage.hasPrefix("es") {
-            translatingText = "Traduciendo..."
-        } else if currentLanguage.hasPrefix("ko") {
-            translatingText = "번역중..."
-        } else {
-            translatingText = "Translating..."
-        }
-        self.translations[message.id] = translatingText
-
-        Task {
-            let result = await AIService.shared.translate(
-                trimmed,
-                autoDetect: translationAutoDetect,
-                target: translationTargetLanguage
-            )
-            await MainActor.run {
-                self.translations[message.id] = result
-            }
-        }
-    }
-
     private func setupNotificationObservers() {
         NotificationCenter.default.publisher(for: .newMessageReceived)
             .sink { [weak self] notification in
@@ -177,7 +129,6 @@ class ChatViewModel: ObservableObject {
 
                 Task { @MainActor in
                     self.messages.append(message)
-                    self.translateIfNeeded(message)
                     self.simulateTypingIndicator()
                 }
             }
@@ -203,7 +154,6 @@ class ChatViewModel: ObservableObject {
 
                 // Update UI
                 messages.append(message)
-                translateIfNeeded(message)
 
                 // Update chat room's last message. Use the message's own text:
                 // newMessageText has already been cleared by the time this task runs.
@@ -411,7 +361,6 @@ class ChatViewModel: ObservableObject {
     private func receiveAutoResponse(_ message: Message) {
         markSentMessagesAsRead()
         messages.append(message)
-        translateIfNeeded(message)
     }
 
     func markSentMessagesAsRead() {
