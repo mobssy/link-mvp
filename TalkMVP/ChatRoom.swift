@@ -16,7 +16,8 @@ class ChatRoom {
     var timestamp: Date
     var unreadCount: Int
     var profileImage: String
-    @Relationship(deleteRule: .cascade) var messages: [Message] = [Message]()
+    // Messages point back to their room via `Message.chatRoomId`; deleting a room
+    // goes through `ChatRoomRepository.deleteChatRoom`, which deletes them too.
 
     // MARK: - 상대방 정보 (1:1 채팅용)
     var otherUserId: String?  // 상대방 User ID

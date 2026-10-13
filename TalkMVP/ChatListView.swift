@@ -112,11 +112,17 @@ struct ChatListView: View {
     }
 
     private func deleteChatRooms(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(filteredChatRooms[index])
+        // Resolve the rooms now: the offsets refer to the list as currently shown.
+        let rooms = offsets.map { filteredChatRooms[$0] }
+        let repository: ChatRoomRepositoryProtocol = LocalChatRoomRepository(modelContext: modelContext)
+        Task {
+            for room in rooms {
+                do {
+                    try await repository.deleteChatRoom(room)
+                } catch {
+                    print("❌ [ChatListView] Failed to delete chat room: \(error)")
+                }
             }
-            do { try modelContext.save() } catch { print("❌ [ChatListView] Failed to delete chat rooms: \(error)") }
         }
     }
 

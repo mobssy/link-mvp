@@ -263,6 +263,25 @@ struct ChatRoomRepositoryTests {
 
         #expect(rooms.isEmpty)
     }
+
+    @Test("Deleting a chat room also deletes its messages, and only its messages")
+    func deleteChatRoomDeletesItsMessages() async throws {
+        let context = try makeContext()
+        let repo = LocalChatRoomRepository(modelContext: context)
+        let doomed = ChatRoom(name: "To Delete")
+        let kept = ChatRoom(name: "Kept")
+        try await repo.saveChatRoom(doomed)
+        try await repo.saveChatRoom(kept)
+        context.insert(Message(text: "a", isFromCurrentUser: true, chatRoomId: doomed.id.uuidString))
+        context.insert(Message(text: "b", isFromCurrentUser: false, chatRoomId: doomed.id.uuidString))
+        context.insert(Message(text: "keep me", isFromCurrentUser: true, chatRoomId: kept.id.uuidString))
+        try context.save()
+
+        try await repo.deleteChatRoom(doomed)
+
+        let remaining = try context.fetch(FetchDescriptor<Message>())
+        #expect(remaining.map(\.text) == ["keep me"])
+    }
 }
 
 // MARK: - FriendSearchService

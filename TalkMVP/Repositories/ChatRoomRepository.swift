@@ -25,7 +25,7 @@ protocol ChatRoomRepositoryProtocol {
     /// Update unread count for a chat room
     func updateUnreadCount(for chatRoomId: UUID, count: Int) async throws
 
-    /// Delete a chat room
+    /// Delete a chat room together with every message in it
     func deleteChatRoom(_ chatRoom: ChatRoom) async throws
 }
 
@@ -100,7 +100,11 @@ class LocalChatRoomRepository: ChatRoomRepositoryProtocol {
     }
 
     func deleteChatRoom(_ chatRoom: ChatRoom) async throws {
+        // Messages belong to a room through `chatRoomId`, not a SwiftData relationship,
+        // so they have to be deleted explicitly or they outlive the room.
+        let roomId = chatRoom.id.uuidString
         do {
+            try modelContext.delete(model: Message.self, where: #Predicate { $0.chatRoomId == roomId })
             modelContext.delete(chatRoom)
             try modelContext.save()
         } catch {
