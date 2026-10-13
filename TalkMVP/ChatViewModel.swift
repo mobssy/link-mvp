@@ -44,7 +44,7 @@ class ChatViewModel: ObservableObject {
     // Dependencies injected via constructor (Dependency Inversion Principle)
     private let messageRepository: MessageRepositoryProtocol
     private let chatRoomRepository: ChatRoomRepositoryProtocol
-    private let autoResponseService: AutoResponseService
+    private let autoResponder: AutoResponding
     private var chatRoom: ChatRoom
     private var chatService: ChatServiceProtocol?
     private var cancellables = Set<AnyCancellable>()
@@ -63,11 +63,12 @@ class ChatViewModel: ObservableObject {
         messageRepository: MessageRepositoryProtocol,
         chatRoomRepository: ChatRoomRepositoryProtocol,
         chatRoom: ChatRoom,
-        chatService: ChatServiceProtocol? = nil
+        chatService: ChatServiceProtocol? = nil,
+        autoResponder: AutoResponding? = nil
     ) {
         self.messageRepository = messageRepository
         self.chatRoomRepository = chatRoomRepository
-        self.autoResponseService = AutoResponseService(messageRepository: messageRepository, chatRoomRepository: chatRoomRepository)
+        self.autoResponder = autoResponder ?? AutoResponseService(messageRepository: messageRepository, chatRoomRepository: chatRoomRepository)
         self.chatRoom = chatRoom
         self.chatService = chatService
 
@@ -183,8 +184,9 @@ class ChatViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    func sendMessage() {
-        guard !newMessageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+    @discardableResult
+    func sendMessage() -> Task<Void, Never>? {
+        guard !newMessageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
 
         let message = Message(
             text: newMessageText,
@@ -197,7 +199,7 @@ class ChatViewModel: ObservableObject {
             message.disappearAfterSeconds = chatRoom.disappearingDuration
         }
 
-        Task {
+        let task = Task {
             do {
                 // Save message via repository
                 try await messageRepository.saveMessage(message)
@@ -231,16 +233,18 @@ class ChatViewModel: ObservableObject {
 
         // Auto response
         sendAutoResponse()
+        return task
     }
 
-    func sendImage(_ imageData: Data) {
+    @discardableResult
+    func sendImage(_ imageData: Data) -> Task<Void, Never> {
         let message = Message(
             imageData: imageData,
             isFromCurrentUser: true,
             chatRoomId: chatRoom.id.uuidString
         )
 
-        Task {
+        let task = Task {
             do {
                 try await messageRepository.saveMessage(message)
 
@@ -265,9 +269,11 @@ class ChatViewModel: ObservableObject {
         }
 
         sendAutoResponse()
+        return task
     }
 
-    func sendVoiceMessage(audioData: Data, duration: Double) {
+    @discardableResult
+    func sendVoiceMessage(audioData: Data, duration: Double) -> Task<Void, Never> {
         let message = Message(
             audioData: audioData,
             duration: duration,
@@ -279,7 +285,7 @@ class ChatViewModel: ObservableObject {
             message.disappearAfterSeconds = chatRoom.disappearingDuration
         }
 
-        Task {
+        let task = Task {
             do {
                 try await messageRepository.saveMessage(message)
                 messages.append(message)
@@ -299,9 +305,11 @@ class ChatViewModel: ObservableObject {
         }
 
         sendAutoResponse()
+        return task
     }
 
-    func sendFile(fileName: String, fileExtension: String, fileSize: Int) {
+    @discardableResult
+    func sendFile(fileName: String, fileExtension: String, fileSize: Int) -> Task<Void, Never> {
         let message = Message(
             fileName: fileName,
             fileExtension: fileExtension,
@@ -310,7 +318,7 @@ class ChatViewModel: ObservableObject {
             chatRoomId: chatRoom.id.uuidString
         )
 
-        Task {
+        let task = Task {
             do {
                 try await messageRepository.saveMessage(message)
 
@@ -335,6 +343,7 @@ class ChatViewModel: ObservableObject {
         }
 
         sendAutoResponse()
+        return task
     }
 
     private func simulateTypingIndicator() {
@@ -347,11 +356,11 @@ class ChatViewModel: ObservableObject {
     private func sendAutoResponse() {
         // Capture the dependencies up front so the pending reply (a few seconds away)
         // doesn't keep this view model alive after the chat screen has closed.
-        let service = autoResponseService
+        let responder = autoResponder
         let room = chatRoom
         Task { [weak self] in
             do {
-                try await service.generateResponse(
+                try await responder.generateResponse(
                     for: room,
                     onTypingChange: { typing in self?.otherUserTyping = typing },
                     onMessage: { message in self?.receiveAutoResponse(message) }
@@ -380,7 +389,8 @@ class ChatViewModel: ObservableObject {
         }
     }
 
-    func sendLocationMessage(latitude: Double, longitude: Double) {
+    @discardableResult
+    func sendLocationMessage(latitude: Double, longitude: Double) -> Task<Void, Never> {
         let message = Message(
             latitude: latitude,
             longitude: longitude,
@@ -388,7 +398,7 @@ class ChatViewModel: ObservableObject {
             chatRoomId: chatRoom.id.uuidString
         )
 
-        Task {
+        let task = Task {
             do {
                 try await messageRepository.saveMessage(message)
                 messages.append(message)
@@ -406,6 +416,7 @@ class ChatViewModel: ObservableObject {
                 }
             }
         }
+        return task
     }
 
     private func markAsRead() async {

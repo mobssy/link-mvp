@@ -5,8 +5,18 @@
 
 import Foundation
 
+/// Produces the simulated reply from the other side of a conversation.
 @MainActor
-final class AutoResponseService {
+protocol AutoResponding {
+    func generateResponse(
+        for chatRoom: ChatRoom,
+        onTypingChange: @escaping (Bool) -> Void,
+        onMessage: @escaping (Message) -> Void
+    ) async throws
+}
+
+@MainActor
+final class AutoResponseService: AutoResponding {
     private let messageRepository: MessageRepositoryProtocol
     private let chatRoomRepository: ChatRoomRepositoryProtocol
 
