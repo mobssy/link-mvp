@@ -101,15 +101,23 @@ struct AuthenticatedTabsView: View {
                 .tag(2)
         }
         .tint(.appPrimary)
-        .overlay(alignment: .bottom) {
-            if showTestModeIndicator {
-                VStack {
-                    Spacer()
-                    TestModeIndicatorView(languageManager: languageManager)
-                        .padding(.bottom, 100)
-                        .padding(.horizontal, 16)
-                }
-            }
+        .bottomAccessory(isShown: showTestModeIndicator) {
+            TestModeIndicatorView(languageManager: languageManager)
+        }
+    }
+}
+
+private extension View {
+    /// Puts `content` in the tab view's bottom accessory, just above the tab bar. The tabs'
+    /// content is laid out around the accessory, so it never covers a screen's own bottom
+    /// controls; the overlay it replaces sat on top of the chat input field, and at a fixed
+    /// height that meant nothing on iPad, where the tab bar is at the top.
+    @ViewBuilder
+    func bottomAccessory<Accessory: View>(isShown: Bool, @ViewBuilder content: () -> Accessory) -> some View {
+        if isShown {
+            tabViewBottomAccessory(content: content)
+        } else {
+            self
         }
     }
 }
@@ -170,23 +178,15 @@ struct TestModeIndicatorView: View {
     let languageManager: LanguageManager
 
     var body: some View {
+        // The tab view's accessory draws the capsule around this.
         HStack(spacing: 6) {
             Image(systemName: "wrench.and.screwdriver")
-                .font(.caption)
             Text(languageManager.localizedText("test_mode"))
-                .font(.caption)
                 .fontWeight(.semibold)
         }
-        .foregroundColor(.white)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.orange)
-                .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
-        )
+        .font(.subheadline)
+        .foregroundStyle(.orange)
         .frame(maxWidth: .infinity)
-        .multilineTextAlignment(.center)
     }
 }
 
