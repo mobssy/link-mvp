@@ -1089,6 +1089,31 @@ struct ChatViewModelTests {
     }
 }
 
+// MARK: - AIService
+
+@MainActor
+@Suite("AIService summary input")
+struct AIServiceSummaryTests {
+    @Test("A message is copied into a plain value before it leaves the main actor")
+    func snapshotCopiesTheFieldsTheSummaryUses() {
+        let message = Message(text: "lunch at noon?", isFromCurrentUser: false, sender: "Mina", chatRoomId: "room")
+
+        let snapshot = SummaryMessage(message)
+        message.text = "edited later"
+
+        #expect(snapshot == SummaryMessage(text: "lunch at noon?", sender: "Mina", isFromCurrentUser: false, messageType: .text))
+    }
+
+    @Test("An empty conversation gets the no-messages text in the requested language", arguments: [
+        ("en", "No messages to summarize."),
+        ("ko", "요약할 메시지가 없습니다.")
+    ])
+    func emptyConversation(language: String, expected: String) async {
+        let summary = await AIService.shared.summarize(messages: [], targetLanguage: language)
+        #expect(summary == expected)
+    }
+}
+
 // MARK: - Notifications
 
 @MainActor

@@ -10,10 +10,32 @@ import Translation
 
 import FoundationModels
 
+/// What a summary needs from a message, copied out on the main actor. `Message` is a
+/// SwiftData model bound to the main context; reading it from `AIService`'s own executor
+/// races with the main thread editing or deleting the same message.
+nonisolated struct SummaryMessage: Sendable, Equatable {
+    let text: String
+    let sender: String
+    let isFromCurrentUser: Bool
+    let messageType: MessageType
+}
+
+extension SummaryMessage {
+    @MainActor
+    init(_ message: Message) {
+        self.init(
+            text: message.text,
+            sender: message.sender,
+            isFromCurrentUser: message.isFromCurrentUser,
+            messageType: message.messageType
+        )
+    }
+}
+
 actor AIService {
     static let shared = AIService()
 
-    func summarize(messages: [Message], limit: Int = 30, targetLanguage: String = "en") async -> String {
+    func summarize(messages: [SummaryMessage], limit: Int = 30, targetLanguage: String = "en") async -> String {
         let last = Array(messages.suffix(limit))
         let labels = summaryLabels(for: targetLanguage)
         guard !last.isEmpty else { return labels.noMessages }
@@ -78,7 +100,7 @@ actor AIService {
     }
 
     private func generateFallbackSummary(
-        messages: [Message], textMessages: [Message], labels: SummaryLabels,
+        messages: [SummaryMessage], textMessages: [SummaryMessage], labels: SummaryLabels,
         participantList: String, fromMe: Int, fromOther: Int, dateStr: String
     ) -> String {
         var parts: [String] = []
