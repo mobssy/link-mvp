@@ -36,7 +36,9 @@ extension ChatView {
         case .text:
             contentLabel = message.text
         case .image:
-            contentLabel = svc.text(for: .photoMessage, language: lang)
+            contentLabel = [svc.text(for: .photoMessage, language: lang), message.imageDescription]
+                .compactMap { $0 }
+                .joined(separator: ": ")
         case .video:
             contentLabel = svc.text(for: .videoMessage, language: lang)
         case .audio:

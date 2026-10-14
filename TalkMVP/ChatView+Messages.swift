@@ -246,7 +246,9 @@ extension ChatView {
                 return msg.text.lowercased().contains(query)
             case .audio:
                 return msg.transcript?.lowercased().contains(query) ?? false
-            case .image, .video, .location:
+            case .image:
+                return msg.imageDescription?.lowercased().contains(query) ?? false
+            case .video, .location:
                 return false
             case .deleted:
                 return false

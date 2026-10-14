@@ -23,6 +23,8 @@ nonisolated struct SummaryMessage: Sendable, Equatable {
     let messageType: MessageType
     /// What was said in a voice message, once transcribed.
     var transcript: String? = nil
+    /// What a photo shows, once described.
+    var imageDescription: String? = nil
 
     /// The message as words: a text message as it is, or a transcribed voice message as the
     /// text message it amounts to. Nil for anything without words, so notes and summaries can
@@ -44,7 +46,8 @@ extension SummaryMessage {
             sender: message.sender,
             isFromCurrentUser: message.isFromCurrentUser,
             messageType: message.messageType,
-            transcript: message.transcript
+            transcript: message.transcript,
+            imageDescription: message.imageDescription
         )
     }
 }

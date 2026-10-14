@@ -39,6 +39,7 @@ class ChatViewModel: ObservableObject {
     private let autoResponder: AutoResponding
     private let replySuggester: ReplySuggesting
     private let voiceTranscriber: VoiceTranscribing
+    private let photoDescriber: PhotoDescribing
     private let replySuggestionsEnabled: () -> Bool
     private var suggestionTask: Task<Void, Never>?
     private var chatRoom: ChatRoom
@@ -63,7 +64,8 @@ class ChatViewModel: ObservableObject {
         autoResponder: AutoResponding? = nil,
         replySuggester: ReplySuggesting = OnDeviceReplySuggester(),
         replySuggestionsEnabled: @escaping () -> Bool = { ReplySuggestionSettings.isEnabled },
-        voiceTranscriber: VoiceTranscribing = OnDeviceVoiceTranscriber()
+        voiceTranscriber: VoiceTranscribing = OnDeviceVoiceTranscriber(),
+        photoDescriber: PhotoDescribing = OnDevicePhotoDescriber()
     ) {
         self.messageRepository = messageRepository
         self.chatRoomRepository = chatRoomRepository
@@ -71,6 +73,7 @@ class ChatViewModel: ObservableObject {
         self.replySuggester = replySuggester
         self.replySuggestionsEnabled = replySuggestionsEnabled
         self.voiceTranscriber = voiceTranscriber
+        self.photoDescriber = photoDescriber
         self.chatRoom = chatRoom
         self.chatService = chatService
 
@@ -175,12 +178,19 @@ class ChatViewModel: ObservableObject {
         )
     }
 
+    /// Sends the photo, then has it described on device (iOS 27 and later) for VoiceOver,
+    /// search and the other side's reply, which waits for the description.
     @discardableResult
     func sendImage(_ imageData: Data) -> Task<Void, Never> {
-        deliver(
+        let describer = photoDescriber
+        let language = LanguageManager.currentLanguageCode
+        return deliver(
             Message(imageData: imageData, isFromCurrentUser: true, chatRoomId: chatRoom.id.uuidString),
             preview: localizedVM(ko: "사진을 보냈습니다", en: "Photo sent", ja: "写真を送りました", zh: "发送了照片", es: "Foto enviada"),
-            failureMessage: localizedVM(ko: "사진 전송에 실패했습니다.", en: "Failed to send image.", ja: "画像の送信に失敗しました。", zh: "发送图片失败。", es: "Error al enviar la imagen.")
+            failureMessage: localizedVM(ko: "사진 전송에 실패했습니다.", en: "Failed to send image.", ja: "画像の送信に失敗しました。", zh: "发送图片失败。", es: "Error al enviar la imagen."),
+            thenWorkOut: { message in
+                message.imageDescription = await describer.describe(imageData, languageCode: language)
+            }
         )
     }
 
@@ -188,33 +198,19 @@ class ChatViewModel: ObservableObject {
     /// the transcript is in, so its reply can be about the words rather than "a voice message".
     @discardableResult
     func sendVoiceMessage(audioData: Data, duration: Double) -> Task<Void, Never> {
-        let message = Message(audioData: audioData, duration: duration, isFromCurrentUser: true, chatRoomId: chatRoom.id.uuidString)
-        let delivery = deliver(
-            message,
-            preview: localizedVM(ko: "음성 메시지", en: "Voice message", ja: "音声メッセージ", zh: "语音消息", es: "Mensaje de voz"),
-            failureMessage: localizedVM(ko: "음성 메시지 전송에 실패했습니다.", en: "Failed to send voice message.", ja: "音声メッセージの送信に失敗しました。", zh: "发送语音消息失败。", es: "Error al enviar el mensaje de voz."),
-            requestsReply: false
-        )
         // Spoken most likely in the language this chat is written in.
         let language = ConversationLanguage.code(for: messages.map(SummaryMessage.init), fallbackCode: LanguageManager.currentLanguageCode)
         let transcriber = voiceTranscriber
-        return Task {
-            await delivery.value
-            guard messages.contains(where: { $0.id == message.id }) else { return } // not delivered
-            transcribingMessageIDs.insert(message.id)
-            let transcript = await transcriber.transcribe(audioData, languageCode: language)
-            transcribingMessageIDs.remove(message.id)
-            if let transcript {
-                message.transcript = transcript
-                objectWillChange.send()
-                do {
-                    try await messageRepository.updateMessage(message)
-                } catch {
-                    vmLogger.error("Failed to save transcript: \(error.localizedDescription, privacy: .public)")
-                }
+        return deliver(
+            Message(audioData: audioData, duration: duration, isFromCurrentUser: true, chatRoomId: chatRoom.id.uuidString),
+            preview: localizedVM(ko: "음성 메시지", en: "Voice message", ja: "音声メッセージ", zh: "语音消息", es: "Mensaje de voz"),
+            failureMessage: localizedVM(ko: "음성 메시지 전송에 실패했습니다.", en: "Failed to send voice message.", ja: "音声メッセージの送信に失敗しました。", zh: "发送语音消息失败。", es: "Error al enviar el mensaje de voz."),
+            thenWorkOut: { [weak self] message in
+                self?.transcribingMessageIDs.insert(message.id)
+                message.transcript = await transcriber.transcribe(audioData, languageCode: language)
+                self?.transcribingMessageIDs.remove(message.id)
             }
-            sendAutoResponse()
-        }
+        )
     }
 
     @discardableResult
@@ -296,6 +292,30 @@ class ChatViewModel: ObservableObject {
             sendAutoResponse()
         }
         return task
+    }
+
+    /// Delivers a message whose content the app works out on device afterwards (what a voice
+    /// message says, what a photo shows), saves what `workOut` found, and only then has the other
+    /// side answer, so the reply can be about it.
+    private func deliver(
+        _ message: Message,
+        preview: String,
+        failureMessage: String,
+        thenWorkOut workOut: @escaping (Message) async -> Void
+    ) -> Task<Void, Never> {
+        let delivery = deliver(message, preview: preview, failureMessage: failureMessage, requestsReply: false)
+        return Task {
+            await delivery.value
+            guard messages.contains(where: { $0.id == message.id }) else { return } // not delivered
+            await workOut(message)
+            objectWillChange.send()
+            do {
+                try await messageRepository.updateMessage(message)
+            } catch {
+                vmLogger.error("Failed to save what was worked out about a message: \(error.localizedDescription, privacy: .public)")
+            }
+            sendAutoResponse()
+        }
     }
 
     /// Applies the room's per-chat options to an outgoing message. Currently that's the

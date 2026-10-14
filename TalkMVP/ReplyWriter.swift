@@ -27,7 +27,7 @@ extension SummaryMessage {
     nonisolated var transcriptText: String {
         switch messageType {
         case .text: text
-        case .image: "[sent a photo]"
+        case .image: imageDescription.map { "[sent a photo: \($0)]" } ?? "[sent a photo]"
         case .video: "[sent a video]"
         case .audio: transcript.map { "[voice message] \($0)" } ?? "[sent a voice message]"
         case .file: "[sent a file]"

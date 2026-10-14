@@ -28,6 +28,8 @@ class Message {
     var chatRoomId: String
     var messageType: MessageType
     var imageData: Data? // 이미지 데이터
+    /// What the photo shows, in a sentence written on device after sending (iOS 27 and later).
+    var imageDescription: String?
     var fileName: String? // 파일명
     var fileExtension: String? // 파일 확장자
     var fileSize: Int? // 파일 크기 (바이트)

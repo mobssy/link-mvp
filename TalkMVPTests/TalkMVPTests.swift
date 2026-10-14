@@ -8,6 +8,7 @@
 import Testing
 import AVFoundation
 import Foundation
+import ImageIO
 import NaturalLanguage
 import SwiftData
 import SwiftUI
@@ -1037,6 +1038,60 @@ struct VoiceTranscriptionTests {
     }
 }
 
+// MARK: - Photo descriptions
+
+@Suite("Photo descriptions")
+struct PhotoDescriptionTests {
+    /// A blank `width` x `height` image, encoded as `type` with an optional EXIF orientation.
+    private func encodedImage(width: Int, height: Int, type: String = "public.png", orientation: Int? = nil) throws -> Data {
+        let context = try #require(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                             space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.setFillColor(CGColor(red: 0.2, green: 0.5, blue: 0.9, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        let image = try #require(context.makeImage())
+        let data = NSMutableData()
+        let destination = try #require(CGImageDestinationCreateWithData(data, type as CFString, 1, nil))
+        let properties = orientation.map { [kCGImagePropertyOrientation: $0] as CFDictionary }
+        CGImageDestinationAddImage(destination, image, properties)
+        #expect(CGImageDestinationFinalize(destination))
+        return data as Data
+    }
+
+    @Test("A large photo is decoded small for the model")
+    func largePhotosAreScaledDown() throws {
+        let thumbnail = try #require(PhotoThumbnail.make(from: try encodedImage(width: 3000, height: 2000), maxPixelSize: 1024))
+        #expect(thumbnail.width == 1024)
+        #expect(abs(thumbnail.height - 683) <= 1)
+    }
+
+    @Test("A photo taken sideways is decoded upright")
+    func rotatedPhotosAreDecodedUpright() throws {
+        // Stored landscape, with EXIF saying to turn it a quarter turn to view it.
+        let sideways = try encodedImage(width: 1200, height: 800, type: "public.jpeg", orientation: 6)
+        let thumbnail = try #require(PhotoThumbnail.make(from: sideways, maxPixelSize: 600))
+        #expect(thumbnail.height > thumbnail.width)
+    }
+
+    @Test("The request is written in the language the description should be in", arguments: [
+        ("ko", "사진"), ("ja", "写真"), ("zh", "照片"), ("es", "foto"), ("en", "photo"), ("zh-Hans", "照片"), ("fr", "photo"),
+    ])
+    func requestIsInTheTargetLanguage(code: String, word: String) {
+        #expect(OnDevicePhotoDescriber.request(for: code).contains(word))
+    }
+
+    @Test("Only the first line the model writes is kept")
+    func descriptionIsOneLine() {
+        #expect(OnDevicePhotoDescriber.cleaned("\n  A dog on a beach.  \n【日本語】ビーチの犬。") == "A dog on a beach.")
+        #expect(OnDevicePhotoDescriber.cleaned(" \n ") == nil)
+    }
+
+    @Test("A described photo is spelled out for the model")
+    func describedPhotoReadsAsWhatItShows() {
+        let photo = SummaryMessage(text: "📷", sender: "Me", isFromCurrentUser: true, messageType: .image, imageDescription: "A dog on a beach.")
+        #expect(photo.transcriptText == "[sent a photo: A dog on a beach.]")
+    }
+}
+
 // MARK: - Auto replies
 
 private struct FixedReplyWriter: ReplyWriting {
@@ -1191,19 +1246,25 @@ private struct SilentAutoResponder: AutoResponding {
     ) async throws {}
 }
 
-/// Notes what the newest message's transcript was when the other side was asked to answer.
+/// Notes the newest message as it stood each time the other side was asked to answer.
 @MainActor
 private final class RecordingAutoResponder: AutoResponding {
     weak var viewModel: ChatViewModel?
-    private(set) var transcriptsWhenAsked: [String?] = []
+    private(set) var lastMessageWhenAsked: [SummaryMessage?] = []
 
     func generateResponse(
         for chatRoom: ChatRoom,
         onTypingChange: @escaping (Bool) -> Void,
         onMessage: @escaping (Message) -> Void
     ) async throws {
-        transcriptsWhenAsked.append(viewModel?.messages.last?.transcript)
+        lastMessageWhenAsked.append(viewModel?.messages.last.map(SummaryMessage.init))
     }
+}
+
+/// Stands in for on-device photo descriptions.
+private struct FixedDescriber: PhotoDescribing {
+    var sentence: String?
+    func describe(_ imageData: Data, languageCode: String) async -> String? { sentence }
 }
 
 /// Stands in for on-device transcription.
@@ -1262,7 +1323,8 @@ struct ChatViewModelTests {
         _ context: ModelContext, room: ChatRoom,
         autoResponder: AutoResponding? = nil,
         suggester: ReplySuggesting = FixedSuggester(), suggestionsEnabled: Bool = true,
-        transcriber: VoiceTranscribing = FixedTranscriber()
+        transcriber: VoiceTranscribing = FixedTranscriber(),
+        describer: PhotoDescribing = FixedDescriber()
     ) -> ChatViewModel {
         ChatViewModel(
             messageRepository: LocalMessageRepository(modelContext: context, attachmentFiles: attachmentFiles),
@@ -1271,8 +1333,24 @@ struct ChatViewModelTests {
             autoResponder: autoResponder ?? SilentAutoResponder(),
             replySuggester: suggester,
             replySuggestionsEnabled: { suggestionsEnabled },
-            voiceTranscriber: transcriber
+            voiceTranscriber: transcriber,
+            photoDescriber: describer
         )
+    }
+
+    @Test("A photo is described, and the other side answers once the description is in")
+    func photoIsDescribedBeforeTheReply() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        let responder = RecordingAutoResponder()
+        let viewModel = makeViewModel(context, room: room, autoResponder: responder, describer: FixedDescriber(sentence: "A dog running on a beach."))
+        responder.viewModel = viewModel
+
+        await viewModel.sendImage(Data([0x01])).value
+
+        #expect(viewModel.messages.last?.imageDescription == "A dog running on a beach.")
+        #expect(try context.fetch(FetchDescriptor<Message>()).first?.imageDescription == "A dog running on a beach.")
+        #expect(await eventually { responder.lastMessageWhenAsked.map { $0?.imageDescription } == ["A dog running on a beach."] })
     }
 
     @Test("A voice message is written down, and the other side answers once the words are in")
@@ -1287,7 +1365,7 @@ struct ChatViewModelTests {
 
         #expect(viewModel.messages.last?.transcript == "Let's meet at 7")
         #expect(try context.fetch(FetchDescriptor<Message>()).first?.transcript == "Let's meet at 7")
-        #expect(await eventually { responder.transcriptsWhenAsked == ["Let's meet at 7"] })
+        #expect(await eventually { responder.lastMessageWhenAsked.map { $0?.transcript } == ["Let's meet at 7"] })
     }
 
     @Test("A voice message shows as being transcribed until its words are in")
@@ -1316,7 +1394,8 @@ struct ChatViewModelTests {
 
         #expect(viewModel.messages.count == 1)
         #expect(viewModel.messages.last?.transcript == nil)
-        #expect(await eventually { responder.transcriptsWhenAsked == [nil] })
+        #expect(await eventually { responder.lastMessageWhenAsked.count == 1 })
+        #expect(responder.lastMessageWhenAsked.first??.transcript == nil)
     }
 
     private func receive(_ text: String, in room: ChatRoom, context: ModelContext) throws {
