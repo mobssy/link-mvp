@@ -169,7 +169,8 @@ link-mvp/
 │   │   ├── AttachmentFileStore.swift
 │   │   ├── ChatRoomRepository.swift
 │   │   ├── MessageRepository.swift
-│   │   └── OrphanedDataCleaner.swift
+│   │   ├── OrphanedDataCleaner.swift
+│   │   └── TestAccount.swift
 │   └── Assets.xcassets/         # App icon, color sets, image assets
 ├── TalkMVPTests/
 │   └── TalkMVPTests.swift       # Swift Testing suites
@@ -189,7 +190,7 @@ link-mvp/
 - **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
 - **Services & Managers**: `AIService`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `VoiceMessageService`, `AttachmentHandler`
 - **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
-- **Data Layer**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `User`
+- **Data Layer**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `Repositories/TestAccount`, `User`
 - **Shared**: `Colors+Extensions`
 
 ---
@@ -375,7 +376,8 @@ link-mvp/
 │   │   ├── AttachmentFileStore.swift
 │   │   ├── ChatRoomRepository.swift
 │   │   ├── MessageRepository.swift
-│   │   └── OrphanedDataCleaner.swift
+│   │   ├── OrphanedDataCleaner.swift
+│   │   └── TestAccount.swift
 │   └── Assets.xcassets/         # 앱 아이콘, 색상, 이미지 에셋
 ├── TalkMVPTests/
 │   └── TalkMVPTests.swift       # Swift Testing 스위트
@@ -395,7 +397,7 @@ link-mvp/
 - **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
 - **Services & Managers**: `AIService`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `VoiceMessageService`, `AttachmentHandler`
 - **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
-- **데이터 레이어**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `User`
+- **데이터 레이어**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `Repositories/TestAccount`, `User`
 - **공용**: `Colors+Extensions`
 
 ---
