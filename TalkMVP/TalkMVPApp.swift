@@ -81,7 +81,6 @@ struct LinkMVPApp: App {
                 .preferredColorScheme(themeMode == "light" ? .light : (themeMode == "dark" ? .dark : nil))
                 .fontWeight(boldText ? .bold : .regular)
                 .dynamicTypeSize(dynamicTypeSizeForStep(textSizeStep))
-                .ignoresSafeArea(.all, edges: .all)
                 .fullScreenCover(isPresented: Binding(get: { appLock.isLocked }, set: { _ in })) {
                     AppLockView()
                         .environmentObject(appLock)

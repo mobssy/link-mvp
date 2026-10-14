@@ -132,13 +132,8 @@ struct UnauthenticatedView: View {
     @Binding var showTestModeAlert: Bool
 
     var body: some View {
-        ZStack {
-            AuthView()
-            VStack {
-                Spacer()
-                TestModeButtonView(showTestModeAlert: $showTestModeAlert)
-                    .padding(.bottom, 50)
-            }
+        AuthView {
+            TestModeButtonView(showTestModeAlert: $showTestModeAlert)
         }
     }
 }

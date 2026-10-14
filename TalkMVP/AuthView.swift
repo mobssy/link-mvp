@@ -9,7 +9,9 @@ import SwiftUI
 import SwiftData
 import UIKit
 
-struct AuthView: View {
+/// The sign-in / sign-up screen. `footer` is laid out after the form, inside the same
+/// scroll view, so whatever the caller adds (the test mode button) can never cover it.
+struct AuthView<Footer: View>: View {
     @EnvironmentObject private var authManager: AuthManager
     @EnvironmentObject private var languageManager: LanguageManager
     @Environment(\.colorScheme) private var colorScheme
@@ -20,6 +22,11 @@ struct AuthView: View {
     @State private var password = ""
     @State private var confirmPassword = ""
     @State private var appIcon: UIImage?
+    private let footer: Footer
+
+    init(@ViewBuilder footer: () -> Footer) {
+        self.footer = footer()
+    }
 
     private var appTitle: AttributedString {
         var str = AttributedString("L!NK")
@@ -29,62 +36,73 @@ struct AuthView: View {
         return str
     }
 
+    // Scrolls when the content does not fit (landscape, a large text size, the keyboard
+    // up) and keeps the portrait layout otherwise: the content is at least as tall as
+    // the screen, so the spacers still push the form to the middle. The view respects
+    // the safe area and the keyboard, so nothing sits under the status bar, the Dynamic
+    // Island or the keyboard.
     var body: some View {
-        GeometryReader { geometry in
-            NavigationStack {
-                VStack(spacing: 30) {
-                // 로고 영역
-                VStack(spacing: 16) {
-                    if let icon = appIcon {
-                        Image(uiImage: icon)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 80, height: 80)
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                    } else {
-                        Image(systemName: "message.circle.fill")
-                            .font(.system(size: 80))
-                            .foregroundColor(.appPrimary)
+        NavigationStack {
+            GeometryReader { geometry in
+                ScrollView {
+                    VStack(spacing: 30) {
+                        // 로고 영역
+                        VStack(spacing: 16) {
+                            if let icon = appIcon {
+                                Image(uiImage: icon)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 80, height: 80)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                            } else {
+                                Image(systemName: "message.circle.fill")
+                                    .font(.system(size: 80))
+                                    .foregroundColor(.appPrimary)
+                            }
+
+                            Text(appTitle)
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                                .foregroundColor(.primary)
+                        }
+                        .padding(.top, 50)
+
+                        Spacer(minLength: 0)
+
+                        // 폼 영역 (다크 모드에서 다크 그레이 래퍼 적용)
+                        Group {
+                            if colorScheme == .dark {
+                                formContent
+                                    .padding(20)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                            .fill(Color(UIColor.secondarySystemBackground))
+                                    )
+                                    .padding(.horizontal, 16)
+                            } else {
+                                formContent
+                                    .padding(.horizontal, 32)
+                            }
+                        }
+
+                        Spacer(minLength: 0)
+
+                        footer
+                            .padding(.bottom, 24)
                     }
-
-                    Text(appTitle)
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
+                    .frame(maxWidth: .infinity, minHeight: geometry.size.height)
                 }
-                .padding(.top, 50)
-
-                Spacer()
-
-                // 폼 영역 (다크 모드에서 다크 그레이 래퍼 적용)
-                Group {
-                    if colorScheme == .dark {
-                        formContent
-                            .padding(20)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .fill(Color(UIColor.secondarySystemBackground))
-                            )
-                            .padding(.horizontal, 16)
-                    } else {
-                        formContent
-                            .padding(.horizontal, 32)
-                    }
-                }
-
-                Spacer()
+                .scrollBounceBehavior(.basedOnSize)
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle("")
             .navigationBarHidden(true)
             .tint(.appPrimary)
-            }
-            .frame(width: geometry.size.width, height: geometry.size.height)
-            .ignoresSafeArea(.all, edges: .all)
-            .onAppear {
-                if appIcon == nil {
-                    appIcon = appIconUIImage()
-                }
+        }
+        .onAppear {
+            if appIcon == nil {
+                appIcon = appIconUIImage()
             }
         }
     }
@@ -240,6 +258,12 @@ struct AuthView: View {
             return image
         }
         return nil
+    }
+}
+
+extension AuthView where Footer == EmptyView {
+    init() {
+        self.init { EmptyView() }
     }
 }
 
