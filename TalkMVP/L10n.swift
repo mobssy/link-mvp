@@ -1,5 +1,8 @@
 import Foundation
 import SwiftUI
+import os
+
+private let l10nLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "L10n")
 
 /// Centralized localization helper to avoid scattering `localizedText` across views.
 /// - Usage: `L10n.text("friends", language)`
@@ -579,7 +582,7 @@ enum L10n {
             }
         default:
             // Fallback: return key as-is with warning
-            print("⚠️ L10n: Missing translation for key '\(key)'")
+            l10nLogger.error("L10n: Missing translation for key '\(key, privacy: .public)'")
             return key.replacingOccurrences(of: "_", with: " ").capitalized
         }
     }

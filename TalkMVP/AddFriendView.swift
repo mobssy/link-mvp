@@ -72,14 +72,12 @@ struct AddFriendView: View {
                                 notificationManager: notificationManager,
                                 modelContext: modelContext
                             ) { success, message in
-                                print("📝 UserSearchResultRow onComplete: success=\(success), message=\(message)")
                                 lastActionWasSuccess = success
                                 alertMessage = message
                                 showingAlert = true
                                 if success {
                                     searchResults.removeAll()
                                     friendEmail = ""
-                                    print("📝 Calling onFriendAdded callback...")
                                     onFriendAdded()
                                 }
                             }
@@ -100,7 +98,6 @@ struct AddFriendView: View {
         .alert(L10n.text("alert", languageManager.currentLanguage), isPresented: $showingAlert) {
             Button(L10n.text("ok", languageManager.currentLanguage)) {
                 if lastActionWasSuccess {
-                    print("✅ Alert OK pressed, dismissing AddFriendView...")
                     // Give time for data to propagate
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         dismiss()
@@ -131,7 +128,6 @@ struct AddFriendView: View {
             return
         }
 
-        print("사용자 검색 시작: \(email)")
         isSearching = true
         searchResults = []
 
@@ -139,13 +135,12 @@ struct AddFriendView: View {
             do {
                 let results = try await FriendSearchService.searchUsers(by: email)
                 await MainActor.run {
-                    print("검색 결과: \(results.count)개")
                     self.searchResults = results
                     self.isSearching = false
                 }
             } catch {
                 await MainActor.run {
-                    print("검색 오류: \(error.localizedDescription)")
+                    addFriendLogger.error("검색 오류: \(error.localizedDescription, privacy: .public)")
                     self.alertMessage = L10n.text("search_error_prefix", languageManager.currentLanguage) + error.localizedDescription
                     self.showingAlert = true
                     self.isSearching = false

@@ -7,6 +7,9 @@
 import SwiftUI
 import UIKit
 import SwiftData
+import os
+
+private let settingsLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "SettingsView")
 
 struct SettingsView: View {
     @ObservedObject var authManager: AuthManager
@@ -247,7 +250,7 @@ struct SettingsView: View {
 
         default:
             // 디버깅을 위해 키가 정의되지 않은 경우를 확인
-            print("⚠️ SettingsView: 키 '\(key)'가 정의되지 않음")
+            settingsLogger.error("키 '\(key, privacy: .public)'가 정의되지 않음")
             return key
         }
     }

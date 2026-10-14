@@ -6,6 +6,9 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import os
+
+private let helpersLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ChatView")
 
 extension ChatView {
     func setupViewModelIfNeeded() {
@@ -87,7 +90,7 @@ extension ChatView {
 
     func addReaction(emoji: String, to message: Message) {
         guard let currentUserId = getCurrentUserId() else {
-            print("❌ [ChatView] Cannot add reaction: no current user")
+            helpersLogger.error("Cannot add reaction: no current user")
             return
         }
 

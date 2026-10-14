@@ -12,6 +12,9 @@ import PhotosUI
 import UniformTypeIdentifiers
 import LinkPresentation
 import CoreLocation
+import os
+
+private let supportingViewsLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ChatView.Supporting")
 
 // MARK: - Document Picker
 
@@ -463,7 +466,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         case .authorizedWhenInUse, .authorizedAlways:
             locationManager.requestLocation()
         case .denied, .restricted:
-            print("위치 권한이 거부되었습니다")
+            supportingViewsLogger.info("위치 권한이 거부되었습니다")
         @unknown default:
             break
         }
@@ -477,7 +480,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("위치 정보 가져오기 실패: \(error)")
+        supportingViewsLogger.error("위치 정보 가져오기 실패: \(error.localizedDescription, privacy: .public)")
     }
 
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {

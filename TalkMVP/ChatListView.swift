@@ -8,6 +8,9 @@
 import SwiftUI
 import Combine
 import SwiftData
+import os
+
+private let chatListLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ChatListView")
 
 // MARK: - Shared localization (fileprivate — used by ChatListView, ChatRoomRow, ChatScreen)
 fileprivate func chatListLocalized(_ key: String, using manager: LanguageManager) -> String {
@@ -102,13 +105,13 @@ struct ChatListView: View {
     private func addNewChatRoom() {
         let newRoom = ChatRoom(name: localizedText("new_friend"))
         modelContext.insert(newRoom)
-        do { try modelContext.save() } catch { print("❌ [ChatListView] Failed to save new chat room: \(error)") }
+        do { try modelContext.save() } catch { chatListLogger.error("Failed to save new chat room: \(error.localizedDescription, privacy: .public)") }
     }
 
     private func addGroupChatRoom() {
         let groupRoom = ChatRoom(name: localizedText("new_group"), profileImage: "person.3.circle.fill")
         modelContext.insert(groupRoom)
-        do { try modelContext.save() } catch { print("❌ [ChatListView] Failed to save group chat room: \(error)") }
+        do { try modelContext.save() } catch { chatListLogger.error("Failed to save group chat room: \(error.localizedDescription, privacy: .public)") }
     }
 
     private func deleteChatRooms(offsets: IndexSet) {
@@ -120,7 +123,7 @@ struct ChatListView: View {
                 do {
                     try await repository.deleteChatRoom(room)
                 } catch {
-                    print("❌ [ChatListView] Failed to delete chat room: \(error)")
+                    chatListLogger.error("Failed to delete chat room: \(error.localizedDescription, privacy: .public)")
                 }
             }
         }
@@ -142,7 +145,7 @@ struct ChatListView: View {
                 modelContext.insert(room)
             }
 
-            do { try modelContext.save() } catch { print("❌ [ChatListView] Failed to save sample data: \(error)") }
+            do { try modelContext.save() } catch { chatListLogger.error("Failed to save sample data: \(error.localizedDescription, privacy: .public)") }
         }
     }
 
@@ -296,7 +299,7 @@ struct ChatScreen: View {
                 friendState = .notFriend
             }
         } catch {
-            print("Failed to load friend state: \(error)")
+            chatListLogger.error("Failed to load friend state: \(error.localizedDescription, privacy: .public)")
             friendState = .unknown
         }
     }
@@ -334,7 +337,7 @@ struct ChatScreen: View {
             let senderEmail = authManager.currentUser?.email ?? ""
             Task { await manager.scheduleFriendRequestNotification(from: senderName, email: senderEmail) }
         } catch {
-            print("Failed to save friend request: \(error)")
+            chatListLogger.error("Failed to save friend request: \(error.localizedDescription, privacy: .public)")
         }
     }
 

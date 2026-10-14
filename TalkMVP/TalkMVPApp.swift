@@ -7,6 +7,9 @@
 
 import SwiftUI
 import SwiftData
+import os
+
+private let appLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "App")
 
 @main
 struct LinkMVPApp: App {
@@ -41,7 +44,7 @@ struct LinkMVPApp: App {
         if let container = try? ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemoryOnly)]) {
             return container
         }
-        print("⚠️ [App] Persistent store unavailable — falling back to in-memory store. Data will not persist this session.")
+        appLogger.error("Persistent store unavailable — falling back to in-memory store. Data will not persist this session.")
         if let container = try? ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)]) {
             return container
         }
@@ -53,7 +56,7 @@ struct LinkMVPApp: App {
         do {
             try OrphanedDataCleaner(modelContext: sharedModelContainer.mainContext).run()
         } catch {
-            print("⚠️ [App] Orphaned data cleanup failed: \(error)")
+            appLogger.error("Orphaned data cleanup failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 

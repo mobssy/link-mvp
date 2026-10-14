@@ -24,8 +24,6 @@ class FriendSearchService {
             return []
         }
 
-        print("FriendSearchService: Searching for \(trimmed)...")
-
         let mockResults = [
             UserSearchResult(
                 id: UUID().uuidString,
@@ -36,18 +34,14 @@ class FriendSearchService {
         ]
 
         if trimmed.contains("@") && trimmed.contains(".") {
-            print("FriendSearchService: Returning search results")
             return mockResults
         } else {
-            print("FriendSearchService: Invalid email format")
             return []
         }
     }
 
     static func sendFriendRequest(from senderId: String, to receiverId: String) async throws -> Bool {
-        print("FriendSearchService: Sending friend request...")
         try await Task.sleep(nanoseconds: 200_000_000) // 0.2 second wait
-        print("FriendSearchService: Friend request sent successfully")
         return true
     }
 }

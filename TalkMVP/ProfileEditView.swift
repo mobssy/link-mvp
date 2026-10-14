@@ -8,6 +8,9 @@
 import SwiftUI
 import PhotosUI
 import SwiftData
+import os
+
+private let profileEditLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ProfileEditView")
 
 struct ProfileEditView: View {
     @Environment(\.dismiss) private var dismiss
@@ -198,7 +201,7 @@ struct ProfileEditView: View {
         case "logout": return languageManager.localize(ko: "로그아웃", en: "Sign Out", ja: "サインアウト", zh: "退出登录", es: "Cerrar sesión")
         default:
             // 디버깅을 위해 키가 정의되지 않은 경우를 확인
-            print("⚠️ ProfileEditView: 키 '\(key)'가 정의되지 않음")
+            profileEditLogger.error("키 '\(key, privacy: .public)'가 정의되지 않음")
             return key
         }
     }

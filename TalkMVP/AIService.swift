@@ -9,6 +9,9 @@ import NaturalLanguage
 import Translation
 
 import FoundationModels
+import os
+
+nonisolated private let aiLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "AIService")
 
 /// What a summary needs from a message, copied out on the main actor. `Message` is a
 /// SwiftData model bound to the main context; reading it from `AIService`'s own executor
@@ -94,7 +97,7 @@ actor AIService {
             guard !content.isEmpty else { return nil }
             return "✨ **\(labels.header)**\n\(dateStr)\n\n\(content)"
         } catch {
-            print("⚠️ [AIService] Summary generation failed: \(error)")
+            aiLogger.notice("Summary generation failed: \(error.localizedDescription, privacy: .public)")
             return nil
         }
     }
@@ -300,7 +303,7 @@ actor AIService {
             let response = try await session.translate(text)
             return response.targetText
         } catch {
-            print("⚠️ [AIService] Apple Translation failed: \(error.localizedDescription)")
+            aiLogger.notice("Apple Translation failed: \(error.localizedDescription, privacy: .public)")
             return nil
         }
     }

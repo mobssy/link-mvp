@@ -7,6 +7,9 @@
 
 import Foundation
 import SwiftData
+import os
+
+private let roomRepoLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ChatRoomRepository")
 
 /// Protocol defining chat room data operations
 protocol ChatRoomRepositoryProtocol {
@@ -52,7 +55,7 @@ class LocalChatRoomRepository: ChatRoomRepositoryProtocol {
         do {
             return try modelContext.fetch(descriptor)
         } catch {
-            print("❌ [ChatRoomRepository] Failed to fetch chat rooms: \(error)")
+            roomRepoLogger.error("Failed to fetch chat rooms: \(error.localizedDescription, privacy: .public)")
             throw RepositoryError.fetchFailed(error)
         }
     }
@@ -65,7 +68,7 @@ class LocalChatRoomRepository: ChatRoomRepositoryProtocol {
         do {
             return try modelContext.fetch(descriptor).first
         } catch {
-            print("❌ [ChatRoomRepository] Failed to fetch chat room: \(error)")
+            roomRepoLogger.error("Failed to fetch chat room: \(error.localizedDescription, privacy: .public)")
             throw RepositoryError.fetchFailed(error)
         }
     }
@@ -75,7 +78,7 @@ class LocalChatRoomRepository: ChatRoomRepositoryProtocol {
             modelContext.insert(chatRoom)
             try modelContext.save()
         } catch {
-            print("❌ [ChatRoomRepository] Failed to save chat room: \(error)")
+            roomRepoLogger.error("Failed to save chat room: \(error.localizedDescription, privacy: .public)")
             throw RepositoryError.saveFailed(error)
         }
     }
@@ -86,7 +89,7 @@ class LocalChatRoomRepository: ChatRoomRepositoryProtocol {
             chatRoom.timestamp = timestamp
             try modelContext.save()
         } catch {
-            print("❌ [ChatRoomRepository] Failed to update chat room: \(error)")
+            roomRepoLogger.error("Failed to update chat room: \(error.localizedDescription, privacy: .public)")
             throw RepositoryError.updateFailed(error)
         }
     }
@@ -100,7 +103,7 @@ class LocalChatRoomRepository: ChatRoomRepositoryProtocol {
             chatRoom.unreadCount = count
             try modelContext.save()
         } catch {
-            print("❌ [ChatRoomRepository] Failed to update unread count: \(error)")
+            roomRepoLogger.error("Failed to update unread count: \(error.localizedDescription, privacy: .public)")
             throw RepositoryError.updateFailed(error)
         }
     }
@@ -116,7 +119,7 @@ class LocalChatRoomRepository: ChatRoomRepositoryProtocol {
                 return existing
             }
         } catch {
-            print("❌ [ChatRoomRepository] Failed to look up direct chat room: \(error)")
+            roomRepoLogger.error("Failed to look up direct chat room: \(error.localizedDescription, privacy: .public)")
             throw RepositoryError.fetchFailed(error)
         }
 
@@ -141,7 +144,7 @@ class LocalChatRoomRepository: ChatRoomRepositoryProtocol {
             modelContext.delete(chatRoom)
             try modelContext.save()
         } catch {
-            print("❌ [ChatRoomRepository] Failed to delete chat room: \(error)")
+            roomRepoLogger.error("Failed to delete chat room: \(error.localizedDescription, privacy: .public)")
             throw RepositoryError.deleteFailed(error)
         }
         filePaths.forEach(attachmentFiles.removeFile(atStoredPath:))

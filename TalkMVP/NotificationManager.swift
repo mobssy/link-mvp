@@ -9,6 +9,9 @@ import Foundation
 import UserNotifications
 import SwiftUI
 import Combine
+import os
+
+private let notificationLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "NotificationManager")
 
 /// The user's "notifications on" switch in Settings.
 ///
@@ -67,7 +70,7 @@ class NotificationManager: ObservableObject {
         do {
             _ = try await center.requestAuthorization(options: [.alert, .badge, .sound])
         } catch {
-            print("❌ [NotificationManager] Permission request failed: \(error)")
+            notificationLogger.error("Permission request failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -101,7 +104,7 @@ class NotificationManager: ObservableObject {
         do {
             try await center.add(request)
         } catch {
-            print("❌ [NotificationManager] Friend request notification failed: \(error)")
+            notificationLogger.error("Friend request notification failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 

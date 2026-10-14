@@ -10,6 +10,9 @@ import Combine
 import SwiftData
 import AVFoundation
 import QuickLook
+import os
+
+private let bubbleLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "MessageBubbleView")
 
 struct MessageBubbleView: View {
     let message: Message
@@ -341,7 +344,7 @@ struct MessageBubbleView: View {
                 return
             }
         } catch {
-            print("❌ [MessageBubbleView] Failed to prepare attachment preview: \(error)")
+            bubbleLogger.error("Failed to prepare attachment preview: \(error.localizedDescription, privacy: .public)")
         }
         alertMessage = localizedText("attachment_unavailable")
         showingAlert = true
@@ -406,7 +409,7 @@ struct MessageBubbleView: View {
                 friendState = .notFriend
             }
         } catch {
-            print("Failed to load friendship state: \(error)")
+            bubbleLogger.error("Failed to load friendship state: \(error.localizedDescription, privacy: .public)")
             friendState = .unknown
         }
     }
@@ -445,7 +448,7 @@ struct MessageBubbleView: View {
             let senderEmail = authManager.currentUser?.email ?? ""
             Task { await manager.scheduleFriendRequestNotification(from: senderName, email: senderEmail) }
         } catch {
-            print("Failed to save friend request: \(error)")
+            bubbleLogger.error("Failed to save friend request: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

@@ -8,6 +8,9 @@
 import SwiftUI
 import SwiftData
 import PhotosUI
+import os
+
+private let backgroundLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ChatRoomBackgroundSettings")
 
 struct ChatRoomBackgroundSettings: View {
     @Environment(\.dismiss) private var dismiss
@@ -370,7 +373,7 @@ struct ChatRoomBackgroundSettings: View {
                     }
                 }
             case .failure(let error):
-                print("❌ Failed to load image: \(error)")
+                backgroundLogger.error("Failed to load image: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -409,10 +412,9 @@ struct ChatRoomBackgroundSettings: View {
 
         do {
             try modelContext.save()
-            print("✅ Chat room background saved")
             dismiss()
         } catch {
-            print("❌ Failed to save background settings: \(error)")
+            backgroundLogger.error("Failed to save background settings: \(error.localizedDescription, privacy: .public)")
         }
     }
 

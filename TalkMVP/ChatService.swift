@@ -9,6 +9,9 @@ import Foundation
 import Combine
 import SwiftData
 import UserNotifications
+import os
+
+private let chatServiceLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ChatService")
 
 @MainActor
 class ChatService: ObservableObject, ChatServiceProtocol {
@@ -107,7 +110,7 @@ class ChatService: ObservableObject, ChatServiceProtocol {
         let effectiveCount = notificationsEnabled ? count : 0
         UNUserNotificationCenter.current().setBadgeCount(effectiveCount) { error in
             if let error = error {
-                print("❌ Failed to set badge count: \(error)")
+                chatServiceLogger.error("Failed to set badge count: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -143,7 +146,6 @@ class ChatService: ObservableObject, ChatServiceProtocol {
         heartbeatTimer?.invalidate()
         heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { _ in
             // 실제 앱에서는 서버로 heartbeat 전송
-            print("Heartbeat sent")
         }
     }
 
@@ -200,7 +202,7 @@ class ChatService: ObservableObject, ChatServiceProtocol {
             do {
                 try modelContext.save()
             } catch {
-                print("❌ simulateIncomingMessage 저장 실패: \(error)")
+                chatServiceLogger.error("simulateIncomingMessage 저장 실패: \(error.localizedDescription, privacy: .public)")
             }
 
             // Update badge count based on total unread across all rooms
@@ -224,7 +226,7 @@ class ChatService: ObservableObject, ChatServiceProtocol {
                     self.setAppBadgeCount(0)
                 }
             } catch {
-                print("❌ Failed to update badge/schedule notification: \(error)")
+                chatServiceLogger.error("Failed to update badge/schedule notification: \(error.localizedDescription, privacy: .public)")
             }
         }
 
@@ -237,14 +239,7 @@ class ChatService: ObservableObject, ChatServiceProtocol {
     }
 
     func sendMessage(_ message: Message, to chatRoom: ChatRoom) {
-        // 실제 서버로 메시지 전송 시뮬레이션
-        print("Sending message to server: \(message.text)")
-
-        // 전송 성공 시뮬레이션
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            // 메시지 전송 상태 업데이트 (실제 앱에서 구현)
-            print("Message sent successfully")
-        }
+        // 실제 서버로 메시지 전송 (서버 연동 전까지는 로컬 저장만으로 충분)
     }
 
     func markAsRead(chatRoom: ChatRoom) {
@@ -258,22 +253,20 @@ class ChatService: ObservableObject, ChatServiceProtocol {
                 try modelContext.save()
             } else {
                 // Refetch 실패 시, 최소한의 폴백 처리
-                print("⚠️ markAsRead: 해당 채팅방을 현재 컨텍스트에서 찾지 못했습니다.")
+                chatServiceLogger.error("markAsRead: 해당 채팅방을 현재 컨텍스트에서 찾지 못했습니다.")
             }
         } catch {
-            print("❌ markAsRead 저장 실패: \(error)")
+            chatServiceLogger.error("markAsRead 저장 실패: \(error.localizedDescription, privacy: .public)")
         }
     }
 
     func editMessage(_ message: Message, in chatRoom: ChatRoom) {
         // 실제 서버로 편집 메시지 전송 시뮬레이션
-        print("Editing message \(message.id) in room \(chatRoom.name)")
         // 로컬 저장은 ViewModel에서 처리되었습니다.
     }
 
     func deleteMessage(_ message: Message, in chatRoom: ChatRoom) {
         // 실제 서버로 메시지 삭제 전송 시뮬레이션
-        print("Deleting message \(message.id) in room \(chatRoom.name)")
         // 로컬 삭제는 ViewModel에서 처리되었습니다.
     }
 }

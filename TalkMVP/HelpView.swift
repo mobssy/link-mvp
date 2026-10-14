@@ -1,5 +1,8 @@
 import SwiftUI
 import MessageUI
+import os
+
+private let helpLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "HelpView")
 
 struct HelpView: View {
     @EnvironmentObject var languageManager: LanguageManager
@@ -446,7 +449,7 @@ struct FeedbackView: View {
 
     private func sendFeedback() {
         // TODO: Implement actual feedback submission to backend
-        print("📝 Feedback submitted: \(feedbackText)")
+        helpLogger.info("Feedback submitted: \(feedbackText, privacy: .private)")
         showingConfirmation = true
     }
 }
