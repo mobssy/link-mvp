@@ -62,6 +62,13 @@ class Friendship {
         self.isFavorite = false
         self.notificationsEnabled = true
     }
+
+    /// The id of the person on the other side. A request the user sent (or a test-mode
+    /// friend) has them in `friendId`; a request the user received has the user there and
+    /// the sender in `userId`.
+    func otherUserId(currentUserId: String) -> String {
+        friendId == currentUserId ? userId : friendId
+    }
 }
 
 enum FriendshipStatus: String, Codable, CaseIterable {

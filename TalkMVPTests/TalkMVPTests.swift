@@ -286,6 +286,23 @@ struct ChatRoomRepositoryTests {
         #expect(rooms.isEmpty)
     }
 
+    @Test("Starting a chat with someone saves the room once and reuses it afterwards")
+    func directChatRoomIsCreatedOnceAndReused() async throws {
+        let context = try makeContext()
+        let repo = LocalChatRoomRepository(modelContext: context)
+
+        let first = try await repo.directChatRoom(withUserId: "friend-1", name: "Mina", email: "mina@example.com")
+        let again = try await repo.directChatRoom(withUserId: "friend-1", name: "Mina", email: "mina@example.com")
+        let other = try await repo.directChatRoom(withUserId: "friend-2", name: "Joon", email: nil)
+
+        #expect(first.id == again.id)
+        #expect(first.id != other.id)
+        #expect(first.name == "Mina")
+        #expect(first.otherUserId == "friend-1")
+        #expect(first.otherUserEmail == "mina@example.com")
+        #expect(try await repo.fetchChatRooms().count == 2)
+    }
+
     @Test("Deleting a chat room also deletes its messages, and only its messages")
     func deleteChatRoomDeletesItsMessages() async throws {
         let context = try makeContext()
@@ -327,6 +344,21 @@ struct ChatRoomRepositoryTests {
 
         #expect(!FileManager.default.fileExists(atPath: doomedPath))
         #expect(FileManager.default.fileExists(atPath: keptPath))
+    }
+}
+
+// MARK: - Friendship
+
+@MainActor
+@Suite("Friendship")
+struct FriendshipTests {
+    @Test("The other person is found whichever side sent the request")
+    func otherUserIdFromEitherSide() {
+        let sent = Friendship(userId: "me", friendId: "them", friendName: "Them", friendEmail: "t@example.com")
+        let received = Friendship(userId: "them", friendId: "me", friendName: "Them", friendEmail: "t@example.com")
+
+        #expect(sent.otherUserId(currentUserId: "me") == "them")
+        #expect(received.otherUserId(currentUserId: "me") == "them")
     }
 }
 

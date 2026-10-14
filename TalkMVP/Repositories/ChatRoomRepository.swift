@@ -25,6 +25,10 @@ protocol ChatRoomRepositoryProtocol {
     /// Update unread count for a chat room
     func updateUnreadCount(for chatRoomId: UUID, count: Int) async throws
 
+    /// The one-to-one room with `userId`, created and saved the first time it is asked for,
+    /// so every way of starting a chat with someone lands in the same conversation.
+    func directChatRoom(withUserId userId: String, name: String, email: String?) async throws -> ChatRoom
+
     /// Delete a chat room together with every message in it
     func deleteChatRoom(_ chatRoom: ChatRoom) async throws
 }
@@ -99,6 +103,28 @@ class LocalChatRoomRepository: ChatRoomRepositoryProtocol {
             print("❌ [ChatRoomRepository] Failed to update unread count: \(error)")
             throw RepositoryError.updateFailed(error)
         }
+    }
+
+    func directChatRoom(withUserId userId: String, name: String, email: String?) async throws -> ChatRoom {
+        let otherUserId: String? = userId
+        var descriptor = FetchDescriptor<ChatRoom>(
+            predicate: #Predicate { $0.otherUserId == otherUserId && !$0.isOrganizationRoom }
+        )
+        descriptor.fetchLimit = 1
+        do {
+            if let existing = try modelContext.fetch(descriptor).first {
+                return existing
+            }
+        } catch {
+            print("❌ [ChatRoomRepository] Failed to look up direct chat room: \(error)")
+            throw RepositoryError.fetchFailed(error)
+        }
+
+        let room = ChatRoom(name: name, profileImage: "person.circle.fill")
+        room.otherUserId = userId
+        room.otherUserEmail = email
+        try await saveChatRoom(room)
+        return room
     }
 
     func deleteChatRoom(_ chatRoom: ChatRoom) async throws {
