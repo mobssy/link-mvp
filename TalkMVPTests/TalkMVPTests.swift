@@ -1234,6 +1234,149 @@ struct AIServiceSummaryTests {
     }
 }
 
+// MARK: - Meeting notes
+
+@MainActor
+@Suite("Meeting notes")
+struct MeetingNotesTests {
+    private func msg(_ text: String, from sender: String = "Mina", mine: Bool = false) -> SummaryMessage {
+        SummaryMessage(text: text, sender: sender, isFromCurrentUser: mine, messageType: .text)
+    }
+
+    private func task(_ quote: String, _ kind: MeetingNotes.ProposedTask.Kind, _ task: String, owner: String? = nil, due: String? = nil) -> MeetingNotes.ProposedTask {
+        MeetingNotes.ProposedTask(quote: quote, kind: kind, task: task, owner: owner, due: due)
+    }
+
+    private func ground(_ tasks: [MeetingNotes.ProposedTask], decisions: [String] = [], questions: [String] = [], in chat: [SummaryMessage]) -> MeetingNotes {
+        MeetingNotesGrounding.ground(.init(summary: " Plans ", decisions: decisions, openQuestions: questions, tasks: tasks), in: chat, meLabel: "Me")
+    }
+
+    @Test("Dates and times are kept as the chat wrote them, with the message they came from")
+    func scheduleKeepsTheChatsWording() throws {
+        let schedule = MeetingNotesExtractor.schedule(in: [
+            msg("Let's meet on October 20, 2026 at 3:00 PM at the station"),
+            msg("ok", mine: true),
+        ])
+        let item = try #require(schedule.first)
+        #expect(schedule.count == 1)
+        #expect(item.when.contains("October 20, 2026") && item.when.contains("3:00 PM"))
+        #expect(item.context.contains("station"))
+    }
+
+    @Test("A day named in passing is not put on the schedule")
+    func scheduleSkipsDaysWithoutADigit() {
+        #expect(MeetingNotesExtractor.schedule(in: [
+            msg("Have a good day today!"), msg("오늘도 좋은 하루 되세요!"), msg("see you Friday", mine: true),
+        ]).isEmpty)
+    }
+
+    @Test("Without the model, decisions, commitments and questions are picked out by rule")
+    func ruleBasedExtraction() {
+        let notes = MeetingNotesExtractor.extract(from: [
+            msg("Let's go with the Italian place"),
+            msg("I'll book a table for four", mine: true),
+            msg("자료는 제가 준비할게요", from: "Joon"),
+            msg("Who is bringing the cake?"),
+            msg("haha nice"),
+        ], meLabel: "Me")
+
+        #expect(notes.decisions == ["Let's go with the Italian place"])
+        #expect(notes.actionItems.map(\.task) == ["I'll book a table for four", "자료는 제가 준비할게요"])
+        #expect(notes.actionItems.map(\.owner) == ["Me", "Joon"])
+        #expect(notes.openQuestions == ["Who is bringing the cake?"])
+        #expect(!notes.generatedByModel)
+    }
+
+    @Test("Small talk alone leaves nothing to note")
+    func smallTalkIsEmpty() {
+        #expect(MeetingNotesExtractor.extract(from: [msg("hi"), msg("hello!", mine: true)], meLabel: "Me").isEmpty)
+    }
+
+    @Test("A question is not a task, even when the model calls it a commitment")
+    func questionsAreNotTasks() {
+        let notes = ground(
+            [task("Sure, I'll send them tonight", .commitment, "Send the slides"), task("Should we invite Jordan?", .commitment, "Invite Jordan", owner: "Mina")],
+            questions: ["Should we invite Jordan?"],
+            in: [msg("Can you send the slides?"), msg("Sure, I'll send them tonight", mine: true), msg("Should we invite Jordan?")]
+        )
+        #expect(notes.actionItems == [.init(task: "Send the slides", owner: "Me", due: nil)])
+        #expect(notes.openQuestions == ["Should we invite Jordan?"])
+        #expect(notes.summary == "Plans")
+        #expect(notes.generatedByModel)
+    }
+
+    @Test("A task whose quote is not in the chat, or says nothing about doing anything, is dropped")
+    func unsupportedTasksAreDropped() {
+        let notes = ground(
+            [task("I'll bring the cake", .commitment, "Bring the cake", owner: "Mina"), task("pretty good, went hiking", .statement, "Share the hike")],
+            questions: ["Who is bringing the cake?"],
+            in: [msg("Who is bringing the cake?", mine: true), msg("pretty good, went hiking")]
+        )
+        #expect(notes.actionItems.isEmpty)
+        #expect(notes.openQuestions == ["Who is bringing the cake?"])
+    }
+
+    @Test("A quote still matches when the model changes punctuation or adds the sender's name")
+    func quoteMatchingIgnoresPunctuationAndSender() {
+        let notes = ground([task("Me: i'll book a table for six", .commitment, "Book a table", due: " ")], in: [msg("I'll book a table for six!", mine: true)])
+        #expect(notes.actionItems == [.init(task: "Book a table", owner: "Me", due: nil)])
+    }
+
+    @Test("A commitment keeps the owner the chat names, and otherwise belongs to its sender")
+    func commitmentOwner() {
+        let chat = [
+            msg("Sure, on it", mine: true), msg("Jordan will bring the wine", from: "Alex"),
+            msg("I'll handle the slides"), msg("Could you book the table, please.", from: "Alex"),
+        ]
+        let notes = ground([
+            task("Sure, on it", .commitment, "Book the venue"),
+            task("Jordan will bring the wine", .commitment, "Bring the wine", owner: "Jordan"),
+            task("I'll handle the slides", .commitment, "Handle the slides", owner: "Sam"),
+            // A request the model took for a commitment: the participant it names still wins.
+            task("Could you book the table, please.", .commitment, "Book the table", owner: "me"),
+        ], in: chat)
+        #expect(notes.actionItems.map(\.owner) == ["Me", "Jordan", "Mina", "Me"])
+    }
+
+    @Test("A request belongs to the person asked: one the chat names, or the other person in a two-person chat")
+    func requestOwner() {
+        let ask = msg("Could you book the table for Saturday, please.", from: "Alex")
+        #expect(ground([task(ask.text, .request, "Book the table", owner: "Alex")], in: [ask, msg("Sure", mine: true)]).actionItems.map(\.owner) == ["Me"])
+        let askedAsAQuestion = msg("Can you send me the slides by Thursday?", from: "Alex")
+        #expect(ground([task(askedAsAQuestion.text, .request, "Send the slides")], in: [askedAsAQuestion]).actionItems.map(\.owner) == [nil])
+
+        let group = [msg("Joon, please send the deck.", from: "Alex"), msg("ok", from: "Joon"), msg("thanks", mine: true)]
+        #expect(ground([task(group[0].text, .request, "Send the deck", owner: "Joon")], in: group).actionItems.map(\.owner) == ["Joon"])
+        #expect(ground([task(group[0].text, .request, "Send the deck", owner: "Sam")], in: group).actionItems.map(\.owner) == [nil])
+    }
+
+    @Test("A task proposed twice, or a decision that only restates a task, is left out")
+    func nothingIsListedTwice() {
+        let notes = ground(
+            [task("I'll book a table for six", .commitment, "Book a table for six"), task("I'll book a table for six", .commitment, "book a table for six.")],
+            decisions: ["Me will book a table for six", "Dinner at the Italian place"],
+            in: [msg("I'll book a table for six", mine: true)]
+        )
+        #expect(notes.actionItems.count == 1)
+        #expect(notes.decisions == ["Dinner at the Italian place"])
+    }
+
+    @Test("Shared text lists only the sections that have content")
+    func shareTextSkipsEmptySections() {
+        let notes = MeetingNotes(
+            summary: "Dinner plans",
+            decisions: ["Italian place"],
+            actionItems: [.init(task: "Book a table", owner: "Me", due: "today")],
+            schedule: [.init(when: "Friday at 7", context: "Dinner Friday at 7?")],
+            openQuestions: [],
+            generatedByModel: true
+        )
+        let labels = MeetingNotes.Labels(title: "Notes", decisions: "Decisions", actionItems: "Tasks", schedule: "Schedule", openQuestions: "Questions")
+        #expect(notes.shareText(labels: labels)
+                == "Notes\n\nDinner plans\n\nDecisions\n• Italian place\n\nTasks\n• Me: Book a table (today)\n\nSchedule\n• Friday at 7 — Dinner Friday at 7?")
+    }
+}
+
 // MARK: - Notifications
 
 @MainActor

@@ -77,6 +77,7 @@ It's the moment of connection — the spark when two people understand each othe
 - **Link previews** — rich metadata loaded automatically for URLs
 - **Read receipts** — checkmark icons showing message delivery and read state
 - **AI summary** — on-device conversation summary powered by FoundationModels
+- **Meeting notes** — decisions, tasks with owners, dates and open questions from a chat, written on device by Apple Intelligence (guided generation). Every task has to quote the message it came from and is checked against the chat, so the model can't slip in a task nobody took on; dates are read by a date detector, not the model. Without Apple Intelligence, rules pick them out instead
 - **Reactions & bookmarks** — emoji reactions and bookmarked messages
 - **Disappearing messages** — auto-delete after a configurable duration
 - **Scheduled send** — queue messages to send at a future time
@@ -185,10 +186,10 @@ link-mvp/
 
 - **App**: `TalkMVPApp`, `ContentView`
 - **Auth & App Lock**: `AuthView`, `AuthManager`, `SSOSignInView`, `GoogleOAuthService`, `AppLockView`, `AppLockManager`
-- **Chat**: `ChatView` (+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `AttachmentPreviewer`, `TypingIndicatorView`, `ConnectionStatusView`
+- **Chat**: `ChatView` (+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `AttachmentPreviewer`, `TypingIndicatorView`, `ConnectionStatusView`, `MeetingNotesView`
 - **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
 - **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
-- **Services & Managers**: `AIService`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `VoiceMessageService`, `AttachmentHandler`
+- **Services & Managers**: `AIService`, `MeetingNotes`(+`Extractor`/`Grounding`), `LocalizationService`, `NotificationManager`, `AutoResponseService`, `VoiceMessageService`, `AttachmentHandler`
 - **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
 - **Data Layer**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `Repositories/TestAccount`, `User`
 - **Shared**: `Colors+Extensions`
@@ -284,6 +285,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 - **링크 미리보기** — URL에 대한 풍부한 메타데이터 자동 로드
 - **읽음 확인** — 메시지 전송 및 읽음 상태를 체크마크 아이콘으로 표시
 - **AI 요약** — FoundationModels 기반 온디바이스 대화 요약
+- **회의 노트** — 대화의 결정 사항, 담당자가 있는 할 일, 일정, 남은 질문을 기기 안의 Apple Intelligence가 정리(가이드 생성). 할 일마다 근거 메시지를 인용하게 하고 대화와 대조해, 아무도 맡지 않은 할 일이 끼어들지 못하게 함. 일정은 모델이 아니라 날짜 감지기가 읽음. Apple Intelligence가 없으면 규칙 기반으로 추출
 - **리액션 & 북마크** — 이모지 리액션 및 메시지 북마크
 - **자폭 메시지** — 설정한 시간 후 자동 삭제
 - **예약 전송** — 원하는 시간에 메시지 예약 발송
@@ -392,10 +394,10 @@ link-mvp/
 
 - **App**: `TalkMVPApp`, `ContentView`
 - **Auth & 앱 잠금**: `AuthView`, `AuthManager`, `SSOSignInView`, `GoogleOAuthService`, `AppLockView`, `AppLockManager`
-- **Chat**: `ChatView`(+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `AttachmentPreviewer`, `TypingIndicatorView`, `ConnectionStatusView`
+- **Chat**: `ChatView`(+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `AttachmentPreviewer`, `TypingIndicatorView`, `ConnectionStatusView`, `MeetingNotesView`
 - **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
 - **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
-- **Services & Managers**: `AIService`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `VoiceMessageService`, `AttachmentHandler`
+- **Services & Managers**: `AIService`, `MeetingNotes`(+`Extractor`/`Grounding`), `LocalizationService`, `NotificationManager`, `AutoResponseService`, `VoiceMessageService`, `AttachmentHandler`
 - **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
 - **데이터 레이어**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `Repositories/TestAccount`, `User`
 - **공용**: `Colors+Extensions`

@@ -77,6 +77,9 @@ struct ChatView: View {
     @State var showingSummarySheet = false
     @State var summaryText: String = ""
     @State var isSummaryLoading = false
+    @State var showingMeetingNotes = false
+    @State var meetingNotes: MeetingNotes?
+    @State var isMeetingNotesLoading = false
 
     // MARK: - Bookmarks
     @State var showingBookmarks = false
@@ -227,6 +230,14 @@ struct ChatView: View {
                         }
                     }
 
+                    if aiAutoMeetingNotesEnabled {
+                        Button {
+                            generateMeetingNotes()
+                        } label: {
+                            Label(languageManager.localize(ko: "회의 노트", en: "Meeting Notes", ja: "会議メモ", zh: "会议记录", es: "Notas de reunión"), systemImage: "note.text")
+                        }
+                    }
+
                     if !isFriend && !friendRequestSent && chatRoom.otherUserId != nil {
                         Button {
                             showingAddFriendAlert = true
@@ -332,6 +343,25 @@ struct ChatView: View {
                         .toolbar {
                             ToolbarItem(placement: .navigationBarTrailing) {
                                 Button(localizedText("done")) { showingSummarySheet = false }
+                            }
+                        }
+                }
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showingMeetingNotes) {
+                NavigationStack {
+                    MeetingNotesView(notes: meetingNotes, isLoading: isMeetingNotesLoading)
+                        .navigationTitle(MeetingNotesView.labels(languageManager).title)
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarLeading) {
+                                if let notes = meetingNotes, !isMeetingNotesLoading, !notes.isEmpty {
+                                    ShareLink(item: notes.shareText(labels: MeetingNotesView.labels(languageManager)))
+                                }
+                            }
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button(localizedText("done")) { showingMeetingNotes = false }
                             }
                         }
                 }

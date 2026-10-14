@@ -160,6 +160,19 @@ extension ChatView {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
+    func generateMeetingNotes() {
+        let snapshot = (viewModel?.messages ?? []).map(SummaryMessage.init)
+        let language = appLanguageCode()
+        let me = languageManager.localize(ko: "나", en: "Me", ja: "自分", zh: "我", es: "Yo")
+        meetingNotes = nil
+        isMeetingNotesLoading = true
+        showingMeetingNotes = true
+        Task {
+            meetingNotes = await AIService.shared.meetingNotes(messages: snapshot, targetLanguage: language, meLabel: me)
+            isMeetingNotesLoading = false
+        }
+    }
+
     func generateSummary() {
         guard let messages = viewModel?.messages, !messages.isEmpty else { return }
         let snapshot = messages.map(SummaryMessage.init)

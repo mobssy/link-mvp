@@ -35,8 +35,93 @@ extension SummaryMessage {
     }
 }
 
+/// The shape the on-device model fills in for meeting notes (guided generation), so the
+/// result arrives as fields rather than prose to be parsed.
+@Generable
+nonisolated struct MeetingNotesDraft {
+    @Guide(description: "One sentence on what the conversation was about")
+    var summary: String
+    @Guide(description: "Things the participants clearly agreed on. Empty if nothing was settled.", .maximumCount(5))
+    var decisions: [String]
+    @Guide(description: "Questions nobody answered, such as \"Who is bringing the cake?\". Empty if there are none.", .maximumCount(4))
+    var openQuestions: [String]
+    @Guide(description: "Tasks someone took on or was asked to do, such as \"I'll book the table\". Empty if there are none.", .maximumCount(6))
+    var actionItems: [ActionItemDraft]
+}
+
+@Generable
+nonisolated struct ActionItemDraft {
+    // Generated in this order, so the task is read from a real message rather than made up first.
+    @Guide(description: "The chat message the task comes from, copied exactly, in its original language")
+    var quote: String
+    @Guide(
+        description: """
+        What the quoted message does. commitment: the sender promises to do something, or says someone named will \
+        ("I'll book it", "내가 할게", "Jordan will bring the wine"). request: the sender asks someone to do something \
+        ("Could you send the slides?"). question: any other question. statement: anything else, such as a greeting, \
+        news, or what someone already did ("went hiking").
+        """,
+        .anyOf(MeetingNotes.ProposedTask.Kind.allCases.map(\.rawValue))
+    )
+    var kind: String
+    @Guide(description: "What needs doing, written so it makes sense without the chat (\"Ask Minsu whether he is coming\", not \"I'll ask\")")
+    var task: String
+    @Guide(description: "The person who will do it, as their name appears in the chat")
+    var owner: String?
+    @Guide(description: "When it is due, as said in the chat; omit if not mentioned")
+    var due: String?
+}
+
 actor AIService {
     static let shared = AIService()
+
+    /// Meeting notes for the conversation. The on-device model writes the decisions, tasks and
+    /// open questions when Apple Intelligence is available, and its tasks are checked against
+    /// the chat; otherwise the rule-based extractor writes them. Dates and times always come
+    /// from the date detector, which reads them exactly.
+    func meetingNotes(messages: [SummaryMessage], limit: Int = 60, targetLanguage: String, meLabel: String) async -> MeetingNotes {
+        let recent = Array(messages.suffix(limit))
+        let transcript = recent
+            .filter { $0.messageType == .text }
+            .map { "\($0.isFromCurrentUser ? meLabel : $0.sender): \($0.text)" }
+            .joined(separator: "\n")
+        guard let draft = await generateMeetingNotesDraft(transcript: transcript, language: targetLanguage, meLabel: meLabel) else {
+            return MeetingNotesExtractor.extract(from: recent, meLabel: meLabel)
+        }
+        let proposal = MeetingNotes.Proposal(
+            summary: draft.summary,
+            decisions: draft.decisions,
+            openQuestions: draft.openQuestions,
+            tasks: draft.actionItems.map {
+                .init(quote: $0.quote, kind: .init(rawValue: $0.kind) ?? .statement, task: $0.task, owner: $0.owner, due: $0.due)
+            }
+        )
+        return MeetingNotesGrounding.ground(proposal, in: recent, meLabel: meLabel)
+    }
+
+    private func generateMeetingNotesDraft(transcript: String, language: String, meLabel: String) async -> MeetingNotesDraft? {
+        guard case .available = SystemLanguageModel.default.availability, !transcript.isEmpty else { return nil }
+        let instructions = """
+        You write short meeting notes from a chat. Always write in \(languageName(for: language)).
+        Use only what the messages say; an empty list is better than a guess.
+        An action item is a task someone said they would do or was asked to do. A question that only
+        asks for information is never an action item: if nobody answered it, it is an open question.
+        Give a due date only when the chat states one.
+        "\(meLabel)" is the person reading the notes. Name everyone else as they appear before their messages.
+        """
+        do {
+            let session = LanguageModelSession(instructions: instructions)
+            return try await session.respond(
+                to: "Write meeting notes for this chat:\n\n\(transcript)",
+                generating: MeetingNotesDraft.self,
+                // Extraction wants the most likely reading, not variety.
+                options: GenerationOptions(samplingMode: .greedy)
+            ).content
+        } catch {
+            aiLogger.notice("Meeting notes generation failed: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
 
     func summarize(messages: [SummaryMessage], limit: Int = 30, targetLanguage: String = "en") async -> String {
         let last = Array(messages.suffix(limit))
