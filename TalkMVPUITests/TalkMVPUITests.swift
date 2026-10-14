@@ -94,6 +94,41 @@ final class TalkMVPUITests: XCTestCase {
     }
 
     @MainActor
+    func testSwipingAMessageStartsAReply() throws {
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        app.buttons["testModeButton"].tap()
+        let startButton = app.alerts.buttons["Start Test"]
+        XCTAssertTrue(startButton.waitForExistence(timeout: 5))
+        startButton.tap()
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 10))
+
+        tabBar.buttons["Chats"].tap()
+        let firstRoom = app.cells.firstMatch
+        XCTAssertTrue(firstRoom.waitForExistence(timeout: 5))
+        firstRoom.tap()
+
+        let input = app.textFields.firstMatch
+        XCTAssertTrue(input.waitForExistence(timeout: 10))
+        input.tap()
+        input.typeText("swipe me\n")
+
+        // Messages live in a ScrollView, not a List; swipe actions there need iOS 27's
+        // swipeActionsContainer().
+        let message = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH 'message_' AND label CONTAINS 'swipe me'"))
+            .firstMatch
+        XCTAssertTrue(message.waitForExistence(timeout: 5))
+        message.swipeRight()
+
+        let reply = app.buttons["Reply"]
+        XCTAssertTrue(reply.waitForExistence(timeout: 3), "swiping a message reveals Reply")
+        reply.tap()
+        XCTAssertTrue(app.buttons["Cancel"].waitForExistence(timeout: 3), "the reply banner opens")
+    }
+
+    @MainActor
     func testLaunchPerformance() throws {
         // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
