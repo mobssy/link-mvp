@@ -27,6 +27,9 @@ class ChatViewModel: ObservableObject {
     /// Voice messages being written down right now. The first one in a language can take a
     /// while, since the speech model is downloaded then.
     @Published private(set) var transcribingMessageIDs: Set<UUID> = []
+    /// Words related to the current search, looked up on device; empty when searching by meaning is off.
+    @Published private(set) var relatedSearchTerms: [String] = []
+    @Published private(set) var isExpandingSearch = false
 
     // MARK: - Pagination
     private static let pageSize = 50
@@ -40,6 +43,10 @@ class ChatViewModel: ObservableObject {
     private let replySuggester: ReplySuggesting
     private let voiceTranscriber: VoiceTranscribing
     private let photoDescriber: PhotoDescribing
+    private let searchExpander: SearchQueryExpanding
+    private let searchByMeaningEnabled: () -> Bool
+    /// Bumped by every search, so a lookup that returns after a newer one started is ignored.
+    private var searchGeneration = 0
     private let replySuggestionsEnabled: () -> Bool
     private var suggestionTask: Task<Void, Never>?
     private var chatRoom: ChatRoom
@@ -65,7 +72,9 @@ class ChatViewModel: ObservableObject {
         replySuggester: ReplySuggesting = OnDeviceReplySuggester(),
         replySuggestionsEnabled: @escaping () -> Bool = { AIFeatureSettings.replySuggestions.isOn },
         voiceTranscriber: VoiceTranscribing = OnDeviceVoiceTranscriber(),
-        photoDescriber: PhotoDescribing = OnDevicePhotoDescriber()
+        photoDescriber: PhotoDescribing = OnDevicePhotoDescriber(),
+        searchExpander: SearchQueryExpanding = OnDeviceSearchExpander(),
+        searchByMeaningEnabled: @escaping () -> Bool = { AIFeatureSettings.search.isOn }
     ) {
         self.messageRepository = messageRepository
         self.chatRoomRepository = chatRoomRepository
@@ -74,6 +83,8 @@ class ChatViewModel: ObservableObject {
         self.replySuggestionsEnabled = replySuggestionsEnabled
         self.voiceTranscriber = voiceTranscriber
         self.photoDescriber = photoDescriber
+        self.searchExpander = searchExpander
+        self.searchByMeaningEnabled = searchByMeaningEnabled
         self.chatRoom = chatRoom
         self.chatService = chatService
 
@@ -355,6 +366,33 @@ class ChatViewModel: ObservableObject {
         markSentMessagesAsRead()
         messages.append(message)
         refreshReplySuggestions()
+    }
+
+    // MARK: - Search
+
+    /// The messages a search finds: those with the query's words and, when searching by meaning,
+    /// those with the related terms looked up for it.
+    func searchResults(for query: String) -> [Message] {
+        MessageSearch.filter(messages, query: query, relatedTerms: relatedSearchTerms)
+    }
+
+    /// Looks up words related to `query` on device once typing pauses, so search also finds
+    /// messages that say the same thing differently ("저녁 약속" finds "dinner tonight"). Call it
+    /// whenever the query changes.
+    func expandSearch(for query: String, after pause: Duration = .milliseconds(400)) async {
+        searchGeneration += 1
+        let generation = searchGeneration
+        relatedSearchTerms = []
+        isExpandingSearch = false
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard searchByMeaningEnabled(), query.count >= 2 else { return }
+        try? await Task.sleep(for: pause)
+        guard generation == searchGeneration, !Task.isCancelled else { return }
+        isExpandingSearch = true
+        let terms = await searchExpander.relatedTerms(for: query, in: messages.suffix(100).map(SummaryMessage.init))
+        guard generation == searchGeneration else { return }
+        relatedSearchTerms = terms
+        isExpandingSearch = false
     }
 
     // MARK: - Reply suggestions

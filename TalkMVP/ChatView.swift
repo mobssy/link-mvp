@@ -109,7 +109,6 @@ struct ChatView: View {
 
     // MARK: - AI Settings
     @AppStorage(AIFeatureSettings.summary.key) var aiSummaryEnabled = AIFeatureSettings.summary.defaultValue
-    @AppStorage(AIFeatureSettings.search.key) var aiSearchEnabled = AIFeatureSettings.search.defaultValue
     @AppStorage(AIFeatureSettings.meetingNotes.key) var aiAutoMeetingNotesEnabled = AIFeatureSettings.meetingNotes.defaultValue
 
     // MARK: - Translation Settings
@@ -335,6 +334,7 @@ struct ChatView: View {
             }
             .dynamicTypeSize(dynamicTypeSize.isAccessibilitySize ? .accessibility3 : dynamicTypeSize)
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: localizedText("search_conversation"))
+            .task(id: searchText) { await viewModel?.expandSearch(for: searchText) }
             .sheet(isPresented: $showingSummarySheet) {
                 NavigationStack {
                     summarySheetContent

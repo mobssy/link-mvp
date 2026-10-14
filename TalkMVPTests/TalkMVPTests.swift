@@ -1038,6 +1038,67 @@ struct VoiceTranscriptionTests {
     }
 }
 
+// MARK: - Message search
+
+@MainActor
+@Suite("Message search")
+struct MessageSearchTests {
+    private func text(_ words: String) -> Message { Message(text: words, isFromCurrentUser: false, chatRoomId: "room") }
+
+    @Test("Messages are found by their words, ignoring case, accents and width")
+    func findsWordsLoosely() {
+        let cafe = text("Café at 7?")
+        let wide = text("ＤＩＮＮＥＲ")
+        let other = text("see you")
+        #expect(MessageSearch.filter([cafe, wide, other], query: "CAFE").map(\.id) == [cafe.id])
+        #expect(MessageSearch.filter([cafe, wide, other], query: "dinner").map(\.id) == [wide.id])
+    }
+
+    @Test("Voice transcripts, photo descriptions and file names can be found; videos and places can't")
+    func findsWhatAttachmentsSay() {
+        let voice = Message(audioData: Data([1]), duration: 2, isFromCurrentUser: true, chatRoomId: "room")
+        voice.transcript = "see you at the beach"
+        let photo = Message(imageData: Data([1]), isFromCurrentUser: true, chatRoomId: "room")
+        photo.imageDescription = "A dog running on a beach."
+        let file = Message(fileName: "beach-trip", fileExtension: "pdf", fileSize: 10, isFromCurrentUser: true, chatRoomId: "room")
+        let place = Message(latitude: 1, longitude: 2, isFromCurrentUser: true, chatRoomId: "room")
+        let video = Message(text: "beach video", isFromCurrentUser: true, chatRoomId: "room", messageType: .video)
+
+        let found = MessageSearch.filter([voice, photo, file, place, video], query: "beach")
+
+        #expect(found.map(\.id) == [voice.id, photo.id, file.id])
+    }
+
+    @Test("A blank search finds everything, and related terms widen a search")
+    func blankAndWidenedSearches() {
+        let dinner = text("Dinner tonight?")
+        let lunch = text("Lunch tomorrow?")
+        #expect(MessageSearch.filter([dinner, lunch], query: "  ").count == 2)
+        #expect(MessageSearch.filter([dinner, lunch], query: "저녁", relatedTerms: ["dinner"]).map(\.id) == [dinner.id])
+    }
+
+    @Test("Related terms leave out the search itself, repeats and short Latin fragments")
+    func relatedTermsAreCleaned() {
+        let terms = ["Dinner", " dinner ", "저녁 약속", "a", "of", "밥", "\"supper\""]
+        #expect(OnDeviceSearchExpander.cleaned(terms, excluding: "저녁 약속") == ["Dinner", "밥", "supper"])
+    }
+
+    @Test("A translation of the whole search is used word by word")
+    func translationsAreSplitIntoWords() {
+        #expect(OnDeviceSearchExpander.words(of: ["dinner appointment", "식사", "夕食の約束"]) == ["dinner", "appointment", "식사", "夕食の約束"])
+    }
+
+    @Test("Related terms are asked for in the search's language, then the chat's")
+    func termsCoverTheSearchAndTheChat() {
+        let chat = ["Want to grab dinner tonight?", "Sure, where should we go?", "How about the Italian place downtown?"]
+            .map { SummaryMessage(text: $0, sender: "Sam", isFromCurrentUser: false, messageType: .text) }
+        let names = OnDeviceSearchExpander.languageNames(for: "오늘 저녁 약속", in: chat)
+        #expect(names.all == "Korean and English")
+        #expect(names.others == "English")
+        #expect(OnDeviceSearchExpander.languageNames(for: "dinner plans", in: chat).others == nil, "nothing to translate into")
+    }
+}
+
 // MARK: - AI feature settings
 
 @Suite("AI feature settings")
@@ -1284,6 +1345,16 @@ private final class RecordingAutoResponder: AutoResponding {
     }
 }
 
+/// Stands in for on-device search expansion; a query's lookup can be slowed down.
+private struct FixedExpander: SearchQueryExpanding {
+    var terms: [String: [String]] = [:]
+    var delays: [String: Duration] = [:]
+    func relatedTerms(for query: String, in conversation: [SummaryMessage]) async -> [String] {
+        try? await Task.sleep(for: delays[query] ?? .zero)
+        return terms[query] ?? []
+    }
+}
+
 /// Stands in for on-device photo descriptions.
 private struct FixedDescriber: PhotoDescribing {
     var sentence: String?
@@ -1347,7 +1418,8 @@ struct ChatViewModelTests {
         autoResponder: AutoResponding? = nil,
         suggester: ReplySuggesting = FixedSuggester(), suggestionsEnabled: Bool = true,
         transcriber: VoiceTranscribing = FixedTranscriber(),
-        describer: PhotoDescribing = FixedDescriber()
+        describer: PhotoDescribing = FixedDescriber(),
+        expander: SearchQueryExpanding = FixedExpander(), searchByMeaning: Bool = true
     ) -> ChatViewModel {
         ChatViewModel(
             messageRepository: LocalMessageRepository(modelContext: context, attachmentFiles: attachmentFiles),
@@ -1357,8 +1429,58 @@ struct ChatViewModelTests {
             replySuggester: suggester,
             replySuggestionsEnabled: { suggestionsEnabled },
             voiceTranscriber: transcriber,
-            photoDescriber: describer
+            photoDescriber: describer,
+            searchExpander: expander,
+            searchByMeaningEnabled: { searchByMeaning }
         )
+    }
+
+    @Test("Searching by meaning also finds messages that say it differently")
+    func searchByMeaningFindsRelatedWords() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        try receive("Dinner tonight at 7?", in: room, context: context)
+        try receive("see you", in: room, context: context)
+        let viewModel = makeViewModel(context, room: room, expander: FixedExpander(terms: ["저녁 약속": ["dinner"]]))
+        await viewModel.loadMessages()
+        #expect(viewModel.searchResults(for: "저녁 약속").isEmpty, "the words as typed match nothing")
+
+        await viewModel.expandSearch(for: "저녁 약속", after: .zero)
+
+        #expect(viewModel.relatedSearchTerms == ["dinner"])
+        #expect(viewModel.searchResults(for: "저녁 약속").map(\.text) == ["Dinner tonight at 7?"])
+        #expect(!viewModel.isExpandingSearch)
+    }
+
+    @Test("With searching by meaning off, search still matches the words as typed")
+    func searchByMeaningCanBeTurnedOff() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        try receive("Dinner tonight at 7?", in: room, context: context)
+        let viewModel = makeViewModel(context, room: room, expander: FixedExpander(terms: ["저녁 약속": ["dinner"]]), searchByMeaning: false)
+        await viewModel.loadMessages()
+
+        await viewModel.expandSearch(for: "저녁 약속", after: .zero)
+
+        #expect(viewModel.relatedSearchTerms.isEmpty)
+        #expect(viewModel.searchResults(for: "저녁 약속").isEmpty)
+        #expect(viewModel.searchResults(for: "dinner").count == 1)
+    }
+
+    @Test("A lookup that returns after a newer search started is ignored")
+    func staleSearchLookupIsIgnored() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        let expander = FixedExpander(terms: ["old query": ["old"], "new query": ["new"]], delays: ["old query": .milliseconds(300)])
+        let viewModel = makeViewModel(context, room: room, expander: expander)
+
+        let older = Task { await viewModel.expandSearch(for: "old query", after: .zero) }
+        try await Task.sleep(for: .milliseconds(50)) // the older lookup is under way
+        await viewModel.expandSearch(for: "new query", after: .zero)
+        await older.value
+
+        #expect(viewModel.relatedSearchTerms == ["new"])
+        #expect(!viewModel.isExpandingSearch)
     }
 
     @Test("A photo is described, and the other side answers once the description is in")

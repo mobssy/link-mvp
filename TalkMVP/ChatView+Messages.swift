@@ -32,6 +32,8 @@ extension ChatView {
                             }
                     }
 
+                    searchStatus(viewModel: viewModel)
+
                     messagesList(viewModel: viewModel)
 
                     if viewModel.otherUserTyping {
@@ -236,23 +238,40 @@ extension ChatView {
     }
 
     func filteredMessages(viewModel: ChatViewModel) -> [Message] {
-        guard aiSearchEnabled, !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return viewModel.messages
-        }
-        let query = searchText.lowercased()
-        return viewModel.messages.filter { msg in
-            switch msg.messageType {
-            case .text, .file:
-                return msg.text.lowercased().contains(query)
-            case .audio:
-                return msg.transcript?.lowercased().contains(query) ?? false
-            case .image:
-                return msg.imageDescription?.lowercased().contains(query) ?? false
-            case .video, .location:
-                return false
-            case .deleted:
-                return false
+        viewModel.searchResults(for: searchText)
+    }
+
+    /// While searching: that related words are being looked up, which ones were, and when
+    /// nothing matches, that nothing did.
+    @ViewBuilder
+    func searchStatus(viewModel: ChatViewModel) -> some View {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !query.isEmpty {
+            VStack(spacing: 8) {
+                Group {
+                    if viewModel.isExpandingSearch {
+                        HStack(spacing: 6) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text(languageManager.localize(ko: "의미로 찾는 중…", en: "Searching by meaning…", ja: "意味で検索中…", zh: "正在按含义搜索…", es: "Buscando por significado…"))
+                        }
+                    } else if !viewModel.relatedSearchTerms.isEmpty {
+                        Text(String(
+                            format: languageManager.localize(ko: "함께 찾은 말: %@", en: "Also searched for: %@", ja: "一緒に検索した言葉: %@", zh: "同时搜索：%@", es: "También se buscó: %@"),
+                            viewModel.relatedSearchTerms.joined(separator: ", ")
+                        ))
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+                if !viewModel.isExpandingSearch && viewModel.searchResults(for: query).isEmpty {
+                    ContentUnavailableView.search(text: query)
+                }
             }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 4)
         }
     }
 
