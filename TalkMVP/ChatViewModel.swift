@@ -356,6 +356,92 @@ class ChatViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Reactions & bookmarks
+
+    @discardableResult
+    func addReaction(_ emoji: String, to message: Message, from userId: String) -> Task<Void, Never> {
+        message.addReaction(emoji, from: userId)
+        return persist(message, failureLog: "reaction")
+    }
+
+    @discardableResult
+    func toggleBookmark(_ message: Message) -> Task<Void, Never> {
+        message.isBookmarked.toggle()
+        return persist(message, failureLog: "bookmark")
+    }
+
+    private func persist(_ message: Message, failureLog: StaticString) -> Task<Void, Never> {
+        Task {
+            do {
+                try await messageRepository.updateMessage(message)
+            } catch {
+                vmLogger.error("Failed to save \(failureLog): \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
+    // MARK: - Scheduled send
+
+    /// Saves `text` to go out at `date`. Until then it sits in the conversation marked as
+    /// scheduled; `sendDueScheduledMessages` sends it.
+    @discardableResult
+    func scheduleMessage(_ text: String, sendAt date: Date) -> Task<Void, Never>? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let message = Message(text: trimmed, isFromCurrentUser: true, chatRoomId: chatRoom.id.uuidString)
+        message.scheduledFor = date
+        message.isPendingScheduled = true
+
+        // Shown once saved, like `deliver`, so the initial load cannot overwrite it.
+        return Task {
+            do {
+                try await messageRepository.saveMessage(message)
+                messages.append(message)
+                messages.sort { $0.timestamp < $1.timestamp }
+            } catch {
+                vmLogger.error("Failed to save scheduled message: \(error.localizedDescription, privacy: .public)")
+                errorMessage = localizedVM(ko: "예약 메시지 저장에 실패했습니다.", en: "Failed to schedule the message.", ja: "予約メッセージの保存に失敗しました。", zh: "保存定时消息失败。", es: "Error al programar el mensaje.")
+            }
+        }
+    }
+
+    /// Sends every scheduled message whose time has come, the way a message typed now is
+    /// sent: the room's disappearing timer applies, the chat list preview moves to it, the
+    /// chat service hears about it and the other side replies.
+    @discardableResult
+    func sendDueScheduledMessages(now: Date = Date()) -> Task<Void, Never>? {
+        let due = messages.filter { message in
+            guard message.isPendingScheduled, let sendAt = message.scheduledFor else { return false }
+            return sendAt <= now
+        }
+        guard let latest = due.last else { return nil }
+
+        for message in due {
+            message.isPendingScheduled = false
+            message.scheduledFor = nil
+            message.timestamp = now
+            applyRoomSettings(to: message)
+        }
+        messages.sort { $0.timestamp < $1.timestamp }
+
+        let task = Task {
+            do {
+                for message in due {
+                    try await messageRepository.updateMessage(message)
+                }
+                try await chatRoomRepository.updateChatRoom(chatRoom, lastMessage: latest.text, timestamp: now)
+                for message in due {
+                    chatService?.sendMessage(message, to: chatRoom)
+                }
+            } catch {
+                vmLogger.error("Failed to send scheduled messages: \(error.localizedDescription, privacy: .public)")
+                errorMessage = localizedVM(ko: "예약 메시지 전송에 실패했습니다.", en: "Failed to send a scheduled message.", ja: "予約メッセージの送信に失敗しました。", zh: "发送定时消息失败。", es: "Error al enviar un mensaje programado.")
+            }
+        }
+        sendAutoResponse()
+        return task
+    }
+
     /// Drops disappearing messages whose time is up, from the conversation and the store.
     /// Callers that animate the removal may already have taken them out of `messages`.
     @discardableResult

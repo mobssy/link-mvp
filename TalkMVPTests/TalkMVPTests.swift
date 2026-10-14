@@ -1070,6 +1070,63 @@ struct ChatViewModelTests {
         #expect(!room.lastMessage.isEmpty)
     }
 
+    @Test("A scheduled message waits in the conversation without moving the chat list preview")
+    func scheduledMessageWaits() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        let viewModel = makeViewModel(context, room: room)
+
+        await viewModel.scheduleMessage("  good morning ", sendAt: Date().addingTimeInterval(3600))?.value
+        viewModel.sendDueScheduledMessages()
+
+        let pending = try #require(viewModel.messages.first)
+        #expect(pending.text == "good morning")
+        #expect(pending.isPendingScheduled)
+        #expect(try context.fetchCount(FetchDescriptor<Message>()) == 1)
+        #expect(room.lastMessage.isEmpty)
+    }
+
+    @Test("A due scheduled message is sent like a typed one: timer, preview and order")
+    func dueScheduledMessageIsSent() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        room.disappearingDuration = 60
+        let viewModel = makeViewModel(context, room: room)
+        let sendAt = Date().addingTimeInterval(60)
+        await viewModel.scheduleMessage("good morning", sendAt: sendAt)?.value
+        viewModel.newMessageText = "typed meanwhile"
+        await viewModel.sendMessage()?.value
+
+        let now = sendAt.addingTimeInterval(1)
+        await viewModel.sendDueScheduledMessages(now: now)?.value
+
+        let sent = try #require(viewModel.messages.last)
+        #expect(viewModel.messages.map(\.text) == ["typed meanwhile", "good morning"])
+        #expect(!sent.isPendingScheduled)
+        #expect(sent.scheduledFor == nil)
+        #expect(sent.timestamp == now)
+        #expect(sent.isDisappearing && sent.disappearAfterSeconds == 60)
+        #expect(room.lastMessage == "good morning")
+        #expect(room.timestamp == now)
+    }
+
+    @Test("Reactions and bookmarks are saved")
+    func reactionAndBookmarkPersist() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        let viewModel = makeViewModel(context, room: room)
+        viewModel.newMessageText = "hi"
+        await viewModel.sendMessage()?.value
+        let message = try #require(viewModel.messages.first)
+
+        await viewModel.addReaction("👍", to: message, from: "me").value
+        await viewModel.toggleBookmark(message).value
+
+        #expect(!context.hasChanges, "both edits were saved")
+        #expect(message.hasReaction("👍", from: "me"))
+        #expect(message.isBookmarked)
+    }
+
     @Test("Expired disappearing messages leave the conversation, the store and the disk")
     func deleteExpiredMessagesRemovesEverywhere() async throws {
         let context = try makeContext()

@@ -402,7 +402,7 @@ struct ChatView: View {
             .task {
                 while !Task.isCancelled {
                     checkDisappearingMessages()
-                    if let vm = viewModel { checkAndSendScheduled(viewModel: vm) }
+                    viewModel?.sendDueScheduledMessages()
                     try? await Task.sleep(for: .seconds(15))
                 }
             }

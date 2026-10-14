@@ -6,9 +6,6 @@
 import SwiftUI
 import SwiftData
 import UIKit
-import os
-
-private let helpersLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ChatView")
 
 extension ChatView {
     func setupViewModelIfNeeded() {
@@ -94,35 +91,23 @@ extension ChatView {
             return
         }
 
-        message.addReaction(emoji, from: currentUserId)
+        viewModel?.addReaction(emoji, to: message, from: currentUserId)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
 
-        do {
-            try modelContext.save()
-            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-            impactFeedback.impactOccurred()
-
-            let announcement = languageManager.localize(
-                ko: "반응 \(emoji)를 추가했습니다",
-                en: "Added reaction \(emoji)",
-                ja: "リアクション \(emoji) を追加しました",
-                zh: "添加了反应 \(emoji)",
-                es: "Reacción \(emoji) añadida"
-            )
-            UIAccessibility.post(notification: .announcement, argument: announcement)
-        } catch {
-            helpersLogger.error("Failed to save reaction: \(error.localizedDescription, privacy: .public)")
-        }
+        let announcement = languageManager.localize(
+            ko: "반응 \(emoji)를 추가했습니다",
+            en: "Added reaction \(emoji)",
+            ja: "リアクション \(emoji) を追加しました",
+            zh: "添加了反应 \(emoji)",
+            es: "Reacción \(emoji) añadida"
+        )
+        UIAccessibility.post(notification: .announcement, argument: announcement)
     }
 
     // MARK: - Bookmarks
 
     func toggleBookmark(_ message: Message) {
-        message.isBookmarked.toggle()
-        do {
-            try modelContext.save()
-        } catch {
-            helpersLogger.error("Failed to save bookmark: \(error.localizedDescription, privacy: .public)")
-        }
+        viewModel?.toggleBookmark(message)
         let label = message.isBookmarked
             ? languageManager.localize(ko: "북마크 추가됨", en: "Bookmarked", ja: "ブックマーク済み", zh: "已收藏", es: "Marcado")
             : languageManager.localize(ko: "북마크 해제됨", en: "Bookmark removed", ja: "ブックマーク解除", zh: "已取消收藏", es: "Marcador eliminado")
@@ -167,48 +152,9 @@ extension ChatView {
     // MARK: - Scheduled Send
 
     func scheduleMessage(viewModel: ChatViewModel, sendAt date: Date) {
-        let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
-        let message = Message(
-            text: text,
-            isFromCurrentUser: true,
-            chatRoomId: chatRoom.id.uuidString
-        )
-        message.scheduledFor = date
-        message.isPendingScheduled = true
-        modelContext.insert(message)
-        do {
-            try modelContext.save()
-        } catch {
-            helpersLogger.error("Failed to save scheduled message: \(error.localizedDescription, privacy: .public)")
-        }
-        // Add to viewModel so the timer can find and send it
-        viewModel.messages.append(message)
-        viewModel.messages.sort { $0.timestamp < $1.timestamp }
+        guard viewModel.scheduleMessage(inputText, sendAt: date) != nil else { return }
         inputText = ""
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-    }
-
-    func checkAndSendScheduled(viewModel: ChatViewModel) {
-        let now = Date()
-        let pending = viewModel.messages.filter { $0.isPendingScheduled }
-        for message in pending {
-            guard let sendAt = message.scheduledFor, now >= sendAt else { continue }
-            message.isPendingScheduled = false
-            message.scheduledFor = nil
-            message.timestamp = now
-            if chatRoom.disappearingDuration > 0 {
-                message.isDisappearing = true
-                message.disappearAfterSeconds = chatRoom.disappearingDuration
-            }
-            do {
-                try modelContext.save()
-            } catch {
-                helpersLogger.error("Failed to send scheduled message: \(error.localizedDescription, privacy: .public)")
-            }
-            // Re-sort so the message lands in chronological order
-            viewModel.messages.sort { $0.timestamp < $1.timestamp }
-        }
     }
 
     func generateSummary() {
