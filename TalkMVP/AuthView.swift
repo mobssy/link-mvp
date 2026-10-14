@@ -21,7 +21,6 @@ struct AuthView<Footer: View>: View {
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
-    @State private var appIcon: UIImage?
     private let footer: Footer
 
     init(@ViewBuilder footer: () -> Footer) {
@@ -48,18 +47,13 @@ struct AuthView<Footer: View>: View {
                     VStack(spacing: 30) {
                         // 로고 영역
                         VStack(spacing: 16) {
-                            if let icon = appIcon {
-                                Image(uiImage: icon)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 80, height: 80)
-                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                            } else {
-                                Image(systemName: "message.circle.fill")
-                                    .font(.system(size: 80))
-                                    .foregroundColor(.appPrimary)
-                            }
+                            // The app icon's glass bubble without its background, so it sits on the
+                            // screen itself; the asset has a light and a dark rendering.
+                            Image("LoginBubble")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 80, height: 80)
+                                .accessibilityHidden(true)
 
                             Text(appTitle)
                                 .font(.largeTitle)
@@ -99,11 +93,6 @@ struct AuthView<Footer: View>: View {
             .navigationTitle("")
             .navigationBarHidden(true)
             .tint(.appPrimary)
-        }
-        .onAppear {
-            if appIcon == nil {
-                appIcon = appIconUIImage()
-            }
         }
     }
 
@@ -247,17 +236,6 @@ struct AuthView<Footer: View>: View {
             return languageManager.localize(ko: "비밀번호 확인", en: "Confirm Password", ja: "パスワード確認", zh: "确认密码", es: "Confirmar contraseña")
         default: return key
         }
-    }
-
-    private func appIconUIImage() -> UIImage? {
-        if let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
-           let primary = icons["CFBundlePrimaryIcon"] as? [String: Any],
-           let files = primary["CFBundleIconFiles"] as? [String],
-           let iconName = files.last,
-           let image = UIImage(named: iconName) {
-            return image
-        }
-        return nil
     }
 }
 
