@@ -18,6 +18,8 @@ struct MessageBubbleView: View {
     let message: Message
     var avatarSymbolName: String?
     var onAvatarTap: (() -> Void)?
+    /// A voice message whose words are still being written down.
+    var isTranscribing = false
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var authManager: AuthManager
 
@@ -256,25 +258,44 @@ struct MessageBubbleView: View {
             .accessibilityHint(localizedText("open_attachment_hint"))
 
         case .audio:
-            HStack(spacing: 10) {
-                Button {
-                    toggleAudioPlayback()
-                } label: {
-                    Image(systemName: isPlayingAudio ? "pause.circle.fill" : "play.circle.fill")
-                        .font(.system(size: 30))
-                        .foregroundColor(message.isFromCurrentUser ? .white : .appPrimary)
-                }
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 10) {
+                    Button {
+                        toggleAudioPlayback()
+                    } label: {
+                        Image(systemName: isPlayingAudio ? "pause.circle.fill" : "play.circle.fill")
+                            .font(.system(size: 30))
+                            .foregroundColor(message.isFromCurrentUser ? .white : .appPrimary)
+                    }
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Image(systemName: "waveform")
-                        .font(.system(size: 14))
-                        .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.8) : .secondary)
-                    Text(formatAudioDuration(message.audioDuration))
-                        .font(.caption2.monospacedDigit())
-                        .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.7) : .secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Image(systemName: "waveform")
+                            .font(.system(size: 14))
+                            .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.8) : .secondary)
+                        Text(formatAudioDuration(message.audioDuration))
+                            .font(.caption2.monospacedDigit())
+                            .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.7) : .secondary)
+                    }
+                }
+                .frame(minWidth: 120, alignment: .leading)
+
+                // Written down on device after sending.
+                if let transcript = message.transcript {
+                    Text(transcript)
+                        .font(.subheadline)
+                        .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.9) : .primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else if isTranscribing {
+                    HStack(spacing: 6) {
+                        ProgressView()
+                            .controlSize(.mini)
+                            .tint(message.isFromCurrentUser ? .white : .secondary)
+                        Text(languageManager.localize(ko: "받아쓰는 중…", en: "Transcribing…", ja: "文字起こし中…", zh: "正在转写…", es: "Transcribiendo…"))
+                            .font(.caption)
+                            .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.8) : .secondary)
+                    }
                 }
             }
-            .frame(minWidth: 120)
 
         case .deleted:
             HStack {

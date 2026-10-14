@@ -59,6 +59,8 @@ class Message {
     // 음성 메시지
     var audioData: Data?
     var audioDuration: Double = 0
+    /// What was said, written down on device after sending; nil until then, or if it couldn't be.
+    var transcript: String?
 
     // 위치 공유
     var locationLatitude: Double? = nil

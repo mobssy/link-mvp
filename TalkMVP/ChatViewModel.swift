@@ -24,6 +24,9 @@ class ChatViewModel: ObservableObject {
     @Published var errorMessage: String?
     /// Replies the user can pick instead of typing; empty unless the other side spoke last.
     @Published private(set) var replySuggestions: [String] = []
+    /// Voice messages being written down right now. The first one in a language can take a
+    /// while, since the speech model is downloaded then.
+    @Published private(set) var transcribingMessageIDs: Set<UUID> = []
 
     // MARK: - Pagination
     private static let pageSize = 50
@@ -35,6 +38,7 @@ class ChatViewModel: ObservableObject {
     private let chatRoomRepository: ChatRoomRepositoryProtocol
     private let autoResponder: AutoResponding
     private let replySuggester: ReplySuggesting
+    private let voiceTranscriber: VoiceTranscribing
     private let replySuggestionsEnabled: () -> Bool
     private var suggestionTask: Task<Void, Never>?
     private var chatRoom: ChatRoom
@@ -58,13 +62,15 @@ class ChatViewModel: ObservableObject {
         chatService: ChatServiceProtocol? = nil,
         autoResponder: AutoResponding? = nil,
         replySuggester: ReplySuggesting = OnDeviceReplySuggester(),
-        replySuggestionsEnabled: @escaping () -> Bool = { ReplySuggestionSettings.isEnabled }
+        replySuggestionsEnabled: @escaping () -> Bool = { ReplySuggestionSettings.isEnabled },
+        voiceTranscriber: VoiceTranscribing = OnDeviceVoiceTranscriber()
     ) {
         self.messageRepository = messageRepository
         self.chatRoomRepository = chatRoomRepository
         self.autoResponder = autoResponder ?? AutoResponseService(messageRepository: messageRepository, chatRoomRepository: chatRoomRepository)
         self.replySuggester = replySuggester
         self.replySuggestionsEnabled = replySuggestionsEnabled
+        self.voiceTranscriber = voiceTranscriber
         self.chatRoom = chatRoom
         self.chatService = chatService
 
@@ -178,13 +184,37 @@ class ChatViewModel: ObservableObject {
         )
     }
 
+    /// Sends the recording, then writes down what was said. The other side answers only once
+    /// the transcript is in, so its reply can be about the words rather than "a voice message".
     @discardableResult
     func sendVoiceMessage(audioData: Data, duration: Double) -> Task<Void, Never> {
-        deliver(
-            Message(audioData: audioData, duration: duration, isFromCurrentUser: true, chatRoomId: chatRoom.id.uuidString),
+        let message = Message(audioData: audioData, duration: duration, isFromCurrentUser: true, chatRoomId: chatRoom.id.uuidString)
+        let delivery = deliver(
+            message,
             preview: localizedVM(ko: "음성 메시지", en: "Voice message", ja: "音声メッセージ", zh: "语音消息", es: "Mensaje de voz"),
-            failureMessage: localizedVM(ko: "음성 메시지 전송에 실패했습니다.", en: "Failed to send voice message.", ja: "音声メッセージの送信に失敗しました。", zh: "发送语音消息失败。", es: "Error al enviar el mensaje de voz.")
+            failureMessage: localizedVM(ko: "음성 메시지 전송에 실패했습니다.", en: "Failed to send voice message.", ja: "音声メッセージの送信に失敗しました。", zh: "发送语音消息失败。", es: "Error al enviar el mensaje de voz."),
+            requestsReply: false
         )
+        // Spoken most likely in the language this chat is written in.
+        let language = ConversationLanguage.code(for: messages.map(SummaryMessage.init), fallbackCode: LanguageManager.currentLanguageCode)
+        let transcriber = voiceTranscriber
+        return Task {
+            await delivery.value
+            guard messages.contains(where: { $0.id == message.id }) else { return } // not delivered
+            transcribingMessageIDs.insert(message.id)
+            let transcript = await transcriber.transcribe(audioData, languageCode: language)
+            transcribingMessageIDs.remove(message.id)
+            if let transcript {
+                message.transcript = transcript
+                objectWillChange.send()
+                do {
+                    try await messageRepository.updateMessage(message)
+                } catch {
+                    vmLogger.error("Failed to save transcript: \(error.localizedDescription, privacy: .public)")
+                }
+            }
+            sendAutoResponse()
+        }
     }
 
     @discardableResult

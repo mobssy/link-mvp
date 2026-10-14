@@ -40,7 +40,10 @@ extension ChatView {
         case .video:
             contentLabel = svc.text(for: .videoMessage, language: lang)
         case .audio:
-            contentLabel = svc.text(for: .audioMessageLabel, language: lang)
+            // The row's label replaces its children's, so the transcript has to be read out here.
+            contentLabel = [svc.text(for: .audioMessageLabel, language: lang), message.transcript]
+                .compactMap { $0 }
+                .joined(separator: ": ")
         case .file:
             let fileName = message.fileName ?? svc.text(for: .fileMessage, language: lang)
             contentLabel = "\(svc.text(for: .fileMessage, language: lang)): \(fileName)"

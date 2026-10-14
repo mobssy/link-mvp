@@ -45,7 +45,7 @@ nonisolated struct OnDeviceReplySuggester: ReplySuggesting {
         // Only words get suggestions: the model can't see a photo, and guessed at one with
         // "Tell me about the photo".
         guard case .available = SystemLanguageModel.default.availability,
-              let last = recent.last, !last.isFromCurrentUser, last.messageType == .text else { return [] }
+              let last = recent.last, !last.isFromCurrentUser, last.asText != nil else { return [] }
 
         let language = ConversationLanguage.name(for: conversation, fallbackCode: fallbackLanguage)
         // Small models lose track of whose side they are on ("Congrats! When do you start?" got

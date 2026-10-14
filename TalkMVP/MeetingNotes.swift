@@ -95,7 +95,7 @@ nonisolated struct MeetingNotes: Equatable, Sendable {
 /// model can only paraphrase them.
 nonisolated enum MeetingNotesExtractor {
     static func extract(from messages: [SummaryMessage], meLabel: String) -> MeetingNotes {
-        let texts = messages.filter { $0.messageType == .text }
+        let texts = messages.compactMap(\.asText)
         return MeetingNotes(
             summary: "",
             decisions: unique(texts.filter { matches($0.text, decisionCues) }.map(\.text)).suffix(5).map { $0 },
@@ -109,14 +109,14 @@ nonisolated enum MeetingNotesExtractor {
         )
     }
 
-    /// The dates and times the text messages spell out, in the order they were sent. Only a
+    /// The dates and times the messages spell out, typed or said, in the order they were sent. Only a
     /// match with a digit in it counts: a bare "today" or "Friday" is usually small talk
     /// ("Have a good day today!"), and the detector would pin it to noon, a time nobody said.
     static func schedule(in messages: [SummaryMessage]) -> [MeetingNotes.ScheduleItem] {
         guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue) else { return [] }
         var seen = Set<Date>()
         var items: [MeetingNotes.ScheduleItem] = []
-        for message in messages where message.messageType == .text {
+        for message in messages.compactMap(\.asText) {
             let text = message.text
             for match in detector.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
                 guard let date = match.date, let range = Range(match.range, in: text) else { continue }
@@ -171,7 +171,7 @@ nonisolated enum MeetingNotesGrounding {
     ///   two-person chat is the other one. Nobody owns their own request.
     /// - The same task proposed twice, or a decision that only restates a task, is left out.
     static func ground(_ proposal: MeetingNotes.Proposal, in messages: [SummaryMessage], meLabel: String) -> MeetingNotes {
-        let texts = messages.filter { $0.messageType == .text }
+        let texts = messages.compactMap(\.asText)
         let speakers = Set(texts.map { $0.isFromCurrentUser ? meLabel : $0.sender })
         var actionItems: [MeetingNotes.ActionItem] = []
         for task in proposal.tasks {

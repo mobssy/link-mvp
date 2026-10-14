@@ -85,7 +85,8 @@ extension ChatView {
             MessageBubbleView(
                 message: message,
                 avatarSymbolName: chatRoom.profileImage,
-                onAvatarTap: { openFriendProfile() }
+                onAvatarTap: { openFriendProfile() },
+                isTranscribing: viewModel.transcribingMessageIDs.contains(message.id)
             )
                 .id(message.id)
                 .scaleEffect(poppingMessageIds.contains(message.id) ? 1.18 : 1.0)
@@ -243,7 +244,9 @@ extension ChatView {
             switch msg.messageType {
             case .text, .file:
                 return msg.text.lowercased().contains(query)
-            case .image, .audio, .video, .location:
+            case .audio:
+                return msg.transcript?.lowercased().contains(query) ?? false
+            case .image, .video, .location:
                 return false
             case .deleted:
                 return false

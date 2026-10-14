@@ -29,7 +29,7 @@ extension SummaryMessage {
         case .text: text
         case .image: "[sent a photo]"
         case .video: "[sent a video]"
-        case .audio: "[sent a voice message]"
+        case .audio: transcript.map { "[voice message] \($0)" } ?? "[sent a voice message]"
         case .file: "[sent a file]"
         case .location: "[shared a location]"
         case .deleted: "[deleted message]"
@@ -49,18 +49,22 @@ nonisolated enum ConversationLanguage {
     /// hasn't written yet usually answers in the language they were written to. Nil when none
     /// of these can be told with confidence.
     static func of(_ conversation: [SummaryMessage]) -> NLLanguage? {
-        let texts = conversation.filter { $0.messageType == .text }
+        let texts = conversation.compactMap(\.asText)
         let own = texts.filter(\.isFromCurrentUser).map(\.text)
         return own.last.flatMap(confidentLanguage(of:))
             ?? confidentLanguage(of: own.suffix(5).joined(separator: "\n"))
             ?? confidentLanguage(of: texts.suffix(5).map(\.text).joined(separator: "\n"))
     }
 
+    /// The chat's language code, such as "ko", or `fallbackCode` when it can't be told.
+    static func code(for conversation: [SummaryMessage], fallbackCode: String) -> String {
+        of(conversation)?.rawValue ?? fallbackCode
+    }
+
     /// The English name of the language to write in, for a model's instructions: the chat's
     /// language, or the one `fallbackCode` names when that can't be told.
     static func name(for conversation: [SummaryMessage], fallbackCode: String) -> String {
-        let code = of(conversation)?.rawValue ?? fallbackCode
-        return Locale(identifier: "en").localizedString(forLanguageCode: code) ?? "English"
+        Locale(identifier: "en").localizedString(forLanguageCode: code(for: conversation, fallbackCode: fallbackCode)) ?? "English"
     }
 
     private static func confidentLanguage(of text: String) -> NLLanguage? {

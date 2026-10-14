@@ -72,7 +72,7 @@ It's the moment of connection — the spark when two people understand each othe
 - **Adaptive layout** — on iPad and an unfolded iPhone Duo the chat list stays beside the open conversation; on iPhone it collapses to a single column
 - **Auto-translation** — inline and on device (Apple Translation framework), across Korean, English, Japanese, Chinese, Spanish, French and German
 - **Multi-language app** — Korean, English, Japanese, Chinese, Spanish
-- **Voice messages** — hold to record, tap to play, waveform display
+- **Voice messages** — hold to record, tap to play, waveform display; what you said is written down on device under the message (Speech framework: SpeechAnalyzer with SpeechTranscriber, or DictationTranscriber on older devices), and the AI features read it too: the other side answers it, meeting notes and summaries include it, and search finds it
 - **Attachments** — photos, videos, files and locations; files and videos open in Quick Look
 - **Link previews** — rich metadata loaded automatically for URLs
 - **Read receipts** — checkmark icons showing message delivery and read state
@@ -97,7 +97,7 @@ It's the moment of connection — the spark when two people understand each othe
 | UI Framework | SwiftUI — `NavigationSplitView` adaptive layout, Liquid Glass              |
 | Architecture | MVVM + protocol-based repositories                                         |
 | Persistence  | SwiftData; attachment files on disk                                        |
-| On-device AI | FoundationModels, Apple Translation framework                              |
+| On-device AI | FoundationModels, Apple Translation framework, Speech (SpeechAnalyzer)     |
 | Tests        | Swift Testing (unit), XCTest UI tests on iPhone and iPad                   |
 | Platforms    | iOS and iPadOS 26+, built with the iOS 27 SDK                              |
 
@@ -191,7 +191,7 @@ link-mvp/
 - **Chat**: `ChatView` (+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `AttachmentPreviewer`, `TypingIndicatorView`, `ConnectionStatusView`, `MeetingNotesView`
 - **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
 - **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
-- **Services & Managers**: `AIService`, `MeetingNotes`(+`Extractor`/`Grounding`), `LocalizationService`, `NotificationManager`, `AutoResponseService`, `ReplyWriter`, `ReplySuggestions`, `VoiceMessageService`, `AttachmentHandler`
+- **Services & Managers**: `AIService`, `MeetingNotes`(+`Extractor`/`Grounding`), `LocalizationService`, `NotificationManager`, `AutoResponseService`, `ReplyWriter`, `ReplySuggestions`, `VoiceMessageService`, `VoiceTranscriber`, `AttachmentHandler`
 - **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
 - **Data Layer**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `Repositories/TestAccount`, `User`
 - **Shared**: `Colors+Extensions`
@@ -282,7 +282,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 - **적응형 레이아웃** — iPad와 펼친 iPhone Duo에서는 채팅 목록과 대화가 나란히, 아이폰에서는 한 화면씩
 - **자동 번역** — 메시지 바로 아래 인라인으로, 기기 안에서(Apple Translation 프레임워크) 한국어·영어·일본어·중국어·스페인어·프랑스어·독일어 번역
 - **다국어 앱** — 한국어, 영어, 일본어, 중국어, 스페인어 지원
-- **음성 메시지** — 꾹 눌러 녹음, 탭하여 재생, 파형 표시
+- **음성 메시지** — 꾹 눌러 녹음, 탭하여 재생, 파형 표시. 말한 내용을 기기 안에서 받아써 메시지 아래에 표시(Speech 프레임워크: SpeechAnalyzer + SpeechTranscriber, 구형 기기는 DictationTranscriber). AI 기능도 이 내용을 읽음: 상대방이 그 말에 답하고, 회의 노트·요약에 들어가고, 검색으로 찾을 수 있음
 - **첨부** — 사진, 동영상, 파일, 위치; 파일과 동영상은 Quick Look으로 열기
 - **링크 미리보기** — URL에 대한 풍부한 메타데이터 자동 로드
 - **읽음 확인** — 메시지 전송 및 읽음 상태를 체크마크 아이콘으로 표시
@@ -307,7 +307,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 | UI 프레임워크 | SwiftUI — `NavigationSplitView` 적응형 레이아웃, Liquid Glass     |
 | 아키텍처      | MVVM + 프로토콜 기반 리포지토리                                   |
 | 저장소        | SwiftData; 첨부 파일은 디스크에 저장                              |
-| 온디바이스 AI | FoundationModels, Apple Translation 프레임워크                    |
+| 온디바이스 AI | FoundationModels, Apple Translation 프레임워크, Speech(SpeechAnalyzer) |
 | 테스트        | Swift Testing(단위), XCTest UI 테스트(아이폰·iPad)                |
 | 플랫폼        | iOS·iPadOS 26+, iOS 27 SDK로 빌드                                 |
 
@@ -401,7 +401,7 @@ link-mvp/
 - **Chat**: `ChatView`(+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `AttachmentPreviewer`, `TypingIndicatorView`, `ConnectionStatusView`, `MeetingNotesView`
 - **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
 - **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
-- **Services & Managers**: `AIService`, `MeetingNotes`(+`Extractor`/`Grounding`), `LocalizationService`, `NotificationManager`, `AutoResponseService`, `ReplyWriter`, `ReplySuggestions`, `VoiceMessageService`, `AttachmentHandler`
+- **Services & Managers**: `AIService`, `MeetingNotes`(+`Extractor`/`Grounding`), `LocalizationService`, `NotificationManager`, `AutoResponseService`, `ReplyWriter`, `ReplySuggestions`, `VoiceMessageService`, `VoiceTranscriber`, `AttachmentHandler`
 - **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
 - **데이터 레이어**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `Repositories/TestAccount`, `User`
 - **공용**: `Colors+Extensions`

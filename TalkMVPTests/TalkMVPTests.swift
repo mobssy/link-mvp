@@ -6,6 +6,7 @@
 //
 
 import Testing
+import AVFoundation
 import Foundation
 import NaturalLanguage
 import SwiftData
@@ -994,6 +995,48 @@ struct ChatServiceTests {
     }
 }
 
+// MARK: - Voice transcription
+
+@Suite("Voice transcription")
+struct VoiceTranscriptionTests {
+    /// A second of a 440 Hz tone in a 44.1 kHz file, like a recording before conversion.
+    private func toneFile() throws -> URL {
+        let format = try #require(AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1))
+        let tone = try #require(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 44_100))
+        tone.frameLength = 44_100
+        let samples = try #require(tone.floatChannelData?[0])
+        for i in 0..<Int(tone.frameLength) { samples[i] = 0.5 * sin(Float(i) * 2 * .pi * 440 / 44_100) }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".caf")
+        let file = try AVAudioFile(forWriting: url, settings: format.settings)
+        try file.write(from: tone)
+        file.close() // until then only whole 1024-frame chunks are on disk
+        return url
+    }
+
+    @Test("A recording is converted to the format the analyzer asks for")
+    func audioIsConvertedToTheRequestedFormat() throws {
+        let url = try toneFile()
+        defer { try? FileManager.default.removeItem(at: url) }
+        let target = try #require(AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 16_000, channels: 1, interleaved: true))
+
+        let converted = try AudioConversion.read(try AVAudioFile(forReading: url), as: target)
+
+        #expect(converted.format == target)
+        #expect(abs(Int(converted.frameLength) - 16_000) <= 2, "a second of audio is still a second long")
+    }
+
+    @Test("A recording already in the requested format is read whole")
+    func audioInTheRequestedFormatIsUnchanged() throws {
+        let url = try toneFile()
+        defer { try? FileManager.default.removeItem(at: url) }
+        let file = try AVAudioFile(forReading: url)
+
+        let read = try AudioConversion.read(file, as: file.processingFormat)
+
+        #expect(read.frameLength == 44_100)
+    }
+}
+
 // MARK: - Auto replies
 
 private struct FixedReplyWriter: ReplyWriting {
@@ -1148,6 +1191,31 @@ private struct SilentAutoResponder: AutoResponding {
     ) async throws {}
 }
 
+/// Notes what the newest message's transcript was when the other side was asked to answer.
+@MainActor
+private final class RecordingAutoResponder: AutoResponding {
+    weak var viewModel: ChatViewModel?
+    private(set) var transcriptsWhenAsked: [String?] = []
+
+    func generateResponse(
+        for chatRoom: ChatRoom,
+        onTypingChange: @escaping (Bool) -> Void,
+        onMessage: @escaping (Message) -> Void
+    ) async throws {
+        transcriptsWhenAsked.append(viewModel?.messages.last?.transcript)
+    }
+}
+
+/// Stands in for on-device transcription.
+private struct FixedTranscriber: VoiceTranscribing {
+    var words: String?
+    var delay: Duration = .zero
+    func transcribe(_ audio: Data, languageCode: String) async -> String? {
+        try? await Task.sleep(for: delay)
+        return words
+    }
+}
+
 /// Stands in for the on-device model's reply suggestions.
 private struct FixedSuggester: ReplySuggesting {
     var replies: [String] = []
@@ -1192,16 +1260,63 @@ struct ChatViewModelTests {
 
     private func makeViewModel(
         _ context: ModelContext, room: ChatRoom,
-        suggester: ReplySuggesting = FixedSuggester(), suggestionsEnabled: Bool = true
+        autoResponder: AutoResponding? = nil,
+        suggester: ReplySuggesting = FixedSuggester(), suggestionsEnabled: Bool = true,
+        transcriber: VoiceTranscribing = FixedTranscriber()
     ) -> ChatViewModel {
         ChatViewModel(
             messageRepository: LocalMessageRepository(modelContext: context, attachmentFiles: attachmentFiles),
             chatRoomRepository: LocalChatRoomRepository(modelContext: context, attachmentFiles: attachmentFiles),
             chatRoom: room,
-            autoResponder: SilentAutoResponder(),
+            autoResponder: autoResponder ?? SilentAutoResponder(),
             replySuggester: suggester,
-            replySuggestionsEnabled: { suggestionsEnabled }
+            replySuggestionsEnabled: { suggestionsEnabled },
+            voiceTranscriber: transcriber
         )
+    }
+
+    @Test("A voice message is written down, and the other side answers once the words are in")
+    func voiceMessageIsTranscribedBeforeTheReply() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        let responder = RecordingAutoResponder()
+        let viewModel = makeViewModel(context, room: room, autoResponder: responder, transcriber: FixedTranscriber(words: "Let's meet at 7"))
+        responder.viewModel = viewModel
+
+        await viewModel.sendVoiceMessage(audioData: Data([0x01]), duration: 2).value
+
+        #expect(viewModel.messages.last?.transcript == "Let's meet at 7")
+        #expect(try context.fetch(FetchDescriptor<Message>()).first?.transcript == "Let's meet at 7")
+        #expect(await eventually { responder.transcriptsWhenAsked == ["Let's meet at 7"] })
+    }
+
+    @Test("A voice message shows as being transcribed until its words are in")
+    func voiceMessageIsMarkedWhileTranscribing() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        let viewModel = makeViewModel(context, room: room, transcriber: FixedTranscriber(words: "hi", delay: .milliseconds(300)))
+
+        let sending = viewModel.sendVoiceMessage(audioData: Data([0x01]), duration: 1)
+
+        #expect(await eventually { viewModel.messages.last.map { viewModel.transcribingMessageIDs.contains($0.id) } == true })
+        await sending.value
+        #expect(viewModel.transcribingMessageIDs.isEmpty)
+        #expect(viewModel.messages.last?.transcript == "hi")
+    }
+
+    @Test("A voice message whose words can't be made out is still sent and answered")
+    func untranscribedVoiceMessageIsStillAnswered() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        let responder = RecordingAutoResponder()
+        let viewModel = makeViewModel(context, room: room, autoResponder: responder, transcriber: FixedTranscriber(words: nil))
+        responder.viewModel = viewModel
+
+        await viewModel.sendVoiceMessage(audioData: Data([0x01]), duration: 2).value
+
+        #expect(viewModel.messages.count == 1)
+        #expect(viewModel.messages.last?.transcript == nil)
+        #expect(await eventually { responder.transcriptsWhenAsked == [nil] })
     }
 
     private func receive(_ text: String, in room: ChatRoom, context: ModelContext) throws {
@@ -1563,6 +1678,21 @@ struct MeetingNotesTests {
         )
         #expect(notes.actionItems.count == 1)
         #expect(notes.decisions == ["Dinner at the Italian place"])
+    }
+
+    @Test("A transcribed voice message counts as what was said")
+    func voiceMessagesCountAsWords() {
+        let said = SummaryMessage(text: "🎤", sender: "Me", isFromCurrentUser: true, messageType: .audio,
+                                  transcript: "I'll book the table for October 20, 2026 at 7:00 PM")
+        let unheard = SummaryMessage(text: "🎤", sender: "Mina", isFromCurrentUser: false, messageType: .audio)
+
+        let notes = MeetingNotesExtractor.extract(from: [said, unheard], meLabel: "Me")
+
+        #expect(notes.actionItems == [.init(task: "I'll book the table for October 20, 2026 at 7:00 PM", owner: "Me", due: nil)])
+        #expect(notes.schedule.map(\.context) == ["I'll book the table for October 20, 2026 at 7:00 PM"])
+        #expect(unheard.asText == nil)
+        #expect(said.transcriptText == "[voice message] I'll book the table for October 20, 2026 at 7:00 PM")
+        #expect(unheard.transcriptText == "[sent a voice message]")
     }
 
     @Test("Shared text lists only the sections that have content")

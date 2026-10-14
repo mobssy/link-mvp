@@ -21,6 +21,19 @@ nonisolated struct SummaryMessage: Sendable, Equatable {
     let sender: String
     let isFromCurrentUser: Bool
     let messageType: MessageType
+    /// What was said in a voice message, once transcribed.
+    var transcript: String? = nil
+
+    /// The message as words: a text message as it is, or a transcribed voice message as the
+    /// text message it amounts to. Nil for anything without words, so notes and summaries can
+    /// read what was said aloud the same way as what was typed.
+    var asText: SummaryMessage? {
+        switch messageType {
+        case .text: self
+        case .audio: transcript.map { SummaryMessage(text: $0, sender: sender, isFromCurrentUser: isFromCurrentUser, messageType: .text) }
+        default: nil
+        }
+    }
 }
 
 extension SummaryMessage {
@@ -30,7 +43,8 @@ extension SummaryMessage {
             text: message.text,
             sender: message.sender,
             isFromCurrentUser: message.isFromCurrentUser,
-            messageType: message.messageType
+            messageType: message.messageType,
+            transcript: message.transcript
         )
     }
 }
@@ -82,7 +96,7 @@ actor AIService {
     func meetingNotes(messages: [SummaryMessage], limit: Int = 60, targetLanguage: String, meLabel: String) async -> MeetingNotes {
         let recent = Array(messages.suffix(limit))
         let transcript = recent
-            .filter { $0.messageType == .text }
+            .compactMap(\.asText)
             .map { "\($0.isFromCurrentUser ? meLabel : $0.sender): \($0.text)" }
             .joined(separator: "\n")
         guard let draft = await generateMeetingNotesDraft(transcript: transcript, language: targetLanguage, meLabel: meLabel) else {
@@ -128,7 +142,7 @@ actor AIService {
         let labels = summaryLabels(for: targetLanguage)
         guard !last.isEmpty else { return labels.noMessages }
 
-        let textMessages = last.filter { $0.messageType == .text }
+        let textMessages = last.compactMap(\.asText)
         let participants = Set(last.map { $0.isFromCurrentUser ? labels.me : $0.sender })
         let participantList = participants.sorted().joined(separator: ", ")
         let fromMe = last.filter { $0.isFromCurrentUser }.count
