@@ -6,7 +6,7 @@
 
 ![Swift](https://img.shields.io/badge/Swift-6.2+-F05138?style=flat-square&logo=swift&logoColor=white)
 ![Xcode](https://img.shields.io/badge/Xcode-26+-147EFB?style=flat-square&logo=xcode&logoColor=white)
-![iOS](https://img.shields.io/badge/iOS-26+-000000?style=flat-square&logo=apple&logoColor=white)
+![iOS | iPadOS](https://img.shields.io/badge/iOS%20%7C%20iPadOS-26+-000000?style=flat-square&logo=apple&logoColor=white)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
 
 <br/>
@@ -69,9 +69,11 @@ It's the moment of connection — the spark when two people understand each othe
 ## Features
 
 - **Minimal UI** — only what you need to send a message
-- **Auto-translation** — real-time, inline, supports 50+ languages
+- **Adaptive layout** — on iPad and an unfolded iPhone Duo the chat list stays beside the open conversation; on iPhone it collapses to a single column
+- **Auto-translation** — inline and on device (Apple Translation framework), across Korean, English, Japanese, Chinese, Spanish, French and German
 - **Multi-language app** — Korean, English, Japanese, Chinese, Spanish
 - **Voice messages** — hold to record, tap to play, waveform display
+- **Attachments** — photos, videos, files and locations; files and videos open in Quick Look
 - **Link previews** — rich metadata loaded automatically for URLs
 - **Read receipts** — checkmark icons showing message delivery and read state
 - **AI summary** — on-device conversation summary powered by FoundationModels
@@ -80,24 +82,29 @@ It's the moment of connection — the spark when two people understand each othe
 - **Scheduled send** — queue messages to send at a future time
 - **App lock** — Face ID / Touch ID protection
 - **Accessibility** — dynamic type, high contrast, screen reader support
+- **Test mode** — try the app with sample friends and chats, no account needed
 
 ---
 
 ## Tech Stack
 
-| Layer          | Technology                                     |
-| -------------- | ---------------------------------------------- |
-| Language       | Swift 6.2 toolchain (targets use Swift 5 mode) |
-| UI Framework   | SwiftUI                                        |
-| Architecture   | MVVM + repositories                            |
-| Persistence    | SwiftData                                      |
-| On-device AI   | FoundationModels, Apple Translation Framework  |
-| Tests          | Swift Testing                                  |
-| Minimum Target | iOS 26+                                        |
+| Layer        | Technology                                                                 |
+| ------------ | -------------------------------------------------------------------------- |
+| Language     | Swift 6.2+ toolchain; Swift 5 language mode, MainActor default isolation   |
+| UI Framework | SwiftUI — `NavigationSplitView` adaptive layout, Liquid Glass              |
+| Architecture | MVVM + protocol-based repositories                                         |
+| Persistence  | SwiftData; attachment files on disk                                        |
+| On-device AI | FoundationModels, Apple Translation framework                              |
+| Tests        | Swift Testing (unit), XCTest UI tests on iPhone and iPad                   |
+| Platforms    | iOS and iPadOS 26+, built with the iOS 27 SDK                              |
 
 ---
 
 ## Screenshots
+
+### Adaptive Layout (iPad)
+
+![Adaptive layout on iPad](docs/screenshots/wide-layout.png)
 
 ### Translation
 
@@ -125,8 +132,8 @@ It's the moment of connection — the spark when two people understand each othe
 
 ### Requirements
 
-- Xcode 26+
-- iOS 26+ (simulator or device)
+- Xcode 26+ (developed and tested with Xcode 27)
+- iOS or iPadOS 26+ (simulator or device)
 
 ### Run on an iPhone
 
@@ -138,8 +145,13 @@ It's the moment of connection — the spark when two people understand each othe
 ### Tests
 
 ```bash
+# Unit tests (Swift Testing)
 xcodebuild test -project TalkMVP.xcodeproj -scheme TalkMVP \
   -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:TalkMVPTests
+
+# UI tests — also run them on an iPad: the side-by-side layout test only runs in a regular-width window
+xcodebuild test -project TalkMVP.xcodeproj -scheme TalkMVP \
+  -destination 'platform=iOS Simulator,name=iPad mini (A17 Pro)' -only-testing:TalkMVPUITests
 ```
 
 ---
@@ -154,12 +166,16 @@ link-mvp/
 ├── TalkMVP/
 │   ├── *.swift                  # ~60 files, flat (grouped by feature below)
 │   ├── Repositories/
+│   │   ├── AttachmentFileStore.swift
 │   │   ├── ChatRoomRepository.swift
-│   │   └── MessageRepository.swift
+│   │   ├── MessageRepository.swift
+│   │   └── OrphanedDataCleaner.swift
 │   └── Assets.xcassets/         # App icon, color sets, image assets
 ├── TalkMVPTests/
 │   └── TalkMVPTests.swift       # Swift Testing suites
 ├── TalkMVPUITests/
+│   ├── TalkMVPUITests.swift     # UI flows, on iPhone and iPad
+│   └── TalkMVPUITestsLaunchTests.swift
 └── docs/
     └── screenshots/             # Images used in this README (kept out of the app bundle)
 ```
@@ -168,12 +184,12 @@ link-mvp/
 
 - **App**: `TalkMVPApp`, `ContentView`
 - **Auth & App Lock**: `AuthView`, `AuthManager`, `SSOSignInView`, `GoogleOAuthService`, `AppLockView`, `AppLockManager`
-- **Chat**: `ChatView` (+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `TypingIndicatorView`, `ConnectionStatusView`
+- **Chat**: `ChatView` (+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `AttachmentPreviewer`, `TypingIndicatorView`, `ConnectionStatusView`
 - **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
 - **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
 - **Services & Managers**: `AIService`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `VoiceMessageService`, `AttachmentHandler`
 - **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
-- **Data Layer**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `User`
+- **Data Layer**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `User`
 - **Shared**: `Colors+Extensions`
 
 ---
@@ -196,7 +212,7 @@ This repository is published on GitHub for portfolio purposes. Being able to vie
 
 ![Swift](https://img.shields.io/badge/Swift-6.2+-F05138?style=flat-square&logo=swift&logoColor=white)
 ![Xcode](https://img.shields.io/badge/Xcode-26+-147EFB?style=flat-square&logo=xcode&logoColor=white)
-![iOS](https://img.shields.io/badge/iOS-26+-000000?style=flat-square&logo=apple&logoColor=white)
+![iOS | iPadOS](https://img.shields.io/badge/iOS%20%7C%20iPadOS-26+-000000?style=flat-square&logo=apple&logoColor=white)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
 
 <br/>
@@ -259,9 +275,11 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 ## 주요 기능
 
 - **미니멀 UI** — 메시지 보내는 데 필요한 것만
-- **자동 번역** — 실시간, 인라인, 50개 이상 언어 지원
+- **적응형 레이아웃** — iPad와 펼친 iPhone Duo에서는 채팅 목록과 대화가 나란히, 아이폰에서는 한 화면씩
+- **자동 번역** — 메시지 바로 아래 인라인으로, 기기 안에서(Apple Translation 프레임워크) 한국어·영어·일본어·중국어·스페인어·프랑스어·독일어 번역
 - **다국어 앱** — 한국어, 영어, 일본어, 중국어, 스페인어 지원
 - **음성 메시지** — 꾹 눌러 녹음, 탭하여 재생, 파형 표시
+- **첨부** — 사진, 동영상, 파일, 위치; 파일과 동영상은 Quick Look으로 열기
 - **링크 미리보기** — URL에 대한 풍부한 메타데이터 자동 로드
 - **읽음 확인** — 메시지 전송 및 읽음 상태를 체크마크 아이콘으로 표시
 - **AI 요약** — FoundationModels 기반 온디바이스 대화 요약
@@ -270,24 +288,29 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 - **예약 전송** — 원하는 시간에 메시지 예약 발송
 - **앱 잠금** — Face ID / Touch ID 보호
 - **접근성** — 다이나믹 타입, 고대비, 화면 낭독기 지원
+- **테스트 모드** — 계정 없이 샘플 친구·채팅으로 바로 체험
 
 ---
 
 ## 기술 스택
 
-| 레이어        | 기술                                           |
-| ------------- | ---------------------------------------------- |
-| 언어          | Swift 6.2 툴체인 (타깃은 Swift 5 모드)         |
-| UI 프레임워크 | SwiftUI                                        |
-| 아키텍처      | MVVM + 리포지토리                              |
-| 저장소        | SwiftData                                      |
-| 온디바이스 AI | FoundationModels, Apple Translation Framework  |
-| 테스트        | Swift Testing                                  |
-| 최소 타겟     | iOS 26+                                        |
+| 레이어        | 기술                                                              |
+| ------------- | ----------------------------------------------------------------- |
+| 언어          | Swift 6.2+ 툴체인; Swift 5 언어 모드, 기본 격리 MainActor         |
+| UI 프레임워크 | SwiftUI — `NavigationSplitView` 적응형 레이아웃, Liquid Glass     |
+| 아키텍처      | MVVM + 프로토콜 기반 리포지토리                                   |
+| 저장소        | SwiftData; 첨부 파일은 디스크에 저장                              |
+| 온디바이스 AI | FoundationModels, Apple Translation 프레임워크                    |
+| 테스트        | Swift Testing(단위), XCTest UI 테스트(아이폰·iPad)                |
+| 플랫폼        | iOS·iPadOS 26+, iOS 27 SDK로 빌드                                 |
 
 ---
 
 ## 스크린샷
+
+### 적응형 레이아웃 (iPad)
+
+![iPad 적응형 레이아웃](docs/screenshots/wide-layout.png)
 
 ### 번역
 
@@ -315,8 +338,8 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ### 요구사항
 
-- Xcode 26+
-- iOS 26+ (시뮬레이터 또는 실기기)
+- Xcode 26+ (Xcode 27로 개발·테스트)
+- iOS 또는 iPadOS 26+ (시뮬레이터 또는 실기기)
 
 ### 아이폰에서 실행하기
 
@@ -328,8 +351,13 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 ### 테스트
 
 ```bash
+# 단위 테스트 (Swift Testing)
 xcodebuild test -project TalkMVP.xcodeproj -scheme TalkMVP \
   -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:TalkMVPTests
+
+# UI 테스트 — iPad에서도 돌려 주세요: 목록·대화 나란히 보기 테스트는 넓은 창에서만 실행됩니다
+xcodebuild test -project TalkMVP.xcodeproj -scheme TalkMVP \
+  -destination 'platform=iOS Simulator,name=iPad mini (A17 Pro)' -only-testing:TalkMVPUITests
 ```
 
 ---
@@ -344,12 +372,16 @@ link-mvp/
 ├── TalkMVP/
 │   ├── *.swift                  # 약 60개 파일, flat (기능별 분류는 아래 참고)
 │   ├── Repositories/
+│   │   ├── AttachmentFileStore.swift
 │   │   ├── ChatRoomRepository.swift
-│   │   └── MessageRepository.swift
+│   │   ├── MessageRepository.swift
+│   │   └── OrphanedDataCleaner.swift
 │   └── Assets.xcassets/         # 앱 아이콘, 색상, 이미지 에셋
 ├── TalkMVPTests/
 │   └── TalkMVPTests.swift       # Swift Testing 스위트
 ├── TalkMVPUITests/
+│   ├── TalkMVPUITests.swift     # 아이폰·iPad UI 흐름 테스트
+│   └── TalkMVPUITestsLaunchTests.swift
 └── docs/
     └── screenshots/             # 이 README에 쓰인 이미지 (앱 번들에는 포함되지 않음)
 ```
@@ -358,12 +390,12 @@ link-mvp/
 
 - **App**: `TalkMVPApp`, `ContentView`
 - **Auth & 앱 잠금**: `AuthView`, `AuthManager`, `SSOSignInView`, `GoogleOAuthService`, `AppLockView`, `AppLockManager`
-- **Chat**: `ChatView`(+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `TypingIndicatorView`, `ConnectionStatusView`
+- **Chat**: `ChatView`(+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `AttachmentPreviewer`, `TypingIndicatorView`, `ConnectionStatusView`
 - **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
 - **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
 - **Services & Managers**: `AIService`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `VoiceMessageService`, `AttachmentHandler`
 - **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
-- **데이터 레이어**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `User`
+- **데이터 레이어**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `User`
 - **공용**: `Colors+Extensions`
 
 ---
