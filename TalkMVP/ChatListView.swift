@@ -34,6 +34,8 @@ fileprivate func chatListLocalized(_ key: String, using manager: LanguageManager
     case "ok":                 return manager.localize(ko: "확인", en: "OK", ja: "OK", zh: "确认", es: "Aceptar")
     case "user":               return manager.localize(ko: "사용자", en: "User", ja: "ユーザー", zh: "用户", es: "Usuario")
     case "friend_request_sent":return manager.localize(ko: "친구 요청을 보냈습니다.", en: "Friend request sent.", ja: "友達リクエストを送りました。", zh: "好友请求已发送。", es: "Solicitud de amistad enviada.")
+    case "select_chat":        return manager.localize(ko: "채팅을 선택하세요", en: "Select a Chat", ja: "チャットを選択", zh: "选择一个聊天", es: "Selecciona un chat")
+    case "select_chat_hint":   return manager.localize(ko: "왼쪽 목록에서 대화를 고르면 여기에 열립니다.", en: "Pick a conversation from the list to open it here.", ja: "リストから会話を選ぶとここに表示されます。", zh: "从列表中选择一个对话，它会在这里打开。", es: "Elige una conversación de la lista para abrirla aquí.")
     default: return key
     }
 }
@@ -43,6 +45,9 @@ struct ChatListView: View {
     @EnvironmentObject private var languageManager: LanguageManager
     @Query(sort: \ChatRoom.timestamp, order: .reverse) private var chatRooms: [ChatRoom]
     @State private var searchText = ""
+    /// The open conversation. Kept as an id so a room deleted while open simply resolves
+    /// to nothing instead of leaving a dangling model in the detail column.
+    @State private var selectedRoomID: UUID?
     @StateObject private var chatService: ChatService
 
     // Shared in-memory context used only during init — replaced by the environment's
@@ -65,16 +70,28 @@ struct ChatListView: View {
         return chatRooms.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
     }
 
+    private var selectedRoom: ChatRoom? {
+        guard let selectedRoomID else { return nil }
+        return chatRooms.first { $0.id == selectedRoomID }
+    }
+
+    // A split view adapts to the window instead of the device: in a regular-width window
+    // (iPad, iPhone Duo's inner display, a large iPhone in landscape) the list and the
+    // open conversation sit side by side; in a compact one (any iPhone in portrait, the
+    // Duo's outer display, a narrow Split View) it collapses into the familiar push.
     var body: some View {
-        NavigationStack {
-            List {
+        NavigationSplitView {
+            List(selection: $selectedRoomID) {
                 ForEach(filteredChatRooms, id: \.id) { room in
-                    NavigationLink(value: room) {
+                    NavigationLink(value: room.id) {
                         ChatRoomRow(room: room)
                     }
                 }
                 .onDelete(perform: deleteChatRooms)
             }
+            // The selected row is filled with the tint and its text turns white; the
+            // regular brand color is too light for that (and hides the row's avatar).
+            .tint(.appPrimaryStrong)
             .navigationTitle(localizedText("chat"))
             .searchable(text: $searchText, prompt: localizedText("search"))
             .toolbar {
@@ -92,8 +109,18 @@ struct ChatListView: View {
                     .accessibilityLabel(localizedText("new_chat_button"))
                 }
             }
-            .navigationDestination(for: ChatRoom.self) { room in
+        } detail: {
+            if let room = selectedRoom {
+                // A new identity per room: the chat view builds its view model for the
+                // room it first appears with, so switching rooms must not reuse it.
                 ChatScreen(room: room)
+                    .id(room.id)
+            } else {
+                ContentUnavailableView(
+                    localizedText("select_chat"),
+                    systemImage: "bubble.left.and.bubble.right",
+                    description: Text(localizedText("select_chat_hint"))
+                )
             }
         }
         .onAppear {
@@ -117,6 +144,9 @@ struct ChatListView: View {
     private func deleteChatRooms(offsets: IndexSet) {
         // Resolve the rooms now: the offsets refer to the list as currently shown.
         let rooms = offsets.map { filteredChatRooms[$0] }
+        if rooms.contains(where: { $0.id == selectedRoomID }) {
+            selectedRoomID = nil
+        }
         let repository: ChatRoomRepositoryProtocol = LocalChatRoomRepository(modelContext: modelContext)
         Task {
             for room in rooms {
@@ -176,13 +206,15 @@ struct ChatRoomRow: View {
 
                     Text(room.timestamp, style: .time)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
 
                 HStack {
+                    // A hierarchical style rather than the fixed gray, so the text turns
+                    // light on a selected (filled) row instead of fading into it.
                     Text(room.lastMessage.isEmpty ? localizedText("start_conversation") : room.lastMessage)
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .lineLimit(1)
 
                     Spacer()

@@ -126,6 +126,30 @@ final class TalkMVPUITests: XCTestCase {
     }
 
     @MainActor
+    func testWideWindowShowsChatListBesideConversation() throws {
+        // A regular-width window (iPad, iPhone Duo's inner display) keeps the chat list on
+        // screen next to the open conversation; compact windows push instead, which the
+        // other tests cover.
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad, "needs a regular-width window")
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        signInWithTestMode()
+
+        tab("Chats").tap()
+        XCTAssertTrue(app.staticTexts["Select a Chat"].waitForExistence(timeout: 5), "no conversation is open yet")
+
+        app.staticTexts["Family Group"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars.staticTexts["Family Group"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.textFields.firstMatch.exists, "the conversation is open")
+        let otherRoom = app.staticTexts["Study Group"].firstMatch
+        XCTAssertTrue(otherRoom.isHittable, "the list stays on screen beside it")
+
+        otherRoom.tap()
+        XCTAssertTrue(app.navigationBars.staticTexts["Study Group"].waitForExistence(timeout: 5), "picking another room switches the conversation")
+        XCTAssertFalse(app.staticTexts["Select a Chat"].exists)
+    }
+
+    @MainActor
     func testLaunchPerformance() throws {
         // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
