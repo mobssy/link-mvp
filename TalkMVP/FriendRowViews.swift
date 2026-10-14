@@ -49,6 +49,7 @@ struct MyProfileRow: View {
                     .frame(width: 12, height: 12)
             }
             .padding(.vertical, 12)
+            .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
         .sheet(isPresented: $showingProfileEdit) {
@@ -131,6 +132,9 @@ struct FriendRow: View {
                     .frame(width: 10, height: 10)
             }
             .padding(.vertical, 8)
+            // A plain-style button only hit-tests its drawn content; without this the
+            // empty middle of the row (the Spacer) ignores taps.
+            .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
         .swipeActions(edge: .leading, allowsFullSwipe: true) {

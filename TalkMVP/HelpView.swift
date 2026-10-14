@@ -348,6 +348,8 @@ struct FAQCategoryView: View {
                         .font(.caption)
                 }
                 .padding(.vertical, 8)
+                // Plain-style buttons only hit-test drawn content; make the Spacer tappable too.
+                .contentShape(Rectangle())
             }
             .buttonStyle(PlainButtonStyle())
 
