@@ -76,7 +76,7 @@ It's the moment of connection — the spark when two people understand each othe
 - **Attachments** — photos, videos, files and locations; files and videos open in Quick Look
 - **Link previews** — rich metadata loaded automatically for URLs
 - **Read receipts** — checkmark icons showing message delivery and read state
-- **AI summary** — on-device conversation summary powered by FoundationModels
+- **AI summary** — on-device summary of up to the last 300 messages (FoundationModels guided generation); a chat too long for the model to read at once is read in parts, with progress shown, and summarized from notes on each part
 - **Meeting notes** — decisions, tasks with owners, dates and open questions from a chat, written on device by Apple Intelligence (guided generation). Every task has to quote the message it came from and is checked against the chat, so the model can't slip in a task nobody took on; dates are read by a date detector, not the model. Without Apple Intelligence, rules pick them out instead
 - **Photo understanding (iOS 27)** — the on-device model looks at photos you send (Foundation Models image input) and writes a one-line description in your language, which VoiceOver reads, search finds, and the other side replies to; on iOS 26 photos work as before
 - **Search by meaning** — search finds messages by their text, voice transcripts, photo descriptions and file names; with Apple Intelligence it also looks up related words and translations on device, so "저녁 약속" finds "dinner tonight", and it shows which words it added
@@ -193,7 +193,7 @@ link-mvp/
 - **Chat**: `ChatView` (+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `AttachmentPreviewer`, `TypingIndicatorView`, `ConnectionStatusView`, `MeetingNotesView`
 - **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
 - **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `AIFeatureSettings`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
-- **Services & Managers**: `AIService`, `MeetingNotes`(+`Extractor`/`Grounding`), `MessageSearch`, `ConversationLanguage`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `ReplyWriter`, `ReplySuggestions`, `VoiceMessageService`, `VoiceTranscriber`, `PhotoDescriber`, `AttachmentHandler`
+- **Services & Managers**: `AIService`, `ConversationChunker`, `MeetingNotes`(+`Extractor`/`Grounding`), `MessageSearch`, `ConversationLanguage`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `ReplyWriter`, `ReplySuggestions`, `VoiceMessageService`, `VoiceTranscriber`, `PhotoDescriber`, `AttachmentHandler`
 - **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
 - **Data Layer**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `Repositories/TestAccount`, `User`
 - **Shared**: `Colors+Extensions`
@@ -288,7 +288,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 - **첨부** — 사진, 동영상, 파일, 위치; 파일과 동영상은 Quick Look으로 열기
 - **링크 미리보기** — URL에 대한 풍부한 메타데이터 자동 로드
 - **읽음 확인** — 메시지 전송 및 읽음 상태를 체크마크 아이콘으로 표시
-- **AI 요약** — FoundationModels 기반 온디바이스 대화 요약
+- **AI 요약** — 최근 메시지 최대 300개를 기기 안에서 요약(FoundationModels 가이드 생성). 모델이 한 번에 못 읽는 긴 대화는 나눠 읽으며 진행 상황을 보여 주고, 부분별 메모를 모아 요약
 - **회의 노트** — 대화의 결정 사항, 담당자가 있는 할 일, 일정, 남은 질문을 기기 안의 Apple Intelligence가 정리(가이드 생성). 할 일마다 근거 메시지를 인용하게 하고 대화와 대조해, 아무도 맡지 않은 할 일이 끼어들지 못하게 함. 일정은 모델이 아니라 날짜 감지기가 읽음. Apple Intelligence가 없으면 규칙 기반으로 추출
 - **사진 이해(iOS 27)** — 보낸 사진을 기기 안의 모델이 보고(Foundation Models 이미지 입력) 내 언어로 한 줄 설명을 붙임. VoiceOver가 읽어 주고, 검색으로 찾을 수 있고, 상대방이 사진 내용에 답함. iOS 26에서는 기존과 동일
 - **의미로 검색** — 메시지 글, 음성 받아쓰기, 사진 설명, 파일 이름으로 찾음. Apple Intelligence가 있으면 관련어와 번역어까지 기기 안에서 찾아 "저녁 약속"으로 "dinner tonight"도 찾고, 어떤 말로 함께 찾았는지 보여 줌
@@ -405,7 +405,7 @@ link-mvp/
 - **Chat**: `ChatView`(+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `AttachmentPreviewer`, `TypingIndicatorView`, `ConnectionStatusView`, `MeetingNotesView`
 - **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
 - **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `AIFeatureSettings`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
-- **Services & Managers**: `AIService`, `MeetingNotes`(+`Extractor`/`Grounding`), `MessageSearch`, `ConversationLanguage`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `ReplyWriter`, `ReplySuggestions`, `VoiceMessageService`, `VoiceTranscriber`, `PhotoDescriber`, `AttachmentHandler`
+- **Services & Managers**: `AIService`, `ConversationChunker`, `MeetingNotes`(+`Extractor`/`Grounding`), `MessageSearch`, `ConversationLanguage`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `ReplyWriter`, `ReplySuggestions`, `VoiceMessageService`, `VoiceTranscriber`, `PhotoDescriber`, `AttachmentHandler`
 - **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
 - **데이터 레이어**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `Repositories/TestAccount`, `User`
 - **공용**: `Colors+Extensions`

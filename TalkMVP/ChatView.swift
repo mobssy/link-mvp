@@ -77,6 +77,8 @@ struct ChatView: View {
     @State var showingSummarySheet = false
     @State var summaryText: String = ""
     @State var isSummaryLoading = false
+    /// Which part of a long chat the summary is reading; nil for a chat read in one go.
+    @State var summaryProgress: SummaryProgress?
     @State var showingMeetingNotes = false
     @State var meetingNotes: MeetingNotes?
     @State var isMeetingNotesLoading = false
@@ -149,7 +151,7 @@ struct ChatView: View {
             VStack(spacing: 16) {
                 ProgressView()
                     .scaleEffect(1.5)
-                Text(languageManager.localize(ko: "요약 생성 중...", en: "Generating summary...", ja: "要約を生成中...", zh: "正在生成摘要...", es: "Generando resumen..."))
+                Text(summaryLoadingText)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
@@ -164,6 +166,17 @@ struct ChatView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 20)
             }
+        }
+    }
+
+    private var summaryLoadingText: String {
+        switch summaryProgress {
+        case .readingPart(let index, let count):
+            String(format: languageManager.localize(ko: "긴 대화를 나눠 읽는 중… (%d/%d)", en: "Reading a long chat in parts… (%d/%d)", ja: "長い会話を分けて読んでいます… (%d/%d)", zh: "正在分段阅读长对话… (%d/%d)", es: "Leyendo un chat largo por partes… (%d/%d)"), index, count)
+        case .writing:
+            languageManager.localize(ko: "요약 정리 중…", en: "Writing the summary…", ja: "要約をまとめています…", zh: "正在整理摘要…", es: "Redactando el resumen…")
+        case nil:
+            languageManager.localize(ko: "요약 생성 중...", en: "Generating summary...", ja: "要約を生成中...", zh: "正在生成摘要...", es: "Generando resumen...")
         }
     }
 

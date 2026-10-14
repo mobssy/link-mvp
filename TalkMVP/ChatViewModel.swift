@@ -368,6 +368,20 @@ class ChatViewModel: ObservableObject {
         refreshReplySuggestions()
     }
 
+    // MARK: - Summary
+
+    /// The latest `limit` messages from the store, oldest first, rather than just the page on
+    /// screen, so a summary can cover more than what has been scrolled through.
+    func recentConversation(limit: Int) async -> [SummaryMessage] {
+        do {
+            return try await messageRepository.fetchMessages(for: chatRoom.id.uuidString, limit: limit, before: nil)
+                .map(SummaryMessage.init)
+        } catch {
+            vmLogger.error("Failed to load messages for a summary: \(error.localizedDescription, privacy: .public)")
+            return messages.map(SummaryMessage.init)
+        }
+    }
+
     // MARK: - Search
 
     /// The messages a search finds: those with the query's words and, when searching by meaning,

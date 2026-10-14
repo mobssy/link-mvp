@@ -1038,6 +1038,55 @@ struct VoiceTranscriptionTests {
     }
 }
 
+// MARK: - Long chat summaries
+
+@Suite("Long chat summaries")
+struct ConversationChunkerTests {
+    @Test("The token estimate stays above the model's own count, but not far above", arguments: [
+        // Measured with SystemLanguageModel.tokenCount(for:) in the iOS 27 simulator.
+        (String(repeating: "오늘 저녁에 삼겹살 어때? 좋아 몇 시에 볼까? ", count: 20), 342),
+        (String(repeating: "Want to grab dinner tonight? Sure, where should we go? ", count: 20), 262),
+    ])
+    func estimateIsSafelyHigh(text: String, modelCount: Int) {
+        let estimate = ConversationChunker.estimatedTokens(in: text)
+        #expect(estimate >= modelCount)
+        #expect(Double(estimate) <= Double(modelCount) * 1.5)
+    }
+
+    @Test("A chat is cut into consecutive parts within the budget, every line kept in order")
+    func partsKeepEveryLineInOrder() {
+        let lines = (1...40).map { "Mina: message number \($0) about the trip" }
+        let parts = ConversationChunker.chunks(of: lines, budget: 60)
+
+        #expect(parts.count > 1)
+        #expect(Array(parts.joined()) == lines)
+        #expect(parts.allSatisfy { part in part.reduce(0) { $0 + ConversationChunker.estimatedTokens(in: $1) } <= 60 })
+    }
+
+    @Test("A line too long for any part is cut short to fit one")
+    func overlongLineIsCut() {
+        let parts = ConversationChunker.chunks(of: ["short", String(repeating: "가", count: 500), "after"], budget: 100)
+
+        #expect(parts.flatMap { $0 }.count == 3)
+        #expect(parts.allSatisfy { part in part.reduce(0) { $0 + ConversationChunker.estimatedTokens(in: $1) } <= 100 })
+    }
+
+    @Test("A summary is an overview, then a bold header over bullet lines for each section that has any")
+    func summaryLayout() {
+        let body = AIService.summaryBody(
+            overview: " A trip to Jeju. ", keyTopics: ["Dates", " "], decisions: [],
+            keyTopicsHeader: "Key Topics", decisionsHeader: "Decisions"
+        )
+        #expect(body == "A trip to Jeju.\n\n**Key Topics**\n• Dates")
+        #expect(AIService.summaryBody(overview: " ", keyTopics: [], decisions: [], keyTopicsHeader: "K", decisionsHeader: "D") == nil)
+    }
+
+    @Test("A short chat is read in one part")
+    func shortChatIsOnePart() {
+        #expect(ConversationChunker.chunks(of: ["Me: hi", "Mina: hello"], budget: AIService.summaryTranscriptBudget).count == 1)
+    }
+}
+
 // MARK: - Message search
 
 @MainActor
@@ -1433,6 +1482,29 @@ struct ChatViewModelTests {
             searchExpander: expander,
             searchByMeaningEnabled: { searchByMeaning }
         )
+    }
+
+    @Test("A summary reads past the page on screen, up to its limit")
+    func summaryReadsBeyondTheLoadedPage() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        let start = Date().addingTimeInterval(-10_000)
+        for index in 0..<120 {
+            let message = Message(text: "message \(index)", isFromCurrentUser: index % 2 == 0, chatRoomId: room.id.uuidString)
+            message.timestamp = start.addingTimeInterval(Double(index))
+            context.insert(message)
+        }
+        try context.save()
+        let viewModel = makeViewModel(context, room: room)
+        await viewModel.loadMessages()
+
+        let everything = await viewModel.recentConversation(limit: 300)
+        let latest = await viewModel.recentConversation(limit: 80)
+
+        #expect(viewModel.messages.count == 50, "only a page is on screen")
+        #expect(everything.map(\.text) == (0..<120).map { "message \($0)" })
+        #expect(latest.first?.text == "message 40")
+        #expect(latest.count == 80)
     }
 
     @Test("Searching by meaning also finds messages that say it differently")

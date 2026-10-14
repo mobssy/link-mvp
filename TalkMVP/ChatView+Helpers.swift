@@ -179,14 +179,20 @@ extension ChatView {
     }
 
     func generateSummary() {
-        guard let messages = viewModel?.messages, !messages.isEmpty else { return }
-        let snapshot = messages.map(SummaryMessage.init)
+        guard let viewModel, !viewModel.messages.isEmpty else { return }
         let language = appLanguageCode()
         isSummaryLoading = true
         summaryText = ""
+        summaryProgress = nil
         showingSummarySheet = true
         Task {
-            let result = await AIService.shared.summarize(messages: snapshot, targetLanguage: language)
+            let (progress, reporter) = AsyncStream<SummaryProgress>.makeStream()
+            let showingProgress = Task { for await step in progress { summaryProgress = step } }
+            let conversation = await viewModel.recentConversation(limit: AIService.summaryMessageLimit)
+            let result = await AIService.shared.summarize(messages: conversation, targetLanguage: language) { reporter.yield($0) }
+            reporter.finish()
+            await showingProgress.value
+            summaryProgress = nil
             await MainActor.run {
                 summaryText = result
                 isSummaryLoading = false

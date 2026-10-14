@@ -89,6 +89,35 @@ nonisolated struct ActionItemDraft {
     var due: String?
 }
 
+/// The shape the on-device model fills in for a summary (guided generation). The layout is the
+/// app's, so no template line can end up in the text, as "[Write 2–3 sentences…]" once did.
+@Generable
+nonisolated struct ConversationSummaryDraft {
+    @Guide(description: "Two or three sentences on what the whole conversation was about, from its start to its end")
+    var overview: String
+    @Guide(description: "The main topics, each a short phrase", .maximumCount(5))
+    var keyTopics: [String]
+    @Guide(description: "Decisions made and tasks people took on, saying who and when where the chat does. Empty if there were none.", .maximumCount(6))
+    var decisions: [String]
+}
+
+/// Notes on one part of a long chat (guided generation). Asked for "at most four bullet points",
+/// the model copied the part's first few lines, small talk included, and stopped before the
+/// plans further down, so the notes ask for what the part settles, not for what it says first.
+@Generable
+nonisolated struct PartNotesDraft {
+    @Guide(description: "What this part settles or plans: decisions, bookings, who does what, dates, times, places and amounts, each a short sentence. Leave out small talk. Empty if the part is only small talk.", .maximumCount(6))
+    var points: [String]
+}
+
+/// How far a summary of a long chat has got, for the screen to show while it waits.
+nonisolated enum SummaryProgress: Sendable, Equatable {
+    /// Taking notes on part `index` (from 1) of `count`.
+    case readingPart(Int, of: Int)
+    /// Writing the summary from the notes.
+    case writing
+}
+
 actor AIService {
     static let shared = AIService()
 
@@ -140,7 +169,17 @@ actor AIService {
         }
     }
 
-    func summarize(messages: [SummaryMessage], limit: Int = 30, targetLanguage: String = "en") async -> String {
+    /// The most a summary reads, oldest dropped first. A chat longer than the model reads at once
+    /// is summarized a part at a time.
+    nonisolated static let summaryMessageLimit = 300
+    /// Estimated transcript tokens the model reads in one go, leaving room in its 4,096 for the
+    /// instructions and the answer.
+    nonisolated static let summaryTranscriptBudget = 2_400
+
+    func summarize(
+        messages: [SummaryMessage], limit: Int = AIService.summaryMessageLimit, targetLanguage: String = "en",
+        onProgress: (@Sendable (SummaryProgress) -> Void)? = nil
+    ) async -> String {
         let last = Array(messages.suffix(limit))
         let labels = summaryLabels(for: targetLanguage)
         guard !last.isEmpty else { return labels.noMessages }
@@ -153,11 +192,10 @@ actor AIService {
         let dateStr = DateFormatter.localizedString(from: Date(), dateStyle: .medium, timeStyle: .short)
 
         let transcriptLines = textMessages.map { "\($0.isFromCurrentUser ? labels.me : $0.sender): \($0.text)" }
-        let transcript = transcriptLines.joined(separator: "\n")
 
         if let aiResult = await generateAISummary(
-            transcript: transcript, labels: labels, language: targetLanguage,
-            participants: participantList, messageCount: last.count, dateStr: dateStr
+            lines: transcriptLines, labels: labels, language: targetLanguage,
+            participants: participantList, messageCount: last.count, dateStr: dateStr, onProgress: onProgress
         ) { return aiResult }
 
         return generateFallbackSummary(
@@ -167,39 +205,90 @@ actor AIService {
     }
 
     private func generateAISummary(
-        transcript: String, labels: SummaryLabels, language: String,
-        participants: String, messageCount: Int, dateStr: String
+        lines: [String], labels: SummaryLabels, language: String,
+        participants: String, messageCount: Int, dateStr: String,
+        onProgress: (@Sendable (SummaryProgress) -> Void)?
     ) async -> String? {
         let model = SystemLanguageModel.default
-        guard case .available = model.availability, !transcript.isEmpty else { return nil }
+        guard case .available = model.availability, !lines.isEmpty else { return nil }
 
-        let langName = languageName(for: language)
+        let parts = ConversationChunker.chunks(of: lines, budget: Self.summaryTranscriptBudget)
+        let prompt: String
+        if parts.count == 1 {
+            prompt = "Summarize this chat (\(messageCount) messages, participants: \(participants)):\n\n\(lines.joined(separator: "\n"))"
+        } else {
+            // Too long to read at once: take notes on each part, then summarize the notes.
+            var notes: [String] = []
+            for (index, part) in parts.enumerated() {
+                onProgress?(.readingPart(index + 1, of: parts.count))
+                if let note = await notesOnPart(part, language: language) { notes.append("Part \(index + 1):\n\(note)") }
+            }
+            guard !notes.isEmpty else { return nil }
+            onProgress?(.writing)
+            prompt = """
+            Summarize this chat (\(messageCount) messages, participants: \(participants)). It was too long to \
+            read at once, so these are notes on its consecutive parts, oldest first:
+
+            \(notes.joined(separator: "\n\n"))
+            """
+        }
+
+        // Asked for one summary of a long chat, the model dwelt on how it began and dropped the
+        // plans made at the end, hence the reminder.
         let instructions = """
         You are an expert conversation analyst. Summarize chat conversations clearly and insightfully.
-        Always respond in \(langName).
-        Structure your response exactly like this (use the exact section headers provided):
-
-        [Write 2–3 sentences summarizing the overall conversation]
-
-        **\(labels.keyTopics)**
-        • [key topic 1]
-        • [key topic 2]
-        • [key topic 3]
-
-        **\(labels.decisions)**
-        • [any decisions or action items — omit this section entirely if none]
+        Always write in \(languageName(for: language)). Cover the whole conversation, from the first message
+        to the last: plans made near the end matter as much as those made at the start.
         """
-
-        let prompt = "Summarize this chat (\(messageCount) messages, participants: \(participants)):\n\n\(transcript)"
-
         do {
             let session = LanguageModelSession(instructions: instructions)
-            let response = try await session.respond(to: prompt)
-            let content = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !content.isEmpty else { return nil }
-            return "✨ **\(labels.header)**\n\(dateStr)\n\n\(content)"
+            let draft = try await session.respond(to: prompt, generating: ConversationSummaryDraft.self).content
+            guard let body = Self.summaryBody(
+                overview: draft.overview, keyTopics: draft.keyTopics, decisions: draft.decisions,
+                keyTopicsHeader: labels.keyTopics, decisionsHeader: labels.decisions
+            ) else { return nil }
+            return "✨ **\(labels.header)**\n\(dateStr) · \(String(format: labels.coverage, messageCount))\n\n\(body)"
         } catch {
             aiLogger.notice("Summary generation failed: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
+
+    /// The summary laid out the way the summary sheet shows it: the overview, then a paragraph
+    /// per section, each a bold header over bullet lines. Empty sections are left out; nil when
+    /// there is nothing at all.
+    nonisolated static func summaryBody(
+        overview: String, keyTopics: [String], decisions: [String],
+        keyTopicsHeader: String, decisionsHeader: String
+    ) -> String? {
+        func section(_ header: String, _ items: [String]) -> String? {
+            let items = items.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+            return items.isEmpty ? nil : (["**\(header)**"] + items.map { "• \($0)" }).joined(separator: "\n")
+        }
+        let overview = overview.trimmingCharacters(in: .whitespacesAndNewlines)
+        let paragraphs = [overview.isEmpty ? nil : overview, section(keyTopicsHeader, keyTopics), section(decisionsHeader, decisions)].compactMap { $0 }
+        return paragraphs.isEmpty ? nil : paragraphs.joined(separator: "\n\n")
+    }
+
+    /// Notes on one part of a long chat, for the summary of the whole; nil if the model couldn't
+    /// write them, in which case the summary goes on without that part.
+    private func notesOnPart(_ lines: [String], language: String) async -> String? {
+        let instructions = """
+        You take notes on one part of a long chat, for a summary of the whole chat. Write in \(languageName(for: language)). \
+        Keep names, dates, times, places and amounts as the chat gives them.
+        """
+        do {
+            let session = LanguageModelSession(instructions: instructions)
+            let draft = try await session.respond(
+                to: lines.joined(separator: "\n"),
+                generating: PartNotesDraft.self,
+                options: GenerationOptions(samplingMode: .greedy)
+            ).content
+            let points = draft.points.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+            // An empty part still tells the summary that this stretch was small talk.
+            return points.isEmpty ? "- (small talk only)" : points.map { "- \($0)" }.joined(separator: "\n")
+        } catch {
+            aiLogger.notice("Notes on part of a long chat failed: \(error.localizedDescription, privacy: .public)")
             return nil
         }
     }
@@ -266,6 +355,8 @@ actor AIService {
         let me, image, file, audio, header: String
         let noMessages, statsHeader, participants, totalMessages: String
         let other, keywordsHeader, recentHeader, keyTopics, decisions: String
+        /// How many messages the summary covers, with a %d for the count.
+        let coverage: String
     }
 
     private func summaryLabels(for language: String) -> SummaryLabels {
@@ -276,7 +367,7 @@ actor AIService {
                 header: "대화 요약", noMessages: "요약할 메시지가 없습니다.",
                 statsHeader: "대화 통계", participants: "참여자", totalMessages: "총 메시지",
                 other: "상대방", keywordsHeader: "주요 키워드", recentHeader: "최근 대화",
-                keyTopics: "주요 내용", decisions: "결정 사항"
+                keyTopics: "주요 내용", decisions: "결정 사항", coverage: "메시지 %d개"
             )
         case "ja":
             return SummaryLabels(
@@ -284,7 +375,7 @@ actor AIService {
                 header: "会話まとめ", noMessages: "要約するメッセージがありません。",
                 statsHeader: "会話統計", participants: "参加者", totalMessages: "合計メッセージ",
                 other: "相手", keywordsHeader: "キーワード", recentHeader: "最近の会話",
-                keyTopics: "主なトピック", decisions: "決定事項"
+                keyTopics: "主なトピック", decisions: "決定事項", coverage: "%d件のメッセージ"
             )
         case "zh-hans":
             return SummaryLabels(
@@ -292,7 +383,7 @@ actor AIService {
                 header: "对话摘要", noMessages: "没有可摘要的消息。",
                 statsHeader: "对话统计", participants: "参与者", totalMessages: "消息总数",
                 other: "对方", keywordsHeader: "关键词", recentHeader: "最近对话",
-                keyTopics: "主要话题", decisions: "决定事项"
+                keyTopics: "主要话题", decisions: "决定事项", coverage: "%d 条消息"
             )
         case "es":
             return SummaryLabels(
@@ -300,7 +391,7 @@ actor AIService {
                 header: "Resumen de conversación", noMessages: "No hay mensajes para resumir.",
                 statsHeader: "Estadísticas", participants: "Participantes", totalMessages: "Total de mensajes",
                 other: "Otro", keywordsHeader: "Palabras clave", recentHeader: "Mensajes recientes",
-                keyTopics: "Temas principales", decisions: "Decisiones"
+                keyTopics: "Temas principales", decisions: "Decisiones", coverage: "%d mensajes"
             )
         default:
             return SummaryLabels(
@@ -308,7 +399,7 @@ actor AIService {
                 header: "Conversation Summary", noMessages: "No messages to summarize.",
                 statsHeader: "Statistics", participants: "Participants", totalMessages: "Total messages",
                 other: "Other", keywordsHeader: "Keywords", recentHeader: "Recent messages",
-                keyTopics: "Key Topics", decisions: "Decisions"
+                keyTopics: "Key Topics", decisions: "Decisions", coverage: "%d messages"
             )
         }
     }
