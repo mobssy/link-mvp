@@ -1081,6 +1081,14 @@ struct ConversationChunkerTests {
         #expect(AIService.summaryBody(overview: " ", keyTopics: [], decisions: [], keyTopicsHeader: "K", decisionsHeader: "D") == nil)
     }
 
+    @Test("A summary is dated the way the app's language writes dates")
+    func summaryDateFollowsTheAppLanguage() throws {
+        let date = try #require(Calendar(identifier: .gregorian).date(from: DateComponents(year: 2026, month: 10, day: 14, hour: 14, minute: 1)))
+        #expect(AIService.summaryDate(date, language: "ko").contains("오후"))
+        #expect(AIService.summaryDate(date, language: "en").contains("Oct"))
+        #expect(AIService.summaryDate(date, language: "ja").contains("2026年10月14日"))
+    }
+
     @Test("A short chat is read in one part")
     func shortChatIsOnePart() {
         #expect(ConversationChunker.chunks(of: ["Me: hi", "Mina: hello"], budget: AIService.summaryTranscriptBudget).count == 1)

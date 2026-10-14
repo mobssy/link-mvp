@@ -418,7 +418,9 @@ struct SummaryParagraphCard: View {
     }
 
     private var renderedText: Text {
-        if let attr = try? AttributedString(markdown: text) {
+        // Inline-only parsing keeps line breaks; full Markdown folds a section's bullet lines
+        // into one line ("Key Topics: • Weather • Well-being • Weekend plans").
+        if let attr = try? AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)) {
             return Text(attr)
         }
         return Text(text)

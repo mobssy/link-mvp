@@ -189,7 +189,7 @@ actor AIService {
         let participantList = participants.sorted().joined(separator: ", ")
         let fromMe = last.filter { $0.isFromCurrentUser }.count
         let fromOther = last.count - fromMe
-        let dateStr = DateFormatter.localizedString(from: Date(), dateStyle: .medium, timeStyle: .short)
+        let dateStr = Self.summaryDate(Date(), language: targetLanguage)
 
         let transcriptLines = textMessages.map { "\($0.isFromCurrentUser ? labels.me : $0.sender): \($0.text)" }
 
@@ -252,6 +252,12 @@ actor AIService {
             aiLogger.notice("Summary generation failed: \(error.localizedDescription, privacy: .public)")
             return nil
         }
+    }
+
+    /// When the summary was made, written the way the app's language writes dates; the device's
+    /// own region gave a Korean summary an English date ("Oct 14, 2026 at 2:01 PM").
+    nonisolated static func summaryDate(_ date: Date, language: String) -> String {
+        date.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened).locale(Locale(identifier: language)))
     }
 
     /// The summary laid out the way the summary sheet shows it: the overview, then a paragraph
