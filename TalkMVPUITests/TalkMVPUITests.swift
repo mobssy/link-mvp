@@ -22,26 +22,33 @@ final class TalkMVPUITests: XCTestCase {
         ]
     }
 
-    @MainActor
-    func testTestModeSignsInAndSignOutReturnsToSignIn() throws {
-        app.launch()
+    /// A tab button, found by its label: the tab bar sits at the bottom on iPhone but at the
+    /// top on iPad, where it is not exposed as `app.tabBars`.
+    private func tab(_ name: String) -> XCUIElement {
+        app.buttons[name].firstMatch
+    }
 
-        // Signed out: the sign-in screen offers test mode.
+    /// Enters test mode from the sign-in screen and waits for the tabs.
+    private func signInWithTestMode() {
         let testModeButton = app.buttons["testModeButton"]
         XCTAssertTrue(testModeButton.waitForExistence(timeout: 10))
         testModeButton.tap()
         let startButton = app.alerts.buttons["Start Test"]
         XCTAssertTrue(startButton.waitForExistence(timeout: 5))
         startButton.tap()
+        XCTAssertTrue(tab("Friends").waitForExistence(timeout: 10))
+    }
 
-        // Signed in: the tab interface replaces the sign-in screen.
-        let tabBar = app.tabBars.firstMatch
-        XCTAssertTrue(tabBar.waitForExistence(timeout: 10))
-        XCTAssertTrue(tabBar.buttons["Friends"].exists)
+    @MainActor
+    func testTestModeSignsInAndSignOutReturnsToSignIn() throws {
+        app.launch()
+
+        // Signed out: the sign-in screen offers test mode. Signed in: the tabs replace it.
+        signInWithTestMode()
         XCTAssertTrue(app.staticTexts["Test Mode"].exists)
 
         // Sign out from Settings.
-        tabBar.buttons["Settings"].tap()
+        tab("Settings").tap()
         let signOutButton = app.buttons["Sign Out"].firstMatch
         XCTAssertTrue(signOutButton.waitForExistence(timeout: 5))
         signOutButton.tap()
@@ -50,24 +57,19 @@ final class TalkMVPUITests: XCTestCase {
         confirmSignOut.tap()
 
         // Back on the sign-in screen.
-        XCTAssertTrue(testModeButton.waitForExistence(timeout: 10))
-        XCTAssertFalse(tabBar.exists)
+        XCTAssertTrue(app.buttons["testModeButton"].waitForExistence(timeout: 10))
+        XCTAssertFalse(tab("Chats").exists)
     }
 
     @MainActor
     func testStartingChatFromFriendProfileSavesTheRoom() throws {
         XCUIDevice.shared.orientation = .portrait
         app.launch()
-        app.buttons["testModeButton"].tap()
-        let startButton = app.alerts.buttons["Start Test"]
-        XCTAssertTrue(startButton.waitForExistence(timeout: 5))
-        startButton.tap()
-        let tabBar = app.tabBars.firstMatch
-        XCTAssertTrue(tabBar.waitForExistence(timeout: 10))
+        signInWithTestMode()
 
         // Twice, to check the second time reuses the first room instead of adding another.
         for _ in 0..<2 {
-            tabBar.buttons["Friends"].tap()
+            tab("Friends").tap()
             // The row is one button whose label combines the name and status; tapping it
             // hits the middle of the row, which must open the profile too.
             let friend = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "강호동")).firstMatch
@@ -83,11 +85,11 @@ final class TalkMVPUITests: XCTestCase {
             for _ in 0..<2 {
                 app.swipeDown(velocity: .fast)
             }
-            XCTAssertTrue(tabBar.waitForExistence(timeout: 5))
+            XCTAssertTrue(tab("Friends").waitForExistence(timeout: 5))
         }
 
         // The conversation is a real room in the chat list, listed once.
-        tabBar.buttons.element(boundBy: 1).tap()
+        tab("Chats").tap()
         let rooms = app.staticTexts.matching(NSPredicate(format: "label == %@", "강호동"))
         XCTAssertTrue(rooms.firstMatch.waitForExistence(timeout: 5))
         XCTAssertEqual(rooms.count, 1)
@@ -97,14 +99,9 @@ final class TalkMVPUITests: XCTestCase {
     func testSwipingAMessageStartsAReply() throws {
         XCUIDevice.shared.orientation = .portrait
         app.launch()
-        app.buttons["testModeButton"].tap()
-        let startButton = app.alerts.buttons["Start Test"]
-        XCTAssertTrue(startButton.waitForExistence(timeout: 5))
-        startButton.tap()
-        let tabBar = app.tabBars.firstMatch
-        XCTAssertTrue(tabBar.waitForExistence(timeout: 10))
+        signInWithTestMode()
 
-        tabBar.buttons["Chats"].tap()
+        tab("Chats").tap()
         let firstRoom = app.cells.firstMatch
         XCTAssertTrue(firstRoom.waitForExistence(timeout: 5))
         firstRoom.tap()
@@ -114,8 +111,8 @@ final class TalkMVPUITests: XCTestCase {
         input.tap()
         input.typeText("swipe me\n")
 
-        // Messages live in a ScrollView, not a List; swipe actions there need iOS 27's
-        // swipeActionsContainer().
+        // Messages live in a ScrollView rather than a List; swiping one must still
+        // reveal its actions.
         let message = app.descendants(matching: .any)
             .matching(NSPredicate(format: "identifier BEGINSWITH 'message_' AND label CONTAINS 'swipe me'"))
             .firstMatch
