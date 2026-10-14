@@ -10,11 +10,44 @@ import UserNotifications
 import SwiftUI
 import Combine
 
+/// The user's "notifications on" switch in Settings.
+///
+/// Settings shows it as on before the user has ever touched it, but nothing writes that
+/// default to UserDefaults, so `bool(forKey:)` read a fresh install as "off" and every
+/// notification was suppressed until the switch was flipped off and on again.
+nonisolated enum NotificationPreferences {
+    static let enabledKey = "notificationsEnabled"
+
+    static func isEnabled(in defaults: UserDefaults = .standard) -> Bool {
+        defaults.object(forKey: enabledKey) as? Bool ?? true
+    }
+}
+
+/// The parts of `UNUserNotificationCenter` the app uses, so they can be faked in tests.
+protocol NotificationScheduling {
+    func isAuthorizedToNotify() async -> Bool
+    func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool
+    func add(_ request: UNNotificationRequest) async throws
+    func setBadgeCount(_ newBadgeCount: Int) async throws
+    func removeAllPendingNotificationRequests()
+    func removeAllDeliveredNotifications()
+}
+
+extension UNUserNotificationCenter: NotificationScheduling {
+    func isAuthorizedToNotify() async -> Bool {
+        switch await notificationSettings().authorizationStatus {
+        case .authorized, .provisional, .ephemeral: return true
+        default: return false
+        }
+    }
+}
+
 @MainActor
 class NotificationManager: ObservableObject {
-    @Published var hasPermission = false
+    private let center: NotificationScheduling
+    private let defaults: UserDefaults
 
-    private var notificationsEnabled: Bool { UserDefaults.standard.bool(forKey: "notificationsEnabled") }
+    private var notificationsEnabled: Bool { NotificationPreferences.isEnabled(in: defaults) }
 
     private func loc(ko: String, en: String, ja: String, zh: String, es: String) -> String {
         let lang = LanguageManager.currentLanguageCode
@@ -25,30 +58,24 @@ class NotificationManager: ObservableObject {
         return en
     }
 
-    init() {
-        Task {
-            await checkPermission()
-        }
+    init(center: NotificationScheduling = UNUserNotificationCenter.current(), defaults: UserDefaults = .standard) {
+        self.center = center
+        self.defaults = defaults
     }
 
     func requestPermission() async {
         do {
-            let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound])
-            hasPermission = granted
+            _ = try await center.requestAuthorization(options: [.alert, .badge, .sound])
         } catch {
             print("❌ [NotificationManager] Permission request failed: \(error)")
         }
     }
 
-    func checkPermission() async {
-        let settings = await UNUserNotificationCenter.current().notificationSettings()
-        hasPermission = settings.authorizationStatus == .authorized
-    }
-
-    // 친구 요청 알림
-    func scheduleFriendRequestNotification(from friendName: String, email: String) {
-        guard hasPermission else { return }
-        guard notificationsEnabled else { return }
+    /// 친구 요청 알림. Permission is checked when the notification is scheduled rather than
+    /// cached at init: the cached flag was filled in asynchronously, so a manager created
+    /// right before scheduling always still saw "no permission" and dropped the notification.
+    func scheduleFriendRequestNotification(from friendName: String, email: String) async {
+        guard notificationsEnabled, await center.isAuthorizedToNotify() else { return }
 
         let content = UNMutableNotificationContent()
         content.title = loc(ko: "새 친구 요청", en: "New Friend Request", ja: "新しい友達リクエスト", zh: "新的好友请求", es: "Nueva solicitud de amistad")
@@ -71,25 +98,26 @@ class NotificationManager: ObservableObject {
             trigger: trigger
         )
 
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                print("❌ [NotificationManager] Friend request notification failed: \(error)")
-            }
+        do {
+            try await center.add(request)
+        } catch {
+            print("❌ [NotificationManager] Friend request notification failed: \(error)")
         }
     }
 
     // 배지 숫자 업데이트
-    func updateBadgeCount(_ count: Int) {
-        Task {
-            let effective = notificationsEnabled ? count : 0
-            try? await UNUserNotificationCenter.current().setBadgeCount(effective)
+    @discardableResult
+    func updateBadgeCount(_ count: Int) -> Task<Void, Never> {
+        let effective = notificationsEnabled ? count : 0
+        return Task {
+            try? await center.setBadgeCount(effective)
         }
     }
 
     // 모든 알림 제거
     func clearAllNotifications() {
-        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+        center.removeAllPendingNotificationRequests()
+        center.removeAllDeliveredNotifications()
         updateBadgeCount(0)
     }
 }

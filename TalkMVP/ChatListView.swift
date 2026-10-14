@@ -332,7 +332,7 @@ struct ChatScreen: View {
             let manager = NotificationManager()
             let senderName = authManager.currentUser?.displayName ?? localizedText("user")
             let senderEmail = authManager.currentUser?.email ?? ""
-            manager.scheduleFriendRequestNotification(from: senderName, email: senderEmail)
+            Task { await manager.scheduleFriendRequestNotification(from: senderName, email: senderEmail) }
         } catch {
             print("Failed to save friend request: \(error)")
         }

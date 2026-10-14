@@ -22,7 +22,7 @@ struct SettingsView: View {
 
     // Notifications
     @StateObject private var notificationManager = NotificationManager()
-    @AppStorage("notificationsEnabled") private var notificationsEnabled = true
+    @AppStorage(NotificationPreferences.enabledKey) private var notificationsEnabled = true
 
     var body: some View {
         NavigationStack {

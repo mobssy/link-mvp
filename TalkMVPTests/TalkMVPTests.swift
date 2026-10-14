@@ -9,6 +9,7 @@ import Testing
 import Foundation
 import SwiftData
 import SwiftUI
+import UserNotifications
 @testable import TalkMVP
 
 /// A throwaway Documents folder, so file-store tests never touch the app's real one.
@@ -1085,6 +1086,75 @@ struct ChatViewModelTests {
         #expect(viewModel.messages.map(\.text) == ["stays"])
         #expect(try context.fetch(FetchDescriptor<Message>()).map(\.text) == ["stays"])
         #expect(!FileManager.default.fileExists(atPath: path))
+    }
+}
+
+// MARK: - Notifications
+
+@MainActor
+private final class FakeNotificationCenter: NotificationScheduling {
+    var authorized = true
+    private(set) var added: [UNNotificationRequest] = []
+    private(set) var badgeCounts: [Int] = []
+
+    func isAuthorizedToNotify() async -> Bool { authorized }
+    func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool { authorized }
+    func add(_ request: UNNotificationRequest) async throws { added.append(request) }
+    func setBadgeCount(_ newBadgeCount: Int) async throws { badgeCounts.append(newBadgeCount) }
+    func removeAllPendingNotificationRequests() {}
+    func removeAllDeliveredNotifications() {}
+}
+
+@MainActor
+@Suite("NotificationManager")
+struct NotificationManagerTests {
+    /// A defaults domain of its own, starting empty like a fresh install.
+    private let defaults = UserDefaults(suiteName: "NotificationManagerTests-\(UUID().uuidString)")!
+    private let center = FakeNotificationCenter()
+
+    private var manager: NotificationManager { NotificationManager(center: center, defaults: defaults) }
+
+    @Test("The notifications switch counts as on until the user turns it off", arguments: [
+        (nil, true),
+        (true, true),
+        (false, false)
+    ] as [(Bool?, Bool)])
+    func preferenceDefaultsToOn(stored: Bool?, expected: Bool) {
+        if let stored { defaults.set(stored, forKey: NotificationPreferences.enabledKey) }
+        #expect(NotificationPreferences.isEnabled(in: defaults) == expected)
+    }
+
+    @Test("A friend request notification is scheduled on a fresh install with permission granted")
+    func friendRequestScheduledWhenAllowed() async throws {
+        await manager.scheduleFriendRequestNotification(from: "Mina", email: "mina@example.com")
+
+        let request = try #require(center.added.first)
+        #expect(center.added.count == 1)
+        #expect(request.content.body.contains("Mina"))
+        #expect(request.content.userInfo["type"] as? String == "friend_request")
+    }
+
+    @Test("No friend request notification without permission")
+    func friendRequestSkippedWithoutPermission() async {
+        center.authorized = false
+        await manager.scheduleFriendRequestNotification(from: "Mina", email: "mina@example.com")
+        #expect(center.added.isEmpty)
+    }
+
+    @Test("No friend request notification once the user switched notifications off")
+    func friendRequestSkippedWhenSwitchedOff() async {
+        defaults.set(false, forKey: NotificationPreferences.enabledKey)
+        await manager.scheduleFriendRequestNotification(from: "Mina", email: "mina@example.com")
+        #expect(center.added.isEmpty)
+    }
+
+    @Test("The badge shows the count while notifications are on and clears when they are off")
+    func badgeFollowsSwitch() async {
+        await manager.updateBadgeCount(3).value
+        defaults.set(false, forKey: NotificationPreferences.enabledKey)
+        await manager.updateBadgeCount(3).value
+
+        #expect(center.badgeCounts == [3, 0])
     }
 }
 

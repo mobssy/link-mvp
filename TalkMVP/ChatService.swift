@@ -14,7 +14,7 @@ import UserNotifications
 class ChatService: ObservableObject, ChatServiceProtocol {
     @Published var connectionStatus: ConnectionStatus = .disconnected
 
-    private var notificationsEnabled: Bool { UserDefaults.standard.bool(forKey: "notificationsEnabled") }
+    private var notificationsEnabled: Bool { NotificationPreferences.isEnabled() }
 
     private var heartbeatTimer: Timer?
     private var randomMessageTimer: Timer?

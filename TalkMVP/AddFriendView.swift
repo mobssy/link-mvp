@@ -249,7 +249,7 @@ struct UserSearchResultRow: View {
                     // Schedule a local notification to simulate receiver-side alert
                     let senderName = authManager.currentUser?.displayName ?? L10n.text("user", languageManager.currentLanguage)
                     let senderEmail = authManager.currentUser?.email ?? ""
-                    notificationManager.scheduleFriendRequestNotification(from: senderName, email: senderEmail)
+                    Task { await notificationManager.scheduleFriendRequestNotification(from: senderName, email: senderEmail) }
 
                     // Post notification AFTER insert (data is in modelContext even if save failed)
                     NotificationCenter.default.post(name: .friendshipPendingCreated, object: nil, userInfo: ["friendId": result.id])
