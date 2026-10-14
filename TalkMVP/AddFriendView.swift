@@ -7,6 +7,9 @@
 
 import SwiftUI
 import SwiftData
+import os
+
+private let addFriendLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "AddFriendView")
 
 // MARK: - Add Friend View
 struct AddFriendView: View {
@@ -236,14 +239,16 @@ struct UserSearchResultRow: View {
                     mirror.ownerUserId = result.id
                     modelContext.insert(mirror)
 
-                    // Try to save - if it fails, we'll still notify (data is in memory)
+                    // An unsaved request would vanish at the next launch, so a failed save is a
+                    // failed request: take the two records back out and say so.
                     do {
                         try modelContext.save()
-                        print("✅ Friendship saved successfully to persistent store")
-                    } catch let error as NSError {
-                        print("⚠️ Save to persistent store failed: \(error)")
-                        print("⚠️ Error domain: \(error.domain), code: \(error.code)")
-                        print("⚠️ Data remains in memory context and will be used")
+                    } catch {
+                        addFriendLogger.error("Failed to save friend request: \(error.localizedDescription, privacy: .public)")
+                        modelContext.delete(outgoing)
+                        modelContext.delete(mirror)
+                        onComplete(false, L10n.text("friend_request_failed", languageManager.currentLanguage))
+                        return
                     }
 
                     // Schedule a local notification to simulate receiver-side alert
@@ -251,15 +256,13 @@ struct UserSearchResultRow: View {
                     let senderEmail = authManager.currentUser?.email ?? ""
                     Task { await notificationManager.scheduleFriendRequestNotification(from: senderName, email: senderEmail) }
 
-                    // Post notification AFTER insert (data is in modelContext even if save failed)
                     NotificationCenter.default.post(name: .friendshipPendingCreated, object: nil, userInfo: ["friendId": result.id])
-                    print("✅ Notification posted, data available in memory")
 
                     onComplete(true, L10n.text("friend_request_sent", languageManager.currentLanguage))
                 }
             } catch {
                 await MainActor.run {
-                    print("❌ sendFriendRequest error: \(error)")
+                    addFriendLogger.error("Friend request failed: \(error.localizedDescription, privacy: .public)")
                     onComplete(false, L10n.text("error_occurred_prefix", languageManager.currentLanguage) + error.localizedDescription)
                     isSendingRequest = false
                 }
