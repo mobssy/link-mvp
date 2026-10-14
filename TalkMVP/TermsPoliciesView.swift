@@ -88,11 +88,9 @@ struct TermsPoliciesView: View {
     }
 }
 
-struct TermsPoliciesView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationView {
-            TermsPoliciesView()
-                .environmentObject(LanguageManager())
-        }
+#Preview {
+    NavigationStack {
+        TermsPoliciesView()
+            .environmentObject(LanguageManager())
     }
 }

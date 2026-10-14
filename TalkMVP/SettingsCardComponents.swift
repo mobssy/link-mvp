@@ -163,20 +163,17 @@ struct ProfileCardView: View {
     }
 }
 
-struct SettingsSectionCard_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: 40) {
-            SettingsSectionCard(title: "Section Title") {
-                VStack {
-                    SettingsLinkRow(systemImage: "gearshape.fill", tint: .purple, title: "Settings")
-                    Divider()
-                    SettingsToggleRow(systemImage: "bell.fill", tint: .orange, title: "Notifications", isOn: .constant(true))
-                }
+#Preview(traits: .sizeThatFitsLayout) {
+    VStack(spacing: 40) {
+        SettingsSectionCard(title: "Section Title") {
+            VStack {
+                SettingsLinkRow(systemImage: "gearshape.fill", tint: .purple, title: "Settings")
+                Divider()
+                SettingsToggleRow(systemImage: "bell.fill", tint: .orange, title: "Notifications", isOn: .constant(true))
             }
-            ProfileCardView(title: "John Doe", subtitle: "Premium User") {}
-                .padding(.horizontal)
         }
-        .padding()
-        .previewLayout(.sizeThatFits)
+        ProfileCardView(title: "John Doe", subtitle: "Premium User") {}
+            .padding(.horizontal)
     }
+    .padding()
 }
