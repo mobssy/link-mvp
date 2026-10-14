@@ -1038,6 +1038,92 @@ struct VoiceTranscriptionTests {
     }
 }
 
+// MARK: - Siri and Shortcuts
+
+@MainActor
+@Suite("Siri and Shortcuts actions")
+struct ChatIntentActionsTests {
+    private let context: ModelContext
+    private let room = ChatRoom(name: "Family Group")
+
+    init() throws {
+        let container = try ModelContainer(
+            for: Message.self, ChatRoom.self, User.self, Friendship.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        context = ModelContext(container)
+        context.insert(room)
+        try context.save()
+    }
+
+    private func signIn() throws {
+        context.insert(User(username: "tester", displayName: "Tester", email: "test@example.com", isCurrentUser: true))
+        try context.save()
+    }
+
+    private func actions(locked: Bool = false, summary: String = "") -> ChatIntentActions {
+        ChatIntentActions(context: context, isAppLocked: { locked }, summarize: { _, _ in summary })
+    }
+
+    @Test("Nothing runs while signed out, or while App Lock is on")
+    func accessIsChecked() throws {
+        #expect(throws: ChatIntentError.signedOut) { try actions().checkAccess() }
+        try signIn()
+        #expect(throws: ChatIntentError.appLocked) { try actions(locked: true).checkAccess() }
+        try actions().checkAccess()
+    }
+
+    @Test("A message sent through Siri lands in the chat as the user's, with the chat's options and preview")
+    func sendAddsTheMessage() async throws {
+        try signIn()
+        room.disappearingDuration = 60
+
+        let sent = try await actions().send("  On my way  ", to: room.id)
+
+        #expect(try context.fetch(FetchDescriptor<Message>()).map(\.text) == ["On my way"])
+        #expect(sent.isFromCurrentUser)
+        #expect(sent.isDisappearing && sent.disappearAfterSeconds == 60)
+        #expect(room.lastMessage == "On my way")
+    }
+
+    @Test("A blank message, or a chat that is gone, is refused")
+    func sendRefusesWhatItCannotSend() async throws {
+        try signIn()
+        await #expect(throws: ChatIntentError.emptyMessage) { try await actions().send("  ", to: room.id) }
+        await #expect(throws: ChatIntentError.chatNotFound) { try await actions().send("hi", to: UUID()) }
+    }
+
+    @Test("Chats are found by part of their name, most recent first")
+    func roomsMatchByName() throws {
+        let older = ChatRoom(name: "Study Group")
+        older.timestamp = Date().addingTimeInterval(-3600)
+        room.timestamp = Date()
+        context.insert(older)
+        try context.save()
+
+        #expect(try actions().rooms(matching: "group").map(\.name) == ["Family Group", "Study Group"])
+        #expect(try actions().rooms(matching: "STUDY").map(\.name) == ["Study Group"])
+    }
+
+    @Test("Siri gets the summary as plain text, without the app's heading")
+    func summaryIsPlainText() async throws {
+        try signIn()
+        let formatted = "✨ **Summary**\nOct 14 · 3 messages\n\nDinner plans.\n\n**Decisions**\n• Saturday at 7"
+
+        let summary = try await actions(summary: formatted).summary(of: room.id, language: "en")
+
+        #expect(summary == "Dinner plans.\n\nDecisions\n• Saturday at 7")
+    }
+
+    @Test("A summary is in the language Siri speaks", arguments: [
+        (["ko-KR"], "ko"), (["ja-JP"], "ja"), (["zh-Hans-CN"], "zh-Hans"), (["zh-Hant-TW"], "zh-Hant"),
+        (["es-ES"], "es"), (["fr-FR"], "en"), ([], "en"),
+    ] as [([String], String)])
+    func summaryLanguage(preferred: [String], expected: String) {
+        #expect(ChatIntentActions.summaryLanguage(for: preferred) == expected)
+    }
+}
+
 // MARK: - Long chat summaries
 
 @Suite("Long chat summaries")

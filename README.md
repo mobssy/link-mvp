@@ -86,6 +86,7 @@ It's the moment of connection — the spark when two people understand each othe
 - **Scheduled send** — queue messages to send at a future time
 - **App lock** — Face ID / Touch ID protection
 - **Accessibility** — dynamic type, high contrast, screen reader support
+- **Siri & Shortcuts** — "Send a message with TalkMVP" and "Summarize Family Group in TalkMVP" from Siri, Spotlight or Shortcuts, in Korean, English, Japanese, Chinese and Spanish (App Intents); nothing runs while signed out or while App Lock is on
 - **Test mode** — try the app with sample friends and chats, no account needed
 - **Replies in context** — the simulated other side answers what you actually said, in your language, written on device by Apple Intelligence; without it, a stock reply in your language
 
@@ -100,7 +101,7 @@ It's the moment of connection — the spark when two people understand each othe
 | Architecture | MVVM + protocol-based repositories                                         |
 | Persistence  | SwiftData; attachment files on disk                                        |
 | On-device AI | FoundationModels (image input on iOS 27), Apple Translation framework, Speech (SpeechAnalyzer) |
-| Tests        | Swift Testing (unit), XCTest UI tests on iPhone and iPad                   |
+| Tests        | Swift Testing (unit), XCTest UI tests on iPhone and iPad, AppIntentsTesting (iOS 27) |
 | Platforms    | iOS and iPadOS 26+, built with the iOS 27 SDK                              |
 
 ---
@@ -176,11 +177,14 @@ link-mvp/
 │   │   ├── MessageRepository.swift
 │   │   ├── OrphanedDataCleaner.swift
 │   │   └── TestAccount.swift
+│   ├── AppShortcuts.xcstrings   # Siri phrases, in the app's five languages
+│   ├── Localizable.xcstrings    # Siri and Shortcuts strings, in the same languages
 │   └── Assets.xcassets/         # App icon, color sets, image assets
 ├── TalkMVPTests/
 │   └── TalkMVPTests.swift       # Swift Testing suites
 ├── TalkMVPUITests/
 │   ├── TalkMVPUITests.swift     # UI flows, on iPhone and iPad
+│   ├── SiriActionsUITests.swift # Siri actions run end to end with AppIntentsTesting (iOS 27)
 │   └── TalkMVPUITestsLaunchTests.swift
 └── docs/
     └── screenshots/             # Images used in this README (kept out of the app bundle)
@@ -193,7 +197,7 @@ link-mvp/
 - **Chat**: `ChatView` (+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `AttachmentPreviewer`, `TypingIndicatorView`, `ConnectionStatusView`, `MeetingNotesView`
 - **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
 - **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `AIFeatureSettings`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
-- **Services & Managers**: `AIService`, `ConversationChunker`, `MeetingNotes`(+`Extractor`/`Grounding`), `MessageSearch`, `ConversationLanguage`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `ReplyWriter`, `ReplySuggestions`, `VoiceMessageService`, `VoiceTranscriber`, `PhotoDescriber`, `AttachmentHandler`
+- **Services & Managers**: `AIService`, `ConversationChunker`, `MeetingNotes`(+`Extractor`/`Grounding`), `MessageSearch`, `ConversationLanguage`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `ReplyWriter`, `ReplySuggestions`, `VoiceMessageService`, `VoiceTranscriber`, `PhotoDescriber`, `ChatIntents`, `ChatIntentActions`, `AttachmentHandler`
 - **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
 - **Data Layer**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `Repositories/TestAccount`, `User`
 - **Shared**: `Colors+Extensions`
@@ -298,6 +302,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 - **예약 전송** — 원하는 시간에 메시지 예약 발송
 - **앱 잠금** — Face ID / Touch ID 보호
 - **접근성** — 다이나믹 타입, 고대비, 화면 낭독기 지원
+- **Siri·단축어** — "TalkMVP로 메시지 보내기", "TalkMVP에서 가족 단톡방 요약해 줘"를 Siri, Spotlight, 단축어에서 한국어·영어·일본어·중국어·스페인어로 사용(App Intents). 로그아웃 상태나 앱 잠금이 켜져 있으면 실행하지 않음
 - **테스트 모드** — 계정 없이 샘플 친구·채팅으로 바로 체험
 - **맥락에 맞는 답장** — 시뮬레이션 상대방이 내가 실제로 한 말에 내 언어로 답함. 기기 안의 Apple Intelligence가 작성하고, 없으면 같은 언어의 기본 답장
 
@@ -312,7 +317,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 | 아키텍처      | MVVM + 프로토콜 기반 리포지토리                                   |
 | 저장소        | SwiftData; 첨부 파일은 디스크에 저장                              |
 | 온디바이스 AI | FoundationModels(iOS 27 이미지 입력), Apple Translation 프레임워크, Speech(SpeechAnalyzer) |
-| 테스트        | Swift Testing(단위), XCTest UI 테스트(아이폰·iPad)                |
+| 테스트        | Swift Testing(단위), XCTest UI 테스트(아이폰·iPad), AppIntentsTesting(iOS 27) |
 | 플랫폼        | iOS·iPadOS 26+, iOS 27 SDK로 빌드                                 |
 
 ---
@@ -388,11 +393,14 @@ link-mvp/
 │   │   ├── MessageRepository.swift
 │   │   ├── OrphanedDataCleaner.swift
 │   │   └── TestAccount.swift
+│   ├── AppShortcuts.xcstrings   # Siri 문구 (앱이 지원하는 5개 언어)
+│   ├── Localizable.xcstrings    # Siri·단축어 문구 (같은 5개 언어)
 │   └── Assets.xcassets/         # 앱 아이콘, 색상, 이미지 에셋
 ├── TalkMVPTests/
 │   └── TalkMVPTests.swift       # Swift Testing 스위트
 ├── TalkMVPUITests/
 │   ├── TalkMVPUITests.swift     # 아이폰·iPad UI 흐름 테스트
+│   ├── SiriActionsUITests.swift # AppIntentsTesting(iOS 27)으로 Siri 동작을 끝까지 실행
 │   └── TalkMVPUITestsLaunchTests.swift
 └── docs/
     └── screenshots/             # 이 README에 쓰인 이미지 (앱 번들에는 포함되지 않음)
@@ -405,7 +413,7 @@ link-mvp/
 - **Chat**: `ChatView`(+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `AttachmentPreviewer`, `TypingIndicatorView`, `ConnectionStatusView`, `MeetingNotesView`
 - **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
 - **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `AIFeatureSettings`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
-- **Services & Managers**: `AIService`, `ConversationChunker`, `MeetingNotes`(+`Extractor`/`Grounding`), `MessageSearch`, `ConversationLanguage`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `ReplyWriter`, `ReplySuggestions`, `VoiceMessageService`, `VoiceTranscriber`, `PhotoDescriber`, `AttachmentHandler`
+- **Services & Managers**: `AIService`, `ConversationChunker`, `MeetingNotes`(+`Extractor`/`Grounding`), `MessageSearch`, `ConversationLanguage`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `ReplyWriter`, `ReplySuggestions`, `VoiceMessageService`, `VoiceTranscriber`, `PhotoDescriber`, `ChatIntents`, `ChatIntentActions`, `AttachmentHandler`
 - **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
 - **데이터 레이어**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `Repositories/TestAccount`, `User`
 - **공용**: `Colors+Extensions`

@@ -5,6 +5,7 @@
 //  Created by David Song on 9/26/25.
 //
 
+import AppIntents
 import SwiftUI
 import SwiftData
 import os
@@ -28,6 +29,9 @@ struct LinkMVPApp: App {
         // can be edited and saved from any view.
         let context = sharedModelContainer.mainContext
         _authManager = StateObject(wrappedValue: AuthManager(modelContext: context))
+        // Siri and Shortcuts actions read and write the same store as the app's screens.
+        let container = sharedModelContainer
+        AppDependencyManager.shared.add(dependency: container)
     }
 
     var sharedModelContainer: ModelContainer = {
@@ -89,6 +93,8 @@ struct LinkMVPApp: App {
                 .task {
                     appLock.updateLockStateOnLaunch()
                     cleanUpOrphanedData()
+                    // Lets Siri match chat names in phrases like "Summarize Family Group".
+                    ChatShortcuts.updateAppShortcutParameters()
                 }
         }
         .modelContainer(sharedModelContainer)
