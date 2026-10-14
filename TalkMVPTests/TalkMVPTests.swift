@@ -529,10 +529,31 @@ struct OrphanedDataCleanerTests {
 
     private func makeContext() throws -> ModelContext {
         let container = try ModelContainer(
-            for: Message.self, ChatRoom.self,
+            for: Message.self, ChatRoom.self, User.self, Friendship.self,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
         )
         return ModelContext(container)
+    }
+
+    @Test("Leftover tester accounts are removed at launch, keeping the signed-in one")
+    func removesLeftoverTesters() throws {
+        let context = try makeContext()
+        let signedIn = User(username: "tester", displayName: "Now", email: "test@example.com", isCurrentUser: true)
+        signedIn.lastActiveAt = .distantPast
+        let newer = User(username: "tester", displayName: "Newer", email: "test@example.com")
+        let real = User(username: "jordan", displayName: "Jordan", email: "jordan@example.com")
+        for user in [signedIn, newer, real] {
+            context.insert(user)
+            context.insert(Friendship(userId: user.id.uuidString, friendId: UUID().uuidString, friendName: "A", friendEmail: "a@example.com", status: .accepted))
+        }
+        try context.save()
+        let files = DiskAttachmentFileStore(documentsDirectory: try makeTemporaryDocuments())
+
+        let result = try OrphanedDataCleaner(modelContext: context, attachmentFiles: files).run()
+
+        #expect(result.deletedTestAccounts == 1)
+        #expect(Set(try context.fetch(FetchDescriptor<User>()).map(\.id)) == [signedIn.id, real.id])
+        #expect(Set(try context.fetch(FetchDescriptor<Friendship>()).map(\.ownerUserId)) == [signedIn.id.uuidString, real.id.uuidString])
     }
 
     @Test("Messages of deleted rooms and their files are removed; live rooms keep theirs")
@@ -860,6 +881,48 @@ struct AuthManagerTests {
         #expect(manager.currentUser?.username == "tester")
         #expect(friendships.count == 2)
         #expect(friendships.allSatisfy { $0.ownerUserId == testerID && $0.status == .accepted })
+    }
+
+    @Test("Entering test mode again reuses the one tester account and its friends")
+    func testModeReusesTheTesterAccount() throws {
+        let context = try makeContext()
+        let manager = makeManager(context)
+        let friends = [(name: "A", email: "a@example.com"), (name: "B", email: "b@example.com")]
+
+        manager.startTestSession(displayName: "Tester", statusMessage: "Hi", friends: friends)
+        let firstID = try #require(manager.currentUser?.id)
+        manager.signOut()
+        manager.startTestSession(displayName: "Tester", statusMessage: "Hi", friends: friends)
+
+        #expect(manager.currentUser?.id == firstID)
+        #expect(try context.fetchCount(FetchDescriptor<User>()) == 1)
+        #expect(try context.fetchCount(FetchDescriptor<Friendship>()) == 2)
+    }
+
+    @Test("Entering test mode removes tester accounts left behind earlier, but not real accounts")
+    func testModeClearsLeftoverTesters() async throws {
+        let context = try makeContext()
+        let manager = makeManager(context)
+        await manager.signUp(username: "jordan", displayName: "Jordan", email: "jordan@example.com", password: "secret1")
+        manager.signOut()
+        let realFriendships = try context.fetchCount(FetchDescriptor<Friendship>())
+        for i in 0..<3 {
+            let old = User(username: "tester", displayName: "Tester \(i)", email: "test@example.com")
+            old.lastActiveAt = Date().addingTimeInterval(TimeInterval(-100 * (i + 1)))
+            context.insert(old)
+            context.insert(Friendship(userId: old.id.uuidString, friendId: UUID().uuidString, friendName: "A", friendEmail: "a@example.com", status: .accepted))
+        }
+        try context.save()
+
+        manager.startTestSession(displayName: "Tester", statusMessage: "Hi", friends: [(name: "A", email: "a@example.com")])
+
+        let testers = try context.fetch(FetchDescriptor<User>(predicate: #Predicate { $0.username == "tester" }))
+        let tester = try #require(testers.first)
+        #expect(testers.count == 1)
+        #expect(tester.displayName == "Tester 0", "the most recently active one is kept")
+        #expect(manager.currentUser?.id == tester.id)
+        #expect(try context.fetchCount(FetchDescriptor<User>(predicate: #Predicate { $0.username == "jordan" })) == 1)
+        #expect(try context.fetchCount(FetchDescriptor<Friendship>()) == realFriendships + 1, "the tester keeps one friend A, no duplicate")
     }
 
     @Test("Deleting the account wipes local data and attachment files and ends the session")

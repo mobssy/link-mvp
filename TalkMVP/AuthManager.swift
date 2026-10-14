@@ -173,31 +173,48 @@ class AuthManager: ObservableObject {
         }
     }
 
-    /// Starts the credential-free demo session ("test mode") as a fresh local tester account.
+    /// Starts the credential-free demo session ("test mode"). It signs into the one stored test
+    /// account, creating it on first use, and deletes any extra ones earlier builds left behind,
+    /// so entering test mode again never piles up accounts or duplicate friends.
     func startTestSession(displayName: String, statusMessage: String, friends: [(name: String, email: String)]) {
         errorMessage = nil
+        do {
+            let tester = try TestAccount.all(in: modelContext).first
+                ?? newTestAccount(displayName: displayName, statusMessage: statusMessage)
+            try TestAccount.removeAll(except: tester, in: modelContext)
+            try addMissingFriends(friends, to: tester)
+            try activate(tester)
+        } catch {
+            authLogger.error("Failed to start test session: \(error.localizedDescription, privacy: .public)")
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func newTestAccount(displayName: String, statusMessage: String) -> User {
         let tester = User(
-            username: "tester",
+            username: TestAccount.username,
             displayName: displayName,
-            email: "test@example.com",
+            email: TestAccount.email,
             statusMessage: statusMessage
         )
         modelContext.insert(tester)
-        for friend in friends {
+        return tester
+    }
+
+    /// Gives the tester each sample friend it does not already have, matched by email.
+    private func addMissingFriends(_ friends: [(name: String, email: String)], to tester: User) throws {
+        let testerID = tester.id.uuidString
+        let existing = Set(try modelContext.fetch(FetchDescriptor<Friendship>(
+            predicate: #Predicate { $0.ownerUserId == testerID }
+        )).map(\.friendEmail))
+        for friend in friends where !existing.contains(friend.email) {
             modelContext.insert(Friendship(
-                userId: tester.id.uuidString,
+                userId: testerID,
                 friendId: UUID().uuidString,
                 friendName: friend.name,
                 friendEmail: friend.email,
                 status: .accepted
             ))
-        }
-
-        do {
-            try activate(tester)
-        } catch {
-            authLogger.error("Failed to start test session: \(error.localizedDescription, privacy: .public)")
-            errorMessage = error.localizedDescription
         }
     }
 

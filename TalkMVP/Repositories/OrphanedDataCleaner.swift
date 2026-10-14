@@ -11,14 +11,15 @@ import os
 
 private let cleanerLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "OrphanedDataCleaner")
 
-/// Removes messages whose chat room no longer exists and attachment files no message
-/// refers to. Deleting a room now takes its messages and files with it, but builds before
-/// that left both behind, and nothing in the app can reach them to delete them.
+/// Removes data nothing in the app can reach any more: messages whose chat room no longer
+/// exists, attachment files no message refers to, and test-mode accounts beyond the one test
+/// mode signs into. Earlier builds left all three behind and had no way to delete them.
 @MainActor
 struct OrphanedDataCleaner {
     struct Result: Equatable {
         var deletedMessages = 0
         var deletedFiles = 0
+        var deletedTestAccounts = 0
     }
 
     private let modelContext: ModelContext
@@ -42,6 +43,14 @@ struct OrphanedDataCleaner {
     func run() throws -> Result {
         var result = Result()
 
+        result.deletedTestAccounts = try TestAccount.removeAll(
+            except: TestAccount.all(in: modelContext).first,
+            in: modelContext
+        )
+        if result.deletedTestAccounts > 0 {
+            try modelContext.save()
+        }
+
         let roomIds = try modelContext.fetch(FetchDescriptor<ChatRoom>()).map(\.id.uuidString)
         let orphaned = #Predicate<Message> { !roomIds.contains($0.chatRoomId) }
         result.deletedMessages = try modelContext.fetchCount(FetchDescriptor(predicate: orphaned))
@@ -55,7 +64,7 @@ struct OrphanedDataCleaner {
         result.deletedFiles = attachmentFiles.removeFiles(keeping: referenced)
 
         if result != Result() {
-            cleanerLogger.info("Removed \(result.deletedMessages) orphaned messages and \(result.deletedFiles) unreferenced attachment files")
+            cleanerLogger.info("Removed \(result.deletedMessages) orphaned messages, \(result.deletedFiles) unreferenced attachment files and \(result.deletedTestAccounts) leftover test accounts")
         }
         return result
     }
