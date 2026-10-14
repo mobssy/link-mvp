@@ -7,6 +7,7 @@
 
 import Testing
 import Foundation
+import NaturalLanguage
 import SwiftData
 import SwiftUI
 import UserNotifications
@@ -990,6 +991,145 @@ struct ChatServiceTests {
         service.disconnect()
 
         #expect(service.connectionStatus == .disconnected)
+    }
+}
+
+// MARK: - Auto replies
+
+private struct FixedReplyWriter: ReplyWriting {
+    let text: String?
+    func reply(to conversation: [SummaryMessage], as partner: String) async -> String? { text }
+}
+
+/// Remembers the chat it was shown.
+private actor RecordingReplyWriter: ReplyWriting {
+    private(set) var seen: [SummaryMessage] = []
+    func reply(to conversation: [SummaryMessage], as partner: String) async -> String? {
+        seen = conversation
+        return "ok"
+    }
+}
+
+@MainActor
+@Suite("Auto replies")
+struct AutoReplyTests {
+    private let context: ModelContext
+    private let room = ChatRoom(name: "Mina")
+
+    init() throws {
+        let container = try ModelContainer(
+            for: Message.self, ChatRoom.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        context = ModelContext(container)
+        context.insert(room)
+        try context.save()
+    }
+
+    private func service(_ writers: [any ReplyWriting]) -> AutoResponseService {
+        AutoResponseService(
+            messageRepository: LocalMessageRepository(modelContext: context),
+            chatRoomRepository: LocalChatRoomRepository(modelContext: context),
+            writers: writers,
+            pacing: .immediate
+        )
+    }
+
+    private func say(_ text: String, minutesAgo: Double) throws {
+        let message = Message(text: text, isFromCurrentUser: true, chatRoomId: room.id.uuidString)
+        message.timestamp = Date().addingTimeInterval(-minutesAgo * 60)
+        context.insert(message)
+        try context.save()
+    }
+
+    @Test("The first writer that writes a reply wins, and the reply is saved and shown")
+    func firstWrittenReplyIsSent() async throws {
+        try say("Dinner at 7?", minutesAgo: 1)
+        var typing: [Bool] = []
+        var shown: Message?
+
+        try await service([FixedReplyWriter(text: nil), FixedReplyWriter(text: "Sounds good!"), FixedReplyWriter(text: "unused")])
+            .generateResponse(for: room, onTypingChange: { typing.append($0) }, onMessage: { shown = $0 })
+
+        #expect(typing == [true, false])
+        #expect(shown?.text == "Sounds good!")
+        #expect(shown?.sender == "Mina")
+        #expect(shown?.isFromCurrentUser == false)
+        #expect(room.lastMessage == "Sounds good!")
+        let saved = try await LocalMessageRepository(modelContext: context).fetchMessages(for: room.id.uuidString, limit: 10, before: nil)
+        #expect(saved.map(\.text) == ["Dinner at 7?", "Sounds good!"])
+    }
+
+    @Test("Writers see the chat so far, oldest first")
+    func writersSeeTheChatInOrder() async throws {
+        try say("first", minutesAgo: 3)
+        try say("second", minutesAgo: 2)
+        try say("third", minutesAgo: 1)
+        let writer = RecordingReplyWriter()
+
+        try await service([writer]).generateResponse(for: room, onTypingChange: { _ in }, onMessage: { _ in })
+
+        #expect(await writer.seen.map(\.text) == ["first", "second", "third"])
+    }
+
+    @Test("In a disappearing chat the reply disappears too")
+    func replyFollowsDisappearingSetting() async throws {
+        room.disappearingDuration = 60
+        try say("hi", minutesAgo: 1)
+        var shown: Message?
+
+        try await service([FixedReplyWriter(text: "hey")]).generateResponse(for: room, onTypingChange: { _ in }, onMessage: { shown = $0 })
+
+        #expect(shown?.isDisappearing == true)
+        #expect(shown?.disappearAfterSeconds == 60)
+    }
+
+    @Test("Stock replies are in the language the user writes in", arguments: [
+        ("오늘 저녁에 뭐 먹을까요?", "ko"),
+        ("What should we have for dinner tonight?", "en"),
+        ("今夜は何を食べようか？", "ja"),
+        ("我们今晚吃什么？", "zh"),
+        ("¿Qué cenamos esta noche?", "es"),
+    ])
+    func stockRepliesFollowTheChatsLanguage(text: String, language: String) async throws {
+        let chat = [SummaryMessage(text: text, sender: "Me", isFromCurrentUser: true, messageType: .text)]
+        let reply = try #require(await CannedReplyWriter(fallbackLanguage: "en").reply(to: chat, as: "Mina"))
+        #expect(CannedReplyWriter.replies[language]?.contains(reply) == true)
+    }
+
+    @Test("A message too short to tell is read together with the user's earlier ones")
+    func shortMessagesUseTheEarlierOnes() {
+        func chat(_ texts: String...) -> [SummaryMessage] {
+            texts.map { SummaryMessage(text: $0, sender: "Me", isFromCurrentUser: true, messageType: .text) }
+        }
+        #expect(ConversationLanguage.of(chat("ok")) == nil)
+        #expect(ConversationLanguage.of(chat("내일 몇 시에 만날까?", "ok")) == .korean)
+        #expect(ConversationLanguage.of(chat("내일 몇 시에 만날까?", "Sounds great, see you there!")) == .english)
+    }
+
+    @Test("Attachments are spelled out for the model rather than left as an emoji")
+    func attachmentsReadAsWhatWasSent() {
+        let photo = SummaryMessage(text: "📷", sender: "Me", isFromCurrentUser: true, messageType: .image)
+        let words = SummaryMessage(text: "see you", sender: "Me", isFromCurrentUser: true, messageType: .text)
+        #expect(photo.transcriptText == "[sent a photo]")
+        #expect(words.transcriptText == "see you")
+    }
+
+    @Test("With no text to go by, stock replies are in the app's language")
+    func stockRepliesFallBackToTheAppLanguage() async throws {
+        let reply = try #require(await CannedReplyWriter(fallbackLanguage: "ja").reply(to: [], as: "Mina"))
+        #expect(CannedReplyWriter.replies["ja"]?.contains(reply) == true)
+    }
+
+    @Test("A model reply loses the speaker label and wrapping quotes", arguments: [
+        ("You: Sounds good!", "Sounds good!"),
+        ("Mina: \"See you at 7\"", "See you at 7"),
+        ("“Sure thing”", "Sure thing"),
+        ("\"Hi\" and \"bye\"", "\"Hi\" and \"bye\""),
+        ("   ", nil),
+    ] as [(String, String?)])
+    func modelReplyIsCleaned(raw: String, expected: String?) {
+        #expect(OnDeviceReplyWriter.cleaned(raw, partner: "Mina") == expected)
     }
 }
 

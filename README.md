@@ -84,6 +84,7 @@ It's the moment of connection — the spark when two people understand each othe
 - **App lock** — Face ID / Touch ID protection
 - **Accessibility** — dynamic type, high contrast, screen reader support
 - **Test mode** — try the app with sample friends and chats, no account needed
+- **Replies in context** — the simulated other side answers what you actually said, in your language, written on device by Apple Intelligence; without it, a stock reply in your language
 
 ---
 
@@ -189,7 +190,7 @@ link-mvp/
 - **Chat**: `ChatView` (+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `AttachmentPreviewer`, `TypingIndicatorView`, `ConnectionStatusView`, `MeetingNotesView`
 - **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
 - **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
-- **Services & Managers**: `AIService`, `MeetingNotes`(+`Extractor`/`Grounding`), `LocalizationService`, `NotificationManager`, `AutoResponseService`, `VoiceMessageService`, `AttachmentHandler`
+- **Services & Managers**: `AIService`, `MeetingNotes`(+`Extractor`/`Grounding`), `LocalizationService`, `NotificationManager`, `AutoResponseService`, `ReplyWriter`, `VoiceMessageService`, `AttachmentHandler`
 - **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
 - **Data Layer**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `Repositories/TestAccount`, `User`
 - **Shared**: `Colors+Extensions`
@@ -292,6 +293,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 - **앱 잠금** — Face ID / Touch ID 보호
 - **접근성** — 다이나믹 타입, 고대비, 화면 낭독기 지원
 - **테스트 모드** — 계정 없이 샘플 친구·채팅으로 바로 체험
+- **맥락에 맞는 답장** — 시뮬레이션 상대방이 내가 실제로 한 말에 내 언어로 답함. 기기 안의 Apple Intelligence가 작성하고, 없으면 같은 언어의 기본 답장
 
 ---
 
@@ -397,7 +399,7 @@ link-mvp/
 - **Chat**: `ChatView`(+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `Message`, `MessageBubbleView`, `AttachmentPreviewer`, `TypingIndicatorView`, `ConnectionStatusView`, `MeetingNotesView`
 - **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
 - **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
-- **Services & Managers**: `AIService`, `MeetingNotes`(+`Extractor`/`Grounding`), `LocalizationService`, `NotificationManager`, `AutoResponseService`, `VoiceMessageService`, `AttachmentHandler`
+- **Services & Managers**: `AIService`, `MeetingNotes`(+`Extractor`/`Grounding`), `LocalizationService`, `NotificationManager`, `AutoResponseService`, `ReplyWriter`, `VoiceMessageService`, `AttachmentHandler`
 - **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
 - **데이터 레이어**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `Repositories/TestAccount`, `User`
 - **공용**: `Colors+Extensions`

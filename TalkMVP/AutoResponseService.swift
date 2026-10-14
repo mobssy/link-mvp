@@ -17,15 +17,35 @@ protocol AutoResponding {
 
 @MainActor
 final class AutoResponseService: AutoResponding {
+    /// How long the other side takes, in seconds.
+    nonisolated struct Pacing: Sendable {
+        /// Before they start typing, as if reading the message.
+        var reading: ClosedRange<Double>
+        /// The least time "typing…" shows, even when the reply is ready sooner.
+        var minimumTyping: ClosedRange<Double>
+
+        static let natural = Pacing(reading: 1.0...2.5, minimumTyping: 1.0...2.0)
+        static let immediate = Pacing(reading: 0...0, minimumTyping: 0...0)
+    }
+
     private let messageRepository: MessageRepositoryProtocol
     private let chatRoomRepository: ChatRoomRepositoryProtocol
+    /// Tried in order; the first reply written is sent.
+    private let writers: [any ReplyWriting]
+    private let pacing: Pacing
+    /// How many recent messages the writers see.
+    private let historyLimit = 12
 
     init(
         messageRepository: MessageRepositoryProtocol,
-        chatRoomRepository: ChatRoomRepositoryProtocol
+        chatRoomRepository: ChatRoomRepositoryProtocol,
+        writers: [any ReplyWriting] = [OnDeviceReplyWriter(), CannedReplyWriter()],
+        pacing: Pacing = .natural
     ) {
         self.messageRepository = messageRepository
         self.chatRoomRepository = chatRoomRepository
+        self.writers = writers
+        self.pacing = pacing
     }
 
     func generateResponse(
@@ -33,22 +53,26 @@ final class AutoResponseService: AutoResponding {
         onTypingChange: @escaping (Bool) -> Void,
         onMessage: @escaping (Message) -> Void
     ) async throws {
-        try await Task.sleep(nanoseconds: UInt64(Double.random(in: 2.0...5.0) * 1_000_000_000))
+        try await Task.sleep(for: .seconds(Double.random(in: pacing.reading)))
+        let conversation = try await messageRepository
+            .fetchMessages(for: chatRoom.id.uuidString, limit: historyLimit, before: nil)
+            .map(SummaryMessage.init)
 
-        let responses = [
-            "네 알겠습니다! 👍", "좋은 생각이네요 😊", "그렇네요!",
-            "재미있겠어요 😄", "사진 감사해요! 📸", "파일 잘 받았습니다 📄",
-            "언제 시간 되실 때 연락주세요", "오늘도 좋은 하루 되세요!",
-            "네네 맞습니다", "정말요? 대박이네요! 🎉"
-        ]
-        let randomResponse = responses.randomElement() ?? "네!"
-
+        // "Typing…" covers the time the reply actually takes to write.
         onTypingChange(true)
-        try await Task.sleep(nanoseconds: UInt64(Double.random(in: 1.0...2.0) * 1_000_000_000))
+        let typingStarted = ContinuousClock.now
+        let text = await reply(to: conversation, as: chatRoom.name)
+        let typingLeft = Duration.seconds(Double.random(in: pacing.minimumTyping)) - (ContinuousClock.now - typingStarted)
+        do {
+            if typingLeft > .zero { try await Task.sleep(for: typingLeft) }
+        } catch {
+            onTypingChange(false)
+            throw error
+        }
         onTypingChange(false)
 
         let response = Message(
-            text: randomResponse,
+            text: text,
             isFromCurrentUser: false,
             sender: chatRoom.name,
             chatRoomId: chatRoom.id.uuidString
@@ -59,7 +83,14 @@ final class AutoResponseService: AutoResponding {
         }
 
         try await messageRepository.saveMessage(response)
-        try await chatRoomRepository.updateChatRoom(chatRoom, lastMessage: randomResponse, timestamp: Date())
+        try await chatRoomRepository.updateChatRoom(chatRoom, lastMessage: text, timestamp: Date())
         onMessage(response)
+    }
+
+    private func reply(to conversation: [SummaryMessage], as partner: String) async -> String {
+        for writer in writers {
+            if let text = await writer.reply(to: conversation, as: partner) { return text }
+        }
+        return "👍"
     }
 }
