@@ -63,7 +63,7 @@ class ChatViewModel: ObservableObject {
         chatService: ChatServiceProtocol? = nil,
         autoResponder: AutoResponding? = nil,
         replySuggester: ReplySuggesting = OnDeviceReplySuggester(),
-        replySuggestionsEnabled: @escaping () -> Bool = { ReplySuggestionSettings.isEnabled },
+        replySuggestionsEnabled: @escaping () -> Bool = { AIFeatureSettings.replySuggestions.isOn },
         voiceTranscriber: VoiceTranscribing = OnDeviceVoiceTranscriber(),
         photoDescriber: PhotoDescribing = OnDevicePhotoDescriber()
     ) {

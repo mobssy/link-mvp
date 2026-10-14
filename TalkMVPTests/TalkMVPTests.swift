@@ -1038,6 +1038,29 @@ struct VoiceTranscriptionTests {
     }
 }
 
+// MARK: - AI feature settings
+
+@Suite("AI feature settings")
+struct AIFeatureSettingsTests {
+    @Test("A switch reads its default until it is set, then what was set")
+    func switchFallsBackToItsDefault() throws {
+        let key = "test-\(UUID().uuidString)"
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        let feature = AIFeatureSwitch(key: key, defaultValue: true)
+
+        #expect(feature.isOn)
+        UserDefaults.standard.set(false, forKey: key)
+        #expect(!feature.isOn)
+    }
+
+    @Test("Every AI feature starts on, each under its own key")
+    func everyFeatureStartsOn() {
+        let switches = [AIFeatureSettings.summary, AIFeatureSettings.search, AIFeatureSettings.meetingNotes, AIFeatureSettings.replySuggestions]
+        #expect(switches.allSatisfy { $0.defaultValue })
+        #expect(Set(switches.map { $0.key }).count == switches.count)
+    }
+}
+
 // MARK: - Photo descriptions
 
 @Suite("Photo descriptions")

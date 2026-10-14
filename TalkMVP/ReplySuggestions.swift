@@ -11,12 +11,6 @@ import os
 
 nonisolated private let suggestionLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ReplySuggestions")
 
-/// The setting that turns suggestions on, shared by the settings screen and the chat.
-nonisolated enum ReplySuggestionSettings {
-    static let key = "aiReplySuggestionsEnabled"
-    static var isEnabled: Bool { UserDefaults.standard.object(forKey: key) as? Bool ?? true }
-}
-
 /// Suggests replies the user could send next.
 nonisolated protocol ReplySuggesting: Sendable {
     /// - Parameter conversation: The chat so far, oldest first.

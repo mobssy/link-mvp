@@ -2,10 +2,10 @@ import SwiftUI
 
 struct AISettingsView: View {
     @EnvironmentObject private var languageManager: LanguageManager
-    @AppStorage("aiSummaryEnabled") private var aiSummaryEnabled = false
-    @AppStorage("aiSearchEnabled") private var aiSearchEnabled = true
-    @AppStorage("aiAutoMeetingNotesEnabled") private var aiAutoMeetingNotesEnabled = false
-    @AppStorage(ReplySuggestionSettings.key) private var aiReplySuggestionsEnabled = true
+    @AppStorage(AIFeatureSettings.summary.key) private var aiSummaryEnabled = AIFeatureSettings.summary.defaultValue
+    @AppStorage(AIFeatureSettings.search.key) private var aiSearchEnabled = AIFeatureSettings.search.defaultValue
+    @AppStorage(AIFeatureSettings.meetingNotes.key) private var aiAutoMeetingNotesEnabled = AIFeatureSettings.meetingNotes.defaultValue
+    @AppStorage(AIFeatureSettings.replySuggestions.key) private var aiReplySuggestionsEnabled = AIFeatureSettings.replySuggestions.defaultValue
 
     var body: some View {
         Form {

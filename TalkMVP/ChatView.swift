@@ -108,9 +108,9 @@ struct ChatView: View {
     @State var showingLocationPermissionAlert = false
 
     // MARK: - AI Settings
-    @AppStorage("aiSummaryEnabled") var aiSummaryEnabled = false
-    @AppStorage("aiSearchEnabled") var aiSearchEnabled = true
-    @AppStorage("aiAutoMeetingNotesEnabled") var aiAutoMeetingNotesEnabled = false
+    @AppStorage(AIFeatureSettings.summary.key) var aiSummaryEnabled = AIFeatureSettings.summary.defaultValue
+    @AppStorage(AIFeatureSettings.search.key) var aiSearchEnabled = AIFeatureSettings.search.defaultValue
+    @AppStorage(AIFeatureSettings.meetingNotes.key) var aiAutoMeetingNotesEnabled = AIFeatureSettings.meetingNotes.defaultValue
 
     // MARK: - Translation Settings
     @AppStorage("translationEnabled") var translationEnabled = false
