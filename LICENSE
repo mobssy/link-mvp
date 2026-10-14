@@ -1,6 +1,6 @@
 All Rights Reserved
 
-Copyright © 2026 David Song
+Copyright © 2025–2026 David Song
 
 This repository is published on GitHub for portfolio and demonstration
 purposes only.
@@ -8,8 +8,13 @@ purposes only.
 No permission is granted to any person to copy, modify, merge, publish,
 distribute, sublicense, and/or sell copies of this software, or any
 portion of it, for any purpose, without the prior written permission of
-the copyright holder.
+the copyright holder. This includes using any part of it as training or
+evaluation data for machine learning or AI models.
 
 Being able to view this source code does not grant any license to use
-it. If you're interested in using any part of this project, please
-contact the copyright holder first.
+it. Viewing and forking this repository on GitHub are permitted only as
+GitHub's Terms of Service provide; a fork grants no other rights, and
+everything above applies to it in full.
+
+To ask for permission to use any part of this project, contact the
+copyright holder through GitHub: https://github.com/mobssy
