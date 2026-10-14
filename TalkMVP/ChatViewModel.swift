@@ -193,7 +193,7 @@ class ChatViewModel: ObservableObject {
     }
 
     @discardableResult
-    func sendVideo(_ videoData: Data) -> Task<Void, Never> {
+    func sendVideo(_ videoData: Data, fileExtension: String = AttachmentPreviewer.fallbackVideoExtension) -> Task<Void, Never> {
         let preview = localizedVM(ko: "동영상을 보냈습니다", en: "Sent a video", ja: "動画を送りました", zh: "发送了一个视频", es: "Envió un video")
         let message = Message(
             text: preview,
@@ -202,6 +202,8 @@ class ChatViewModel: ObservableObject {
             messageType: .video
         )
         message.videoData = videoData
+        // Playing it back needs the container format, which the raw data does not carry.
+        message.fileExtension = fileExtension
         return deliver(
             message,
             preview: preview,

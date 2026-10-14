@@ -9,6 +9,7 @@ import SwiftUI
 import Combine
 import SwiftData
 import AVFoundation
+import QuickLook
 
 struct MessageBubbleView: View {
     let message: Message
@@ -18,12 +19,13 @@ struct MessageBubbleView: View {
     @EnvironmentObject private var authManager: AuthManager
 
     @State private var friendState: FriendState = .unknown
-    @State private var showingFriendAlert = false
-    @State private var friendAlertMessage = ""
+    @State private var showingAlert = false
+    @State private var alertMessage = ""
     @State private var showingFullScreenImage = false
     @State private var fullScreenImage: UIImage? = nil
     @State private var audioPlayer: AVAudioPlayer?
     @State private var isPlayingAudio = false
+    @State private var attachmentPreviewURL: URL?
 
     private enum FriendState { case unknown, notFriend, pending, isFriend }
 
@@ -46,11 +48,12 @@ struct MessageBubbleView: View {
         .onAppear {
             if !message.isFromCurrentUser { loadFriendState() }
         }
-        .alert(localizedText("alert"), isPresented: $showingFriendAlert) {
+        .alert(localizedText("alert"), isPresented: $showingAlert) {
             Button(localizedText("ok")) {}
         } message: {
-            Text(friendAlertMessage)
+            Text(alertMessage)
         }
+        .quickLookPreview($attachmentPreviewURL)
         .sheet(isPresented: $showingFullScreenImage) {
             if let uiImage = fullScreenImage {
                 FullScreenImageView(image: uiImage)
@@ -211,12 +214,15 @@ struct MessageBubbleView: View {
                             .font(.system(size: 50))
                             .foregroundColor(.white)
                     }
-                    .allowsHitTesting(false)
 
                     Text("\(languageManager.localize(ko: "동영상", en: "Video", ja: "動画", zh: "视频", es: "Video")) (\(AttachmentHandler.formatFileSize(videoData.count)))")
                         .font(.caption)
                         .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.9) : .secondary)
                 }
+                .contentShape(Rectangle())
+                .onTapGesture { openAttachment() }
+                .accessibilityAddTraits(.isButton)
+                .accessibilityHint(localizedText("open_attachment_hint"))
             } else {
                 HStack {
                     Image(systemName: "video")
@@ -241,6 +247,10 @@ struct MessageBubbleView: View {
                 Spacer()
             }
             .frame(minWidth: 150)
+            .contentShape(Rectangle())
+            .onTapGesture { openAttachment() }
+            .accessibilityAddTraits(.isButton)
+            .accessibilityHint(localizedText("open_attachment_hint"))
 
         case .audio:
             HStack(spacing: 10) {
@@ -324,6 +334,19 @@ struct MessageBubbleView: View {
         }
     }
 
+    private func openAttachment() {
+        do {
+            if let url = try AttachmentPreviewer().previewURL(for: message) {
+                attachmentPreviewURL = url
+                return
+            }
+        } catch {
+            print("❌ [MessageBubbleView] Failed to prepare attachment preview: \(error)")
+        }
+        alertMessage = localizedText("attachment_unavailable")
+        showingAlert = true
+    }
+
     private func formatAudioDuration(_ seconds: Double) -> String {
         let s = Int(seconds)
         return String(format: "%d:%02d", s / 60, s % 60)
@@ -335,6 +358,8 @@ struct MessageBubbleView: View {
         case "image_load_failed": text = languageManager.localize(ko: "이미지를 불러올 수 없습니다", en: "Unable to load image", ja: "画像を読み込めません", zh: "无法加载图片", es: "No se puede cargar la imagen")
         case "message_deleted": text = languageManager.localize(ko: "메시지가 삭제되었습니다", en: "Message deleted", ja: "削除されたメッセージ", zh: "已删除的消息", es: "Mensaje eliminado")
         case "file": text = languageManager.localize(ko: "파일", en: "File", ja: "ファイル", zh: "文件", es: "Archivo")
+        case "open_attachment_hint": text = languageManager.localize(ko: "탭하여 열기", en: "Tap to open", ja: "タップして開く", zh: "点击打开", es: "Toca para abrir")
+        case "attachment_unavailable": text = languageManager.localize(ko: "이 첨부 파일을 더 이상 열 수 없습니다.", en: "This attachment can no longer be opened.", ja: "この添付ファイルは開けなくなりました。", zh: "此附件已无法打开。", es: "Este archivo adjunto ya no se puede abrir.")
         case "profile_of": text = languageManager.localize(ko: "\(param) 프로필", en: "Profile of \(param)", ja: "\(param)のプロフィール", zh: "\(param)的资料", es: "Perfil de \(param)")
         case "add_friend": text = languageManager.localize(ko: "친구 추가", en: "Add Friend", ja: "友だちを追加", zh: "添加朋友", es: "Agregar amigo")
         case "request_pending": text = languageManager.localize(ko: "승인 대기", en: "Pending", ja: "承認待ち", zh: "待确认", es: "Pendiente")
@@ -411,8 +436,8 @@ struct MessageBubbleView: View {
         do {
             try modelContext.save()
             friendState = .pending
-            friendAlertMessage = localizedText("friend_request_sent")
-            showingFriendAlert = true
+            alertMessage = localizedText("friend_request_sent")
+            showingAlert = true
 
             // Fire a local notification to simulate receiver-side alert
             let manager = NotificationManager()

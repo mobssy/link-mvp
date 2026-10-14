@@ -361,6 +361,19 @@ struct DiskAttachmentFileStoreTests {
         #expect(!FileManager.default.fileExists(atPath: path))
     }
 
+    @Test("A stored path resolves to the file wherever it lives, or nil once it is gone")
+    func urlForStoredPath() throws {
+        let documents = try makeTemporaryDocuments()
+        let store = DiskAttachmentFileStore(documentsDirectory: documents)
+        let current = try store.save(Data("x".utf8), fileExtension: "txt")
+        let legacy = documents.appendingPathComponent("\(UUID().uuidString).pdf")
+        try Data("old".utf8).write(to: legacy)
+
+        #expect(store.url(forStoredPath: "/old/container/\((current as NSString).lastPathComponent)")?.path == current)
+        #expect(store.url(forStoredPath: legacy.path)?.path == legacy.path)
+        #expect(store.url(forStoredPath: "/nowhere/\(UUID().uuidString).txt") == nil)
+    }
+
     @Test("Files earlier builds wrote straight into Documents are removed too")
     func removeLegacyFile() throws {
         let documents = try makeTemporaryDocuments()
@@ -391,6 +404,87 @@ struct DiskAttachmentFileStoreTests {
         #expect(!FileManager.default.fileExists(atPath: unreferenced))
         #expect(!FileManager.default.fileExists(atPath: legacyUnreferenced.path))
         #expect(FileManager.default.fileExists(atPath: unrelated.path))
+    }
+}
+
+// MARK: - AttachmentPreviewer
+
+@MainActor
+@Suite("AttachmentPreviewer")
+struct AttachmentPreviewerTests {
+    private let files: DiskAttachmentFileStore
+    private let previewer: AttachmentPreviewer
+
+    init() throws {
+        files = DiskAttachmentFileStore(documentsDirectory: try makeTemporaryDocuments())
+        previewer = AttachmentPreviewer(
+            attachmentFiles: files,
+            directory: try makeTemporaryDocuments().appendingPathComponent("Previews")
+        )
+    }
+
+    private func fileMessage(name: String, fileExtension: String, storedPath: String?) -> Message {
+        let message = Message(fileName: name, fileExtension: fileExtension, fileSize: 1, isFromCurrentUser: true, chatRoomId: "room")
+        message.fileURL = storedPath
+        return message
+    }
+
+    @Test("A file attachment previews under its original name with its contents")
+    func filePreviewUsesOriginalName() throws {
+        let path = try files.save(Data("quarterly".utf8), fileExtension: "pdf")
+
+        let url = try #require(try previewer.previewURL(for: fileMessage(name: "report", fileExtension: "pdf", storedPath: path)))
+
+        #expect(url.lastPathComponent == "report.pdf")
+        #expect(FileManager.default.contents(atPath: url.path) == Data("quarterly".utf8))
+        #expect(FileManager.default.fileExists(atPath: path), "the stored attachment itself is left in place")
+    }
+
+    @Test("A file whose attachment is gone has nothing to preview")
+    func missingFileHasNoPreview() throws {
+        let message = fileMessage(name: "report", fileExtension: "pdf", storedPath: "/gone/\(UUID().uuidString).pdf")
+        #expect(try previewer.previewURL(for: message) == nil)
+        #expect(try previewer.previewURL(for: fileMessage(name: "report", fileExtension: "pdf", storedPath: nil)) == nil)
+    }
+
+    @Test("A name with path separators stays inside the preview folder")
+    func unsafeNameIsSanitized() throws {
+        let path = try files.save(Data("x".utf8), fileExtension: "txt")
+
+        let url = try #require(try previewer.previewURL(for: fileMessage(name: "../../etc/passwd", fileExtension: "txt", storedPath: path)))
+
+        #expect(url.lastPathComponent == ".._.._etc_passwd.txt")
+    }
+
+    @Test("A video previews with its recorded extension, or as a movie when none was recorded", arguments: [
+        ("mp4", "mp4"),
+        (nil, "mov")
+    ] as [(String?, String)])
+    func videoPreviewExtension(recorded: String?, expected: String) throws {
+        let message = Message(text: "video", isFromCurrentUser: true, chatRoomId: "room", messageType: .video)
+        message.videoData = Data([0x00, 0x01])
+        message.fileExtension = recorded
+
+        let url = try #require(try previewer.previewURL(for: message))
+
+        #expect(url.pathExtension == expected)
+        #expect(FileManager.default.contents(atPath: url.path) == Data([0x00, 0x01]))
+    }
+
+    @Test("Opening a new preview discards the previous one")
+    func previousPreviewIsDiscarded() throws {
+        let first = try files.save(Data("1".utf8), fileExtension: "txt")
+        let second = try files.save(Data("2".utf8), fileExtension: "txt")
+        let firstURL = try #require(try previewer.previewURL(for: fileMessage(name: "a", fileExtension: "txt", storedPath: first)))
+
+        _ = try previewer.previewURL(for: fileMessage(name: "a", fileExtension: "txt", storedPath: second))
+
+        #expect(!FileManager.default.fileExists(atPath: firstURL.path))
+    }
+
+    @Test("Text messages have nothing to preview")
+    func textHasNoPreview() throws {
+        #expect(try previewer.previewURL(for: Message(text: "hi", isFromCurrentUser: true)) == nil)
     }
 }
 
@@ -889,8 +983,19 @@ struct ChatViewModelTests {
         #expect(viewModel.messages.count == 1)
         #expect(sent.messageType == .video)
         #expect(sent.videoData == videoData)
+        #expect(sent.fileExtension == AttachmentPreviewer.fallbackVideoExtension)
         #expect(room.lastMessage == sent.text)
         #expect(try context.fetchCount(FetchDescriptor<Message>()) == 1)
+    }
+
+    @Test("A sent video keeps its container format so it can be played back")
+    func sendVideoRecordsExtension() async throws {
+        let context = try makeContext()
+        let viewModel = makeViewModel(context, room: try makeRoom(in: context))
+
+        await viewModel.sendVideo(Data([0x00]), fileExtension: "mp4").value
+
+        #expect(viewModel.messages.last?.fileExtension == "mp4")
     }
 
     @Test("The room's disappearing timer applies to every kind of message sent")

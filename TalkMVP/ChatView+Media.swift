@@ -45,8 +45,9 @@ extension ChatView {
             if let data = image.jpegData(compressionQuality: 0.8) {
                 viewModel?.sendImage(data)
             }
-        case .video(let data, _):
-            viewModel?.sendVideo(data)
+        case .video(let data, let url):
+            let fileExtension = url.pathExtension
+            viewModel?.sendVideo(data, fileExtension: fileExtension.isEmpty ? AttachmentPreviewer.fallbackVideoExtension : fileExtension)
         case .document(let data, let fileName, let fileSize, _):
             let fileExtension = (fileName as NSString).pathExtension
             do {

@@ -17,6 +17,9 @@ nonisolated protocol AttachmentFileStoring {
     /// Writes `data` to a new file and returns the path to store on the message.
     func save(_ data: Data, fileExtension: String) throws -> String
 
+    /// Where the file a stored path refers to is now, or nil if it no longer exists.
+    func url(forStoredPath path: String) -> URL?
+
     /// Removes the file a stored path refers to. A file that is already gone is not an error.
     func removeFile(atStoredPath path: String)
 
@@ -55,13 +58,16 @@ nonisolated struct DiskAttachmentFileStore: AttachmentFileStoring {
         return url.path
     }
 
-    func removeFile(atStoredPath path: String) {
+    func url(forStoredPath path: String) -> URL? {
         let name = (path as NSString).lastPathComponent
-        for folder in [directory, legacyDirectory] {
-            let url = folder.appendingPathComponent(name)
-            guard fileManager.fileExists(atPath: url.path) else { continue }
-            remove(url)
-        }
+        return [directory, legacyDirectory]
+            .map { $0.appendingPathComponent(name) }
+            .first { fileManager.fileExists(atPath: $0.path) }
+    }
+
+    func removeFile(atStoredPath path: String) {
+        guard let url = url(forStoredPath: path) else { return }
+        remove(url)
     }
 
     @discardableResult
