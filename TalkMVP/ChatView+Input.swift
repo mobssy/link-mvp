@@ -11,6 +11,11 @@ extension ChatView {
     @ViewBuilder
     func messageInputView(viewModel: ChatViewModel) -> some View {
         VStack(spacing: 0) {
+            // Hidden once the user starts typing their own reply.
+            if inputText.isEmpty, !viewModel.replySuggestions.isEmpty, !voiceService.isRecording {
+                replySuggestionsBar(viewModel: viewModel)
+            }
+
             if let replyingTo = replyingToMessage {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
@@ -163,6 +168,28 @@ extension ChatView {
     private func formatRecordingDuration(_ seconds: TimeInterval) -> String {
         let s = Int(seconds)
         return String(format: "%d:%02d", s / 60, s % 60)
+    }
+
+    /// Replies the user can pick instead of typing. A pick goes into the message field rather
+    /// than straight out, so it can still be edited.
+    func replySuggestionsBar(viewModel: ChatViewModel) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(viewModel.replySuggestions, id: \.self) { suggestion in
+                    Button(suggestion) {
+                        inputText = suggestion
+                        isTextFieldFocused = true
+                        viewModel.clearReplySuggestions()
+                    }
+                    .buttonStyle(.glass)
+                    .accessibilityHint(languageManager.localize(ko: "메시지 입력란에 넣습니다", en: "Puts this reply in the message field", ja: "メッセージ欄に入力します", zh: "填入消息输入框", es: "La pone en el campo de mensaje"))
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(languageManager.localize(ko: "추천 답장", en: "Suggested replies", ja: "返信の提案", zh: "回复建议", es: "Respuestas sugeridas"))
     }
 
     func sendMessage(viewModel: ChatViewModel) {

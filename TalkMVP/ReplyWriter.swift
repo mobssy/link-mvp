@@ -45,11 +45,22 @@ nonisolated enum ConversationLanguage {
     static let minimumConfidence = 0.8
 
     /// The language of the user's newest text message or, when that is too short to tell, of
-    /// their recent messages together. Nil when neither can be told with confidence.
+    /// their recent messages together, and failing that of the chat as a whole: someone who
+    /// hasn't written yet usually answers in the language they were written to. Nil when none
+    /// of these can be told with confidence.
     static func of(_ conversation: [SummaryMessage]) -> NLLanguage? {
-        let texts = conversation.filter { $0.isFromCurrentUser && $0.messageType == .text }.map(\.text)
-        guard let newest = texts.last else { return nil }
-        return confidentLanguage(of: newest) ?? confidentLanguage(of: texts.suffix(5).joined(separator: "\n"))
+        let texts = conversation.filter { $0.messageType == .text }
+        let own = texts.filter(\.isFromCurrentUser).map(\.text)
+        return own.last.flatMap(confidentLanguage(of:))
+            ?? confidentLanguage(of: own.suffix(5).joined(separator: "\n"))
+            ?? confidentLanguage(of: texts.suffix(5).map(\.text).joined(separator: "\n"))
+    }
+
+    /// The English name of the language to write in, for a model's instructions: the chat's
+    /// language, or the one `fallbackCode` names when that can't be told.
+    static func name(for conversation: [SummaryMessage], fallbackCode: String) -> String {
+        let code = of(conversation)?.rawValue ?? fallbackCode
+        return Locale(identifier: "en").localizedString(forLanguageCode: code) ?? "English"
     }
 
     private static func confidentLanguage(of text: String) -> NLLanguage? {
@@ -75,8 +86,7 @@ nonisolated struct OnDeviceReplyWriter: ReplyWriting {
         let recent = conversation.filter { $0.messageType != .deleted }.suffix(historyLimit)
         guard case .available = SystemLanguageModel.default.availability, recent.contains(where: \.isFromCurrentUser) else { return nil }
 
-        let code = ConversationLanguage.of(conversation)?.rawValue ?? fallbackLanguage
-        let language = Locale(identifier: "en").localizedString(forLanguageCode: code) ?? "English"
+        let language = ConversationLanguage.name(for: conversation, fallbackCode: fallbackLanguage)
         let instructions = """
         You are the other side of a chat called "\(partner)" in a messaging app: the person the user is \
         talking to, or one of the members if it is a group. Write your next message to the user in \(language): \

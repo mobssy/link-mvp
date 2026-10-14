@@ -1105,6 +1105,9 @@ struct AutoReplyTests {
         #expect(ConversationLanguage.of(chat("ok")) == nil)
         #expect(ConversationLanguage.of(chat("내일 몇 시에 만날까?", "ok")) == .korean)
         #expect(ConversationLanguage.of(chat("내일 몇 시에 만날까?", "Sounds great, see you there!")) == .english)
+
+        let addressed = [SummaryMessage(text: "明日の会議、10時からで大丈夫？", sender: "Yuki", isFromCurrentUser: false, messageType: .text)]
+        #expect(ConversationLanguage.of(addressed) == .japanese, "before the user writes, the chat's language is what they were written to in")
     }
 
     @Test("Attachments are spelled out for the model rather than left as an emoji")
@@ -1145,6 +1148,23 @@ private struct SilentAutoResponder: AutoResponding {
     ) async throws {}
 }
 
+/// Stands in for the on-device model's reply suggestions.
+private struct FixedSuggester: ReplySuggesting {
+    var replies: [String] = []
+    func suggestions(for conversation: [SummaryMessage]) async -> [String] { replies }
+}
+
+/// Waits for state a view model updates from its own tasks, such as the load it starts on init.
+@MainActor
+private func eventually(within timeout: Duration = .seconds(2), _ condition: () -> Bool) async -> Bool {
+    let deadline = ContinuousClock.now + timeout
+    while !condition() {
+        guard ContinuousClock.now < deadline else { return false }
+        try? await Task.sleep(for: .milliseconds(10))
+    }
+    return true
+}
+
 @MainActor
 @Suite("ChatViewModel")
 struct ChatViewModelTests {
@@ -1170,13 +1190,57 @@ struct ChatViewModelTests {
         attachmentFiles = DiskAttachmentFileStore(documentsDirectory: try makeTemporaryDocuments())
     }
 
-    private func makeViewModel(_ context: ModelContext, room: ChatRoom) -> ChatViewModel {
+    private func makeViewModel(
+        _ context: ModelContext, room: ChatRoom,
+        suggester: ReplySuggesting = FixedSuggester(), suggestionsEnabled: Bool = true
+    ) -> ChatViewModel {
         ChatViewModel(
             messageRepository: LocalMessageRepository(modelContext: context, attachmentFiles: attachmentFiles),
             chatRoomRepository: LocalChatRoomRepository(modelContext: context, attachmentFiles: attachmentFiles),
             chatRoom: room,
-            autoResponder: SilentAutoResponder()
+            autoResponder: SilentAutoResponder(),
+            replySuggester: suggester,
+            replySuggestionsEnabled: { suggestionsEnabled }
         )
+    }
+
+    private func receive(_ text: String, in room: ChatRoom, context: ModelContext) throws {
+        context.insert(Message(text: text, isFromCurrentUser: false, sender: room.name, chatRoomId: room.id.uuidString))
+        try context.save()
+    }
+
+    @Test("Replies are suggested while the other side has the last word, and cleared once the user answers")
+    func replySuggestionsFollowTheLastSpeaker() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        try receive("Dinner at 7?", in: room, context: context)
+        let viewModel = makeViewModel(context, room: room, suggester: FixedSuggester(replies: ["Sure!", "Can't tonight"]))
+
+        #expect(await eventually { viewModel.replySuggestions == ["Sure!", "Can't tonight"] })
+
+        viewModel.newMessageText = "Sure!"
+        await viewModel.sendMessage()?.value
+        #expect(viewModel.replySuggestions.isEmpty)
+        #expect(viewModel.refreshReplySuggestions() == nil, "the user spoke last, so there is nothing to answer")
+    }
+
+    @Test("With suggestions turned off in settings, none are asked for")
+    func replySuggestionsCanBeTurnedOff() async throws {
+        let context = try makeContext()
+        let room = try makeRoom(in: context)
+        try receive("Dinner at 7?", in: room, context: context)
+        let viewModel = makeViewModel(context, room: room, suggester: FixedSuggester(replies: ["Sure!"]), suggestionsEnabled: false)
+
+        await viewModel.loadMessages()
+
+        #expect(viewModel.refreshReplySuggestions() == nil)
+        #expect(viewModel.replySuggestions.isEmpty)
+    }
+
+    @Test("Model suggestions are trimmed, kept short, deduplicated and capped at three")
+    func replySuggestionsAreCleaned() {
+        let suggestions = [String(repeating: "a", count: 61), " Sure! ", "\"sure!\"", "", "Can't tonight", "What time?", "Maybe later"]
+        #expect(OnDeviceReplySuggester.cleaned(suggestions) == ["Sure!", "Can't tonight", "What time?"])
     }
 
     @Test("Sending text shows it in the conversation and as the chat list preview")

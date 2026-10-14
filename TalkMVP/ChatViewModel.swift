@@ -22,6 +22,8 @@ class ChatViewModel: ObservableObject {
     @Published var isOnline = true
     @Published var replyingToMessage: Message?
     @Published var errorMessage: String?
+    /// Replies the user can pick instead of typing; empty unless the other side spoke last.
+    @Published private(set) var replySuggestions: [String] = []
 
     // MARK: - Pagination
     private static let pageSize = 50
@@ -32,6 +34,9 @@ class ChatViewModel: ObservableObject {
     private let messageRepository: MessageRepositoryProtocol
     private let chatRoomRepository: ChatRoomRepositoryProtocol
     private let autoResponder: AutoResponding
+    private let replySuggester: ReplySuggesting
+    private let replySuggestionsEnabled: () -> Bool
+    private var suggestionTask: Task<Void, Never>?
     private var chatRoom: ChatRoom
     private var chatService: ChatServiceProtocol?
     private var cancellables = Set<AnyCancellable>()
@@ -51,11 +56,15 @@ class ChatViewModel: ObservableObject {
         chatRoomRepository: ChatRoomRepositoryProtocol,
         chatRoom: ChatRoom,
         chatService: ChatServiceProtocol? = nil,
-        autoResponder: AutoResponding? = nil
+        autoResponder: AutoResponding? = nil,
+        replySuggester: ReplySuggesting = OnDeviceReplySuggester(),
+        replySuggestionsEnabled: @escaping () -> Bool = { ReplySuggestionSettings.isEnabled }
     ) {
         self.messageRepository = messageRepository
         self.chatRoomRepository = chatRoomRepository
         self.autoResponder = autoResponder ?? AutoResponseService(messageRepository: messageRepository, chatRoomRepository: chatRoomRepository)
+        self.replySuggester = replySuggester
+        self.replySuggestionsEnabled = replySuggestionsEnabled
         self.chatRoom = chatRoom
         self.chatService = chatService
 
@@ -81,6 +90,7 @@ class ChatViewModel: ObservableObject {
     deinit {
         cancellables.removeAll()
         onlineStatusTask?.cancel()
+        suggestionTask?.cancel()
     }
 
     func loadMessages() async {
@@ -92,6 +102,7 @@ class ChatViewModel: ObservableObject {
             )
             messages = fetched
             hasMoreMessages = fetched.count == Self.pageSize
+            refreshReplySuggestions()
         } catch {
             vmLogger.error("Failed to load messages: \(error.localizedDescription, privacy: .public)")
             errorMessage = localizedVM(ko: "메시지를 불러오지 못했습니다.", en: "Failed to load messages.", ja: "メッセージの読み込みに失敗しました。", zh: "加载消息失败。", es: "Error al cargar los mensajes.")
@@ -130,6 +141,7 @@ class ChatViewModel: ObservableObject {
                 Task { @MainActor in
                     self.messages.append(message)
                     self.simulateTypingIndicator()
+                    self.refreshReplySuggestions()
                 }
             }
             .store(in: &cancellables)
@@ -232,6 +244,8 @@ class ChatViewModel: ObservableObject {
         requestsReply: Bool = true
     ) -> Task<Void, Never> {
         applyRoomSettings(to: message)
+        // Once the user has answered, the suggestions for the previous message are moot.
+        clearReplySuggestions()
 
         let task = Task {
             do {
@@ -290,6 +304,33 @@ class ChatViewModel: ObservableObject {
     private func receiveAutoResponse(_ message: Message) {
         markSentMessagesAsRead()
         messages.append(message)
+        refreshReplySuggestions()
+    }
+
+    // MARK: - Reply suggestions
+
+    /// Asks for new suggestions when the other side has the last word, and clears them
+    /// otherwise. A request still running is cancelled, so stale suggestions never land.
+    /// - Returns: The request, for tests to await; nil when nothing was asked for.
+    @discardableResult
+    func refreshReplySuggestions() -> Task<Void, Never>? {
+        clearReplySuggestions()
+        guard replySuggestionsEnabled(), let last = messages.last, !last.isFromCurrentUser else { return nil }
+        let conversation = messages.suffix(10).map(SummaryMessage.init)
+        let suggester = replySuggester
+        let task = Task { [weak self] in
+            let suggestions = await suggester.suggestions(for: conversation)
+            guard !Task.isCancelled else { return }
+            self?.replySuggestions = suggestions
+        }
+        suggestionTask = task
+        return task
+    }
+
+    func clearReplySuggestions() {
+        suggestionTask?.cancel()
+        suggestionTask = nil
+        if !replySuggestions.isEmpty { replySuggestions = [] }
     }
 
     func markSentMessagesAsRead() {
