@@ -401,7 +401,9 @@ actor AIService {
             )
         default:
             return SummaryLabels(
-                me: "Me", image: "Image", file: "File", audio: "Voice message",
+                // "You", not "Me": the model takes the label for a name, and "Me will send the
+                // slides" isn't English. The other languages' labels work as subjects.
+                me: "You", image: "Image", file: "File", audio: "Voice message",
                 header: "Conversation Summary", noMessages: "No messages to summarize.",
                 statsHeader: "Statistics", participants: "Participants", totalMessages: "Total messages",
                 other: "Other", keywordsHeader: "Keywords", recentHeader: "Recent messages",
