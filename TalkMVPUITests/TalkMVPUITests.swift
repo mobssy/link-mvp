@@ -96,7 +96,38 @@ final class TalkMVPUITests: XCTestCase {
     }
 
     @MainActor
+    func testMessageMenuStartsAReply() throws {
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        signInWithTestMode()
+
+        tab("Chats").tap()
+        let firstRoom = app.cells.firstMatch
+        XCTAssertTrue(firstRoom.waitForExistence(timeout: 5))
+        firstRoom.tap()
+
+        let input = app.textFields.firstMatch
+        XCTAssertTrue(input.waitForExistence(timeout: 10))
+        input.tap()
+        input.typeText("hold me\n")
+
+        let message = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH 'message_' AND label CONTAINS 'hold me'"))
+            .firstMatch
+        XCTAssertTrue(message.waitForExistence(timeout: 5))
+        message.press(forDuration: 1.2)
+
+        let reply = app.buttons["Reply"]
+        XCTAssertTrue(reply.waitForExistence(timeout: 3), "holding a message opens its menu")
+        reply.tap()
+        XCTAssertTrue(app.buttons["Cancel"].waitForExistence(timeout: 3), "the reply banner opens")
+    }
+
+    @MainActor
     func testSwipingAMessageStartsAReply() throws {
+        guard #available(iOS 27, *) else {
+            throw XCTSkip("On iOS 26 a swipe in the conversation goes back to the chat list; replying there is in the message's menu.")
+        }
         XCUIDevice.shared.orientation = .portrait
         app.launch()
         signInWithTestMode()
