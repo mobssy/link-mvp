@@ -125,9 +125,6 @@ final class TalkMVPUITests: XCTestCase {
 
     @MainActor
     func testSwipingAMessageStartsAReply() throws {
-        guard #available(iOS 27, *) else {
-            throw XCTSkip("On iOS 26 a swipe in the conversation goes back to the chat list; replying there is in the message's menu.")
-        }
         XCUIDevice.shared.orientation = .portrait
         app.launch()
         signInWithTestMode()
@@ -150,9 +147,12 @@ final class TalkMVPUITests: XCTestCase {
         XCTAssertTrue(message.waitForExistence(timeout: 5))
         message.swipeRight()
 
-        let reply = app.buttons["Reply"]
-        XCTAssertTrue(reply.waitForExistence(timeout: 3), "swiping a message reveals Reply")
-        reply.tap()
+        // iOS 27 reveals a Reply button; on iOS 26 the swipe itself starts the reply.
+        if #available(iOS 27, *) {
+            let reply = app.buttons["Reply"]
+            XCTAssertTrue(reply.waitForExistence(timeout: 3), "swiping a message reveals Reply")
+            reply.tap()
+        }
         XCTAssertTrue(app.buttons["Cancel"].waitForExistence(timeout: 3), "the reply banner opens")
     }
 

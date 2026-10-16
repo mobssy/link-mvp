@@ -105,14 +105,9 @@ extension ChatView {
                 .onLongPressGesture {
                     showReactionPicker(for: message)
                 }
-                .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                    Button(localizedText("reply")) {
-                        replyingToMessage = message
-                        isTextFieldFocused = true
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                        impactFeedback.impactOccurred()
-                    }
-                    .tint(.appPrimary)
+                .swipeToReply(localizedText("reply")) {
+                    replyingToMessage = message
+                    isTextFieldFocused = true
                 }
                 .contextMenu {
                     if message.messageType == .text {
