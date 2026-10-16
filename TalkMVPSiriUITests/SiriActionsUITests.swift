@@ -29,7 +29,9 @@ final class SiriActionsUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Family Group"].firstMatch.waitForExistence(timeout: 5))
 
         let definitions = IntentDefinitions(bundleIdentifier: "com.cclab.TalkMVP.TalkMVP")
-        let matches = try await definitions.entities["ChatRoomEntity"].entities(matching: "Family")
+        let matches = try await afterTheSystemKnowsTheApp {
+            try await definitions.entities["ChatRoomEntity"].entities(matching: "Family")
+        }
         let family = try XCTUnwrap(matches.first, "Siri finds the chat by part of its name")
 
         try await definitions.intents["SendChatMessageIntent"].makeIntent(chat: family, message: "Sent from Siri").run()
@@ -41,5 +43,19 @@ final class SiriActionsUITests: XCTestCase {
         let summary: String = try result.value
         XCTAssertFalse(summary.isEmpty)
         print("SIRI-SUMMARY \(summary.replacingOccurrences(of: "\n", with: " / "))")
+    }
+
+    /// Runs `query` once the system has read the app's App Intents. That happens shortly after
+    /// the app is installed, so on a fresh simulator (or the clone a parallel test run uses) the
+    /// first query can come too early and fail with "com.cclab.TalkMVP.TalkMVP is not present".
+    private func afterTheSystemKnowsTheApp<T>(_ query: () async throws -> T) async throws -> T {
+        let deadline = ContinuousClock.now + .seconds(60)
+        while true {
+            do {
+                return try await query()
+            } catch let error as NSError where error.domain == "AppIntentsServicesMetadataErrorDomain" && ContinuousClock.now < deadline {
+                try await Task.sleep(for: .seconds(2))
+            }
+        }
     }
 }
