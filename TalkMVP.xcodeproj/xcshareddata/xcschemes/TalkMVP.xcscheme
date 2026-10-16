@@ -52,6 +52,17 @@
                ReferencedContainer = "container:TalkMVP.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AAA0EDB52E86C2D60025D50E"
+               BuildableName = "TalkMVPSiriUITests.xctest"
+               BlueprintName = "TalkMVPSiriUITests"
+               ReferencedContainer = "container:TalkMVP.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

@@ -158,6 +158,10 @@ xcodebuild test -project TalkMVP.xcodeproj -scheme TalkMVP \
 # UI tests — also run them on an iPad: the side-by-side layout test only runs in a regular-width window
 xcodebuild test -project TalkMVP.xcodeproj -scheme TalkMVP \
   -destination 'platform=iOS Simulator,name=iPad mini (A17 Pro)' -only-testing:TalkMVPUITests
+
+# Siri and Shortcuts, run end to end with AppIntentsTesting — needs an iOS 27 simulator
+xcodebuild test -project TalkMVP.xcodeproj -scheme TalkMVP \
+  -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:TalkMVPSiriUITests
 ```
 
 ---
@@ -184,8 +188,9 @@ link-mvp/
 │   └── TalkMVPTests.swift       # Swift Testing suites
 ├── TalkMVPUITests/
 │   ├── TalkMVPUITests.swift     # UI flows, on iPhone and iPad
-│   ├── SiriActionsUITests.swift # Siri actions run end to end with AppIntentsTesting (iOS 27)
 │   └── TalkMVPUITestsLaunchTests.swift
+├── TalkMVPSiriUITests/
+│   └── SiriActionsUITests.swift # Siri actions run end to end with AppIntentsTesting (iOS 27 only)
 └── docs/
     └── screenshots/             # Images used in this README (kept out of the app bundle)
 ```
@@ -374,6 +379,10 @@ xcodebuild test -project TalkMVP.xcodeproj -scheme TalkMVP \
 # UI 테스트 — iPad에서도 돌려 주세요: 목록·대화 나란히 보기 테스트는 넓은 창에서만 실행됩니다
 xcodebuild test -project TalkMVP.xcodeproj -scheme TalkMVP \
   -destination 'platform=iOS Simulator,name=iPad mini (A17 Pro)' -only-testing:TalkMVPUITests
+
+# Siri·단축어 — AppIntentsTesting으로 끝까지 실행하며 iOS 27 시뮬레이터가 필요합니다
+xcodebuild test -project TalkMVP.xcodeproj -scheme TalkMVP \
+  -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:TalkMVPSiriUITests
 ```
 
 ---
@@ -400,8 +409,9 @@ link-mvp/
 │   └── TalkMVPTests.swift       # Swift Testing 스위트
 ├── TalkMVPUITests/
 │   ├── TalkMVPUITests.swift     # 아이폰·iPad UI 흐름 테스트
-│   ├── SiriActionsUITests.swift # AppIntentsTesting(iOS 27)으로 Siri 동작을 끝까지 실행
 │   └── TalkMVPUITestsLaunchTests.swift
+├── TalkMVPSiriUITests/
+│   └── SiriActionsUITests.swift # AppIntentsTesting으로 Siri 동작을 끝까지 실행 (iOS 27 전용)
 └── docs/
     └── screenshots/             # 이 README에 쓰인 이미지 (앱 번들에는 포함되지 않음)
 ```

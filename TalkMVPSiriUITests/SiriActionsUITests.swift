@@ -1,6 +1,6 @@
 //
 //  SiriActionsUITests.swift
-//  TalkMVPUITests
+//  TalkMVPSiriUITests
 //
 //  The Siri and Shortcuts actions, run through the system against the app
 //
