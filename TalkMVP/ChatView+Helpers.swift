@@ -169,33 +169,33 @@ extension ChatView {
         let snapshot = (viewModel?.messages ?? []).map(SummaryMessage.init)
         let language = appLanguageCode()
         let me = languageManager.localize(ko: "나", en: "Me", ja: "自分", zh: "我", es: "Yo")
-        meetingNotes = nil
-        isMeetingNotesLoading = true
+        aiResults.meetingNotes = nil
+        aiResults.isMeetingNotesLoading = true
         showingMeetingNotes = true
         Task {
-            meetingNotes = await AIService.shared.meetingNotes(messages: snapshot, targetLanguage: language, meLabel: me)
-            isMeetingNotesLoading = false
+            aiResults.meetingNotes = await AIService.shared.meetingNotes(messages: snapshot, targetLanguage: language, meLabel: me)
+            aiResults.isMeetingNotesLoading = false
         }
     }
 
     func generateSummary() {
         guard let viewModel, !viewModel.messages.isEmpty else { return }
         let language = appLanguageCode()
-        isSummaryLoading = true
-        summaryText = ""
-        summaryProgress = nil
+        aiResults.isSummaryLoading = true
+        aiResults.summaryText = ""
+        aiResults.summaryProgress = nil
         showingSummarySheet = true
         Task {
             let (progress, reporter) = AsyncStream<SummaryProgress>.makeStream()
-            let showingProgress = Task { for await step in progress { summaryProgress = step } }
+            let showingProgress = Task { for await step in progress { aiResults.summaryProgress = step } }
             let conversation = await viewModel.recentConversation(limit: AIService.summaryMessageLimit)
             let result = await AIService.shared.summarize(messages: conversation, targetLanguage: language) { reporter.yield($0) }
             reporter.finish()
             await showingProgress.value
-            summaryProgress = nil
+            aiResults.summaryProgress = nil
             await MainActor.run {
-                summaryText = result
-                isSummaryLoading = false
+                aiResults.summaryText = result
+                aiResults.isSummaryLoading = false
             }
         }
     }

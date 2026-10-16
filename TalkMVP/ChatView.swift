@@ -75,13 +75,9 @@ struct ChatView: View {
     // MARK: - Search & Summary
     @State var searchText: String = ""
     @State var showingSummarySheet = false
-    @State var summaryText: String = ""
-    @State var isSummaryLoading = false
-    /// Which part of a long chat the summary is reading; nil for a chat read in one go.
-    @State var summaryProgress: SummaryProgress?
     @State var showingMeetingNotes = false
-    @State var meetingNotes: MeetingNotes?
-    @State var isMeetingNotesLoading = false
+    /// The summary and meeting notes, as the two sheets show them.
+    @State var aiResults = ChatAIResults()
 
     // MARK: - Bookmarks
     @State var showingBookmarks = false
@@ -147,7 +143,7 @@ struct ChatView: View {
 
     @ViewBuilder
     private var summarySheetContent: some View {
-        if isSummaryLoading {
+        if aiResults.isSummaryLoading {
             VStack(spacing: 16) {
                 ProgressView()
                     .scaleEffect(1.5)
@@ -170,7 +166,7 @@ struct ChatView: View {
     }
 
     private var summaryLoadingText: String {
-        switch summaryProgress {
+        switch aiResults.summaryProgress {
         case .readingPart(let index, let count):
             String(format: languageManager.localize(ko: "긴 대화를 나눠 읽는 중… (%d/%d)", en: "Reading a long chat in parts… (%d/%d)", ja: "長い会話を分けて読んでいます… (%d/%d)", zh: "正在分段阅读长对话… (%d/%d)", es: "Leyendo un chat largo por partes… (%d/%d)"), index, count)
         case .writing:
@@ -181,7 +177,7 @@ struct ChatView: View {
     }
 
     private var summaryParagraphs: [String] {
-        summaryText
+        aiResults.summaryText
             .components(separatedBy: "\n\n")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
@@ -364,12 +360,12 @@ struct ChatView: View {
             }
             .sheet(isPresented: $showingMeetingNotes) {
                 NavigationStack {
-                    MeetingNotesView(notes: meetingNotes, isLoading: isMeetingNotesLoading)
+                    MeetingNotesView(notes: aiResults.meetingNotes, isLoading: aiResults.isMeetingNotesLoading)
                         .navigationTitle(MeetingNotesView.labels(languageManager).title)
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar {
                             ToolbarItem(placement: .navigationBarLeading) {
-                                if let notes = meetingNotes, !isMeetingNotesLoading, !notes.isEmpty {
+                                if let notes = aiResults.meetingNotes, !aiResults.isMeetingNotesLoading, !notes.isEmpty {
                                     ShareLink(item: notes.shareText(labels: MeetingNotesView.labels(languageManager)))
                                 }
                             }

@@ -181,6 +181,40 @@ final class TalkMVPUITests: XCTestCase {
     }
 
     @MainActor
+    func testMeetingNotesShowProgressUntilTheNotesAreWritten() throws {
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        signInWithTestMode()
+
+        tab("Chats").tap()
+        app.staticTexts["Family Group"].firstMatch.tap()
+        let input = app.textFields.firstMatch
+        XCTAssertTrue(input.waitForExistence(timeout: 10))
+        input.tap()
+        // A task with a date: the notes have something in them with or without Apple Intelligence.
+        input.typeText("I'll bring the cake on Saturday at 6 PM.\n")
+        // Wait for the other side's answer, so nothing else redraws the chat while the notes open.
+        let messages = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'message_'"))
+        let answered = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count >= 2"), object: messages)
+        XCTAssertEqual(XCTWaiter.wait(for: [answered], timeout: 90), .completed, "the other side answers")
+
+        app.buttons["More options"].firstMatch.tap()
+        let menuItem = app.buttons["Meeting Notes"].firstMatch
+        XCTAssertTrue(menuItem.waitForExistence(timeout: 5))
+        menuItem.tap()
+
+        // From the moment the sheet opens it says the notes are being written; it used to open
+        // on "Nothing to note yet" and keep that until something else redrew the chat.
+        let writing = app.staticTexts["Writing meeting notes..."]
+        let nothingToNote = app.staticTexts["Nothing to note yet"]
+        let actionItems = app.staticTexts["Action Items"]
+        XCTAssertTrue(writing.waitForExistence(timeout: 2) || actionItems.exists, "the sheet shows the notes are on their way")
+        XCTAssertFalse(nothingToNote.exists)
+        XCTAssertTrue(actionItems.waitForExistence(timeout: 120), "the notes replace the progress")
+        XCTAssertFalse(nothingToNote.exists)
+    }
+
+    @MainActor
     func testLaunchPerformance() throws {
         // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
