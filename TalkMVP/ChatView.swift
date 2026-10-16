@@ -327,7 +327,10 @@ struct ChatView: View {
             .accessibilityLabel(localizedText("chat_screen"))
             .accessibilityHint(String(format: localizedText("chat_screen_hint"), chatRoom.name))
             .accessibilityIdentifier("chatView")
+            // On the same view as onDisappear, so each appearance is matched by one disappearance.
+            .onAppear { OpenChatRooms.shared.opened(chatRoom.id) }
             .onDisappear {
+                OpenChatRooms.shared.closed(chatRoom.id)
                 viewModel?.stopOnlineStatusPolling()
             }
             .alert(

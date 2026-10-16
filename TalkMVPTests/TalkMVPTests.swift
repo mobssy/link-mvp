@@ -994,6 +994,35 @@ struct ChatServiceTests {
 
         #expect(service.connectionStatus == .disconnected)
     }
+
+    @Test("Simulated messages leave the rooms on screen alone")
+    func simulatedMessagesSkipOpenRooms() {
+        let open = ChatRoom(name: "Open")
+        let other = ChatRoom(name: "Other")
+        let openRooms = OpenChatRooms()
+        openRooms.opened(open.id)
+
+        for _ in 0..<20 {
+            #expect(ChatService.roomForSimulatedMessage(in: [open, other], openRooms: openRooms) === other)
+        }
+        openRooms.opened(other.id)
+        #expect(ChatService.roomForSimulatedMessage(in: [open, other], openRooms: openRooms) == nil)
+    }
+
+    @Test("A room stays open until every screen showing it has closed")
+    func openRoomsAreCounted() {
+        let room = UUID()
+        let openRooms = OpenChatRooms()
+        openRooms.opened(room)
+        openRooms.opened(room)
+
+        openRooms.closed(room)
+        #expect(openRooms.contains(room))
+        openRooms.closed(room)
+        #expect(!openRooms.contains(room))
+        openRooms.closed(room)
+        #expect(!openRooms.contains(room), "an extra close changes nothing")
+    }
 }
 
 // MARK: - Voice transcription

@@ -21,6 +21,8 @@ class ChatService: ObservableObject, ChatServiceProtocol {
 
     private var heartbeatTimer: Timer?
     private var randomMessageTimer: Timer?
+    /// Rooms on screen, which simulated messages leave alone.
+    private let openRooms: OpenChatRooms
     /// Simulated handshake time before the connection reports `.connected`.
     private let connectDelay: TimeInterval
     private var hasStartedConnection = false
@@ -85,9 +87,12 @@ class ChatService: ObservableObject, ChatServiceProtocol {
         }
     }
 
-    init(modelContext: ModelContext, connectDelay: TimeInterval = 2.0) {
+    /// - Parameter openRooms: The app's own list when nil; a default argument can't read it, since
+    ///   default arguments aren't evaluated on the main actor.
+    init(modelContext: ModelContext, connectDelay: TimeInterval = 2.0, openRooms: OpenChatRooms? = nil) {
         self.modelContext = modelContext
         self.connectDelay = connectDelay
+        self.openRooms = openRooms ?? .shared
         // Connection will start when a proper modelContext is attached by the view.
     }
 
@@ -163,11 +168,17 @@ class ChatService: ObservableObject, ChatServiceProtocol {
         }
     }
 
+    /// Where a simulated message lands: any room but those on screen. In an open chat the other
+    /// side already answers what was said; a canned line dropped in between ("점심 뭐 드셨어요?"
+    /// in the middle of planning a launch) broke the conversation and its summary.
+    static func roomForSimulatedMessage(in rooms: [ChatRoom], openRooms: OpenChatRooms) -> ChatRoom? {
+        rooms.filter { !openRooms.contains($0.id) }.randomElement()
+    }
+
     private func simulateIncomingMessage() {
-        // 랜덤하게 채팅방 선택
         let descriptor = FetchDescriptor<ChatRoom>()
         guard let chatRooms = try? modelContext.fetch(descriptor),
-              let randomChatRoom = chatRooms.randomElement() else { return }
+              let randomChatRoom = Self.roomForSimulatedMessage(in: chatRooms, openRooms: openRooms) else { return }
 
         let randomMessages = [
             "안녕하세요! 어떻게 지내세요?",
