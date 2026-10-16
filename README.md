@@ -116,9 +116,13 @@ It's the moment of connection — the spark when two people understand each othe
 
 ![Translation](docs/screenshots/translation.png)
 
-### AI Summary
+### AI Summary & Meeting Notes
 
-![AI Summary](docs/screenshots/summary.png)
+![AI summary and meeting notes](docs/screenshots/summary.png)
+
+### Reply Suggestions & Search by Meaning
+
+![Reply suggestions and search by meaning](docs/screenshots/suggestions-search.png)
 
 ### Settings
 
@@ -337,9 +341,13 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ![번역](docs/screenshots/translation.png)
 
-### AI 요약
+### AI 요약 · 회의 노트
 
-![AI 요약](docs/screenshots/summary.png)
+![AI 요약과 회의 노트](docs/screenshots/summary.png)
+
+### 추천 답장 · 의미로 검색
+
+![추천 답장과 의미로 검색](docs/screenshots/suggestions-search.png)
 
 ### 설정
 
