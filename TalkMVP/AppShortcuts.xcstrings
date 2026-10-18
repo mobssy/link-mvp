@@ -1,118 +1,106 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Send a message to ${chat} with ${applicationName}": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enviar un mensaje a ${chat} con ${applicationName}"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Send a message with ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Send a message with ${applicationName}",
+              "Send a message to ${chat} with ${applicationName}"
+            ]
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "${applicationName}で${chat}にメッセージを送信"
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Enviar un mensaje con ${applicationName}",
+              "Enviar un mensaje a ${chat} con ${applicationName}"
+            ]
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "${applicationName}로 ${chat}에 메시지 보내기"
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}でメッセージを送信",
+              "${applicationName}で${chat}にメッセージを送信"
+            ]
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "用${applicationName}给${chat}发消息"
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}로 메시지 보내기",
+              "${applicationName}로 ${chat}에 메시지 보내기"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "用${applicationName}发消息",
+              "用${applicationName}给${chat}发消息"
+            ]
           }
         }
       }
     },
-    "Send a message with ${applicationName}": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enviar un mensaje con ${applicationName}"
+    "Summarize a chat in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Summarize a chat in ${applicationName}",
+              "Summarize ${chat} in ${applicationName}"
+            ]
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "${applicationName}でメッセージを送信"
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Resumir un chat en ${applicationName}",
+              "Resumir ${chat} en ${applicationName}"
+            ]
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "${applicationName}로 메시지 보내기"
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}でチャットを要約",
+              "${applicationName}で${chat}を要約"
+            ]
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "用${applicationName}发消息"
-          }
-        }
-      }
-    },
-    "Summarize ${chat} in ${applicationName}": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resumir ${chat} en ${applicationName}"
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}에서 채팅 요약해 줘",
+              "${applicationName}에서 ${chat} 요약해 줘"
+            ]
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "${applicationName}で${chat}を要約"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "${applicationName}에서 ${chat} 요약해 줘"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在${applicationName}中总结${chat}"
-          }
-        }
-      }
-    },
-    "Summarize a chat in ${applicationName}": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resumir un chat en ${applicationName}"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "${applicationName}でチャットを要約"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "${applicationName}에서 채팅 요약해 줘"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在${applicationName}中总结聊天"
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "在${applicationName}中总结聊天",
+              "在${applicationName}中总结${chat}"
+            ]
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }
