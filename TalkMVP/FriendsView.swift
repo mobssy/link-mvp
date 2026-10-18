@@ -270,8 +270,10 @@ struct FriendsView: View {
                             Label(L10n.text("settings", languageManager.currentLanguage), systemImage: "gearshape")
                         }
                     } label: {
-                        Image(systemName: "gearshape")
+                        // A "more" button, not a gear: the Settings tab already shows the gear.
+                        Image(systemName: "ellipsis")
                     }
+                    .accessibilityLabel(LocalizationService.shared.text(for: .moreOptions, language: languageManager.currentLanguage.asLocalizationLanguage))
                 }
             }
         }
