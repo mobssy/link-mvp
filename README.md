@@ -15,7 +15,7 @@ _A messenger that gets out of your way — and breaks language barriers while it
 
 <br/>
 
-![L!nk screenshot](docs/screenshots/main.png)
+![L!NK: reply suggestions, inline translation across three languages, and meeting notes](docs/screenshots/main.png)
 
 </div>
 
@@ -108,33 +108,49 @@ It's the moment of connection — the spark when two people understand each othe
 
 ## Screenshots
 
-### Adaptive Layout (iPad)
+The numbers in each image match the notes under it. The chats are test-mode sample data on the iOS 27 simulator; the AI text in them — translations, replies, summaries and notes — is real output of the on-device models.
 
-![Adaptive layout on iPad](docs/screenshots/wide-layout.png)
+### Inline Translation
 
-### Translation
+![A study group chat in English and in Korean, with each message translated underneath](docs/screenshots/translation.png)
 
-![Translation](docs/screenshots/translation.png)
+1. Minji writes in Korean, Yuki in Japanese and Carlos in Spanish. With translation on, each message gets a line in your language underneath, translated on device.
+2. The same chat with the app in Korean: the lines are now in Korean, and Minji's message, already in Korean, gets none.
 
 ### AI Summary & Meeting Notes
 
-![AI summary and meeting notes](docs/screenshots/summary.png)
+![A chat summary and the meeting notes of the same chat](docs/screenshots/summary.png)
+
+1. The summary: key topics and decisions, written on device by Apple Intelligence.
+2. Action items, each with who took it on and by when. Every item quotes the message it came from and is checked against the chat.
+3. Dates come from a date detector, not the model, with the message each one was found in.
 
 ### Reply Suggestions & Search by Meaning
 
-![Reply suggestions and search by meaning](docs/screenshots/suggestions-search.png)
+![Suggested replies above the message field, and a Korean search that finds an English message](docs/screenshots/suggestions-search.png)
 
-### Settings
+1. Three short replies in the chat's language, written once the other side answers. A tap puts one in the message field.
+2. Searching "저녁 약속" (dinner plans) finds "dinner tonight". Related words and translations are looked up on device, and the app shows which ones it added.
 
-![Settings](docs/screenshots/settings.png)
+### Adaptive Layout (iPad)
+
+![The chat list beside an open conversation on iPad](docs/screenshots/wide-layout.png)
+
+In a regular-width window the chat list stays beside the open conversation; on iPhone it collapses to one column.
 
 ### Accessibility
 
-![Accessibility](docs/screenshots/accessibility.png)
+![Accessibility settings in Korean and dark mode, and in English and light mode](docs/screenshots/accessibility.png)
 
-### Voice Message
+1. Text size applies to the whole app at once.
+2. Bold text, reduced motion and high-contrast bubbles, on top of the system's own settings.
+3. A preview of the bubbles with the current settings.
 
-![Voice Message](docs/screenshots/voice.png)
+### Settings
+
+![Settings in Korean and in English](docs/screenshots/settings.png)
+
+Notifications, theme, language, app lock, the on-device AI features, translation, contacts and accessibility, in all five of the app's languages.
 
 ---
 
@@ -240,7 +256,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 <br/>
 
-![L!nk screenshot](docs/screenshots/main.png)
+![L!NK: 추천 답장, 세 언어를 오가는 인라인 번역, 회의 노트](docs/screenshots/main.png)
 
 </div>
 
@@ -333,33 +349,49 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ## 스크린샷
 
-### 적응형 레이아웃 (iPad)
+이미지 속 번호는 아래 설명의 번호와 같습니다. 대화는 iOS 27 시뮬레이터의 테스트 모드 샘플 데이터이고, 그 안의 AI 문장(번역, 답장, 요약, 노트)은 기기 안 모델이 실제로 만든 결과입니다.
 
-![iPad 적응형 레이아웃](docs/screenshots/wide-layout.png)
+### 인라인 번역
 
-### 번역
+![영어와 한국어 화면에서 메시지마다 번역이 붙은 스터디 그룹 대화](docs/screenshots/translation.png)
 
-![번역](docs/screenshots/translation.png)
+1. 민지는 한국어로, Yuki는 일본어로, Carlos는 스페인어로 씁니다. 번역을 켜면 메시지마다 아래에 내 언어로 된 번역이 기기 안에서 붙습니다.
+2. 같은 대화를 한국어 앱에서 보면 번역이 한국어로 바뀌고, 이미 한국어인 민지의 메시지에는 붙지 않습니다.
 
 ### AI 요약 · 회의 노트
 
-![AI 요약과 회의 노트](docs/screenshots/summary.png)
+![대화 요약과 같은 대화의 회의 노트](docs/screenshots/summary.png)
+
+1. 요약: 주요 주제와 결정 사항을 기기 안의 Apple Intelligence가 작성합니다.
+2. 할 일마다 누가 맡았는지, 언제까지인지 적습니다. 모든 항목은 근거 메시지를 인용하고 대화와 대조합니다.
+3. 일정은 모델이 아니라 날짜 감지기가 찾고, 찾은 메시지를 함께 보여 줍니다.
 
 ### 추천 답장 · 의미로 검색
 
-![추천 답장과 의미로 검색](docs/screenshots/suggestions-search.png)
+![입력창 위의 추천 답장과, 한국어 검색어로 영어 메시지를 찾은 화면](docs/screenshots/suggestions-search.png)
 
-### 설정
+1. 상대가 답하면 대화 언어로 된 짧은 답장 3개가 나타납니다. 누르면 입력란에 들어갑니다.
+2. "저녁 약속"으로 검색하면 "dinner tonight"을 찾습니다. 관련어와 번역어를 기기 안에서 찾고, 어떤 말을 더했는지 보여 줍니다.
 
-![설정](docs/screenshots/settings.png)
+### 적응형 레이아웃 (iPad)
+
+![iPad에서 채팅 목록과 열린 대화가 나란히 있는 화면](docs/screenshots/wide-layout.png)
+
+넓은 창에서는 채팅 목록이 열린 대화 옆에 그대로 남고, 아이폰에서는 한 화면씩 보입니다.
 
 ### 접근성
 
-![접근성](docs/screenshots/accessibility.png)
+![한국어·다크 모드와 영어·라이트 모드의 접근성 설정](docs/screenshots/accessibility.png)
 
-### 음성 메시지
+1. 글자 크기는 앱 전체에 바로 적용됩니다.
+2. 굵은 텍스트, 동작 줄이기, 고대비 말풍선을 시스템 설정과 별도로 켤 수 있습니다.
+3. 지금 설정으로 말풍선이 어떻게 보이는지 미리 보여 줍니다.
 
-![음성 메시지](docs/screenshots/voice.png)
+### 설정
+
+![한국어와 영어 설정 화면](docs/screenshots/settings.png)
+
+알림, 테마, 언어, 앱 잠금, 기기 안 AI 기능, 번역, 연락처, 접근성을 앱이 지원하는 5개 언어로 제공합니다.
 
 ---
 
