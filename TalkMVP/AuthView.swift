@@ -153,7 +153,7 @@ struct AuthView<Footer: View>: View {
             Button(action: handleAuth) {
                 if authManager.isLoading {
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .progressViewStyle(CircularProgressViewStyle(tint: .onAppPrimary))
                 } else {
                     Text(localizedText(isSignUp ? "signup" : "signin"))
                         .fontWeight(.semibold)
@@ -162,7 +162,7 @@ struct AuthView<Footer: View>: View {
             .frame(maxWidth: 360)
             .frame(height: 50)
             .background(Color.appPrimary)
-            .foregroundColor(.white)
+            .foregroundColor(.onAppPrimary)
             .cornerRadius(25)
             .disabled(authManager.isLoading || !isFormValid)
 
@@ -179,7 +179,7 @@ struct AuthView<Footer: View>: View {
                 }
             }) {
                 Text(localizedText(isSignUp ? "have_account" : "no_account"))
-                    .foregroundColor(.appPrimary)
+                    .foregroundColor(.appPrimaryText)
             }
         }
     }

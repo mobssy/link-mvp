@@ -93,7 +93,7 @@ struct MessageBubbleView: View {
                         Button(localizedText("add_friend")) { addFriend() }
                             .font(.caption2)
                             .buttonStyle(.bordered)
-                            .tint(.appPrimary)
+                            .tint(.appPrimaryText)
                     case .pending:
                         Text(localizedText("request_pending"))
                             .font(.caption2)

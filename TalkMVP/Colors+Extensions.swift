@@ -14,6 +14,12 @@ extension Color {
     /// Text and icons on `appPrimary`. The brand color is light in both appearances, so what sits
     /// on it has to be dark: white was about 1.7:1, this is about 10:1.
     static let onAppPrimary = Color(red: 21/255, green: 28/255, blue: 48/255)
+    /// The brand color for text and tinted controls on the system background: `appPrimary` in
+    /// dark mode, where it reads well, and `appPrimaryStrong` in light mode, where `appPrimary`
+    /// on white is about 1.7:1.
+    static let appPrimaryText = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark ? .appPrimary : UIColor(red: 57/255, green: 92/255, blue: 172/255, alpha: 1)
+    })
 
     /// The fill of your own message bubbles. With high contrast on it is the label color, the
     /// strongest fill in either appearance.

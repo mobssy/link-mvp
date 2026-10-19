@@ -2443,3 +2443,27 @@ struct BubbleColorTests {
         #expect(abs(contrastRatio(.black, .white) - 21) < 0.01)
     }
 }
+
+@MainActor
+@Suite("Brand text color")
+struct BrandTextColorTests {
+    /// The color as it looks in light or dark mode.
+    private func resolved(_ color: Color, _ style: UIUserInterfaceStyle) -> Color {
+        Color(UIColor(color).resolvedColor(with: UITraitCollection(userInterfaceStyle: style)))
+    }
+
+    @Test("Brand-colored text reads on white in light mode")
+    func readableInLightMode() {
+        #expect(contrastRatio(resolved(.appPrimaryText, .light), .white) >= 4.5)
+    }
+
+    @Test("Brand-colored text reads on black in dark mode")
+    func readableInDarkMode() {
+        #expect(contrastRatio(resolved(.appPrimaryText, .dark), .black) >= 4.5)
+    }
+
+    @Test("The sign-in button's text reads on the brand color")
+    func signInButtonText() {
+        #expect(contrastRatio(.onAppPrimary, .appPrimary) >= 7)
+    }
+}
