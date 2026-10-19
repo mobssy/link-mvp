@@ -347,14 +347,16 @@ struct MessageBubbleView: View {
         }
         guard let data = message.audioData,
               let player = try? AVAudioPlayer(data: data) else { return }
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-        try? AVAudioSession.sharedInstance().setActive(true)
         audioPlayer = player
-        player.play()
         isPlayingAudio = true
         Task {
+            // The session is switched on away from the main thread, which it can block.
+            try? await SharedAudioSession().activate(for: .playback)
+            // Stopped, or another playback started, while the session was switching on.
+            guard isPlayingAudio, audioPlayer === player else { return }
+            player.play()
             try? await Task.sleep(for: .seconds(player.duration + 0.2))
-            await MainActor.run { isPlayingAudio = false }
+            if audioPlayer === player { isPlayingAudio = false }
         }
     }
 

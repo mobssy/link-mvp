@@ -155,7 +155,11 @@ extension ChatView {
                         Task { _ = await voiceService.startRecording() }
                     }
                     .onEnded { _ in
-                        guard voiceService.isRecording else { return }
+                        // Let go while the recording was still starting: call the start off.
+                        guard voiceService.isRecording else {
+                            voiceService.cancelRecording()
+                            return
+                        }
                         if let (data, duration) = voiceService.stopRecording(), duration > 0.5 {
                             viewModel.sendVoiceMessage(audioData: data, duration: duration)
                         } else {

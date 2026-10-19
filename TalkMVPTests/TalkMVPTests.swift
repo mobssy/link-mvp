@@ -1096,6 +1096,97 @@ struct MessageTranslationTests {
     }
 }
 
+// MARK: - Voice recording
+
+/// An audio session for tests: it counts what it was asked to do, can fail, and can hold an
+/// activation until the test lets it finish.
+private actor FakeAudioSession: AudioSessionSwitching {
+    private(set) var activations = 0
+    private(set) var deactivations = 0
+    private let holdsActivation: Bool
+    private let fails: Bool
+    private var held: CheckedContinuation<Void, Never>?
+
+    init(holdsActivation: Bool = false, fails: Bool = false) {
+        self.holdsActivation = holdsActivation
+        self.fails = fails
+    }
+
+    func activate(for use: AudioSessionUse) async throws {
+        activations += 1
+        if fails { throw CocoaError(.featureUnsupported) }
+        if holdsActivation { await withCheckedContinuation { held = $0 } }
+    }
+
+    func deactivate() async {
+        deactivations += 1
+    }
+
+    func finishActivation() {
+        held?.resume()
+        held = nil
+    }
+}
+
+@MainActor
+@Suite("Voice recording start")
+struct VoiceRecordingStartTests {
+    /// Waits until the recording has asked the session to switch on.
+    private func waitForActivation(of session: FakeAudioSession) async throws {
+        for _ in 0..<200 {
+            if await session.activations > 0 { return }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        Issue.record("the audio session was never switched on")
+    }
+
+    @Test("Letting go while the session switches on calls the recording off")
+    func cancelWhileStarting() async throws {
+        let session = FakeAudioSession(holdsActivation: true)
+        let service = VoiceMessageService(audioSession: session, requestPermission: { true })
+        let start = Task { await service.startRecording() }
+        try await waitForActivation(of: session)
+
+        service.cancelRecording()
+        await session.finishActivation()
+
+        #expect(await start.value == false)
+        #expect(!service.isRecording)
+        #expect(await session.deactivations >= 1, "the session is switched back off")
+    }
+
+    @Test("A second press while one is starting doesn't start another")
+    func secondStartIsIgnored() async throws {
+        let session = FakeAudioSession(holdsActivation: true)
+        let service = VoiceMessageService(audioSession: session, requestPermission: { true })
+        let first = Task { await service.startRecording() }
+        try await waitForActivation(of: session)
+
+        #expect(await service.startRecording() == false)
+        #expect(await session.activations == 1)
+
+        service.cancelRecording()
+        await session.finishActivation()
+        _ = await first.value
+    }
+
+    @Test("Without microphone permission the session is never switched on")
+    func noPermissionNoSession() async {
+        let session = FakeAudioSession()
+        let service = VoiceMessageService(audioSession: session, requestPermission: { false })
+        #expect(await service.startRecording() == false)
+        #expect(await session.activations == 0)
+    }
+
+    @Test("A session that can't switch on doesn't record")
+    func failedSessionDoesNotRecord() async {
+        let session = FakeAudioSession(fails: true)
+        let service = VoiceMessageService(audioSession: session, requestPermission: { true })
+        #expect(await service.startRecording() == false)
+        #expect(!service.isRecording)
+    }
+}
+
 // MARK: - Voice transcription
 
 @Suite("Voice transcription")
