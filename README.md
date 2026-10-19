@@ -4,8 +4,8 @@
 
 **Messaging without borders. Minimal by design. Universal by nature.**
 
-![Swift](https://img.shields.io/badge/Swift-6.2+-F05138?style=flat-square&logo=swift&logoColor=white)
-![Xcode](https://img.shields.io/badge/Xcode-26+-147EFB?style=flat-square&logo=xcode&logoColor=white)
+![Swift](https://img.shields.io/badge/Swift-6.4+-F05138?style=flat-square&logo=swift&logoColor=white)
+![Xcode](https://img.shields.io/badge/Xcode-27+-147EFB?style=flat-square&logo=xcode&logoColor=white)
 ![iOS | iPadOS](https://img.shields.io/badge/iOS%20%7C%20iPadOS-26+-000000?style=flat-square&logo=apple&logoColor=white)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
 
@@ -70,7 +70,7 @@ It's the moment of connection — the spark when two people understand each othe
 
 - **Minimal UI** — only what you need to send a message
 - **Adaptive layout** — on iPad and an unfolded iPhone Duo the chat list stays beside the open conversation; on iPhone it collapses to a single column
-- **Auto-translation** — inline and on device (Apple Translation framework), across Korean, English, Japanese, Chinese, Spanish, French and German
+- **Auto-translation** — inline and on device: Apple Intelligence (FoundationModels) where it's available, the Apple Translation framework otherwise; across Korean, English, Japanese, Chinese, Spanish, French and German
 - **Multi-language app** — Korean, English, Japanese, Chinese, Spanish
 - **Voice messages** — hold to record, tap to play, waveform display; what you said is written down on device under the message (Speech framework: SpeechAnalyzer with SpeechTranscriber, or DictationTranscriber on older devices), and the AI features read it too: the other side answers it, meeting notes and summaries include it, and search finds it
 - **Attachments** — photos, videos, files and locations; files and videos open in Quick Look
@@ -96,7 +96,7 @@ It's the moment of connection — the spark when two people understand each othe
 
 | Layer        | Technology                                                                 |
 | ------------ | -------------------------------------------------------------------------- |
-| Language     | Swift 6.2+ toolchain; Swift 5 language mode, MainActor default isolation   |
+| Language     | Swift 6.4 toolchain (Xcode 27); Swift 5 language mode, MainActor default isolation |
 | UI Framework | SwiftUI — `NavigationSplitView` adaptive layout, Liquid Glass              |
 | Architecture | MVVM + protocol-based repositories                                         |
 | Persistence  | SwiftData; attachment files on disk                                        |
@@ -142,8 +142,8 @@ It's the moment of connection — the spark when two people understand each othe
 
 ### Requirements
 
-- Xcode 26+ (developed and tested with Xcode 27)
-- iOS or iPadOS 26+ (simulator or device)
+- Xcode 27+ — building needs the iOS 27 SDK: photo descriptions use Foundation Models image input, and the Siri tests use AppIntentsTesting
+- iOS or iPadOS 26+ to run (simulator or device)
 
 ### Run on an iPhone
 
@@ -186,7 +186,7 @@ link-mvp/
 │   │   ├── OrphanedDataCleaner.swift
 │   │   └── TestAccount.swift
 │   ├── AppShortcuts.xcstrings   # Siri phrases, in the app's five languages
-│   ├── Localizable.xcstrings    # Siri and Shortcuts strings, in the same languages
+│   ├── Localizable.xcstrings    # Siri and Shortcuts strings, in the same languages (the UI is localized in code)
 │   └── Assets.xcassets/         # App icon, color sets, image assets
 ├── TalkMVPTests/
 │   └── TalkMVPTests.swift       # Swift Testing suites
@@ -229,8 +229,8 @@ This repository is published on GitHub for portfolio purposes. Being able to vie
 
 **언어의 경계 없이. 미니멀하게 설계된. 모두를 위한 메신저.**
 
-![Swift](https://img.shields.io/badge/Swift-6.2+-F05138?style=flat-square&logo=swift&logoColor=white)
-![Xcode](https://img.shields.io/badge/Xcode-26+-147EFB?style=flat-square&logo=xcode&logoColor=white)
+![Swift](https://img.shields.io/badge/Swift-6.4+-F05138?style=flat-square&logo=swift&logoColor=white)
+![Xcode](https://img.shields.io/badge/Xcode-27+-147EFB?style=flat-square&logo=xcode&logoColor=white)
 ![iOS | iPadOS](https://img.shields.io/badge/iOS%20%7C%20iPadOS-26+-000000?style=flat-square&logo=apple&logoColor=white)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
 
@@ -295,7 +295,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 - **미니멀 UI** — 메시지 보내는 데 필요한 것만
 - **적응형 레이아웃** — iPad와 펼친 iPhone Duo에서는 채팅 목록과 대화가 나란히, 아이폰에서는 한 화면씩
-- **자동 번역** — 메시지 바로 아래 인라인으로, 기기 안에서(Apple Translation 프레임워크) 한국어·영어·일본어·중국어·스페인어·프랑스어·독일어 번역
+- **자동 번역** — 메시지 바로 아래 인라인으로, 기기 안에서 번역: Apple Intelligence(FoundationModels)가 있으면 그것으로, 없으면 Apple Translation 프레임워크로. 한국어·영어·일본어·중국어·스페인어·프랑스어·독일어
 - **다국어 앱** — 한국어, 영어, 일본어, 중국어, 스페인어 지원
 - **음성 메시지** — 꾹 눌러 녹음, 탭하여 재생, 파형 표시. 말한 내용을 기기 안에서 받아써 메시지 아래에 표시(Speech 프레임워크: SpeechAnalyzer + SpeechTranscriber, 구형 기기는 DictationTranscriber). AI 기능도 이 내용을 읽음: 상대방이 그 말에 답하고, 회의 노트·요약에 들어가고, 검색으로 찾을 수 있음
 - **첨부** — 사진, 동영상, 파일, 위치; 파일과 동영상은 Quick Look으로 열기
@@ -321,7 +321,7 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 | 레이어        | 기술                                                              |
 | ------------- | ----------------------------------------------------------------- |
-| 언어          | Swift 6.2+ 툴체인; Swift 5 언어 모드, 기본 격리 MainActor         |
+| 언어          | Swift 6.4 툴체인(Xcode 27); Swift 5 언어 모드, 기본 격리 MainActor |
 | UI 프레임워크 | SwiftUI — `NavigationSplitView` 적응형 레이아웃, Liquid Glass     |
 | 아키텍처      | MVVM + 프로토콜 기반 리포지토리                                   |
 | 저장소        | SwiftData; 첨부 파일은 디스크에 저장                              |
@@ -367,8 +367,8 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 ### 요구사항
 
-- Xcode 26+ (Xcode 27로 개발·테스트)
-- iOS 또는 iPadOS 26+ (시뮬레이터 또는 실기기)
+- Xcode 27+ — 빌드에 iOS 27 SDK가 필요합니다: 사진 설명은 Foundation Models 이미지 입력을, Siri 테스트는 AppIntentsTesting을 씁니다
+- 실행은 iOS 또는 iPadOS 26+ (시뮬레이터 또는 실기기)
 
 ### 아이폰에서 실행하기
 
@@ -411,7 +411,7 @@ link-mvp/
 │   │   ├── OrphanedDataCleaner.swift
 │   │   └── TestAccount.swift
 │   ├── AppShortcuts.xcstrings   # Siri 문구 (앱이 지원하는 5개 언어)
-│   ├── Localizable.xcstrings    # Siri·단축어 문구 (같은 5개 언어)
+│   ├── Localizable.xcstrings    # Siri·단축어 문구 (같은 5개 언어, UI 문구는 코드에서 번역)
 │   └── Assets.xcassets/         # 앱 아이콘, 색상, 이미지 에셋
 ├── TalkMVPTests/
 │   └── TalkMVPTests.swift       # Swift Testing 스위트
