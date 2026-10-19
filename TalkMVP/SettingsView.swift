@@ -159,10 +159,13 @@ struct SettingsView: View {
                             .font(.headline)
                             .padding(.vertical, 12)
 
+                            // The card's own 16-point inset sits above the first button and below the
+                            // last; the same space around the line keeps the two buttons evenly spaced.
                             Divider()
                                 .frame(height: 0.5)
                                 .overlay(Color(UIColor.separator))
                                 .padding(.horizontal, 16)
+                                .padding(.vertical, 16)
 
                             Button(localizedText("logout")) {
                                 let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
