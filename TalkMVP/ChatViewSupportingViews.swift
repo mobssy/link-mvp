@@ -172,7 +172,8 @@ struct TranslatedTextView: View {
     let target: String
     let showOriginal: Bool
 
-    @State private var translated: String = ""
+    /// nil once a try came back empty-handed: no translator on this device could translate it.
+    @State private var translated: String?
     @State private var isLoading = true
 
     var body: some View {
@@ -181,7 +182,9 @@ struct TranslatedTextView: View {
                 Image(systemName: "globe")
                     .font(.caption)
                     .foregroundColor(.secondary)
-                Text(isLoading ? LocalizationService.shared.text(for: .translatingEllipsis, language: currentLanguage) : translated)
+                Text(isLoading
+                     ? LocalizationService.shared.text(for: .translatingEllipsis, language: currentLanguage)
+                     : translated ?? LocalizationService.shared.text(for: .translationUnavailable, language: currentLanguage))
                     .font(.footnote)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

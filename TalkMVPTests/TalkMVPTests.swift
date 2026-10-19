@@ -1046,6 +1046,56 @@ struct MessageSpokenSenderTests {
     }
 }
 
+// MARK: - Message translation
+
+/// A translator that always gives the same answer, or none.
+private struct FixedTranslator: MessageTranslating {
+    let answer: String?
+    func translate(_ text: String, into target: String, autoDetect: Bool) async -> String? { answer }
+}
+
+@Suite("Message translation")
+struct MessageTranslationTests {
+    @Test("The first translator with an answer wins")
+    func firstAnswerWins() async {
+        let result = await AIService.firstTranslation(
+            of: "¡Perfecto! Yo traigo el café", into: "en", autoDetect: true,
+            using: [FixedTranslator(answer: nil), FixedTranslator(answer: "Perfect! I'll bring the coffee"), FixedTranslator(answer: "Perfect")]
+        )
+        #expect(result == "Perfect! I'll bring the coffee")
+    }
+
+    @Test("Nothing is made up when no translator can translate")
+    func noGuessWhenNoneCan() async {
+        let result = await AIService.firstTranslation(
+            of: "업무는 어떠신가요?", into: "en", autoDetect: true,
+            using: [FixedTranslator(answer: nil), FixedTranslator(answer: nil)]
+        )
+        #expect(result == nil)
+    }
+
+    @Test("A blank answer doesn't count as a translation")
+    func blankAnswerIsSkipped() async {
+        let result = await AIService.firstTranslation(
+            of: "Hola", into: "en", autoDetect: true,
+            using: [FixedTranslator(answer: "  \n"), FixedTranslator(answer: "Hello")]
+        )
+        #expect(result == "Hello")
+    }
+
+    @Test("The app's language codes map to the Translation framework's languages",
+          arguments: [("ko", "ko"), ("zh-hans", "zh-Hans"), ("zh-hant", "zh-Hant"), ("de", "de")])
+    func localesForCodes(code: String, identifier: String) {
+        #expect(TranslationLanguage.locale(for: code) == Locale.Language(identifier: identifier))
+    }
+
+    @Test("The language recognizer's codes are normalized",
+          arguments: [("kor", "ko"), ("zh", "zh-hans"), ("zh_TW", "zh-hant"), ("ES", "es")])
+    func normalizedCodes(raw: String, code: String) {
+        #expect(TranslationLanguage.normalizedCode(raw) == code)
+    }
+}
+
 // MARK: - Voice transcription
 
 @Suite("Voice transcription")

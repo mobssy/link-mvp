@@ -66,6 +66,7 @@ enum LocalizationKey: String {
 
     // Translation
     case translatingEllipsis = "translating_ellipsis"
+    case translationUnavailable = "translation_unavailable"
 
     // Profile
     case profileInfoUnavailable = "profile_info_unavailable"
@@ -588,6 +589,14 @@ class LocalizationService: LocalizationServiceProtocol {
             case .japanese: return "翻訳中..."
             case .chinese: return "翻译中..."
             case .spanish: return "Traduciendo..."
+            }
+        case .translationUnavailable:
+            switch language {
+            case .korean: return "번역할 수 없어요"
+            case .english: return "Couldn't translate"
+            case .japanese: return "翻訳できませんでした"
+            case .chinese: return "无法翻译"
+            case .spanish: return "No se pudo traducir"
             }
 
         // Profile
