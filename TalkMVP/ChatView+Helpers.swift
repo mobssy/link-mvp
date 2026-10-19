@@ -25,8 +25,22 @@ extension ChatView {
         }
     }
 
+    /// The name VoiceOver reads before a message: the reader's own label for their messages,
+    /// otherwise the sender shown above the bubble. In a group the room's name isn't who wrote
+    /// the message, so it only stands in when a message has no sender.
+    static func spokenSender(isFromCurrentUser: Bool, sender: String, roomName: String, meLabel: String) -> String {
+        if isFromCurrentUser { return meLabel }
+        let name = sender.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? roomName : name
+    }
+
     func accessibilityLabelForMessage(_ message: Message) -> String {
-        let sender = message.isFromCurrentUser ? localizedText("me") : chatRoom.name
+        let sender = Self.spokenSender(
+            isFromCurrentUser: message.isFromCurrentUser,
+            sender: message.sender,
+            roomName: chatRoom.name,
+            meLabel: localizedText("me")
+        )
         let time = Self.timeFormatter.string(from: message.timestamp)
         let lang: Language = languageManager.currentLanguage.asLocalizationLanguage
         let svc = LocalizationService.shared

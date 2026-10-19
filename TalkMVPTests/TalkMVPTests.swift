@@ -1025,6 +1025,27 @@ struct ChatServiceTests {
     }
 }
 
+// MARK: - Message VoiceOver labels
+
+@MainActor
+@Suite("Message VoiceOver labels")
+struct MessageSpokenSenderTests {
+    @Test("A group message is read with the name of who sent it, not the group's")
+    func groupMessageNamesItsSender() {
+        #expect(ChatView.spokenSender(isFromCurrentUser: false, sender: "Minji", roomName: "Study Group", meLabel: "Me") == "Minji")
+    }
+
+    @Test("The reader's own messages are read with their label")
+    func ownMessageUsesTheReadersLabel() {
+        #expect(ChatView.spokenSender(isFromCurrentUser: true, sender: "나", roomName: "Study Group", meLabel: "Me") == "Me")
+    }
+
+    @Test("A message with no sender is read with the room's name", arguments: ["", "  "])
+    func missingSenderFallsBackToTheRoom(sender: String) {
+        #expect(ChatView.spokenSender(isFromCurrentUser: false, sender: sender, roomName: "Friend", meLabel: "Me") == "Friend")
+    }
+}
+
 // MARK: - Voice transcription
 
 @Suite("Voice transcription")
