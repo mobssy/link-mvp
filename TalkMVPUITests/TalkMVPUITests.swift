@@ -145,13 +145,20 @@ final class TalkMVPUITests: XCTestCase {
             .matching(NSPredicate(format: "identifier BEGINSWITH 'message_' AND label CONTAINS 'swipe me'"))
             .firstMatch
         XCTAssertTrue(message.waitForExistence(timeout: 5))
-        message.swipeRight()
 
-        // iOS 27 reveals a Reply button; on iOS 26 the swipe itself starts the reply.
+        // iOS 27 reveals a Reply button; on iOS 26 the swipe itself starts the reply once the
+        // bubble has moved far enough, so the drag there has a set length: swipeRight()'s
+        // depends on the element's size and the Xcode version, and fell short on this short
+        // bubble after Xcode 27.1.
         if #available(iOS 27, *) {
+            message.swipeRight()
             let reply = app.buttons["Reply"]
             XCTAssertTrue(reply.waitForExistence(timeout: 3), "swiping a message reveals Reply")
             reply.tap()
+        } else {
+            let start = message.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5))
+            start.press(forDuration: 0, thenDragTo: start.withOffset(CGVector(dx: 100, dy: 0)),
+                        withVelocity: .fast, thenHoldForDuration: 0)
         }
         XCTAssertTrue(app.buttons["Cancel"].waitForExistence(timeout: 3), "the reply banner opens")
     }
@@ -161,9 +168,10 @@ final class TalkMVPUITests: XCTestCase {
         // A regular-width window (iPad, iPhone Duo's inner display) keeps the chat list on
         // screen next to the open conversation; compact windows push instead, which the
         // other tests cover.
-        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad, "needs a regular-width window")
+        // Judged by the window, not the device: an unfolded iPhone Duo counts, a phone doesn't.
         XCUIDevice.shared.orientation = .portrait
         app.launch()
+        try XCTSkipUnless(app.windows.firstMatch.frame.width >= 600, "needs a regular-width window")
         signInWithTestMode()
 
         tab("Chats").tap()
