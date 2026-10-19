@@ -33,6 +33,8 @@ struct SSOSignInView: View {
                 .frame(height: 1)
                 .foregroundColor(Color(UIColor.separator))
         }
+        // As wide as the fields and buttons around it, not the whole screen on a wide one.
+        .frame(maxWidth: 360)
     }
 
     private var appleButton: some View {
