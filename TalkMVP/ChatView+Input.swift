@@ -68,8 +68,13 @@ extension ChatView {
                 }
                 .accessibilityLabel(localizedText("attach_file"))
 
+                // A filled capsule rather than the rounded-border style: in dark mode that style is a
+                // black field on the black bar, and the field all but disappears.
                 TextField(localizedText("message_input_placeholder"), text: $inputText)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Color(UIColor.secondarySystemGroupedBackground), in: Capsule())
+                    .overlay(Capsule().strokeBorder(Color(UIColor.separator), lineWidth: 1))
                     .focused($isTextFieldFocused)
                     .submitLabel(.send)
                     .onSubmit {
