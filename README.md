@@ -167,6 +167,7 @@ L!NK has no backend: the other side of every chat is simulated, and every AI fea
 - **Suggestions from the right side of the chat.** Suggested replies lost track of who was talking: "Congrats! When do you start?" got the suggestion "Congrats!". The transcript now marks Me and Them. An example answer in the prompt fixed it too, but then turned up word for word in unrelated chats, so it went.
 - **Search by meaning across languages.** "저녁 약속" (dinner plans) should find "dinner tonight". Asked for related phrases, the model invented ones no message contains, so it returns single words. Asked for synonyms and translations together, it stayed in the search's language, so translations get a list of their own. And it translated the search as a whole ("dinner appointment"), so translations are matched word by word. The chat shows which words it added, so no match is a mystery.
 - **Photo descriptions on iOS 27.** Asked in English for a Korean description, the model answered in English and then translated itself, so the request is now written in the language it should answer in. On iOS 26, photos work as before.
+- **No translation beats a made-up one.** When neither Apple Intelligence nor the Translation framework could translate a message, the app fell back on a short phrasebook and on swapping Korean and English words one at a time, and showed the result as the translation. Now the line under the message says it couldn't translate.
 
 ### One codebase, iOS 26 and iOS 27
 
@@ -178,6 +179,7 @@ L!NK has no backend: the other side of every chat is simulated, and every AI fea
 
 - **Sheets that showed stale results.** The meeting notes sheet opened on "Nothing to note yet" and stayed that way for seconds while the notes were being written. Its state lived in the chat view's `@State`, which only the sheet read, so setting it redrew nothing. It moved into an `@Observable` model the sheets read directly. The UI test written for it failed before the fix and passes after.
 - **SwiftData across actors.** Summaries read SwiftData messages on the AI service's actor, racing with a disappearing message being deleted on the main thread. Swift 5 mode didn't flag it; the chat now hands the AI a `Sendable` copy.
+- **A recording that froze the chat.** Holding the mic froze the whole chat: the audio session was switched on on the main thread, and the recorder switched it on again by itself when it started. In the simulator a 9-second press took over a minute to come back. Both now run off the main thread (`@concurrent`), and letting go before the recording has started calls it off cleanly.
 - **Work nobody saw.** With translation on, every incoming message was translated twice, once for a dictionary nothing read, and every sent message once for nothing. That was real on-device inference; it's gone.
 
 ### Checking what the simulator can't
@@ -441,6 +443,7 @@ L!NK에는 서버가 없습니다. 모든 대화의 상대방은 시뮬레이션
 - **대화의 맞은편에서 고르는 추천 답장.** 추천 답장이 누가 말하는지를 놓쳐서, "Congrats! When do you start?"에 "Congrats!"를 추천했습니다. 이제 대화록에 나와 상대를 표시합니다. 프롬프트에 예시 답을 넣어도 고쳐지긴 했지만, 그 예시가 상관없는 대화에 글자 그대로 나타나서 뺐습니다.
 - **언어를 넘나드는 의미 검색.** "저녁 약속"으로 "dinner tonight"을 찾아야 합니다. 관련 표현을 달라고 하자 모델은 어떤 메시지에도 없는 표현을 지어내서, 이제 한 단어씩 받습니다. 유의어와 번역어를 함께 달라고 하자 검색어의 언어에만 머물러서, 번역어는 따로 받습니다. 검색어를 통째로 번역하는 문제("dinner appointment")도 있어서, 번역어는 단어 단위로 맞춰 봅니다. 무엇을 더해 찾았는지 화면에 보여 주므로 왜 그 메시지가 찾아졌는지 알 수 있습니다.
 - **iOS 27의 사진 설명.** 영어로 쓴 요청에 한국어 설명을 달라고 하자 모델은 영어로 답한 뒤 스스로 번역했습니다. 그래서 요청 자체를 답해야 할 언어로 씁니다. iOS 26에서는 사진이 예전처럼 동작합니다.
+- **지어낸 번역보다는 번역 없음.** Apple Intelligence와 Translation 프레임워크가 둘 다 번역하지 못하면, 예전에는 짧은 인사말 사전과 한국어·영어 단어를 하나씩 바꿔 끼운 결과를 번역처럼 보여 줬습니다. 이제는 메시지 아래에 번역할 수 없었다고 표시합니다.
 
 ### 하나의 코드로 iOS 26과 iOS 27 지원하기
 
@@ -452,6 +455,7 @@ L!NK에는 서버가 없습니다. 모든 대화의 상대방은 시뮬레이션
 
 - **지난 결과를 보여 주던 시트.** 회의 노트 시트가 노트를 쓰는 동안 몇 초씩 "정리할 내용이 아직 없어요"로 열려 있었습니다. 상태가 채팅 화면의 `@State`에 있었는데 시트만 그 값을 읽어서, 값이 바뀌어도 화면이 다시 그려지지 않았습니다. 시트가 직접 읽는 `@Observable` 모델로 옮겼고, 이를 위해 쓴 UI 테스트는 수정 전에는 실패하고 수정 후에는 통과합니다.
 - **액터를 넘나드는 SwiftData.** 요약이 AI 서비스의 액터에서 SwiftData 메시지를 읽어서, 메인 스레드에서 자폭 메시지가 지워지는 순간과 경합했습니다. Swift 5 언어 모드에서는 경고가 나지 않았고, 이제 채팅 화면이 `Sendable` 복사본을 넘깁니다.
+- **채팅을 멈추게 한 녹음.** 마이크를 누르고 있으면 채팅 전체가 멈췄습니다. 오디오 세션을 메인 스레드에서 켰고, 녹음기도 시작하면서 세션을 스스로 한 번 더 켰기 때문입니다. 시뮬레이터에서는 9초 누르기가 1분 넘게 걸렸습니다. 이제 둘 다 메인 스레드 밖(`@concurrent`)에서 돌고, 녹음이 시작되기 전에 손을 떼도 깔끔하게 취소됩니다.
 - **아무도 보지 않던 작업.** 번역을 켜면 받은 메시지마다 번역이 두 번 돌았습니다. 한 번은 아무도 읽지 않는 딕셔너리를 채우는 용도였고, 보낸 메시지도 쓸데없이 한 번씩 번역됐습니다. 실제 온디바이스 추론이었고, 이제 없앴습니다.
 
 ### 시뮬레이터가 못 하는 것 확인하기
