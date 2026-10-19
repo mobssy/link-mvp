@@ -16,6 +16,7 @@ struct ChatRoomBackgroundSettings: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var languageManager: LanguageManager
+    @AppStorage("inAppHighContrast") private var highContrast = false
 
     let chatRoom: ChatRoom
 
@@ -207,8 +208,8 @@ struct ChatRoomBackgroundSettings: View {
         Text(text)
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .background(isFromCurrentUser ? Color.appPrimary : Color(UIColor.secondarySystemGroupedBackground))
-            .foregroundColor(isFromCurrentUser ? .white : .primary)
+            .background(isFromCurrentUser ? Color.ownBubble(highContrast: highContrast) : Color(UIColor.secondarySystemGroupedBackground))
+            .foregroundColor(isFromCurrentUser ? Color.onOwnBubble(highContrast: highContrast) : .primary)
             .clipShape(RoundedRectangle(cornerRadius: 18))
     }
 

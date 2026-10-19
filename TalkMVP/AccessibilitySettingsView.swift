@@ -177,9 +177,9 @@ struct AccessibilitySettingsView: View {
                     .padding(.vertical, 10)
                     .background(
                         RoundedRectangle(cornerRadius: 20)
-                            .fill(highContrast ? Color(UIColor.label) : Color.appPrimary)
+                            .fill(Color.ownBubble(highContrast: highContrast))
                     )
-                    .foregroundColor(highContrast ? Color(UIColor.systemBackground) : .white)
+                    .foregroundColor(Color.onOwnBubble(highContrast: highContrast))
             }
             HStack {
                 Text(languageManager.localize(ko: "반갑습니다! 잘 보이시나요?", en: "Nice to meet you! Can you see this?", ja: "はじめまして！見えますか？", zh: "很高兴认识你！看得清楚吗？", es: "¡Mucho gusto! ¿Puedes ver esto?"))

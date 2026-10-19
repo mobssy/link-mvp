@@ -67,9 +67,14 @@ struct MessageBubbleView: View {
         }
     }
 
+    /// Text and icons on your own bubbles, dark on the light brand color.
+    private var ownBubbleContent: Color {
+        Color.onOwnBubble(highContrast: highContrast)
+    }
+
     private var bubbleBackground: Color {
         if message.isFromCurrentUser {
-            return highContrast ? Color(UIColor.label) : Color.appPrimary
+            return Color.ownBubble(highContrast: highContrast)
         } else {
             return highContrast ? Color(UIColor.systemGray4) : Color.gray.opacity(0.2)
         }
@@ -107,7 +112,7 @@ struct MessageBubbleView: View {
                     RoundedRectangle(cornerRadius: 20)
                         .fill(bubbleBackground)
                 )
-                .foregroundColor(message.isFromCurrentUser ? Color(UIColor.systemBackground) : .primary)
+                .foregroundColor(message.isFromCurrentUser ? ownBubbleContent : .primary)
 
             HStack(spacing: 4) {
                 Text(message.timestamp, style: .time)
@@ -222,7 +227,7 @@ struct MessageBubbleView: View {
 
                     Text("\(languageManager.localize(ko: "동영상", en: "Video", ja: "動画", zh: "视频", es: "Video")) (\(AttachmentHandler.formatFileSize(videoData.count)))")
                         .font(.caption)
-                        .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.9) : .secondary)
+                        .foregroundColor(message.isFromCurrentUser ? ownBubbleContent.opacity(0.9) : .secondary)
                 }
                 .contentShape(Rectangle())
                 .onTapGesture { openAttachment() }
@@ -239,14 +244,14 @@ struct MessageBubbleView: View {
         case .file:
             HStack {
                 Image(systemName: AttachmentHandler.fileIcon(for: message.fileExtension ?? ""))
-                    .foregroundColor(message.isFromCurrentUser ? .white : .appPrimary)
+                    .foregroundColor(message.isFromCurrentUser ? ownBubbleContent : .appPrimary)
                 VStack(alignment: .leading) {
                     Text(message.fileName ?? localizedText("file"))
                         .font(.headline)
                     if let fileSize = message.fileSize {
                         Text(AttachmentHandler.formatFileSize(fileSize))
                             .font(.caption)
-                            .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.8) : .secondary)
+                            .foregroundColor(message.isFromCurrentUser ? ownBubbleContent.opacity(0.8) : .secondary)
                     }
                 }
                 Spacer()
@@ -265,16 +270,16 @@ struct MessageBubbleView: View {
                     } label: {
                         Image(systemName: isPlayingAudio ? "pause.circle.fill" : "play.circle.fill")
                             .font(.system(size: 30))
-                            .foregroundColor(message.isFromCurrentUser ? .white : .appPrimary)
+                            .foregroundColor(message.isFromCurrentUser ? ownBubbleContent : .appPrimary)
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
                         Image(systemName: "waveform")
                             .font(.system(size: 14))
-                            .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.8) : .secondary)
+                            .foregroundColor(message.isFromCurrentUser ? ownBubbleContent.opacity(0.8) : .secondary)
                         Text(formatAudioDuration(message.audioDuration))
                             .font(.caption2.monospacedDigit())
-                            .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.7) : .secondary)
+                            .foregroundColor(message.isFromCurrentUser ? ownBubbleContent.opacity(0.7) : .secondary)
                     }
                 }
                 .frame(minWidth: 120, alignment: .leading)
@@ -283,16 +288,16 @@ struct MessageBubbleView: View {
                 if let transcript = message.transcript {
                     Text(transcript)
                         .font(.subheadline)
-                        .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.9) : .primary)
+                        .foregroundColor(message.isFromCurrentUser ? ownBubbleContent.opacity(0.9) : .primary)
                         .fixedSize(horizontal: false, vertical: true)
                 } else if isTranscribing {
                     HStack(spacing: 6) {
                         ProgressView()
                             .controlSize(.mini)
-                            .tint(message.isFromCurrentUser ? .white : .secondary)
+                            .tint(message.isFromCurrentUser ? ownBubbleContent : .secondary)
                         Text(languageManager.localize(ko: "받아쓰는 중…", en: "Transcribing…", ja: "文字起こし中…", zh: "正在转写…", es: "Transcribiendo…"))
                             .font(.caption)
-                            .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.8) : .secondary)
+                            .foregroundColor(message.isFromCurrentUser ? ownBubbleContent.opacity(0.8) : .secondary)
                     }
                 }
             }
@@ -316,13 +321,13 @@ struct MessageBubbleView: View {
                     HStack(spacing: 10) {
                         Image(systemName: "location.fill")
                             .font(.system(size: 20))
-                            .foregroundColor(message.isFromCurrentUser ? .white : .appPrimary)
+                            .foregroundColor(message.isFromCurrentUser ? ownBubbleContent : .appPrimary)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(languageManager.localize(ko: "현재 위치", en: "Current Location", ja: "現在地", zh: "当前位置", es: "Ubicación actual"))
                                 .font(.subheadline.bold())
                             Text(String(format: "%.5f, %.5f", lat, lon))
                                 .font(.caption2.monospacedDigit())
-                                .foregroundColor(message.isFromCurrentUser ? .white.opacity(0.8) : .secondary)
+                                .foregroundColor(message.isFromCurrentUser ? ownBubbleContent.opacity(0.8) : .secondary)
                         }
                     }
                     .frame(minWidth: 160)

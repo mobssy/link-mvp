@@ -2388,3 +2388,58 @@ struct ColorHexTests {
         #expect(Color(hex: hex) == nil)
     }
 }
+
+// MARK: - Bubble colors
+
+/// A color's red, green and blue, from 0 to 1.
+private func components(_ color: Color) -> (r: Double, g: Double, b: Double) {
+    var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, alpha: CGFloat = 0
+    UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &alpha)
+    return (Double(r), Double(g), Double(b))
+}
+
+/// The WCAG contrast ratio of two opaque colors: from 1 (none) to 21 (black on white).
+private func contrastRatio(_ a: Color, _ b: Color) -> Double {
+    func luminance(_ color: Color) -> Double {
+        func linear(_ c: Double) -> Double { c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4) }
+        let c = components(color)
+        return 0.2126 * linear(c.r) + 0.7152 * linear(c.g) + 0.0722 * linear(c.b)
+    }
+    let (l1, l2) = (luminance(a), luminance(b))
+    return (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
+}
+
+@MainActor
+@Suite("Bubble colors")
+struct BubbleColorTests {
+    @Test("Text on your own bubbles is easy to read")
+    func ownBubbleTextContrast() {
+        #expect(contrastRatio(.onAppPrimary, .appPrimary) >= 7, "WCAG AAA for body text")
+    }
+
+    @Test("Dimmed details on your bubbles, like a voice message's length, stay readable", arguments: [0.7, 0.8, 0.9])
+    func dimmedDetailsStayReadable(opacity: Double) {
+        let content = components(.onAppPrimary), bubble = components(.appPrimary)
+        let blended = Color(
+            red: content.r * opacity + bubble.r * (1 - opacity),
+            green: content.g * opacity + bubble.g * (1 - opacity),
+            blue: content.b * opacity + bubble.b * (1 - opacity)
+        )
+        #expect(contrastRatio(blended, .appPrimary) >= 4.5, "WCAG AA for text")
+    }
+
+    @Test("White on the brand color is too faint, which is why your bubbles no longer use it")
+    func whiteOnBrandIsTooFaint() {
+        #expect(contrastRatio(.white, .appPrimary) < 3)
+    }
+
+    @Test("White on the deeper brand shade is readable")
+    func whiteOnStrongShade() {
+        #expect(contrastRatio(.white, .appPrimaryStrong) >= 4.5)
+    }
+
+    @Test("Black on white measures 21:1")
+    func formulaCheck() {
+        #expect(abs(contrastRatio(.black, .white) - 21) < 0.01)
+    }
+}
