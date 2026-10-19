@@ -37,14 +37,15 @@ private struct SwipeToReply: ViewModifier {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     onReply()
                 }
-                .tint(.appPrimary)
+                // The action's fill, under white text: the deeper shade reads in both modes.
+                .tint(.appPrimaryStrong)
             }
         } else {
             content
                 .offset(x: offset)
                 .background(alignment: .leading) {
                     Image(systemName: "arrowshape.turn.up.left.fill")
-                        .foregroundStyle(Color.appPrimary)
+                        .foregroundStyle(Color.appPrimaryText)
                         .opacity(min(offset / threshold, 1))
                         .padding(.leading, 12)
                         .accessibilityHidden(true)

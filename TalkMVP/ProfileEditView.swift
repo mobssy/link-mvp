@@ -62,7 +62,7 @@ struct ProfileEditView: View {
                                                 .frame(width: 100, height: 100)
                                             Image(systemName: "person.fill")
                                                 .font(.system(size: 48))
-                                                .foregroundColor(.appPrimary)
+                                                .foregroundColor(.appPrimaryText)
                                         }
                                     }
                                 }
@@ -78,7 +78,7 @@ struct ProfileEditView: View {
                                         .overlay(
                                             Image(systemName: "camera.fill")
                                                 .font(.system(size: 12, weight: .semibold))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(.onAppPrimary)
                                         )
                                 }
                                 .shadow(color: Color.black.opacity(0.15), radius: 2, x: 0, y: 1)

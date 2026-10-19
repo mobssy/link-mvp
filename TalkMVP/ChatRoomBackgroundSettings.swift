@@ -227,7 +227,7 @@ struct ChatRoomBackgroundSettings: View {
                     } label: {
                         HStack {
                             Image(systemName: type.icon())
-                                .foregroundColor(.appPrimary)
+                                .foregroundColor(.appPrimaryText)
                                 .frame(width: 24)
 
                             Text(type.title(languageManager: languageManager))
@@ -237,7 +237,7 @@ struct ChatRoomBackgroundSettings: View {
 
                             if selectedBackgroundType == type {
                                 Image(systemName: "checkmark")
-                                    .foregroundColor(.appPrimary)
+                                    .foregroundColor(.appPrimaryText)
                             }
                         }
                         .padding(.vertical, 12)
@@ -321,7 +321,7 @@ struct ChatRoomBackgroundSettings: View {
             } label: {
                 HStack {
                     Image(systemName: "photo.fill")
-                        .foregroundColor(.appPrimary)
+                        .foregroundColor(.appPrimaryText)
                     Text(localizedText("choose_image"))
                         .foregroundColor(.primary)
                     Spacer()

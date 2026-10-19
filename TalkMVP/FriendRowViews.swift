@@ -28,7 +28,7 @@ struct MyProfileRow: View {
                 } else {
                     Image(systemName: "person.circle.fill")
                         .font(.system(size: 60))
-                        .foregroundColor(.appPrimary)
+                        .foregroundColor(.appPrimaryText)
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -104,7 +104,7 @@ struct FriendRow: View {
             HStack(spacing: 16) {
                 Image(systemName: "person.circle.fill")
                     .font(.system(size: 50))
-                    .foregroundColor(.appPrimary)
+                    .foregroundColor(.appPrimaryText)
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {

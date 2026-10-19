@@ -27,7 +27,7 @@ struct ContentView: View {
             } message: {
                 Text(languageManager.localizedText("test_mode_message"))
             }
-            .tint(.appPrimary)
+            .tint(.appPrimaryText)
             .sheet(isPresented: $showContactsOnboarding, onDismiss: {
                 contactsOnboardingShown = true
             }) {
@@ -100,7 +100,7 @@ struct AuthenticatedTabsView: View {
                 }
                 .tag(2)
         }
-        .tint(.appPrimary)
+        .tint(.appPrimaryText)
         .bottomAccessory(isShown: showTestModeIndicator) {
             TestModeIndicatorView(languageManager: languageManager)
         }

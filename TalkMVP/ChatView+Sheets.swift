@@ -42,7 +42,7 @@ struct BookmarkedMessagesSheet: View {
                                     : message.sender)
                                     .font(.caption)
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.appPrimary)
+                                    .foregroundColor(.appPrimaryText)
                                 Spacer()
                                 Text(message.timestamp, style: .date)
                                     .font(.caption2)
@@ -111,7 +111,7 @@ struct DisappearingMessagePickerSheet: View {
                                 Spacer()
                                 if chatRoom.disappearingDuration == option.seconds {
                                     Image(systemName: "checkmark")
-                                        .foregroundColor(.appPrimary)
+                                        .foregroundColor(.appPrimaryText)
                                 }
                             }
                         }
@@ -148,7 +148,7 @@ struct ScheduledSendSheet: View {
             VStack(spacing: 24) {
                 Image(systemName: "clock.badge.checkmark")
                     .font(.system(size: 48))
-                    .foregroundColor(.appPrimary)
+                    .foregroundColor(.appPrimaryText)
 
                 Text(loc(
                     ko: "메시지를 보낼 시간을 선택하세요",

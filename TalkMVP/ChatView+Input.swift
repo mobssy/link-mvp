@@ -63,7 +63,7 @@ extension ChatView {
                     }
                 } label: {
                     Image(systemName: "plus.circle.fill")
-                        .foregroundColor(.appPrimary)
+                        .foregroundColor(.appPrimaryText)
                         .font(.system(size: 28))
                 }
                 .accessibilityLabel(localizedText("attach_file"))
@@ -89,7 +89,7 @@ extension ChatView {
                         showingSchedulePicker = true
                     } label: {
                         Image(systemName: "clock.fill")
-                            .foregroundColor(.appPrimary)
+                            .foregroundColor(.appPrimaryText)
                             .font(.system(size: 22))
                     }
                     .accessibilityLabel(languageManager.localize(ko: "예약 발송", en: "Schedule send", ja: "予約送信", zh: "定时发送", es: "Envío programado"))
@@ -99,7 +99,7 @@ extension ChatView {
                         sendMessage(viewModel: viewModel)
                     } label: {
                         Image(systemName: "paperplane.fill")
-                            .foregroundColor(.white)
+                            .foregroundColor(.onAppPrimary)
                             .frame(width: 32, height: 32)
                             .background(Color.appPrimary)
                             .clipShape(Circle())
@@ -146,7 +146,7 @@ extension ChatView {
 
     private func micButton(viewModel: ChatViewModel) -> some View {
         Image(systemName: voiceService.isRecording ? "waveform.circle.fill" : "mic.circle.fill")
-            .foregroundColor(.white)
+            .foregroundColor(voiceService.isRecording ? .white : .onAppPrimary)
             .frame(width: 32, height: 32)
             .background(voiceService.isRecording ? Color.red : Color.appPrimary)
             .clipShape(Circle())

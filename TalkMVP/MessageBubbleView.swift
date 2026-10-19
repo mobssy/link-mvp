@@ -122,7 +122,7 @@ struct MessageBubbleView: View {
                 if message.isBookmarked {
                     Image(systemName: "bookmark.fill")
                         .font(.caption2)
-                        .foregroundColor(.appPrimary)
+                        .foregroundColor(.appPrimaryText)
                 }
 
                 if message.isDisappearing && message.disappearAfterSeconds > 0 {
@@ -152,14 +152,14 @@ struct MessageBubbleView: View {
             if let symbol = avatarSymbolName {
                 Image(systemName: symbol)
                     .font(.system(size: 28))
-                    .foregroundColor(.appPrimary)
+                    .foregroundColor(.appPrimaryText)
                     .frame(width: 36, height: 36)
             } else {
                 ZStack {
                     Circle()
                         .fill(Color.appPrimary.opacity(0.15))
                     Image(systemName: "person.fill")
-                        .foregroundColor(.appPrimary)
+                        .foregroundColor(.appPrimaryText)
                 }
                 .frame(width: 36, height: 36)
             }
@@ -244,7 +244,7 @@ struct MessageBubbleView: View {
         case .file:
             HStack {
                 Image(systemName: AttachmentHandler.fileIcon(for: message.fileExtension ?? ""))
-                    .foregroundColor(message.isFromCurrentUser ? ownBubbleContent : .appPrimary)
+                    .foregroundColor(message.isFromCurrentUser ? ownBubbleContent : .appPrimaryText)
                 VStack(alignment: .leading) {
                     Text(message.fileName ?? localizedText("file"))
                         .font(.headline)
@@ -270,7 +270,7 @@ struct MessageBubbleView: View {
                     } label: {
                         Image(systemName: isPlayingAudio ? "pause.circle.fill" : "play.circle.fill")
                             .font(.system(size: 30))
-                            .foregroundColor(message.isFromCurrentUser ? ownBubbleContent : .appPrimary)
+                            .foregroundColor(message.isFromCurrentUser ? ownBubbleContent : .appPrimaryText)
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
@@ -321,7 +321,7 @@ struct MessageBubbleView: View {
                     HStack(spacing: 10) {
                         Image(systemName: "location.fill")
                             .font(.system(size: 20))
-                            .foregroundColor(message.isFromCurrentUser ? ownBubbleContent : .appPrimary)
+                            .foregroundColor(message.isFromCurrentUser ? ownBubbleContent : .appPrimaryText)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(languageManager.localize(ko: "현재 위치", en: "Current Location", ja: "現在地", zh: "当前位置", es: "Ubicación actual"))
                                 .font(.subheadline.bold())

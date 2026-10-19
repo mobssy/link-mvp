@@ -45,7 +45,7 @@ struct AccessibilitySettingsView: View {
                         Spacer()
                         ForEach(0..<5) { i in
                             Capsule()
-                                .fill(i <= textSizeStep ? Color.appPrimary : Color.secondary.opacity(0.3))
+                                .fill(i <= textSizeStep ? Color.appPrimaryText : Color.secondary.opacity(0.3))
                                 .frame(width: 6, height: CGFloat(10 + i * 5))
                                 .padding(.horizontal, 2)
                         }
@@ -63,7 +63,7 @@ struct AccessibilitySettingsView: View {
                         in: 0...4,
                         step: 1
                     )
-                    .tint(.appPrimary)
+                    .tint(.appPrimaryText)
                     .accessibilityLabel(languageManager.localize(ko: "글자 크기", en: "Text Size", ja: "テキストサイズ", zh: "文字大小", es: "Tamaño de texto"))
                     .accessibilityValue(textSizeLabel)
 

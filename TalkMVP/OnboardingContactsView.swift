@@ -11,7 +11,7 @@ struct OnboardingContactsView: View {
         VStack(spacing: 20) {
             Image(systemName: "person.crop.circle.badge.plus")
                 .font(.system(size: 60))
-                .foregroundColor(.appPrimary)
+                .foregroundColor(.appPrimaryText)
                 .padding(.top, 20)
 
             Text(loc("title"))
@@ -49,7 +49,7 @@ struct OnboardingContactsView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.appPrimary)
-                .foregroundColor(.white)
+                .foregroundColor(.onAppPrimary)
                 .cornerRadius(12)
                 .disabled(isRequesting)
             }

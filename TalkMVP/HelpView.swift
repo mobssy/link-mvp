@@ -211,7 +211,7 @@ struct HelpView: View {
                 } label: {
                     HStack {
                         Image(systemName: "envelope.fill")
-                            .foregroundColor(.appPrimary)
+                            .foregroundColor(.appPrimaryText)
                         Text(localizedText("email_support"))
                             .foregroundColor(.primary)
                         Spacer()
@@ -226,7 +226,7 @@ struct HelpView: View {
                 } label: {
                     HStack {
                         Image(systemName: "message.fill")
-                            .foregroundColor(.appPrimary)
+                            .foregroundColor(.appPrimaryText)
                         Text(localizedText("send_feedback"))
                             .foregroundColor(.primary)
                         Spacer()
@@ -307,7 +307,7 @@ struct QuickGuideRow: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundColor(.appPrimary)
+                .foregroundColor(.appPrimaryText)
                 .frame(width: 32)
 
             VStack(alignment: .leading, spacing: 4) {
@@ -337,7 +337,7 @@ struct FAQCategoryView: View {
             Button(action: onToggle) {
                 HStack {
                     Image(systemName: category.icon())
-                        .foregroundColor(.appPrimary)
+                        .foregroundColor(.appPrimaryText)
                         .frame(width: 24)
 
                     Text(category.title(languageManager: languageManager))

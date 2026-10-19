@@ -229,7 +229,7 @@ struct MiniProfileSheet: View {
             VStack(spacing: 16) {
                 Image(systemName: symbol)
                     .font(.system(size: 64))
-                    .foregroundColor(.appPrimary)
+                    .foregroundColor(.appPrimaryText)
                     .padding(.top, 20)
                 Text(name)
                     .font(.title2)
@@ -395,7 +395,7 @@ struct AttachmentPreviewView: View {
                 Button(action: onSend) {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.system(size: 36))
-                        .foregroundColor(.appPrimary)
+                        .foregroundColor(.appPrimaryText)
                 }
                 .frame(width: 44, height: 44)
                 .accessibilityLabel(LocalizationService.shared.text(for: .sendAttachment, language: currentLanguage))

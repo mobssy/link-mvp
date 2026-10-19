@@ -81,7 +81,7 @@ struct LinkMVPApp: App {
                 .environmentObject(authManager)
                 .environmentObject(appLock)
                 .environmentObject(languageManager)
-                .tint(.appPrimary)
+                .tint(.appPrimaryText)
                 .preferredColorScheme(themeMode == "light" ? .light : (themeMode == "dark" ? .dark : nil))
                 .fontWeight(boldText ? .bold : .regular)
                 .dynamicTypeSize(dynamicTypeSizeForStep(textSizeStep))

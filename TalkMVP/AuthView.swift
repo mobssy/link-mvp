@@ -92,7 +92,7 @@ struct AuthView<Footer: View>: View {
             }
             .navigationTitle("")
             .navigationBarHidden(true)
-            .tint(.appPrimary)
+            .tint(.appPrimaryText)
         }
     }
 

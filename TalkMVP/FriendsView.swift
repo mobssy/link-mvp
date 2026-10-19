@@ -208,7 +208,7 @@ struct FriendsView: View {
                                     Text(L10n.text("add_friend_by_email", languageManager.currentLanguage))
                                 }
                                 .font(.headline)
-                                .foregroundColor(.white)
+                                .foregroundColor(.onAppPrimary)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
                                 .background(Color.appPrimary)

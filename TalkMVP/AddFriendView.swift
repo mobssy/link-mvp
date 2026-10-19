@@ -165,7 +165,7 @@ struct UserSearchResultRow: View {
         HStack {
             Image(systemName: "person.circle.fill")
                 .font(.system(size: 40))
-                .foregroundColor(.appPrimary)
+                .foregroundColor(.appPrimaryText)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(result.displayName)

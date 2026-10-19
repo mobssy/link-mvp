@@ -263,7 +263,7 @@ struct ChatView: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
-                        .foregroundColor(.appPrimary)
+                        .foregroundColor(.appPrimaryText)
                         .accessibilityLabel(localizedText("more_options"))
                 }
             }

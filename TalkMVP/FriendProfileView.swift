@@ -40,7 +40,7 @@ struct FriendProfileView: View {
 
                             Image(systemName: "person.fill")
                                 .font(.system(size: 60))
-                                .foregroundColor(.appPrimary)
+                                .foregroundColor(.appPrimaryText)
                         }
 
                         // 이름과 이메일
@@ -94,7 +94,7 @@ struct FriendProfileView: View {
                                     .frame(maxWidth: .infinity)
                                     .padding()
                                     .background(Color.appPrimary)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.onAppPrimary)
                                     .cornerRadius(12)
                             }
                         }
