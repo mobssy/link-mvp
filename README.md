@@ -132,6 +132,13 @@ The numbers in each image match the notes under it. The chats are test-mode samp
 1. Three short replies in the chat's language, written once the other side answers. A tap puts one in the message field.
 2. Searching "저녁 약속" (dinner plans) finds "dinner tonight". Related words and translations are looked up on device, and the app shows which ones it added.
 
+### Voice Messages
+
+![Recording a voice message, and the sent message the other side answered](docs/screenshots/voice.png)
+
+1. Hold the mic to record. The bar shows the time and a way to cancel; letting go sends the message.
+2. The sent voice message, with its length. Speech recognition doesn't run in the simulator, so there's no transcript under it here.
+
 ### Adaptive Layout (iPad)
 
 ![The chat list beside an open conversation on iPad](docs/screenshots/wide-layout.png)
@@ -407,6 +414,13 @@ _방해받지 않는 메신저 — 그리고 언어 장벽까지 없애줍니다
 
 1. 상대가 답하면 대화 언어로 된 짧은 답장 3개가 나타납니다. 누르면 입력란에 들어갑니다.
 2. "저녁 약속"으로 검색하면 "dinner tonight"을 찾습니다. 관련어와 번역어를 기기 안에서 찾고, 어떤 말을 더했는지 보여 줍니다.
+
+### 음성 메시지
+
+![음성 메시지를 녹음하는 화면과, 상대가 답한 보낸 음성 메시지](docs/screenshots/voice.png)
+
+1. 마이크를 누르고 있는 동안 녹음합니다. 막대에 녹음 시간과 취소 버튼이 보이고, 손을 떼면 보냅니다.
+2. 보낸 음성 메시지와 길이입니다. 시뮬레이터에서는 음성 인식이 돌지 않아, 이 화면에는 아래에 받아쓰기가 없습니다.
 
 ### 적응형 레이아웃 (iPad)
 
