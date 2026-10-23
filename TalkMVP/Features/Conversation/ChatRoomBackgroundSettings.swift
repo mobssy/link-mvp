@@ -16,7 +16,7 @@ struct ChatRoomBackgroundSettings: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(LanguageManager.self) private var languageManager
-    @AppStorage("inAppHighContrast") private var highContrast = false
+    @Environment(\.prefersHighContrast) private var highContrast
 
     let chatRoom: ChatRoom
 

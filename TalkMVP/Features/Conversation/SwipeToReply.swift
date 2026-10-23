@@ -23,7 +23,7 @@ extension View {
 private struct SwipeToReply: ViewModifier {
     let label: String
     let onReply: () -> Void
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.prefersReducedMotion) private var reduceMotion
     @State private var offset: CGFloat = 0
     @State private var isArmed = false
 

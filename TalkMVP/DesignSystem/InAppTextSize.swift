@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// The text size the app shows: the system's, unless the person picked a size in the app's
 /// Accessibility settings to use instead.
@@ -36,13 +37,31 @@ nonisolated enum InAppTextSize {
 }
 
 /// Applies the in-app text size when it replaces the system's, and the system's otherwise.
+///
+/// It sets the size on the window scenes rather than with `.dynamicTypeSize` on the root view:
+/// sheets take their text size from the window, so a view modifier never reached them.
 struct InAppTextSizeModifier: ViewModifier {
-    @Environment(\.dynamicTypeSize) private var systemSize
     @AppStorage(InAppTextSize.stepKey) private var step = InAppTextSize.defaultStep
     @AppStorage(InAppTextSize.overridesKey) private var overridesSystem = false
 
     func body(content: Content) -> some View {
-        content.dynamicTypeSize(overridesSystem ? InAppTextSize.size(forStep: step) : systemSize)
+        content.onChange(of: overridesSystem ? step : nil, initial: true) { _, chosenStep in
+            InAppTextSize.applyToWindows(chosenStep.map(InAppTextSize.size(forStep:)))
+        }
+    }
+}
+
+extension InAppTextSize {
+    /// Overrides the text size of every window, or with nil hands it back to the system.
+    @MainActor
+    static func applyToWindows(_ size: DynamicTypeSize?) {
+        for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
+            if let size {
+                scene.traitOverrides.preferredContentSizeCategory = UIContentSizeCategory(size)
+            } else {
+                scene.traitOverrides.remove(UITraitPreferredContentSizeCategory.self)
+            }
+        }
     }
 }
 

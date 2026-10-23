@@ -2,9 +2,12 @@ import SwiftUI
 
 struct AccessibilitySettingsView: View {
     @Environment(LanguageManager.self) private var languageManager
-    @AppStorage("inAppBoldText") private var boldText = false
-    @AppStorage("inAppReduceMotion") private var reduceMotion = false
-    @AppStorage("inAppHighContrast") private var highContrast = false
+    @AppStorage(AccessibilityPreferences.boldTextKey) private var boldText = false
+    @AppStorage(AccessibilityPreferences.reduceMotionKey) private var inAppReducesMotion = false
+    @AppStorage(AccessibilityPreferences.highContrastKey) private var inAppHighContrast = false
+    // What applies: the switches below or the matching iOS settings. The preview shows these.
+    @Environment(\.prefersReducedMotion) private var reduceMotion
+    @Environment(\.prefersHighContrast) private var highContrast
     @AppStorage(InAppTextSize.stepKey) private var textSizeStep = InAppTextSize.defaultStep
     @AppStorage(InAppTextSize.overridesKey) private var overridesSystemTextSize = false
 
@@ -106,7 +109,7 @@ struct AccessibilitySettingsView: View {
                 }
                 .accessibilityIdentifier("boldTextToggle")
 
-                Toggle(isOn: $reduceMotion) {
+                Toggle(isOn: $inAppReducesMotion) {
                     Label(
                         languageManager.localize(ko: "모션 줄이기", en: "Reduce Motion", ja: "モーションを減らす", zh: "减少动效", es: "Reducir movimiento"),
                         systemImage: "circle.dotted"
@@ -114,7 +117,7 @@ struct AccessibilitySettingsView: View {
                 }
                 .accessibilityIdentifier("reduceMotionToggle")
 
-                Toggle(isOn: $highContrast) {
+                Toggle(isOn: $inAppHighContrast) {
                     Label(
                         languageManager.localize(ko: "고대비 메시지 버블", en: "High Contrast Bubbles", ja: "高コントラストバブル", zh: "高对比度气泡", es: "Burbujas de alto contraste"),
                         systemImage: "circle.lefthalf.filled"
@@ -173,8 +176,6 @@ struct AccessibilitySettingsView: View {
         .navigationTitle(languageManager.localize(ko: "손쉬운 사용", en: "Accessibility", ja: "アクセシビリティ", zh: "辅助功能", es: "Accesibilidad"))
         .navigationBarTitleDisplayMode(.inline)
         // Apply bold and size in this view so Preview section reflects changes live
-        .fontWeight(boldText ? .bold : .regular)
-        .inAppTextSize()
     }
 
     // MARK: - Live Preview Bubbles

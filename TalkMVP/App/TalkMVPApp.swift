@@ -19,8 +19,6 @@ struct LinkMVPApp: App {
     @State private var languageManager = LanguageManager()
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("themeMode") private var themeMode: String = "system"
-    @AppStorage("inAppBoldText") private var boldText = false
-    @AppStorage("inAppReduceMotion") private var reduceMotion = false
 
     init() {
         InAppTextSize.migrate(.standard)
@@ -72,7 +70,7 @@ struct LinkMVPApp: App {
                 .environment(languageManager)
                 .tint(.appPrimaryText)
                 .preferredColorScheme(themeMode == "light" ? .light : (themeMode == "dark" ? .dark : nil))
-                .fontWeight(boldText ? .bold : .regular)
+                .accessibilityPreferences()
                 .inAppTextSize()
                 .fullScreenCover(isPresented: Binding(get: { appLock.isLocked }, set: { _ in })) {
                     AppLockView()

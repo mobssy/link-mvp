@@ -2838,3 +2838,22 @@ struct InAppTextSizeTests {
         #expect(InAppTextSize.size(forStep: InAppTextSize.defaultStep) == .large)
     }
 }
+
+// MARK: - Accessibility preferences
+
+@Suite("Accessibility preferences")
+struct AccessibilityPreferencesTests {
+    @Test("Reduce Motion applies when iOS or the app asks for it", arguments: [
+        (false, false, false), (true, false, true), (false, true, true), (true, true, true)
+    ])
+    func reduceMotion(system: Bool, inApp: Bool, applies: Bool) {
+        #expect(AccessibilityPreferences(systemReducesMotion: system, inAppReducesMotion: inApp).reducesMotion == applies)
+    }
+
+    @Test("High contrast applies with iOS's Increase Contrast or the app's switch", arguments: [
+        (false, false, false), (true, false, true), (false, true, true), (true, true, true)
+    ])
+    func highContrast(system: Bool, inApp: Bool, applies: Bool) {
+        #expect(AccessibilityPreferences(systemIncreasesContrast: system, inAppHighContrast: inApp).highContrast == applies)
+    }
+}

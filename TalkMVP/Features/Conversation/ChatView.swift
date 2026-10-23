@@ -17,7 +17,7 @@ import UIKit
 struct ChatView: View {
     @Environment(\.modelContext) var modelContext
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @Environment(\.accessibilityReduceMotion) var reduceMotion
+    @Environment(\.prefersReducedMotion) var reduceMotion
     @Environment(\.openURL) private var openURL
     @Environment(LanguageManager.self) var languageManager
 

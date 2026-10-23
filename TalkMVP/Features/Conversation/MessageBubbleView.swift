@@ -35,7 +35,7 @@ struct MessageBubbleView: View {
     @State private var attachmentPreviewURL: URL?
 
     @Environment(LanguageManager.self) private var languageManager
-    @AppStorage("inAppHighContrast") private var highContrast = false
+    @Environment(\.prefersHighContrast) private var highContrast
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
