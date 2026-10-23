@@ -21,10 +21,10 @@ extension ChatView {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(String(format: localizedText("replying_to"), replyingTo.isFromCurrentUser ? localizedText("me") : chatRoom.name))
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(Color.secondary)
                         Text(replyingTo.text)
                             .font(.caption)
-                            .foregroundColor(.primary)
+                            .foregroundStyle(Color.primary)
                             .lineLimit(2)
                     }
                     Spacer()
@@ -65,7 +65,7 @@ extension ChatView {
                     }
                 } label: {
                     Image(systemName: "plus.circle.fill")
-                        .foregroundColor(.appPrimaryText)
+                        .foregroundStyle(.appPrimaryText)
                         .font(.system(size: 28))
                 }
                 .accessibilityLabel(localizedText("attach_file"))
@@ -90,7 +90,7 @@ extension ChatView {
                         showingSchedulePicker = true
                     } label: {
                         Image(systemName: "clock.fill")
-                            .foregroundColor(.appPrimaryText)
+                            .foregroundStyle(.appPrimaryText)
                             .font(.system(size: 22))
                     }
                     .accessibilityLabel(languageManager.localize(ko: "예약 발송", en: "Schedule send", ja: "予約送信", zh: "定时发送", es: "Envío programado"))
@@ -100,7 +100,7 @@ extension ChatView {
                         sendMessage(viewModel: viewModel)
                     } label: {
                         Image(systemName: "paperplane.fill")
-                            .foregroundColor(.onAppPrimary)
+                            .foregroundStyle(.onAppPrimary)
                             .frame(width: 32, height: 32)
                             .background(Color.appPrimary)
                             .clipShape(Circle())
@@ -127,16 +127,16 @@ extension ChatView {
                 .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: voiceService.isRecording)
             Text(languageManager.localize(ko: "녹음 중...", en: "Recording...", ja: "録音中...", zh: "录音中...", es: "Grabando..."))
                 .font(.caption)
-                .foregroundColor(.red)
+                .foregroundStyle(.red)
             Spacer()
             Text(formatRecordingDuration(voiceService.recordingDuration))
                 .font(.caption.monospacedDigit())
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.secondary)
             Button(languageManager.localize(ko: "취소", en: "Cancel", ja: "キャンセル", zh: "取消", es: "Cancelar")) {
                 voiceService.cancelRecording()
             }
             .font(.caption)
-            .foregroundColor(.red)
+            .foregroundStyle(.red)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 6)
@@ -148,7 +148,7 @@ extension ChatView {
 
     private func micButton(viewModel: ChatViewModel) -> some View {
         Image(systemName: voiceService.isRecording ? "waveform.circle.fill" : "mic.circle.fill")
-            .foregroundColor(voiceService.isRecording ? .white : .onAppPrimary)
+            .foregroundStyle(voiceService.isRecording ? .white : .onAppPrimary)
             .frame(width: 32, height: 32)
             .background(voiceService.isRecording ? Color.red : Color.appPrimary)
             .clipShape(Circle())

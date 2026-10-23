@@ -98,7 +98,7 @@ struct ReactionPickerView: View {
         VStack(spacing: 16) {
             Text(LocalizationService.shared.text(for: .addReaction, language: currentLanguage))
                 .font(.headline)
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.secondary)
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 16) {
                 ForEach(reactions, id: \.self) { emoji in
@@ -182,18 +182,18 @@ struct TranslatedTextView: View {
             HStack(spacing: 6) {
                 Image(systemName: "globe")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.secondary)
                 Text(isLoading
                      ? LocalizationService.shared.text(for: .translatingEllipsis, language: currentLanguage)
                      : translated ?? LocalizationService.shared.text(for: .translationUnavailable, language: currentLanguage))
                     .font(.footnote)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             if showOriginal {
                 Text(text)
                     .font(.footnote)
-                    .foregroundColor(.tertiaryLabel)
+                    .foregroundStyle(.tertiaryLabel)
             }
         }
         .onAppear(perform: translate)
@@ -230,21 +230,21 @@ struct MiniProfileSheet: View {
             VStack(spacing: 16) {
                 Image(systemName: symbol)
                     .font(.system(size: 64))
-                    .foregroundColor(.appPrimaryText)
+                    .foregroundStyle(.appPrimaryText)
                     .padding(.top, 20)
                 Text(name)
                     .font(.title2)
                     .fontWeight(.semibold)
                 Text(LocalizationService.shared.text(for: .profileInfoUnavailable, language: currentLanguage))
                     .font(.footnote)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.secondary)
                 Spacer()
             }
             .padding()
             .navigationTitle(LocalizationService.shared.text(for: .profile, language: currentLanguage))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(LocalizationService.shared.text(for: .close, language: currentLanguage)) { dismiss() }
                 }
             }
@@ -278,7 +278,7 @@ struct AttachmentPreviewView: View {
                     Button(action: onCancel) {
                         Image(systemName: "xmark")
                             .font(.system(size: 22))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .frame(width: 44, height: 44)
                     }
                     .accessibilityLabel(LocalizationService.shared.text(for: .cancelAttachment, language: currentLanguage))
@@ -303,7 +303,7 @@ struct AttachmentPreviewView: View {
                 } else {
                     Spacer()
                     Text(LocalizationService.shared.text(for: .noAttachment, language: currentLanguage))
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundStyle(.white.opacity(0.7))
                     Spacer()
                 }
             }
@@ -328,11 +328,11 @@ struct AttachmentPreviewView: View {
                 VStack(spacing: 20) {
                     Image(systemName: "play.circle.fill")
                         .font(.system(size: 80))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
 
                     Text(LocalizationService.shared.text(for: .video, language: currentLanguage))
                         .font(.title2)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                 }
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
@@ -344,19 +344,19 @@ struct AttachmentPreviewView: View {
                 VStack(spacing: 24) {
                     Image(systemName: AttachmentHandler.fileIcon(for: ext ?? ""))
                         .font(.system(size: 100))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
 
                     VStack(spacing: 12) {
                         Text(fileName)
                             .font(.title3)
                             .fontWeight(.semibold)
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .multilineTextAlignment(.center)
                             .lineLimit(2)
 
                         Text(AttachmentHandler.formatFileSize(fileSize))
                             .font(.subheadline)
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundStyle(.white.opacity(0.7))
                     }
                 }
                 .padding(.horizontal, 40)
@@ -376,14 +376,14 @@ struct AttachmentPreviewView: View {
                 ZStack(alignment: .leading) {
                     if captionText.isEmpty {
                         Text(LocalizationService.shared.text(for: .addCaption, language: currentLanguage))
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundStyle(.white.opacity(0.5))
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
                     }
 
                     TextField("", text: $captionText)
                         .focused($isCaptionFocused)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                         .background(
@@ -396,7 +396,7 @@ struct AttachmentPreviewView: View {
                 Button(action: onSend) {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.system(size: 36))
-                        .foregroundColor(.appPrimaryText)
+                        .foregroundStyle(.appPrimaryText)
                 }
                 .frame(width: 44, height: 44)
                 .accessibilityLabel(LocalizationService.shared.text(for: .sendAttachment, language: currentLanguage))
@@ -434,13 +434,13 @@ struct SummaryParagraphCard: View {
         if isHeader {
             renderedText
                 .font(.title3.bold())
-                .foregroundColor(.primary)
+                .foregroundStyle(Color.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.bottom, 4)
         } else {
             renderedText
                 .font(.body)
-                .foregroundColor(.primary)
+                .foregroundStyle(Color.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(14)
                 .background(

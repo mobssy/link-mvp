@@ -211,12 +211,12 @@ struct HelpView: View {
                 } label: {
                     HStack {
                         Image(systemName: "envelope.fill")
-                            .foregroundColor(.appPrimaryText)
+                            .foregroundStyle(.appPrimaryText)
                         Text(localizedText("email_support"))
-                            .foregroundColor(.primary)
+                            .foregroundStyle(Color.primary)
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(Color.secondary)
                             .font(.caption)
                     }
                 }
@@ -226,12 +226,12 @@ struct HelpView: View {
                 } label: {
                     HStack {
                         Image(systemName: "message.fill")
-                            .foregroundColor(.appPrimaryText)
+                            .foregroundStyle(.appPrimaryText)
                         Text(localizedText("send_feedback"))
-                            .foregroundColor(.primary)
+                            .foregroundStyle(Color.primary)
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(Color.secondary)
                             .font(.caption)
                     }
                 }
@@ -243,10 +243,10 @@ struct HelpView: View {
             Section {
                 HStack {
                     Text(localizedText("app_version"))
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.secondary)
                     Spacer()
                     Text(getAppVersion())
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.secondary)
                 }
             }
         }
@@ -307,16 +307,16 @@ struct QuickGuideRow: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundColor(.appPrimaryText)
+                .foregroundStyle(.appPrimaryText)
                 .frame(width: 32)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.headline)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(Color.primary)
                 Text(description)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.secondary)
             }
         }
         .padding(.vertical, 4)
@@ -337,17 +337,17 @@ struct FAQCategoryView: View {
             Button(action: onToggle) {
                 HStack {
                     Image(systemName: category.icon())
-                        .foregroundColor(.appPrimaryText)
+                        .foregroundStyle(.appPrimaryText)
                         .frame(width: 24)
 
                     Text(category.title(languageManager: languageManager))
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundStyle(Color.primary)
 
                     Spacer()
 
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.secondary)
                         .font(.caption)
                 }
                 .padding(.vertical, 8)
@@ -363,12 +363,12 @@ struct FAQCategoryView: View {
                             Text("Q. \(localizedText(faq.questionKey))")
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
-                                .foregroundColor(.primary)
+                                .foregroundStyle(Color.primary)
 
                             ForEach(faq.answerKeys, id: \.self) { answerKey in
                                 Text("• \(localizedText(answerKey))")
                                     .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(Color.secondary)
                             }
                         }
                         .padding(.leading, 36)
@@ -413,7 +413,7 @@ struct FeedbackView: View {
                     .overlay(alignment: .topLeading) {
                         if feedbackText.isEmpty {
                             Text(localizedText("feedback_placeholder"))
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(Color.secondary)
                                 .padding(.horizontal, 20)
                                 .padding(.vertical, 24)
                                 .allowsHitTesting(false)

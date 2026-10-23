@@ -83,7 +83,7 @@ struct MessageBubbleView: View {
                 HStack(spacing: 8) {
                     Text(message.sender)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.secondary)
 
                     switch senderStanding {
                     case .stranger:
@@ -94,7 +94,7 @@ struct MessageBubbleView: View {
                     case .requested:
                         Text(localizedText("request_pending"))
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(Color.secondary)
                     default:
                         EmptyView()
                     }
@@ -109,35 +109,35 @@ struct MessageBubbleView: View {
                     RoundedRectangle(cornerRadius: 20)
                         .fill(bubbleBackground)
                 )
-                .foregroundColor(message.isFromCurrentUser ? ownBubbleContent : .primary)
+                .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent : .primary)
 
             HStack(spacing: 4) {
                 Text(message.timestamp, style: .time)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.secondary)
 
                 if message.isBookmarked {
                     Image(systemName: "bookmark.fill")
                         .font(.caption2)
-                        .foregroundColor(.appPrimaryText)
+                        .foregroundStyle(.appPrimaryText)
                 }
 
                 if message.isDisappearing && message.disappearAfterSeconds > 0 {
                     Image(systemName: "flame.fill")
                         .font(.caption2)
-                        .foregroundColor(.orange)
+                        .foregroundStyle(.orange)
                 }
 
                 if message.isPendingScheduled {
                     Image(systemName: "clock.fill")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.secondary)
                 }
 
                 if message.isFromCurrentUser {
                     Image(systemName: message.isRead ? "checkmark.circle.fill" : "checkmark.circle")
                         .font(.caption2)
-                        .foregroundColor(message.isRead ? .appPrimary : .secondary)
+                        .foregroundStyle(message.isRead ? .appPrimary : .secondary)
                         .transition(.scale.combined(with: .opacity))
                 }
             }
@@ -149,14 +149,14 @@ struct MessageBubbleView: View {
             if let symbol = avatarSymbolName {
                 Image(systemName: symbol)
                     .font(.system(size: 28))
-                    .foregroundColor(.appPrimaryText)
+                    .foregroundStyle(.appPrimaryText)
                     .frame(width: 36, height: 36)
             } else {
                 ZStack {
                     Circle()
                         .fill(Color.appPrimary.opacity(0.15))
                     Image(systemName: "person.fill")
-                        .foregroundColor(.appPrimaryText)
+                        .foregroundStyle(.appPrimaryText)
                 }
                 .frame(width: 36, height: 36)
             }
@@ -205,7 +205,7 @@ struct MessageBubbleView: View {
                     Image(systemName: "photo")
                     Text(localizedText("image_load_failed"))
                 }
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.secondary)
             }
 
         case .video:
@@ -219,12 +219,12 @@ struct MessageBubbleView: View {
 
                         Image(systemName: "play.circle.fill")
                             .font(.system(size: 50))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                     }
 
                     Text("\(languageManager.localize(ko: "동영상", en: "Video", ja: "動画", zh: "视频", es: "Video")) (\(AttachmentHandler.formatFileSize(videoData.count)))")
                         .font(.caption)
-                        .foregroundColor(message.isFromCurrentUser ? ownBubbleContent.opacity(0.9) : .secondary)
+                        .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent.opacity(0.9) : .secondary)
                 }
                 .contentShape(Rectangle())
                 .onTapGesture { openAttachment() }
@@ -235,20 +235,20 @@ struct MessageBubbleView: View {
                     Image(systemName: "video")
                     Text(languageManager.localize(ko: "동영상 로드 실패", en: "Unable to load video", ja: "動画を読み込めません", zh: "无法加载视频", es: "No se puede cargar el video"))
                 }
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.secondary)
             }
 
         case .file:
             HStack {
                 Image(systemName: AttachmentHandler.fileIcon(for: message.fileExtension ?? ""))
-                    .foregroundColor(message.isFromCurrentUser ? ownBubbleContent : .appPrimaryText)
+                    .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent : .appPrimaryText)
                 VStack(alignment: .leading) {
                     Text(message.fileName ?? localizedText("file"))
                         .font(.headline)
                     if let fileSize = message.fileSize {
                         Text(AttachmentHandler.formatFileSize(fileSize))
                             .font(.caption)
-                            .foregroundColor(message.isFromCurrentUser ? ownBubbleContent.opacity(0.8) : .secondary)
+                            .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent.opacity(0.8) : .secondary)
                     }
                 }
                 Spacer()
@@ -267,16 +267,16 @@ struct MessageBubbleView: View {
                     } label: {
                         Image(systemName: isPlayingAudio ? "pause.circle.fill" : "play.circle.fill")
                             .font(.system(size: 30))
-                            .foregroundColor(message.isFromCurrentUser ? ownBubbleContent : .appPrimaryText)
+                            .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent : .appPrimaryText)
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
                         Image(systemName: "waveform")
                             .font(.system(size: 14))
-                            .foregroundColor(message.isFromCurrentUser ? ownBubbleContent.opacity(0.8) : .secondary)
+                            .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent.opacity(0.8) : .secondary)
                         Text(formatAudioDuration(message.audioDuration))
                             .font(.caption2.monospacedDigit())
-                            .foregroundColor(message.isFromCurrentUser ? ownBubbleContent.opacity(0.7) : .secondary)
+                            .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent.opacity(0.7) : .secondary)
                     }
                 }
                 .frame(minWidth: 120, alignment: .leading)
@@ -285,7 +285,7 @@ struct MessageBubbleView: View {
                 if let transcript = message.transcript {
                     Text(transcript)
                         .font(.subheadline)
-                        .foregroundColor(message.isFromCurrentUser ? ownBubbleContent.opacity(0.9) : .primary)
+                        .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent.opacity(0.9) : .primary)
                         .fixedSize(horizontal: false, vertical: true)
                 } else if isTranscribing {
                     HStack(spacing: 6) {
@@ -294,7 +294,7 @@ struct MessageBubbleView: View {
                             .tint(message.isFromCurrentUser ? ownBubbleContent : .secondary)
                         Text(languageManager.localize(ko: "받아쓰는 중…", en: "Transcribing…", ja: "文字起こし中…", zh: "正在转写…", es: "Transcribiendo…"))
                             .font(.caption)
-                            .foregroundColor(message.isFromCurrentUser ? ownBubbleContent.opacity(0.8) : .secondary)
+                            .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent.opacity(0.8) : .secondary)
                     }
                 }
             }
@@ -302,9 +302,9 @@ struct MessageBubbleView: View {
         case .deleted:
             HStack {
                 Image(systemName: "trash")
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.secondary)
                 Text(localizedText("message_deleted"))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.secondary)
                     .italic()
             }
 
@@ -318,13 +318,13 @@ struct MessageBubbleView: View {
                     HStack(spacing: 10) {
                         Image(systemName: "location.fill")
                             .font(.system(size: 20))
-                            .foregroundColor(message.isFromCurrentUser ? ownBubbleContent : .appPrimaryText)
+                            .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent : .appPrimaryText)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(languageManager.localize(ko: "현재 위치", en: "Current Location", ja: "現在地", zh: "当前位置", es: "Ubicación actual"))
                                 .font(.subheadline.bold())
                             Text(String(format: "%.5f, %.5f", lat, lon))
                                 .font(.caption2.monospacedDigit())
-                                .foregroundColor(message.isFromCurrentUser ? ownBubbleContent.opacity(0.8) : .secondary)
+                                .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent.opacity(0.8) : .secondary)
                         }
                     }
                     .frame(minWidth: 160)
@@ -336,7 +336,7 @@ struct MessageBubbleView: View {
                     Image(systemName: "location.slash")
                     Text(languageManager.localize(ko: "위치 정보 없음", en: "Location unavailable", ja: "位置情報なし", zh: "位置不可用", es: "Ubicación no disponible"))
                 }
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.secondary)
             }
         }
     }

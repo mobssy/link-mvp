@@ -13,28 +13,28 @@ struct AISettingsView: View {
                 Toggle(isOn: $aiSummaryEnabled) {
                     HStack(spacing: 12) {
                         Image(systemName: "sparkles")
-                            .foregroundColor(.pink)
+                            .foregroundStyle(.pink)
                         Text(localizedText("ai_summary"))
                     }
                 }
                 Toggle(isOn: $aiSearchEnabled) {
                     HStack(spacing: 12) {
                         Image(systemName: "magnifyingglass")
-                            .foregroundColor(.blue)
+                            .foregroundStyle(.blue)
                         Text(localizedText("ai_search"))
                     }
                 }
                 Toggle(isOn: $aiAutoMeetingNotesEnabled) {
                     HStack(spacing: 12) {
                         Image(systemName: "note.text")
-                            .foregroundColor(.green)
+                            .foregroundStyle(.green)
                         Text(localizedText("ai_meeting_notes"))
                     }
                 }
                 Toggle(isOn: $aiReplySuggestionsEnabled) {
                     HStack(spacing: 12) {
                         Image(systemName: "text.bubble")
-                            .foregroundColor(.orange)
+                            .foregroundStyle(.orange)
                         Text(localizedText("ai_reply_suggestions"))
                     }
                 }

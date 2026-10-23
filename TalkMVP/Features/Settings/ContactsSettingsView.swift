@@ -14,7 +14,7 @@ struct ContactsSettingsView: View {
                 Toggle(isOn: $contactsSyncEnabled) {
                     HStack(spacing: 12) {
                         Image(systemName: "person.crop.circle.badge.plus")
-                            .foregroundColor(.green)
+                            .foregroundStyle(.green)
                         Text(loc("enable_sync"))
                     }
                 }
@@ -27,7 +27,7 @@ struct ContactsSettingsView: View {
                 Button(action: { Task { await requestAndSyncNow() } }) {
                     HStack(spacing: 12) {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                            .foregroundColor(.blue)
+                            .foregroundStyle(.blue)
                         Text(isSyncing ? loc("syncing") : loc("sync_now"))
                     }
                 }
@@ -36,12 +36,12 @@ struct ContactsSettingsView: View {
                 if !status.isEmpty {
                     Text(status)
                         .font(.footnote)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.secondary)
                 }
                 if let errorMessage = errorMessage {
                     Text(errorMessage)
                         .font(.footnote)
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
                 }
             }
 

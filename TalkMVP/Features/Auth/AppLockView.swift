@@ -12,7 +12,7 @@ struct AppLockView: View {
             VStack(spacing: 24) {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 48))
-                    .foregroundColor(.appPrimaryText)
+                    .foregroundStyle(.appPrimaryText)
 
                 Text(localizedText("unlock_required"))
                     .font(.title2)
@@ -21,7 +21,7 @@ struct AppLockView: View {
                 if let error = appLock.errorMessage {
                     Text(error)
                         .font(.footnote)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                 }
@@ -36,8 +36,8 @@ struct AppLockView: View {
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(Color.appPrimary)
-                    .foregroundColor(.onAppPrimary)
-                    .cornerRadius(12)
+                    .foregroundStyle(.onAppPrimary)
+                    .clipShape(.rect(cornerRadius: 12))
                 }
                 .padding(.horizontal)
             }

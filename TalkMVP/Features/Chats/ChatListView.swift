@@ -95,7 +95,7 @@ struct ChatListView: View {
             .navigationTitle(localizedText("chat"))
             .searchable(text: $searchText, prompt: localizedText("search"))
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button(localizedText("new_chat")) {
                             addNewChatRoom()
@@ -193,7 +193,7 @@ struct ChatRoomRow: View {
             // 프로필 이미지
             Image(systemName: room.profileImage)
                 .font(.largeTitle)
-                .foregroundColor(.appPrimary)
+                .foregroundStyle(.appPrimary)
                 .frame(width: 50, height: 50)
 
             VStack(alignment: .leading, spacing: 4) {
@@ -222,7 +222,7 @@ struct ChatRoomRow: View {
                     if room.unreadCount > 0 {
                         Text("\(room.unreadCount)")
                             .font(.caption)
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(Color.red)
@@ -295,10 +295,10 @@ struct ChatScreen: View {
             }
         case .requested:
             Label(localizedText("request_pending"), systemImage: "clock")
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.secondary)
         case .friend:
             Label(localizedText("friend"), systemImage: "checkmark.seal.fill")
-                .foregroundColor(.green)
+                .foregroundStyle(.green)
         case nil:
             EmptyView()
         }

@@ -135,7 +135,7 @@ struct ChatView: View {
                     .scaleEffect(1.5)
                 Text(summaryLoadingText)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -185,7 +185,7 @@ struct ChatView: View {
             ToolbarItem(placement: .principal) {
                 onlineStatusTitleView
             }
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button {
                         showingBackgroundSettings = true
@@ -249,7 +249,7 @@ struct ChatView: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
-                        .foregroundColor(.appPrimaryText)
+                        .foregroundStyle(.appPrimaryText)
                         .accessibilityLabel(localizedText("more_options"))
                 }
             }
@@ -340,7 +340,7 @@ struct ChatView: View {
                         .navigationTitle(localizedText("conversation_summary"))
                         .navigationBarTitleDisplayMode(.large)
                         .toolbar {
-                            ToolbarItem(placement: .navigationBarTrailing) {
+                            ToolbarItem(placement: .topBarTrailing) {
                                 Button(localizedText("done")) { showingSummarySheet = false }
                             }
                         }
@@ -354,12 +354,12 @@ struct ChatView: View {
                         .navigationTitle(MeetingNotesView.labels(languageManager).title)
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar {
-                            ToolbarItem(placement: .navigationBarLeading) {
+                            ToolbarItem(placement: .topBarLeading) {
                                 if let notes = aiResults.meetingNotes, !aiResults.isMeetingNotesLoading, !notes.isEmpty {
                                     ShareLink(item: notes.shareText(labels: MeetingNotesView.labels(languageManager)))
                                 }
                             }
-                            ToolbarItem(placement: .navigationBarTrailing) {
+                            ToolbarItem(placement: .topBarTrailing) {
                                 Button(localizedText("done")) { showingMeetingNotes = false }
                             }
                         }
@@ -454,7 +454,7 @@ struct ChatView: View {
                         ? languageManager.localize(ko: "온라인", en: "Online", ja: "オンライン", zh: "在线", es: "En línea")
                         : languageManager.localize(ko: "오프라인", en: "Offline", ja: "オフライン", zh: "离线", es: "Sin conexión"))
                         .font(.caption)
-                        .foregroundColor(vm.isOnline ? .green : .secondary)
+                        .foregroundStyle(vm.isOnline ? .green : .secondary)
                 }
                 .animation(.easeInOut(duration: 0.4), value: vm.isOnline)
             }

@@ -28,9 +28,9 @@ struct BookmarkedMessagesSheet: View {
                     VStack(spacing: 12) {
                         Image(systemName: "bookmark.slash")
                             .font(.system(size: 48))
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(Color.secondary)
                         Text(emptyLabel)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(Color.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
@@ -42,11 +42,11 @@ struct BookmarkedMessagesSheet: View {
                                     : message.sender)
                                     .font(.caption)
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.appPrimaryText)
+                                    .foregroundStyle(.appPrimaryText)
                                 Spacer()
                                 Text(message.timestamp, style: .date)
                                     .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(Color.secondary)
                             }
                             Text(message.text)
                                 .font(.body)
@@ -59,7 +59,7 @@ struct BookmarkedMessagesSheet: View {
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(doneLabel) { onDismiss() }
                 }
             }
@@ -107,11 +107,11 @@ struct DisappearingMessagePickerSheet: View {
                         } label: {
                             HStack {
                                 Text(option.label)
-                                    .foregroundColor(.primary)
+                                    .foregroundStyle(Color.primary)
                                 Spacer()
                                 if chatRoom.disappearingDuration == option.seconds {
                                     Image(systemName: "checkmark")
-                                        .foregroundColor(.appPrimaryText)
+                                        .foregroundStyle(.appPrimaryText)
                                 }
                             }
                         }
@@ -121,7 +121,7 @@ struct DisappearingMessagePickerSheet: View {
             .navigationTitle(loc(ko: "자폭 메시지", en: "Disappearing Messages", ja: "自動削除メッセージ", zh: "阅后即焚", es: "Mensajes temporales"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(loc(ko: "완료", en: "Done", ja: "完了", zh: "完成", es: "Listo")) { onDismiss() }
                 }
             }
@@ -148,7 +148,7 @@ struct ScheduledSendSheet: View {
             VStack(spacing: 24) {
                 Image(systemName: "clock.badge.checkmark")
                     .font(.system(size: 48))
-                    .foregroundColor(.appPrimaryText)
+                    .foregroundStyle(.appPrimaryText)
 
                 Text(loc(
                     ko: "메시지를 보낼 시간을 선택하세요",
@@ -158,7 +158,7 @@ struct ScheduledSendSheet: View {
                     es: "Elige cuándo enviar este mensaje"
                 ))
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.secondary)
                 .multilineTextAlignment(.center)
 
                 DatePicker(
@@ -176,10 +176,10 @@ struct ScheduledSendSheet: View {
             .navigationTitle(loc(ko: "예약 발송", en: "Schedule Send", ja: "予約送信", zh: "定时发送", es: "Envío programado"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .topBarLeading) {
                     Button(loc(ko: "취소", en: "Cancel", ja: "キャンセル", zh: "取消", es: "Cancelar")) { onCancel() }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(loc(ko: "예약", en: "Schedule", ja: "予約", zh: "定时", es: "Programar")) {
                         onConfirm(scheduledDate)
                     }

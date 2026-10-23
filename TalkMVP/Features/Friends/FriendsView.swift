@@ -169,7 +169,7 @@ struct FriendsView: View {
                     } header: {
                         HStack(spacing: 6) {
                             Image(systemName: "star.fill")
-                                .foregroundColor(.yellow)
+                                .foregroundStyle(.yellow)
                             Text(L10n.text("favorites", languageManager.currentLanguage))
                         }
                     }
@@ -188,16 +188,16 @@ struct FriendsView: View {
                         VStack(spacing: 20) {
                             Image(systemName: "person.2")
                                 .font(.system(size: 60))
-                                .foregroundColor(.gray)
+                                .foregroundStyle(.gray)
 
                             Text(L10n.text("no_friends_yet", languageManager.currentLanguage))
                                 .font(.title2)
                                 .fontWeight(.semibold)
-                                .foregroundColor(.primary)
+                                .foregroundStyle(Color.primary)
 
                             Text(L10n.text("add_friends_suggestion", languageManager.currentLanguage))
                                 .font(.subheadline)
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(Color.secondary)
 
                             Button(action: {
                                 activeSheet = .addFriend
@@ -207,7 +207,7 @@ struct FriendsView: View {
                                     Text(L10n.text("add_friend_by_email", languageManager.currentLanguage))
                                 }
                                 .font(.headline)
-                                .foregroundColor(.onAppPrimary)
+                                .foregroundStyle(.onAppPrimary)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
                                 .background(Color.appPrimary)
@@ -242,7 +242,7 @@ struct FriendsView: View {
             .navigationTitle(L10n.text("friends", languageManager.currentLanguage))
             .searchable(text: $searchText, prompt: L10n.text("search_friends_placeholder", languageManager.currentLanguage))
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         activeSheet = .addFriend
                     } label: {
@@ -250,7 +250,7 @@ struct FriendsView: View {
                     }
                     .accessibilityLabel(L10n.text("add_friend", languageManager.currentLanguage))
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button {
                             activeSheet = .manageHiddenBlocked

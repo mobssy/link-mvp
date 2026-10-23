@@ -33,7 +33,7 @@ struct BlockedFriendsView: View {
             .navigationTitle(L10n.text("blocked_list", languageManager.currentLanguage))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .topBarLeading) {
                     Button(L10n.text("close", languageManager.currentLanguage)) {
                         dismiss()
                     }
@@ -54,16 +54,16 @@ struct BlockedFriendRow: View {
         HStack {
             Image(systemName: "person.circle.fill")
                 .font(.system(size: 40))
-                .foregroundColor(.red)
+                .foregroundStyle(.red)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(friendship.friendName)
                     .font(.headline)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(Color.primary)
 
                 Text(L10n.text("blocked", languageManager.currentLanguage))
                     .font(.caption)
-                    .foregroundColor(.red)
+                    .foregroundStyle(.red)
             }
 
             Spacer()
@@ -132,7 +132,7 @@ struct ManageFriendsView: View {
             .navigationTitle(L10n.text("manage_hidden_blocked", languageManager.currentLanguage))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .topBarLeading) {
                     Button(L10n.text("close", languageManager.currentLanguage)) {
                         dismiss()
                     }
@@ -153,16 +153,16 @@ struct HiddenFriendRow: View {
         HStack {
             Image(systemName: "person.circle.fill")
                 .font(.system(size: 40))
-                .foregroundColor(.gray)
+                .foregroundStyle(.gray)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(friendship.friendName)
                     .font(.headline)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(Color.primary)
 
                 Text(L10n.text("hidden", languageManager.currentLanguage))
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundStyle(.gray)
             }
 
             Spacer()

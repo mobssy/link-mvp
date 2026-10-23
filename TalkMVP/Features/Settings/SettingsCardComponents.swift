@@ -15,7 +15,7 @@ struct SettingsSectionCard<Content: View>: View {
             if !title.isEmpty {
                 Text(title)
                     .font(.footnote.weight(.semibold))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.secondary)
                     .padding(.horizontal, 16)
             }
 
@@ -56,14 +56,14 @@ struct SettingsLinkRow: View {
                     .frame(width: 28, height: 28)
                 Image(systemName: systemImage)
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(tint)
+                    .foregroundStyle(tint)
             }
             Text(title)
-                .foregroundColor(.primary)
+                .foregroundStyle(Color.primary)
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.secondary)
         }
         .contentShape(Rectangle())
         .padding(.vertical, 10)
@@ -91,10 +91,10 @@ struct SettingsToggleRow: View {
                     .frame(width: 28, height: 28)
                 Image(systemName: systemImage)
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(tint)
+                    .foregroundStyle(tint)
             }
             Text(title)
-                .foregroundColor(.primary)
+                .foregroundStyle(Color.primary)
             Spacer()
             Toggle("", isOn: $isOn)
                 .labelsHidden()
@@ -132,21 +132,21 @@ struct ProfileCardView: View {
                             .frame(width: 48, height: 48)
                         Image(systemName: "person.fill")
                             .font(.system(size: 24, weight: .medium))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                     }
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .foregroundColor(.primary)
+                        .foregroundStyle(Color.primary)
                         .font(.headline)
                     Text(subtitle)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.secondary)
                         .font(.subheadline)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.secondary)
             }
             .padding(16)
             .background(

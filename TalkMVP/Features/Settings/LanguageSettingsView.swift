@@ -41,7 +41,7 @@ struct LanguageSettingsView: View {
                                 Spacer()
                                 Text(info[key] ?? "")
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(Color.secondary)
                             }
                         }
                     }
@@ -50,7 +50,7 @@ struct LanguageSettingsView: View {
             .navigationTitle(localizedText(key: "language.title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(localizedText(key: "common.done")) {
                         dismiss()
                     }
@@ -168,19 +168,19 @@ struct LanguageRow: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(language.displayName)
                         .font(.body)
-                        .foregroundColor(.primary)
+                        .foregroundStyle(Color.primary)
 
                     // 현재 설정된 언어와 다른 언어로 설명 표시
                     Text(getAlternativeLanguageName(for: language))
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.secondary)
                 }
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.blue)
                         .font(.system(size: 16, weight: .semibold))
                 }
             }

@@ -10,7 +10,7 @@ struct SecuritySettingsView: View {
                 Toggle(isOn: $appLockEnabled) {
                     HStack(spacing: 12) {
                         Image(systemName: "lock.fill")
-                            .foregroundColor(.purple)
+                            .foregroundStyle(.purple)
                         Text(localizedText("app_lock"))
                     }
                 }

@@ -33,6 +33,16 @@ extension Color {
     }
 }
 
+/// The brand colors as shape styles, so `.foregroundStyle(.appPrimaryText)` reads like the
+/// system colors do.
+extension ShapeStyle where Self == Color {
+    static var appPrimary: Color { Color.appPrimary }
+    static var appPrimaryStrong: Color { Color.appPrimaryStrong }
+    static var onAppPrimary: Color { Color.onAppPrimary }
+    static var appPrimaryText: Color { Color.appPrimaryText }
+    static var tertiaryLabel: Color { Color.tertiaryLabel }
+}
+
 extension UIColor {
     static let appPrimary = UIColor(red: 181/255.0, green: 199/255.0, blue: 235/255.0, alpha: 1.0)
 }

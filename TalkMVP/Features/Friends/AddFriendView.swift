@@ -60,7 +60,7 @@ struct AddFriendView: View {
                             ProgressView()
                                 .controlSize(.small)
                             Text(L10n.text("searching_users", languageManager.currentLanguage))
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(Color.secondary)
                         }
                     }
                 } else if !searchResults.isEmpty {
@@ -88,7 +88,7 @@ struct AddFriendView: View {
             .navigationTitle(L10n.text("add_friend", languageManager.currentLanguage))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .topBarLeading) {
                     Button(L10n.text("cancel", languageManager.currentLanguage)) {
                         dismiss()
                     }
@@ -165,16 +165,16 @@ struct UserSearchResultRow: View {
         HStack {
             Image(systemName: "person.circle.fill")
                 .font(.system(size: 40))
-                .foregroundColor(.appPrimaryText)
+                .foregroundStyle(.appPrimaryText)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(result.displayName)
                     .font(.headline)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(Color.primary)
 
                 Text(result.email)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.secondary)
             }
 
             Spacer()

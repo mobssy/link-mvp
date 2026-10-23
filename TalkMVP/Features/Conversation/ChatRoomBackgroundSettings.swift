@@ -209,7 +209,7 @@ struct ChatRoomBackgroundSettings: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
             .background(isFromCurrentUser ? Color.ownBubble(highContrast: highContrast) : Color(UIColor.secondarySystemGroupedBackground))
-            .foregroundColor(isFromCurrentUser ? Color.onOwnBubble(highContrast: highContrast) : .primary)
+            .foregroundStyle(isFromCurrentUser ? Color.onOwnBubble(highContrast: highContrast) : .primary)
             .clipShape(RoundedRectangle(cornerRadius: 18))
     }
 
@@ -227,17 +227,17 @@ struct ChatRoomBackgroundSettings: View {
                     } label: {
                         HStack {
                             Image(systemName: type.icon())
-                                .foregroundColor(.appPrimaryText)
+                                .foregroundStyle(.appPrimaryText)
                                 .frame(width: 24)
 
                             Text(type.title(languageManager: languageManager))
-                                .foregroundColor(.primary)
+                                .foregroundStyle(Color.primary)
 
                             Spacer()
 
                             if selectedBackgroundType == type {
                                 Image(systemName: "checkmark")
-                                    .foregroundColor(.appPrimaryText)
+                                    .foregroundStyle(.appPrimaryText)
                             }
                         }
                         .padding(.vertical, 12)
@@ -261,10 +261,10 @@ struct ChatRoomBackgroundSettings: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: "info.circle.fill")
-                    .foregroundColor(.blue)
+                    .foregroundStyle(.blue)
                 Text(languageManager.localize(ko: "시스템 기본 배경을 사용합니다", en: "Using system default background", ja: "システムのデフォルト背景を使用します", zh: "使用系统默认背景", es: "Usando el fondo predeterminado del sistema"))
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.secondary)
             }
             .padding()
             .background(Color.blue.opacity(0.1))
@@ -321,12 +321,12 @@ struct ChatRoomBackgroundSettings: View {
             } label: {
                 HStack {
                     Image(systemName: "photo.fill")
-                        .foregroundColor(.appPrimaryText)
+                        .foregroundStyle(.appPrimaryText)
                     Text(localizedText("choose_image"))
-                        .foregroundColor(.primary)
+                        .foregroundStyle(Color.primary)
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.secondary)
                         .font(.caption)
                 }
                 .padding()
@@ -348,7 +348,7 @@ struct ChatRoomBackgroundSettings: View {
             .frame(maxWidth: .infinity)
             .padding()
             .background(Color.red.opacity(0.1))
-            .foregroundColor(.red)
+            .foregroundStyle(.red)
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .alert(localizedText("reset"), isPresented: $showingResetConfirmation) {

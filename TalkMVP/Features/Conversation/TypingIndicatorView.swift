@@ -17,12 +17,12 @@ struct TypingIndicatorView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(senderName)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.secondary)
 
                 HStack {
                     Text(languageManager.localize(ko: "타이핑 중", en: "Typing", ja: "入力中", zh: "正在输入", es: "Escribiendo"))
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.secondary)
 
                     HStack(spacing: 4) {
                         ForEach(0..<3) { index in

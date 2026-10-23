@@ -58,7 +58,7 @@ struct AuthView<Footer: View>: View {
                             Text(appTitle)
                                 .font(.largeTitle)
                                 .fontWeight(.bold)
-                                .foregroundColor(.primary)
+                                .foregroundStyle(Color.primary)
                         }
                         .padding(.top, 50)
 
@@ -144,7 +144,7 @@ struct AuthView<Footer: View>: View {
             // 오류 메시지
             if let errorMessage = authManager.errorMessage {
                 Text(errorMessage)
-                    .foregroundColor(.red)
+                    .foregroundStyle(.red)
                     .font(.caption)
                     .multilineTextAlignment(.center)
             }
@@ -162,8 +162,8 @@ struct AuthView<Footer: View>: View {
             .frame(maxWidth: 360)
             .frame(height: 50)
             .background(Color.appPrimary)
-            .foregroundColor(.onAppPrimary)
-            .cornerRadius(25)
+            .foregroundStyle(.onAppPrimary)
+            .clipShape(.rect(cornerRadius: 25))
             .disabled(authManager.isLoading || !isFormValid)
 
             // SSO 버튼 (로그인 화면에서만)
@@ -179,7 +179,7 @@ struct AuthView<Footer: View>: View {
                 }
             }) {
                 Text(localizedText(isSignUp ? "have_account" : "no_account"))
-                    .foregroundColor(.appPrimaryText)
+                    .foregroundStyle(.appPrimaryText)
             }
         }
     }
@@ -256,7 +256,7 @@ struct CustomTextField: View {
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .foregroundColor(.gray)
+                .foregroundStyle(.gray)
                 .frame(width: 20)
 
             if isSecure {
@@ -270,7 +270,7 @@ struct CustomTextField: View {
         }
         .padding()
         .background(Color.gray.opacity(0.1))
-        .cornerRadius(12)
+        .clipShape(.rect(cornerRadius: 12))
     }
 }
 

@@ -25,13 +25,13 @@ struct SSOSignInView: View {
         HStack(spacing: 12) {
             Rectangle()
                 .frame(height: 1)
-                .foregroundColor(Color(UIColor.separator))
+                .foregroundStyle(Color(UIColor.separator))
             Text(languageManager.localize(ko: "또는", en: "or", ja: "または", zh: "或者", es: "o"))
                 .font(.footnote)
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.secondary)
             Rectangle()
                 .frame(height: 1)
-                .foregroundColor(Color(UIColor.separator))
+                .foregroundStyle(Color(UIColor.separator))
         }
         // As wide as the fields and buttons around it, not the whole screen on a wide one.
         .frame(maxWidth: 360)
@@ -57,7 +57,7 @@ struct SSOSignInView: View {
                 Text(label)
                     .font(.system(size: 17, weight: .medium))
             }
-            .foregroundColor(foreground)
+            .foregroundStyle(foreground)
             .frame(maxWidth: 360)
             .frame(height: 50)
             .background(background)
@@ -85,7 +85,7 @@ struct SSOSignInView: View {
                 Text(label)
                     .font(.system(size: 17, weight: .medium))
             }
-            .foregroundColor(.primary)
+            .foregroundStyle(Color.primary)
             .frame(maxWidth: 360)
             .frame(height: 50)
             .background(background)

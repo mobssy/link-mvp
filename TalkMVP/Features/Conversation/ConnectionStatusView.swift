@@ -26,7 +26,7 @@ struct ConnectionStatusView: View {
 
                     Text(chatService.connectionStatus.displayText)
                         .font(.caption)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
 
                     Spacer()
 
@@ -38,8 +38,8 @@ struct ConnectionStatusView: View {
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(Color.white.opacity(0.3))
-                        .cornerRadius(8)
-                        .foregroundColor(.white)
+                        .clipShape(.rect(cornerRadius: 8))
+                        .foregroundStyle(.white)
                     }
                 }
                 .padding(.horizontal, 16)

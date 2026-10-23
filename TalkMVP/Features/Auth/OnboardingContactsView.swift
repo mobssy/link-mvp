@@ -11,7 +11,7 @@ struct OnboardingContactsView: View {
         VStack(spacing: 20) {
             Image(systemName: "person.crop.circle.badge.plus")
                 .font(.system(size: 60))
-                .foregroundColor(.appPrimaryText)
+                .foregroundStyle(.appPrimaryText)
                 .padding(.top, 20)
 
             Text(loc("title"))
@@ -21,7 +21,7 @@ struct OnboardingContactsView: View {
 
             Text(loc("subtitle"))
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
 
@@ -30,7 +30,7 @@ struct OnboardingContactsView: View {
             if !status.isEmpty {
                 Text(status)
                     .font(.footnote)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.secondary)
             }
 
             HStack(spacing: 12) {
@@ -39,8 +39,8 @@ struct OnboardingContactsView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.gray.opacity(0.1))
-                        .foregroundColor(.primary)
-                        .cornerRadius(12)
+                        .foregroundStyle(Color.primary)
+                        .clipShape(.rect(cornerRadius: 12))
                 }
 
                 Button(action: { Task { await requestAccessAndSync() } }) {
@@ -49,8 +49,8 @@ struct OnboardingContactsView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.appPrimary)
-                .foregroundColor(.onAppPrimary)
-                .cornerRadius(12)
+                .foregroundStyle(.onAppPrimary)
+                .clipShape(.rect(cornerRadius: 12))
                 .disabled(isRequesting)
             }
             .padding(.horizontal)

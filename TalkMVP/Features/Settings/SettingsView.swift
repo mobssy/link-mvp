@@ -172,7 +172,7 @@ struct SettingsView: View {
                                 impactFeedback.impactOccurred()
                                 showingLogoutAlert = true
                             }
-                            .foregroundColor(.red)
+                            .foregroundStyle(.red)
                             .frame(maxWidth: .infinity)
                             .font(.headline)
                             .padding(.vertical, 12)

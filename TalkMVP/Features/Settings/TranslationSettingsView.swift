@@ -13,14 +13,14 @@ struct TranslationSettingsView: View {
                 Toggle(isOn: $translationEnabled) {
                     HStack(spacing: 12) {
                         Image(systemName: "character.bubble")
-                            .foregroundColor(.teal)
+                            .foregroundStyle(.teal)
                         Text(localizedText("translation_enable"))
                     }
                 }
                 Toggle(isOn: $translationAutoDetect) {
                     HStack(spacing: 12) {
                         Image(systemName: "text.magnifyingglass")
-                            .foregroundColor(.indigo)
+                            .foregroundStyle(.indigo)
                         Text(localizedText("translation_auto_detect"))
                     }
                 }
@@ -36,7 +36,7 @@ struct TranslationSettingsView: View {
                 Toggle(isOn: $translationShowOriginal) {
                     HStack(spacing: 12) {
                         Image(systemName: "doc.text.magnifyingglass")
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.gray)
                         Text(localizedText("translation_show_original"))
                     }
                 }

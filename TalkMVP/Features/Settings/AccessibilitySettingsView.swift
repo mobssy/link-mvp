@@ -41,7 +41,7 @@ struct AccessibilitySettingsView: View {
                     HStack(alignment: .bottom, spacing: 0) {
                         Text("Aa")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(Color.secondary)
                         Spacer()
                         ForEach(0..<5) { i in
                             Capsule()
@@ -52,7 +52,7 @@ struct AccessibilitySettingsView: View {
                         Spacer()
                         Text("Aa")
                             .font(.title2)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(Color.secondary)
                     }
 
                     Slider(
@@ -69,7 +69,7 @@ struct AccessibilitySettingsView: View {
 
                     Text(textSizeLabel)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.secondary)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: textSizeStep)
                 }
@@ -137,7 +137,7 @@ struct AccessibilitySettingsView: View {
                     Spacer()
                     Text(languageManager.localize(ko: "설정 → 손쉬운 사용", en: "Settings → Accessibility", ja: "設定 → アクセシビリティ", zh: "设置 → 辅助功能", es: "Ajustes → Accesibilidad"))
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.secondary)
                         .multilineTextAlignment(.trailing)
                 }
                 HStack {
@@ -145,7 +145,7 @@ struct AccessibilitySettingsView: View {
                     Spacer()
                     Text(languageManager.localize(ko: "설정 → 손쉬운 사용", en: "Settings → Accessibility", ja: "設定 → アクセシビリティ", zh: "设置 → 辅助功能", es: "Ajustes → Accesibilidad"))
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.secondary)
                         .multilineTextAlignment(.trailing)
                 }
             } header: {
@@ -179,7 +179,7 @@ struct AccessibilitySettingsView: View {
                         RoundedRectangle(cornerRadius: 20)
                             .fill(Color.ownBubble(highContrast: highContrast))
                     )
-                    .foregroundColor(Color.onOwnBubble(highContrast: highContrast))
+                    .foregroundStyle(Color.onOwnBubble(highContrast: highContrast))
             }
             HStack {
                 Text(languageManager.localize(ko: "반갑습니다! 잘 보이시나요?", en: "Nice to meet you! Can you see this?", ja: "はじめまして！見えますか？", zh: "很高兴认识你！看得清楚吗？", es: "¡Mucho gusto! ¿Puedes ver esto?"))
@@ -189,7 +189,7 @@ struct AccessibilitySettingsView: View {
                         RoundedRectangle(cornerRadius: 20)
                             .fill(highContrast ? Color(UIColor.systemGray4) : Color.gray.opacity(0.2))
                     )
-                    .foregroundColor(.primary)
+                    .foregroundStyle(Color.primary)
                 Spacer()
             }
         }

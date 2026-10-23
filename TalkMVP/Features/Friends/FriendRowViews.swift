@@ -28,18 +28,18 @@ struct MyProfileRow: View {
                 } else {
                     Image(systemName: "person.circle.fill")
                         .font(.system(size: 60))
-                        .foregroundColor(.appPrimaryText)
+                        .foregroundStyle(.appPrimaryText)
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(localizedDisplayName().capitalized)
                         .font(.title2)
                         .fontWeight(.semibold)
-                        .foregroundColor(.primary)
+                        .foregroundStyle(Color.primary)
 
                     Text(localizedStatusMessage())
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.secondary)
                 }
 
                 Spacer()
@@ -104,25 +104,25 @@ struct FriendRow: View {
             HStack(spacing: 16) {
                 Image(systemName: "person.circle.fill")
                     .font(.system(size: 50))
-                    .foregroundColor(.appPrimaryText)
+                    .foregroundStyle(.appPrimaryText)
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         Text(friendship.friendName)
                             .font(.title3)
                             .fontWeight(.semibold)
-                            .foregroundColor(.primary)
+                            .foregroundStyle(Color.primary)
 
                         if friendship.isFavorite {
                             Image(systemName: "star.fill")
                                 .font(.caption)
-                                .foregroundColor(.yellow)
+                                .foregroundStyle(.yellow)
                         }
                     }
 
                     Text(languageManager.localize(ko: "온라인", en: "online", ja: "オンライン", zh: "在线", es: "en línea"))
                         .font(.subheadline)
-                        .foregroundColor(.green)
+                        .foregroundStyle(.green)
                 }
 
                 Spacer()
@@ -196,16 +196,16 @@ struct ReceivedRequestRow: View {
         HStack {
             Image(systemName: "person.circle.fill")
                 .font(.system(size: 40))
-                .foregroundColor(.orange)
+                .foregroundStyle(.orange)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(friendship.friendName)
                     .font(.headline)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(Color.primary)
 
                 Text(L10n.text("friend_request", languageManager.appLanguage))
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.secondary)
             }
 
             Spacer()
@@ -238,23 +238,23 @@ struct PendingRequestRow: View {
         HStack {
             Image(systemName: "person.circle.fill")
                 .font(.system(size: 40))
-                .foregroundColor(.gray)
+                .foregroundStyle(.gray)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(friendship.friendName)
                     .font(.headline)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(Color.primary)
 
                 Text(L10n.text("request_pending", languageManager.appLanguage))
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(Color.secondary)
             }
 
             Spacer()
 
             Text(L10n.text("pending_short", languageManager.appLanguage))
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundStyle(Color.secondary)
         }
         .padding(.vertical, 4)
     }

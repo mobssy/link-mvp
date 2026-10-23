@@ -23,7 +23,7 @@ struct FriendProfileView: View {
     @State private var lastActiveIconColor: Color = .gray
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
                     // 프로필 헤더
@@ -40,7 +40,7 @@ struct FriendProfileView: View {
 
                             Image(systemName: "person.fill")
                                 .font(.system(size: 60))
-                                .foregroundColor(.appPrimaryText)
+                                .foregroundStyle(.appPrimaryText)
                         }
 
                         // 이름과 이메일
@@ -51,7 +51,7 @@ struct FriendProfileView: View {
 
                             Text(friendship.friendEmail)
                                 .font(.subheadline)
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(Color.secondary)
                         }
 
                         // 상태 배지
@@ -94,8 +94,8 @@ struct FriendProfileView: View {
                                     .frame(maxWidth: .infinity)
                                     .padding()
                                     .background(Color.appPrimary)
-                                    .foregroundColor(.onAppPrimary)
-                                    .cornerRadius(12)
+                                    .foregroundStyle(.onAppPrimary)
+                                    .clipShape(.rect(cornerRadius: 12))
                             }
                         }
 
@@ -109,8 +109,8 @@ struct FriendProfileView: View {
                                     .frame(maxWidth: .infinity)
                                     .padding()
                                     .background(.red.opacity(0.1))
-                                    .foregroundColor(.red)
-                                    .cornerRadius(12)
+                                    .foregroundStyle(.red)
+                                    .clipShape(.rect(cornerRadius: 12))
                             }
                         case .blocked:
                             Button(action: {
@@ -120,8 +120,8 @@ struct FriendProfileView: View {
                                     .frame(maxWidth: .infinity)
                                     .padding()
                                     .background(.orange.opacity(0.1))
-                                    .foregroundColor(.orange)
-                                    .cornerRadius(12)
+                                    .foregroundStyle(.orange)
+                                    .clipShape(.rect(cornerRadius: 12))
                             }
                         case .hidden:
                             Button(action: {
@@ -131,16 +131,16 @@ struct FriendProfileView: View {
                                     .frame(maxWidth: .infinity)
                                     .padding()
                                     .background(.gray.opacity(0.1))
-                                    .foregroundColor(.gray)
-                                    .cornerRadius(12)
+                                    .foregroundStyle(.gray)
+                                    .clipShape(.rect(cornerRadius: 12))
                             }
                         case .pending:
                             Text(localizedText("request_pending"))
                                 .frame(maxWidth: .infinity)
                                 .padding()
                                 .background(.gray.opacity(0.1))
-                                .foregroundColor(.gray)
-                                .cornerRadius(12)
+                                .foregroundStyle(.gray)
+                                .clipShape(.rect(cornerRadius: 12))
                         }
                     }
                     .padding(.horizontal)
@@ -150,13 +150,13 @@ struct FriendProfileView: View {
             .navigationTitle(localizedText("profile"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .topBarLeading) {
                     Button(localizedText("close")) {
                         dismiss()
                     }
                 }
 
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button(localizedText("share_profile")) {
                             shareProfile()
@@ -296,16 +296,12 @@ struct FriendProfileView: View {
                 return languageManager.localize(ko: "\(days)일 전", en: "\(days)d ago", ja: "\(days)日前", zh: "\(days)天前", es: "hace \(days)d")
             }
             // 1주 이상이면 날짜 표기
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            return formatter.string(from: date)
+            return formatDate(date)
         }
     }
 
     private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        return formatter.string(from: date)
+        date.formatted(date: .abbreviated, time: .omitted)
     }
 
     private func blockFriend() {
@@ -417,8 +413,8 @@ struct StatusBadge: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(statusColor.opacity(0.15))
-        .foregroundColor(statusColor)
-        .cornerRadius(20)
+        .foregroundStyle(statusColor)
+        .clipShape(.rect(cornerRadius: 20))
     }
 
     private var statusDisplayName: String {
@@ -464,7 +460,7 @@ struct ProfileInfoCard: View {
                     .frame(width: 40, height: 40)
 
                 Image(systemName: icon)
-                    .foregroundColor(iconColor)
+                    .foregroundStyle(iconColor)
                     .font(.system(size: 16, weight: .medium))
             }
 
@@ -473,7 +469,7 @@ struct ProfileInfoCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(Color.secondary)
 
                     Text(value)
                         .font(.subheadline)

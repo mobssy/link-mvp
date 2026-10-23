@@ -157,7 +157,7 @@ struct TestModeButtonView: View {
                 Text(languageManager.localizedText("test_experience"))
             }
             .font(.headline)
-            .foregroundColor(.white)
+            .foregroundStyle(.white)
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
             .background(
@@ -167,7 +167,7 @@ struct TestModeButtonView: View {
                     endPoint: .trailing
                 )
             )
-            .cornerRadius(25)
+            .clipShape(.rect(cornerRadius: 25))
             .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
         }
         .accessibilityIdentifier("testModeButton")

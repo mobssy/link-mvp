@@ -30,7 +30,7 @@ struct ProfileEditView: View {
     }
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section {
                     // 프로필 이미지
@@ -62,7 +62,7 @@ struct ProfileEditView: View {
                                                 .frame(width: 100, height: 100)
                                             Image(systemName: "person.fill")
                                                 .font(.system(size: 48))
-                                                .foregroundColor(.appPrimaryText)
+                                                .foregroundStyle(.appPrimaryText)
                                         }
                                     }
                                 }
@@ -78,7 +78,7 @@ struct ProfileEditView: View {
                                         .overlay(
                                             Image(systemName: "camera.fill")
                                                 .font(.system(size: 12, weight: .semibold))
-                                                .foregroundColor(.onAppPrimary)
+                                                .foregroundStyle(.onAppPrimary)
                                         )
                                 }
                                 .shadow(color: Color.black.opacity(0.15), radius: 2, x: 0, y: 1)
@@ -108,7 +108,7 @@ struct ProfileEditView: View {
                         Text(localizedText("username"))
                         Spacer()
                         Text(authManager.currentUser?.username ?? "")
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(Color.secondary)
                     }
 
                     HStack {
@@ -121,7 +121,7 @@ struct ProfileEditView: View {
                         Text(localizedText("email"))
                         Spacer()
                         Text(authManager.currentUser?.email ?? "")
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(Color.secondary)
                     }
                 } header: {
                     Text(localizedText("account_info"))
@@ -138,19 +138,19 @@ struct ProfileEditView: View {
                     Button(localizedText("logout")) {
                         authManager.signOut()
                     }
-                    .foregroundColor(.red)
+                    .foregroundStyle(.red)
                 }
             }
             .navigationTitle(localizedText("edit_profile"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .topBarLeading) {
                     Button(localizedText("cancel")) {
                         dismiss()
                     }
                 }
 
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(localizedText("save")) {
                         saveProfile()
                         dismiss()
