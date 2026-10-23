@@ -19,6 +19,10 @@ class User {
     var isCurrentUser: Bool
     var createdAt: Date
     var lastActiveAt: Date
+    /// For an account made by signing in with Apple or Google: the provider ("apple", "google")
+    /// and its full, stable user ID. Nil for username-and-password accounts.
+    var ssoProvider: String?
+    var ssoSubject: String?
 
     // 친구 관계
     @Relationship(deleteRule: .cascade) var friendships: [Friendship] = []

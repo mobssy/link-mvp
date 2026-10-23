@@ -912,6 +912,47 @@ struct AuthManagerTests {
         #expect(try context.fetchCount(FetchDescriptor<User>()) == 1)
     }
 
+    @Test("Two Apple IDs that start the same get separate accounts")
+    func appleIDsSharingAPrefixStaySeparate() async throws {
+        let context = try makeContext()
+        let manager = makeManager(context)
+
+        await manager.signInWithApple(userId: "001234.aaaaaaaa.0001", email: "one@example.com", fullName: nil)
+        let firstID = try #require(manager.currentUser?.id)
+        manager.signOut()
+        await manager.signInWithApple(userId: "001234.aaaaaaaa.0002", email: "two@example.com", fullName: nil)
+
+        #expect(manager.currentUser?.id != firstID)
+        #expect(manager.currentUser?.email == "two@example.com")
+        #expect(try context.fetchCount(FetchDescriptor<User>()) == 2)
+    }
+
+    @Test("Signing in with Apple never lands in an account that only has a matching username")
+    func appleSignInIgnoresLookalikeUsernames() async throws {
+        let context = try makeContext()
+        let lookalike = User(username: "apple_001234.a", displayName: "Someone", email: "someone@example.com")
+        context.insert(lookalike)
+        try context.save()
+        let manager = makeManager(context)
+
+        await manager.signInWithApple(userId: "001234.abcdef", email: "j@example.com", fullName: nil)
+
+        #expect(manager.currentUser?.id != lookalike.id)
+        #expect(manager.currentUser?.ssoSubject == "001234.abcdef")
+    }
+
+    @Test("Sign-up can't take the usernames kept for Apple and Google accounts", arguments: ["apple_001234.a", "Google_12345678"])
+    func signUpRejectsReservedUsernames(username: String) async throws {
+        let context = try makeContext()
+        let manager = makeManager(context)
+
+        await manager.signUp(username: username, displayName: "J", email: "j@example.com", password: "secret1")
+
+        #expect(manager.isAuthenticated == false)
+        #expect(manager.errorMessage != nil)
+        #expect(try context.fetchCount(FetchDescriptor<User>()) == 0)
+    }
+
     @Test("Test mode signs in a tester account with the given friends")
     func startTestSessionSeedsFriends() throws {
         let context = try makeContext()

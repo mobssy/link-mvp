@@ -24,6 +24,9 @@ class AuthManager: ObservableObject {
 
     var isAuthenticated: Bool { currentUser != nil }
 
+    /// Usernames given to accounts made by signing in with Apple or Google; sign-up can't take them.
+    static let reservedUsernamePrefixes = ["apple_", "google_"]
+
     private let modelContext: ModelContext
     /// Stand-in for a server round trip on sign-up / sign-in. Tests pass `.zero`.
     private let simulatedLatency: Duration
@@ -45,6 +48,12 @@ class AuthManager: ObservableObject {
             if isZh { return "用户名或电子邮件已存在。" }
             if isEs { return "El nombre de usuario o correo electrónico ya existe." }
             return "Username or email already exists."
+        case "signup_reserved":
+            if isKo { return "apple_ 또는 google_로 시작하는 사용자명은 사용할 수 없습니다." }
+            if isJa { return "apple_ または google_ で始まるユーザー名は使用できません。" }
+            if isZh { return "不能使用以 apple_ 或 google_ 开头的用户名。" }
+            if isEs { return "No se pueden usar nombres de usuario que empiecen por apple_ o google_." }
+            return "Usernames can't start with apple_ or google_."
         case "signup_error_prefix":
             if isKo { return "회원가입 중 오류가 발생했습니다: " }
             if isJa { return "会員登録中にエラーが発生しました: " }
@@ -112,6 +121,11 @@ class AuthManager: ObservableObject {
 
         // 실제 앱에서는 서버 API 호출
         try? await Task.sleep(for: simulatedLatency)
+
+        guard !Self.reservedUsernamePrefixes.contains(where: { username.lowercased().hasPrefix($0) }) else {
+            errorMessage = loc("signup_reserved")
+            return
+        }
 
         // 사용자명 중복 검사
         let existingUserDescriptor = FetchDescriptor<User>(
@@ -324,7 +338,8 @@ class AuthManager: ObservableObject {
 
         do {
             try signInWithSSO(
-                identifier: "apple_\(String(userId.prefix(8)))",
+                provider: "apple",
+                subject: userId,
                 displayName: name.isEmpty ? "Apple User" : name,
                 email: email ?? ""
             )
@@ -341,7 +356,8 @@ class AuthManager: ObservableObject {
         do {
             let info = try await GoogleOAuthService.signIn()
             try signInWithSSO(
-                identifier: "google_\(String(info.userId.prefix(8)))",
+                provider: "google",
+                subject: info.userId,
                 displayName: info.displayName,
                 email: info.email
             )
@@ -351,21 +367,24 @@ class AuthManager: ObservableObject {
     }
 
     /// Reuses the local account created by an earlier sign-in with the same provider identity,
-    /// or creates it on first use.
-    private func signInWithSSO(identifier: String, displayName: String, email: String) throws {
+    /// or creates it on first use. The account is found by the provider's full user ID only:
+    /// never by username, which sign-up controls, nor by part of the ID, which others can share.
+    private func signInWithSSO(provider: String, subject: String, displayName: String, email: String) throws {
         let descriptor = FetchDescriptor<User>(
-            predicate: #Predicate<User> { user in user.username == identifier }
+            predicate: #Predicate<User> { user in user.ssoProvider == provider && user.ssoSubject == subject }
         )
         let user: User
         if let existingUser = try modelContext.fetch(descriptor).first {
             user = existingUser
         } else {
             user = User(
-                username: identifier,
+                username: "\(provider)_\(subject.prefix(8))",
                 displayName: displayName,
                 email: email,
                 statusMessage: "안녕하세요!"
             )
+            user.ssoProvider = provider
+            user.ssoSubject = subject
             modelContext.insert(user)
         }
         try activate(user)
