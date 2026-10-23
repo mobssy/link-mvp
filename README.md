@@ -230,19 +230,33 @@ xcodebuild test -project TalkMVP.xcodeproj -scheme TalkMVP \
 
 ## Project Structure
 
-The app target has no feature subfolders yet — every view/service/model file sits flat inside `TalkMVP/` (a folder Xcode synchronizes into the target), with `Repositories/` as the one exception. This tree reflects the real, current layout:
+The app target is split by role: screens live in `Features/`, one folder per flow, and logic with no UI lives in `Services/`, `Repositories/` and `Models/`. `TalkMVP/` is a folder Xcode synchronizes into the target, so the folders on disk are the groups in Xcode.
 
 ```
 link-mvp/
 ├── TalkMVP.xcodeproj/
 ├── TalkMVP/
-│   ├── *.swift                  # ~75 files, flat (grouped by feature below)
-│   ├── Repositories/
-│   │   ├── AttachmentFileStore.swift
-│   │   ├── ChatRoomRepository.swift
-│   │   ├── MessageRepository.swift
-│   │   ├── OrphanedDataCleaner.swift
-│   │   └── TestAccount.swift
+│   ├── App/                     # Entry point and the tab shell
+│   ├── Features/                # Screens, one folder per flow
+│   │   ├── Auth/                # AuthView, SSOSignInView, AppLockView, OnboardingContactsView
+│   │   ├── Chats/               # ChatListView
+│   │   ├── Conversation/        # ChatView (+Friends/Helpers/Input/Media/Messages/Sheets), ChatViewModel,
+│   │   │                        # MessageBubbleView, MeetingNotesView, ChatRoomBackgroundSettings, …
+│   │   ├── Friends/             # FriendsView, FriendProfileView, FriendRowViews, AddFriendView, FriendManagementViews
+│   │   └── Settings/            # SettingsView, SettingsCardComponents, ProfileEditView, *SettingsView pages,
+│   │                            # HelpView, AppInfoView, TermsPoliciesView
+│   ├── Services/                # Logic with no UI
+│   │   ├── AI/                  # AIService, MeetingNotes (+Extractor/Grounding), ReplySuggestions, ReplyWriter,
+│   │   │                        # MessageTranslation, MessageSearch, PhotoDescriber, VoiceTranscriber, …
+│   │   ├── Auth/                # AuthManager, GoogleOAuthService, AppLockManager
+│   │   ├── Chat/                # ChatService (+Protocol), AutoResponseService, OpenChatRooms, NotificationManager
+│   │   ├── Contacts/            # ContactsSyncService, FriendSearchService
+│   │   └── Media/               # VoiceMessageService, AttachmentHandler, AttachmentPreviewer
+│   ├── Intents/                 # ChatIntents, ChatIntentActions (Siri and Shortcuts)
+│   ├── Models/                  # ChatRoom, Message, User (SwiftData)
+│   ├── Repositories/            # SwiftData access behind protocols, attachment files, cleanup, the test account
+│   ├── Localization/            # L10n, LanguageManager (+Extensions), LocalizationService
+│   ├── DesignSystem/            # Colors+Extensions (brand colors)
 │   ├── AppShortcuts.xcstrings   # Siri phrases, in the app's five languages
 │   ├── Localizable.xcstrings    # Siri and Shortcuts strings, in the same languages (the UI is localized in code)
 │   └── Assets.xcassets/         # App icon, color sets, image assets
@@ -256,18 +270,6 @@ link-mvp/
 └── docs/
     └── screenshots/             # Images used in this README (kept out of the app bundle)
 ```
-
-**By feature** (logical grouping, not physical folders):
-
-- **App**: `TalkMVPApp`, `ContentView`
-- **Auth & App Lock**: `AuthView`, `AuthManager`, `SSOSignInView`, `GoogleOAuthService`, `AppLockView`, `AppLockManager`
-- **Chat**: `ChatView` (+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatAIResults`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `OpenChatRooms`, `Message`, `MessageBubbleView`, `SwipeToReply`, `AttachmentPreviewer`, `TypingIndicatorView`, `ConnectionStatusView`, `MeetingNotesView`
-- **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
-- **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `AIFeatureSettings`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
-- **Services & Managers**: `AIService`, `ConversationChunker`, `MeetingNotes`(+`Extractor`/`Grounding`), `MessageSearch`, `ConversationLanguage`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `ReplyWriter`, `ReplySuggestions`, `MessageTranslation`, `VoiceMessageService`, `VoiceTranscriber`, `PhotoDescriber`, `ChatIntents`, `ChatIntentActions`, `AttachmentHandler`
-- **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
-- **Data Layer**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `Repositories/TestAccount`, `User`
-- **Shared**: `Colors+Extensions`
 
 ---
 
@@ -513,19 +515,33 @@ xcodebuild test -project TalkMVP.xcodeproj -scheme TalkMVP \
 
 ## 프로젝트 구조
 
-아직 기능별 하위 폴더는 없고, `Repositories/`를 제외한 모든 view/service/model 파일이 `TalkMVP/`(Xcode가 타깃에 자동 동기화하는 폴더) 밑에 flat하게 있습니다. 아래는 실제 배치 그대로입니다:
+앱 타깃은 역할별로 나뉩니다. 화면은 흐름마다 `Features/` 아래 폴더 하나에, 화면이 없는 로직은 `Services/`, `Repositories/`, `Models/`에 있습니다. `TalkMVP/`는 Xcode가 타깃에 자동 동기화하는 폴더라, 디스크의 폴더가 그대로 Xcode의 그룹입니다.
 
 ```
 link-mvp/
 ├── TalkMVP.xcodeproj/
 ├── TalkMVP/
-│   ├── *.swift                  # 약 75개 파일, flat (기능별 분류는 아래 참고)
-│   ├── Repositories/
-│   │   ├── AttachmentFileStore.swift
-│   │   ├── ChatRoomRepository.swift
-│   │   ├── MessageRepository.swift
-│   │   ├── OrphanedDataCleaner.swift
-│   │   └── TestAccount.swift
+│   ├── App/                     # 앱 진입점과 탭 구성
+│   ├── Features/                # 화면, 흐름별 폴더 하나씩
+│   │   ├── Auth/                # AuthView, SSOSignInView, AppLockView, OnboardingContactsView
+│   │   ├── Chats/               # ChatListView
+│   │   ├── Conversation/        # ChatView (+Friends/Helpers/Input/Media/Messages/Sheets), ChatViewModel,
+│   │   │                        # MessageBubbleView, MeetingNotesView, ChatRoomBackgroundSettings, …
+│   │   ├── Friends/             # FriendsView, FriendProfileView, FriendRowViews, AddFriendView, FriendManagementViews
+│   │   └── Settings/            # SettingsView, SettingsCardComponents, ProfileEditView, *SettingsView 페이지들,
+│   │                            # HelpView, AppInfoView, TermsPoliciesView
+│   ├── Services/                # 화면 없는 로직
+│   │   ├── AI/                  # AIService, MeetingNotes (+Extractor/Grounding), ReplySuggestions, ReplyWriter,
+│   │   │                        # MessageTranslation, MessageSearch, PhotoDescriber, VoiceTranscriber, …
+│   │   ├── Auth/                # AuthManager, GoogleOAuthService, AppLockManager
+│   │   ├── Chat/                # ChatService (+Protocol), AutoResponseService, OpenChatRooms, NotificationManager
+│   │   ├── Contacts/            # ContactsSyncService, FriendSearchService
+│   │   └── Media/               # VoiceMessageService, AttachmentHandler, AttachmentPreviewer
+│   ├── Intents/                 # ChatIntents, ChatIntentActions (Siri·단축어)
+│   ├── Models/                  # ChatRoom, Message, User (SwiftData)
+│   ├── Repositories/            # 프로토콜 뒤의 SwiftData 접근, 첨부 파일, 정리 작업, 테스트 계정
+│   ├── Localization/            # L10n, LanguageManager (+Extensions), LocalizationService
+│   ├── DesignSystem/            # Colors+Extensions (브랜드 색상)
 │   ├── AppShortcuts.xcstrings   # Siri 문구 (앱이 지원하는 5개 언어)
 │   ├── Localizable.xcstrings    # Siri·단축어 문구 (같은 5개 언어, UI 문구는 코드에서 번역)
 │   └── Assets.xcassets/         # 앱 아이콘, 색상, 이미지 에셋
@@ -539,18 +555,6 @@ link-mvp/
 └── docs/
     └── screenshots/             # 이 README에 쓰인 이미지 (앱 번들에는 포함되지 않음)
 ```
-
-**기능별 분류** (실제 폴더가 아닌 논리적 그룹입니다):
-
-- **App**: `TalkMVPApp`, `ContentView`
-- **Auth & 앱 잠금**: `AuthView`, `AuthManager`, `SSOSignInView`, `GoogleOAuthService`, `AppLockView`, `AppLockManager`
-- **Chat**: `ChatView`(+`Friends`/`Helpers`/`Input`/`Media`/`Messages`/`Sheets`), `ChatViewModel`, `ChatAIResults`, `ChatViewAlertModifiers`, `ChatViewSupportingViews`, `ChatListView`, `ChatRoom`, `ChatRoomBackgroundSettings`, `ChatService`/`ChatServiceProtocol`, `OpenChatRooms`, `Message`, `MessageBubbleView`, `SwipeToReply`, `AttachmentPreviewer`, `TypingIndicatorView`, `ConnectionStatusView`, `MeetingNotesView`
-- **Friends**: `FriendsView`, `FriendProfileView`, `FriendRowViews`, `FriendManagementViews`, `FriendSearchService`, `AddFriendView`, `OnboardingContactsView`, `ContactsSettingsView`, `ContactsSyncService`
-- **Settings**: `SettingsView`, `SettingsCardComponents`, `AISettingsView`, `AIFeatureSettings`, `SecuritySettingsView`, `TranslationSettingsView`, `AccessibilitySettingsView`, `LanguageSettingsView`, `ThemeSettingsView`, `ProfileEditView`, `HelpView`, `TermsPoliciesView`, `AppInfoView`
-- **Services & Managers**: `AIService`, `ConversationChunker`, `MeetingNotes`(+`Extractor`/`Grounding`), `MessageSearch`, `ConversationLanguage`, `LocalizationService`, `NotificationManager`, `AutoResponseService`, `ReplyWriter`, `ReplySuggestions`, `MessageTranslation`, `VoiceMessageService`, `VoiceTranscriber`, `PhotoDescriber`, `ChatIntents`, `ChatIntentActions`, `AttachmentHandler`
-- **Localization**: `L10n`, `LanguageManager`(+`Extensions`)
-- **데이터 레이어**: `Repositories/ChatRoomRepository`, `Repositories/MessageRepository`, `Repositories/AttachmentFileStore`, `Repositories/OrphanedDataCleaner`, `Repositories/TestAccount`, `User`
-- **공용**: `Colors+Extensions`
 
 ---
 
