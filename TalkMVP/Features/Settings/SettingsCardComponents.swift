@@ -50,19 +50,13 @@ struct SettingsLinkRow: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(tint.opacity(0.2))
-                    .frame(width: 28, height: 28)
-                Image(systemName: systemImage)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(tint)
-            }
+            SettingsIconBadge(systemImage: systemImage, tint: tint)
             Text(title)
                 .foregroundStyle(Color.primary)
+                .multilineTextAlignment(.leading)
             Spacer()
             Image(systemName: "chevron.right")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.callout.weight(.semibold))
                 .foregroundStyle(Color.secondary)
         }
         .contentShape(Rectangle())
@@ -85,16 +79,10 @@ struct SettingsToggleRow: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(tint.opacity(0.2))
-                    .frame(width: 28, height: 28)
-                Image(systemName: systemImage)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(tint)
-            }
+            SettingsIconBadge(systemImage: systemImage, tint: tint)
             Text(title)
                 .foregroundStyle(Color.primary)
+                .multilineTextAlignment(.leading)
             Spacer()
             Toggle("", isOn: $isOn)
                 .labelsHidden()
@@ -143,6 +131,7 @@ struct ProfileCardView: View {
                         .foregroundStyle(Color.secondary)
                         .font(.subheadline)
                 }
+                .multilineTextAlignment(.leading)
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.system(size: 18, weight: .semibold))
@@ -176,4 +165,21 @@ struct ProfileCardView: View {
             .padding(.horizontal)
     }
     .padding()
+}
+
+/// The tinted square behind a settings row's symbol. It grows with the text size, so the row
+/// keeps its proportions at larger sizes.
+struct SettingsIconBadge: View {
+    let systemImage: String
+    let tint: Color
+    @ScaledMetric(relativeTo: .body) private var size: CGFloat = 28
+
+    var body: some View {
+        Image(systemName: systemImage)
+            .font(.callout.weight(.medium))
+            .foregroundStyle(tint)
+            .frame(width: size, height: size)
+            .background(tint.opacity(0.2), in: .rect(cornerRadius: 6, style: .continuous))
+            .accessibilityHidden(true)
+    }
 }

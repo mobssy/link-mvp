@@ -5,20 +5,10 @@ struct AccessibilitySettingsView: View {
     @AppStorage("inAppBoldText") private var boldText = false
     @AppStorage("inAppReduceMotion") private var reduceMotion = false
     @AppStorage("inAppHighContrast") private var highContrast = false
-    @AppStorage("inAppTextSizeStep") private var textSizeStep = 2
+    @AppStorage(InAppTextSize.stepKey) private var textSizeStep = InAppTextSize.defaultStep
+    @AppStorage(InAppTextSize.overridesKey) private var overridesSystemTextSize = false
 
     // MARK: - Text Size Helpers
-
-    private func dynamicTypeSizeForStep(_ step: Int) -> DynamicTypeSize {
-        switch step {
-        case 0: return .small
-        case 1: return .medium
-        case 3: return .xLarge
-        case 4: return .xxLarge
-        case 5: return .xxxLarge
-        default: return .large
-        }
-    }
 
     private var textSizeLabel: String {
         let labels: [String] = [
@@ -36,54 +26,74 @@ struct AccessibilitySettingsView: View {
         Form {
             // MARK: - Text Size Section
             Section {
-                VStack(spacing: 14) {
-                    // Aa size indicator
-                    HStack(alignment: .bottom, spacing: 0) {
-                        Text("Aa")
-                            .font(.caption2)
-                            .foregroundStyle(Color.secondary)
-                        Spacer()
-                        ForEach(0..<5) { i in
-                            Capsule()
-                                .fill(i <= textSizeStep ? Color.appPrimaryText : Color.secondary.opacity(0.3))
-                                .frame(width: 6, height: CGFloat(10 + i * 5))
-                                .padding(.horizontal, 2)
-                        }
-                        Spacer()
-                        Text("Aa")
-                            .font(.title2)
-                            .foregroundStyle(Color.secondary)
-                    }
-
-                    Slider(
-                        value: Binding(
-                            get: { Double(textSizeStep) },
-                            set: { textSizeStep = Int($0.rounded()) }
-                        ),
-                        in: 0...4,
-                        step: 1
+                Toggle(isOn: $overridesSystemTextSize.animation(reduceMotion ? nil : .default)) {
+                    Label(
+                        languageManager.localize(ko: "앱에서 글자 크기 정하기", en: "Custom Text Size", ja: "アプリで文字サイズを設定", zh: "在应用中设置文字大小", es: "Tamaño de texto propio"),
+                        systemImage: "textformat.size"
                     )
-                    .tint(.appPrimaryText)
-                    .accessibilityLabel(languageManager.localize(ko: "글자 크기", en: "Text Size", ja: "テキストサイズ", zh: "文字大小", es: "Tamaño de texto"))
-                    .accessibilityValue(textSizeLabel)
-
-                    Text(textSizeLabel)
-                        .font(.caption)
-                        .foregroundStyle(Color.secondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: textSizeStep)
                 }
-                .padding(.vertical, 6)
+                .accessibilityIdentifier("customTextSizeToggle")
+
+                if overridesSystemTextSize {
+                    VStack(spacing: 14) {
+                        // Aa size indicator
+                        HStack(alignment: .bottom, spacing: 0) {
+                            Text("Aa")
+                                .font(.caption2)
+                                .foregroundStyle(Color.secondary)
+                            Spacer()
+                            ForEach(0..<5) { i in
+                                Capsule()
+                                    .fill(i <= textSizeStep ? Color.appPrimaryText : Color.secondary.opacity(0.3))
+                                    .frame(width: 6, height: CGFloat(10 + i * 5))
+                                    .padding(.horizontal, 2)
+                            }
+                            Spacer()
+                            Text("Aa")
+                                .font(.title2)
+                                .foregroundStyle(Color.secondary)
+                        }
+
+                        Slider(
+                            value: Binding(
+                                get: { Double(textSizeStep) },
+                                set: { textSizeStep = Int($0.rounded()) }
+                            ),
+                            in: Double(InAppTextSize.steps.lowerBound)...Double(InAppTextSize.steps.upperBound),
+                            step: 1
+                        )
+                        .tint(.appPrimaryText)
+                        .accessibilityLabel(languageManager.localize(ko: "글자 크기", en: "Text Size", ja: "テキストサイズ", zh: "文字大小", es: "Tamaño de texto"))
+                        .accessibilityValue(textSizeLabel)
+
+                        Text(textSizeLabel)
+                            .font(.caption)
+                            .foregroundStyle(Color.secondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: textSizeStep)
+                    }
+                    .padding(.vertical, 6)
+                }
             } header: {
                 Text(languageManager.localize(ko: "글자 크기", en: "Text Size", ja: "テキストサイズ", zh: "文字大小", es: "Tamaño de texto"))
             } footer: {
-                Text(languageManager.localize(
-                    ko: "앱 내 모든 텍스트 크기에 즉시 적용됩니다.",
-                    en: "Applies immediately to all text in the app.",
-                    ja: "アプリ内のすべてのテキストサイズに即座に適用されます。",
-                    zh: "立即应用于应用程序中的所有文本大小。",
-                    es: "Se aplica inmediatamente a todos los textos de la aplicación."
-                ))
+                if overridesSystemTextSize {
+                    Text(languageManager.localize(
+                        ko: "iOS 설정 대신 이 크기를 앱의 모든 글자에 바로 적용합니다.",
+                        en: "Applies this size to all text in the app right away, instead of the iOS setting.",
+                        ja: "iOSの設定の代わりに、このサイズをアプリ内のすべての文字にすぐ適用します。",
+                        zh: "立即将此大小应用于应用中的所有文字，而不是使用 iOS 设置。",
+                        es: "Aplica este tamaño a todo el texto de la app al instante, en lugar del ajuste de iOS."
+                    ))
+                } else {
+                    Text(languageManager.localize(
+                        ko: "iOS 설정 → 손쉬운 사용 → 디스플레이 및 텍스트 크기의 글자 크기를 따릅니다.",
+                        en: "Follows the text size in iOS Settings → Accessibility → Display & Text Size.",
+                        ja: "iOSの設定 → アクセシビリティ → 画面表示とテキストサイズの文字サイズに従います。",
+                        zh: "跟随 iOS 设置 → 辅助功能 → 显示与文字大小 中的文字大小。",
+                        es: "Sigue el tamaño de texto de Ajustes de iOS → Accesibilidad → Pantalla y tamaño del texto."
+                    ))
+                }
             }
 
             // MARK: - Visual Settings Section
@@ -164,7 +174,7 @@ struct AccessibilitySettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         // Apply bold and size in this view so Preview section reflects changes live
         .fontWeight(boldText ? .bold : .regular)
-        .dynamicTypeSize(dynamicTypeSizeForStep(textSizeStep))
+        .inAppTextSize()
     }
 
     // MARK: - Live Preview Bubbles

@@ -21,9 +21,9 @@ struct LinkMVPApp: App {
     @AppStorage("themeMode") private var themeMode: String = "system"
     @AppStorage("inAppBoldText") private var boldText = false
     @AppStorage("inAppReduceMotion") private var reduceMotion = false
-    @AppStorage("inAppTextSizeStep") private var textSizeStep = 2
 
     init() {
+        InAppTextSize.migrate(.standard)
         // Use the container's main context: it is the same context `.modelContainer(_:)`
         // injects into the view hierarchy, so models AuthManager hands out (currentUser)
         // can be edited and saved from any view.
@@ -64,17 +64,6 @@ struct LinkMVPApp: App {
         }
     }
 
-    private func dynamicTypeSizeForStep(_ step: Int) -> DynamicTypeSize {
-        switch step {
-        case 0: return .small
-        case 1: return .medium
-        case 3: return .xLarge
-        case 4: return .xxLarge
-        case 5: return .xxxLarge
-        default: return .large  // step 2 = iOS 기본값
-        }
-    }
-
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -84,7 +73,7 @@ struct LinkMVPApp: App {
                 .tint(.appPrimaryText)
                 .preferredColorScheme(themeMode == "light" ? .light : (themeMode == "dark" ? .dark : nil))
                 .fontWeight(boldText ? .bold : .regular)
-                .dynamicTypeSize(dynamicTypeSizeForStep(textSizeStep))
+                .inAppTextSize()
                 .fullScreenCover(isPresented: Binding(get: { appLock.isLocked }, set: { _ in })) {
                     AppLockView()
                         .environment(appLock)

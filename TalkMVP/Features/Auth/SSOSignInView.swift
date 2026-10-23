@@ -10,6 +10,7 @@ struct SSOSignInView: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(LanguageManager.self) private var languageManager
     @Environment(\.colorScheme) private var colorScheme
+    @ScaledMetric(relativeTo: .body) private var googleLogoSize: CGFloat = 20
 
     var body: some View {
         VStack(spacing: 12) {
@@ -53,13 +54,13 @@ struct SSOSignInView: View {
         return Button(action: triggerAppleSignIn) {
             HStack(spacing: 8) {
                 Image(systemName: "apple.logo")
-                    .font(.system(size: 17, weight: .medium))
                 Text(label)
-                    .font(.system(size: 17, weight: .medium))
             }
+            .font(.body.weight(.medium))
             .foregroundStyle(foreground)
             .frame(maxWidth: 360)
-            .frame(height: 50)
+            // At least the old height, taller when the text grows.
+            .frame(minHeight: 50)
             .background(background)
             .clipShape(RoundedRectangle(cornerRadius: 25, style: .continuous))
         }
@@ -81,13 +82,14 @@ struct SSOSignInView: View {
                 Image("google-logo")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 20, height: 20)
+                    .frame(width: googleLogoSize, height: googleLogoSize)
+                    .accessibilityHidden(true)
                 Text(label)
-                    .font(.system(size: 17, weight: .medium))
             }
+            .font(.body.weight(.medium))
             .foregroundStyle(Color.primary)
             .frame(maxWidth: 360)
-            .frame(height: 50)
+            .frame(minHeight: 50)
             .background(background)
             .clipShape(RoundedRectangle(cornerRadius: 25, style: .continuous))
             .overlay(

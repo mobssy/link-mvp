@@ -93,6 +93,7 @@ struct ReactionPickerView: View {
     let onReactionSelected: (String) -> Void
 
     private let reactions = ["👍", "❤️", "😂", "😮", "😢", "😡", "👏", "🎉"]
+    @ScaledMetric(relativeTo: .largeTitle) private var emojiSize: CGFloat = 32
 
     var body: some View {
         VStack(spacing: 16) {
@@ -106,8 +107,8 @@ struct ReactionPickerView: View {
                         onReactionSelected(emoji)
                     }) {
                         Text(emoji)
-                            .font(.system(size: 32))
-                            .frame(width: 60, height: 60)
+                            .font(.system(size: emojiSize))
+                            .frame(width: emojiSize * 1.9, height: emojiSize * 1.9)
                             .glassEffect(.regular.interactive(), in: .circle)
                     }
                     .buttonStyle(PlainButtonStyle())

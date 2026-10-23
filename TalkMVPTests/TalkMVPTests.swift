@@ -2797,3 +2797,44 @@ struct FriendshipRepositoryTests {
         #expect(FriendStanding(status) == standing)
     }
 }
+
+// MARK: - Text size
+
+@Suite("In-app text size")
+struct InAppTextSizeTests {
+    private func makeDefaults() -> UserDefaults {
+        UserDefaults(suiteName: "InAppTextSizeTests-\(UUID().uuidString)")!
+    }
+
+    @Test("A fresh install follows the system text size")
+    func freshInstallFollowsSystem() {
+        let defaults = makeDefaults()
+        InAppTextSize.migrate(defaults)
+        #expect(defaults.bool(forKey: InAppTextSize.overridesKey) == false)
+    }
+
+    @Test("Someone who picked a size before keeps it; the default size follows the system", arguments: [
+        (0, true), (1, true), (2, false), (3, true), (4, true)
+    ])
+    func earlierChoiceIsKept(step: Int, overrides: Bool) {
+        let defaults = makeDefaults()
+        defaults.set(step, forKey: InAppTextSize.stepKey)
+        InAppTextSize.migrate(defaults)
+        #expect(defaults.bool(forKey: InAppTextSize.overridesKey) == overrides)
+    }
+
+    @Test("A decision already made isn't changed again")
+    func migrationRunsOnce() {
+        let defaults = makeDefaults()
+        defaults.set(4, forKey: InAppTextSize.stepKey)
+        defaults.set(false, forKey: InAppTextSize.overridesKey)
+        InAppTextSize.migrate(defaults)
+        #expect(defaults.bool(forKey: InAppTextSize.overridesKey) == false)
+    }
+
+    @Test("The slider's steps run from small to extra extra large, with the default in the middle")
+    func stepSizes() {
+        #expect(InAppTextSize.steps.map(InAppTextSize.size(forStep:)) == [.small, .medium, .large, .xLarge, .xxLarge])
+        #expect(InAppTextSize.size(forStep: InAppTextSize.defaultStep) == .large)
+    }
+}

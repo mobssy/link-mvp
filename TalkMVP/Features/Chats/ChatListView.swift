@@ -187,6 +187,15 @@ struct ChatListView: View {
 struct ChatRoomRow: View {
     let room: ChatRoom
     @Environment(LanguageManager.self) private var languageManager
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// At accessibility text sizes the time goes under the name, so the name has the full width
+    /// instead of being cut to a few letters beside a time broken over two lines.
+    private var nameAndTimeLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
+            : AnyLayout(HStackLayout())
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -197,16 +206,20 @@ struct ChatRoomRow: View {
                 .frame(width: 50, height: 50)
 
             VStack(alignment: .leading, spacing: 4) {
-                HStack {
+                nameAndTimeLayout {
                     Text(room.name)
                         .font(.headline)
-                        .lineLimit(1)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
 
-                    Spacer()
+                    if !dynamicTypeSize.isAccessibilitySize {
+                        Spacer()
+                    }
 
                     Text(room.timestamp, style: .time)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .fixedSize()
                 }
 
                 HStack {
