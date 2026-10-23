@@ -10,11 +10,13 @@ import UIKit
 extension ChatView {
     @ViewBuilder
     func chatContentView(viewModel: ChatViewModel) -> some View {
-        VStack(spacing: 0) {
-            messagesScrollView(viewModel: viewModel)
-            Divider()
-            messageInputView(viewModel: viewModel)
-        }
+        // The input floats over the conversation instead of sitting on a panel of its own: the
+        // room's background runs to the bottom of the screen, and messages scroll under the bar,
+        // where the system softens them.
+        messagesScrollView(viewModel: viewModel)
+            .safeAreaBar(edge: .bottom) {
+                messageInputView(viewModel: viewModel)
+            }
     }
 
     @ViewBuilder

@@ -33,9 +33,11 @@ extension ChatView {
                     }
                     .font(.caption)
                 }
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 14)
                 .padding(.vertical, 8)
-                .background(Color(UIColor.secondarySystemGroupedBackground))
+                .glassEffect(.regular, in: .rect(cornerRadius: 16))
+                .padding(.horizontal, 12)
+                .padding(.top, 4)
             }
 
             if voiceService.isRecording {
@@ -68,13 +70,12 @@ extension ChatView {
                 }
                 .accessibilityLabel(localizedText("attach_file"))
 
-                // A filled capsule rather than the rounded-border style: in dark mode that style is a
-                // black field on the black bar, and the field all but disappears.
+                // Glass like the toolbar buttons, so the field reads on any room background, plain
+                // or a photo, without a solid panel behind the bar.
                 TextField(localizedText("message_input_placeholder"), text: $inputText)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
-                    .background(Color(UIColor.secondarySystemGroupedBackground), in: Capsule())
-                    .overlay(Capsule().strokeBorder(Color(UIColor.separator), lineWidth: 1))
+                    .glassEffect(.regular.interactive(), in: .capsule)
                     .focused($isTextFieldFocused)
                     .submitLabel(.send)
                     .onSubmit {
@@ -115,7 +116,6 @@ extension ChatView {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
-        .background(Color(UIColor.systemGroupedBackground))
     }
 
     private var recordingBannerView: some View {
@@ -138,9 +138,11 @@ extension ChatView {
             .font(.caption)
             .foregroundColor(.red)
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 14)
         .padding(.vertical, 6)
-        .background(Color.red.opacity(0.08))
+        .glassEffect(.regular.tint(.red.opacity(0.15)), in: .capsule)
+        .padding(.horizontal, 12)
+        .padding(.top, 4)
         .transition(.move(edge: .top).combined(with: .opacity))
     }
 
