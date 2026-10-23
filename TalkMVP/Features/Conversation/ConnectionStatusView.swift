@@ -46,13 +46,9 @@ struct ConnectionStatusView: View {
                 .padding(.vertical, 8)
                 .background(backgroundColor)
                 .transition(.move(edge: .top).combined(with: .opacity))
-                .onTapGesture {
-                    if chatService.connectionStatus == .connected {
-                        withAnimation {
-                            isVisible = false
-                        }
-                    }
-                }
+                .onTapGesture(perform: dismissIfConnected)
+                // The same for VoiceOver and Switch Control, which can't tap a plain view.
+                .accessibilityAction(named: languageManager.localize(ko: "닫기", en: "Dismiss", ja: "閉じる", zh: "关闭", es: "Cerrar"), dismissIfConnected)
             }
         }
         .onAppear {
@@ -80,6 +76,13 @@ struct ConnectionStatusView: View {
             withAnimation {
                 isVisible = false
             }
+        }
+    }
+
+    private func dismissIfConnected() {
+        guard chatService.connectionStatus == .connected else { return }
+        withAnimation {
+            isVisible = false
         }
     }
 

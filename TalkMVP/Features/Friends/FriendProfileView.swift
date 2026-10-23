@@ -175,6 +175,7 @@ struct FriendProfileView: View {
                         }
                     } label: {
                         Image(systemName: "ellipsis")
+                            .accessibilityLabel(languageManager.localize(ko: "더 보기", en: "More options", ja: "その他のオプション", zh: "更多选项", es: "Más opciones"))
                     }
                 }
             }

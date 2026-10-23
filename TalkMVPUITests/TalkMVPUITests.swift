@@ -164,6 +164,26 @@ final class TalkMVPUITests: XCTestCase {
     }
 
     @MainActor
+    func testSenderAvatarIsAButtonThatOpensTheProfile() throws {
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        signInWithTestMode()
+
+        tab("Chats").tap()
+        app.staticTexts["Family Group"].firstMatch.tap()
+        let input = app.textFields.firstMatch
+        XCTAssertTrue(input.waitForExistence(timeout: 10))
+        input.tap()
+        input.typeText("hi\n")
+
+        // A button, so VoiceOver, Switch Control and keyboards can reach it, not just a tap.
+        let avatar = app.buttons["Profile of Family Group"].firstMatch
+        XCTAssertTrue(avatar.waitForExistence(timeout: 60), "the other side's bubble shows its avatar as a button")
+        avatar.tap()
+        XCTAssertTrue(app.buttons["Close"].waitForExistence(timeout: 5), "the profile opens")
+    }
+
+    @MainActor
     func testWideWindowShowsChatListBesideConversation() throws {
         // A regular-width window (iPad, iPhone Duo's inner display) keeps the chat list on
         // screen next to the open conversation; compact windows push instead, which the

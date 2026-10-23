@@ -244,6 +244,7 @@ struct ChatRoomBackgroundSettings: View {
                         .padding(.horizontal, 16)
                         .background(selectedBackgroundType == type ? Color.appPrimary.opacity(0.1) : Color.clear)
                     }
+                    .accessibilityAddTraits(selectedBackgroundType == type ? .isSelected : [])
 
                     if type != BackgroundType.allCases.last {
                         Divider()

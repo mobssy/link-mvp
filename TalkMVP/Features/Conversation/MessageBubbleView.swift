@@ -145,7 +145,7 @@ struct MessageBubbleView: View {
     }
 
     private var avatarView: some View {
-        Group {
+        Button { onAvatarTap?() } label: {
             if let symbol = avatarSymbolName {
                 Image(systemName: symbol)
                     .font(.system(size: 28))
@@ -161,7 +161,7 @@ struct MessageBubbleView: View {
                 .frame(width: 36, height: 36)
             }
         }
-        .onTapGesture { onAvatarTap?() }
+        .buttonStyle(.plain)
         .contextMenu {
             if !message.isFromCurrentUser {
                 switch senderStanding {
@@ -175,7 +175,6 @@ struct MessageBubbleView: View {
             }
         }
         .accessibilityLabel(localizedText("profile_of", message.sender))
-        .accessibilityAddTraits(.isButton)
     }
 
     @ViewBuilder
@@ -188,18 +187,20 @@ struct MessageBubbleView: View {
         case .image:
             if let imageData = message.imageData,
                let uiImage = UIImage(data: imageData) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: 200, maxHeight: 200)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .onTapGesture {
-                        fullScreenImage = uiImage
-                        showingFullScreenImage = true
-                    }
-                    .accessibilityLabel(localizedText("image_load_failed"))
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityHint(languageManager.localize(ko: "탭하여 전체화면으로 보기", en: "Tap to view full screen", ja: "タップしてフルスクリーンで表示", zh: "点击全屏查看", es: "Toca para ver en pantalla completa"))
+                Button {
+                    fullScreenImage = uiImage
+                    showingFullScreenImage = true
+                } label: {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: 200, maxHeight: 200)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+                // What the photo shows when it has been described, otherwise just that it is one.
+                .accessibilityLabel(message.imageDescription ?? localizedText("photo"))
+                .accessibilityHint(languageManager.localize(ko: "탭하여 전체화면으로 보기", en: "Tap to view full screen", ja: "タップしてフルスクリーンで表示", zh: "点击全屏查看", es: "Toca para ver en pantalla completa"))
             } else {
                 HStack {
                     Image(systemName: "photo")
@@ -210,25 +211,26 @@ struct MessageBubbleView: View {
 
         case .video:
             if let videoData = message.videoData {
-                VStack(alignment: .leading, spacing: 4) {
-                    ZStack {
-                        Rectangle()
-                            .fill(Color.black.opacity(0.3))
-                            .frame(width: 200, height: 150)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                Button { openAttachment() } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ZStack {
+                            Rectangle()
+                                .fill(Color.black.opacity(0.3))
+                                .frame(width: 200, height: 150)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                        Image(systemName: "play.circle.fill")
-                            .font(.system(size: 50))
-                            .foregroundStyle(.white)
+                            Image(systemName: "play.circle.fill")
+                                .font(.system(size: 50))
+                                .foregroundStyle(.white)
+                        }
+
+                        Text("\(languageManager.localize(ko: "동영상", en: "Video", ja: "動画", zh: "视频", es: "Video")) (\(AttachmentHandler.formatFileSize(videoData.count)))")
+                            .font(.caption)
+                            .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent.opacity(0.9) : .secondary)
                     }
-
-                    Text("\(languageManager.localize(ko: "동영상", en: "Video", ja: "動画", zh: "视频", es: "Video")) (\(AttachmentHandler.formatFileSize(videoData.count)))")
-                        .font(.caption)
-                        .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent.opacity(0.9) : .secondary)
+                    .contentShape(Rectangle())
                 }
-                .contentShape(Rectangle())
-                .onTapGesture { openAttachment() }
-                .accessibilityAddTraits(.isButton)
+                .buttonStyle(.plain)
                 .accessibilityHint(localizedText("open_attachment_hint"))
             } else {
                 HStack {
@@ -239,24 +241,25 @@ struct MessageBubbleView: View {
             }
 
         case .file:
-            HStack {
-                Image(systemName: AttachmentHandler.fileIcon(for: message.fileExtension ?? ""))
-                    .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent : .appPrimaryText)
-                VStack(alignment: .leading) {
-                    Text(message.fileName ?? localizedText("file"))
-                        .font(.headline)
-                    if let fileSize = message.fileSize {
-                        Text(AttachmentHandler.formatFileSize(fileSize))
-                            .font(.caption)
-                            .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent.opacity(0.8) : .secondary)
+            Button { openAttachment() } label: {
+                HStack {
+                    Image(systemName: AttachmentHandler.fileIcon(for: message.fileExtension ?? ""))
+                        .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent : .appPrimaryText)
+                    VStack(alignment: .leading) {
+                        Text(message.fileName ?? localizedText("file"))
+                            .font(.headline)
+                        if let fileSize = message.fileSize {
+                            Text(AttachmentHandler.formatFileSize(fileSize))
+                                .font(.caption)
+                                .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent.opacity(0.8) : .secondary)
+                        }
                     }
+                    Spacer()
                 }
-                Spacer()
+                .frame(minWidth: 150)
+                .contentShape(Rectangle())
             }
-            .frame(minWidth: 150)
-            .contentShape(Rectangle())
-            .onTapGesture { openAttachment() }
-            .accessibilityAddTraits(.isButton)
+            .buttonStyle(.plain)
             .accessibilityHint(localizedText("open_attachment_hint"))
 
         case .audio:
@@ -269,6 +272,9 @@ struct MessageBubbleView: View {
                             .font(.system(size: 30))
                             .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent : .appPrimaryText)
                     }
+                    .accessibilityLabel(isPlayingAudio
+                        ? languageManager.localize(ko: "음성 메시지 일시정지", en: "Pause voice message", ja: "音声メッセージを一時停止", zh: "暂停语音消息", es: "Pausar mensaje de voz")
+                        : languageManager.localize(ko: "음성 메시지 재생", en: "Play voice message", ja: "音声メッセージを再生", zh: "播放语音消息", es: "Reproducir mensaje de voz"))
 
                     VStack(alignment: .leading, spacing: 2) {
                         Image(systemName: "waveform")
@@ -383,6 +389,7 @@ struct MessageBubbleView: View {
     private func localizedText(_ key: String, _ param: String = "") -> String {
         let text: String
         switch key {
+        case "photo": text = languageManager.localize(ko: "사진", en: "Photo", ja: "写真", zh: "照片", es: "Foto")
         case "image_load_failed": text = languageManager.localize(ko: "이미지를 불러올 수 없습니다", en: "Unable to load image", ja: "画像を読み込めません", zh: "无法加载图片", es: "No se puede cargar la imagen")
         case "message_deleted": text = languageManager.localize(ko: "메시지가 삭제되었습니다", en: "Message deleted", ja: "削除されたメッセージ", zh: "已删除的消息", es: "Mensaje eliminado")
         case "file": text = languageManager.localize(ko: "파일", en: "File", ja: "ファイル", zh: "文件", es: "Archivo")
