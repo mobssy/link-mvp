@@ -249,14 +249,16 @@ link-mvp/
 │   │   ├── AI/                  # AIService, MeetingNotes (+Extractor/Grounding), ReplySuggestions, ReplyWriter,
 │   │   │                        # MessageTranslation, MessageSearch, PhotoDescriber, VoiceTranscriber, …
 │   │   ├── Auth/                # AuthManager, GoogleOAuthService, AppLockManager
-│   │   ├── Chat/                # ChatService (+Protocol), AutoResponseService, OpenChatRooms, NotificationManager
+│   │   ├── Chat/                # ChatService (+Protocol), AutoResponseService, OpenChatRooms, NotificationManager,
+│   │   │                        # LocalNotificationDelegate
 │   │   ├── Contacts/            # ContactsSyncService, FriendSearchService
+│   │   ├── Location/            # LocationManager
 │   │   └── Media/               # VoiceMessageService, AttachmentHandler, AttachmentPreviewer
 │   ├── Intents/                 # ChatIntents, ChatIntentActions (Siri and Shortcuts)
 │   ├── Models/                  # ChatRoom, Message, User (SwiftData)
 │   ├── Repositories/            # SwiftData access behind protocols, attachment files, cleanup, the test account
 │   ├── Localization/            # L10n, LanguageManager (+Extensions), LocalizationService
-│   ├── DesignSystem/            # Colors+Extensions (brand colors)
+│   ├── DesignSystem/            # Colors+Extensions (brand colors), Color+Hex
 │   ├── AppShortcuts.xcstrings   # Siri phrases, in the app's five languages
 │   ├── Localizable.xcstrings    # Siri and Shortcuts strings, in the same languages (the UI is localized in code)
 │   └── Assets.xcassets/         # App icon, color sets, image assets
@@ -534,14 +536,16 @@ link-mvp/
 │   │   ├── AI/                  # AIService, MeetingNotes (+Extractor/Grounding), ReplySuggestions, ReplyWriter,
 │   │   │                        # MessageTranslation, MessageSearch, PhotoDescriber, VoiceTranscriber, …
 │   │   ├── Auth/                # AuthManager, GoogleOAuthService, AppLockManager
-│   │   ├── Chat/                # ChatService (+Protocol), AutoResponseService, OpenChatRooms, NotificationManager
+│   │   ├── Chat/                # ChatService (+Protocol), AutoResponseService, OpenChatRooms, NotificationManager,
+│   │   │                        # LocalNotificationDelegate
 │   │   ├── Contacts/            # ContactsSyncService, FriendSearchService
+│   │   ├── Location/            # LocationManager
 │   │   └── Media/               # VoiceMessageService, AttachmentHandler, AttachmentPreviewer
 │   ├── Intents/                 # ChatIntents, ChatIntentActions (Siri·단축어)
 │   ├── Models/                  # ChatRoom, Message, User (SwiftData)
 │   ├── Repositories/            # 프로토콜 뒤의 SwiftData 접근, 첨부 파일, 정리 작업, 테스트 계정
 │   ├── Localization/            # L10n, LanguageManager (+Extensions), LocalizationService
-│   ├── DesignSystem/            # Colors+Extensions (브랜드 색상)
+│   ├── DesignSystem/            # Colors+Extensions (브랜드 색상), Color+Hex
 │   ├── AppShortcuts.xcstrings   # Siri 문구 (앱이 지원하는 5개 언어)
 │   ├── Localizable.xcstrings    # Siri·단축어 문구 (같은 5개 언어, UI 문구는 코드에서 번역)
 │   └── Assets.xcassets/         # 앱 아이콘, 색상, 이미지 에셋
