@@ -1,6 +1,6 @@
 # Code modernization (stage 2 of the app-wide cleanup)
 
-Date: 2026-10-22. Status: approved in chat.
+Date: 2026-10-22. Status: done.
 
 ## Context
 
@@ -66,3 +66,15 @@ Eleven `DispatchQueue.main` uses become `Task` with `Task.sleep`, or run directl
 - Each item: a warning-free build, then the unit and UI tests on the iPhone 27 simulator (iOS 27).
 - After 2-3: the full suite on iOS 26.5 as well.
 - At the end: the Siri tests on iOS 27, and a launch over existing simulator data.
+
+## Outcome
+
+| Item | Commit | Notes |
+|---|---|---|
+| 2-1 and 2-2 | 9dd637b | One commit: the bubble's friend state moved onto the new repository, so the two couldn't be separated. The bubble and the chat screen had judged friends by different fields (`userId`, `ownerUserId`); both use the user's own records now. |
+| 2-3 | d80de98 | `NotificationManager` and `ContactsSyncService` published nothing and became plain classes. Timers, tasks and subscriptions that `deinit` cancels are `@ObservationIgnored`. |
+| 2-4 | 81c5c26 | Also fixed: `ChatService.disconnect()` didn't cancel a scheduled handshake, and the connection banner could hide a status that came back. `ContactsSyncService` keeps its background queue for the blocking contacts API. |
+| 2-5 | c07b991 | `.primary` and `.secondary` stay fixed colors (`Color.primary`, `Color.secondary`); the hierarchical styles follow the tint in links and buttons. Also `cornerRadius`, toolbar placements. Main screens compared pixel by pixel before and after. |
+| 2-6 | 7ed4c09 | As planned. |
+
+Known issue: on iOS 26.5 the swipe-to-reply UI test failed 4 times in about 50 runs during 2-3 and has not failed since; the test helper now keeps failure screenshots so the next failure can be examined.
