@@ -309,23 +309,20 @@ struct FriendProfileView: View {
     }
 
     private func blockFriend() {
-        withAnimation {
-            friendship.status = .blocked
-            try? modelContext.save()
-        }
+        setStatus(.blocked)
     }
 
     private func unblockFriend() {
-        withAnimation {
-            friendship.status = .accepted
-            try? modelContext.save()
-        }
+        setStatus(.accepted)
     }
 
     private func unhideFriend() {
+        setStatus(.accepted)
+    }
+
+    private func setStatus(_ status: FriendshipStatus) {
         withAnimation {
-            friendship.status = .accepted
-            try? modelContext.save()
+            try? LocalFriendshipRepository(modelContext: modelContext).setStatus(status, of: friendship)
         }
     }
 

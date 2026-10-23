@@ -81,3 +81,17 @@ enum FriendshipStatus: String, Codable, CaseIterable {
     case hidden = "hidden"
     case blocked = "blocked"
 }
+
+/// How the signed-in user stands with someone, as the chat screens show it: hidden and blocked
+/// people, like strangers, get the offer to add them.
+enum FriendStanding: Equatable {
+    case stranger, requested, friend
+
+    init(_ status: FriendshipStatus?) {
+        switch status {
+        case .accepted: self = .friend
+        case .pending: self = .requested
+        case .blocked, .hidden, nil: self = .stranger
+        }
+    }
+}

@@ -70,7 +70,7 @@ struct AddFriendView: View {
                                 result: result,
                                 authManager: authManager,
                                 notificationManager: notificationManager,
-                                modelContext: modelContext
+                                friendships: LocalFriendshipRepository(modelContext: modelContext)
                             ) { success, message in
                                 lastActionWasSuccess = success
                                 alertMessage = message
@@ -156,7 +156,7 @@ struct UserSearchResultRow: View {
     @ObservedObject var authManager: AuthManager
     @EnvironmentObject private var languageManager: LanguageManager
     let notificationManager: NotificationManager
-    let modelContext: ModelContext
+    let friendships: FriendshipRepositoryProtocol
     let onComplete: (Bool, String) -> Void
 
     @State private var isSendingRequest = false
@@ -207,41 +207,20 @@ struct UserSearchResultRow: View {
                         return
                     }
 
-                    // Create outgoing (sender) friendship record
-                    guard let senderId = authManager.currentUser?.id.uuidString else {
+                    guard let me = authManager.currentUser else {
                         onComplete(false, L10n.text("error_occurred_prefix", languageManager.currentLanguage) + "User not found")
                         return
                     }
-
-                    let outgoing = Friendship(
-                        userId: senderId,
-                        friendId: result.id,
-                        friendName: result.displayName,
-                        friendEmail: result.email,
-                        status: .pending
-                    )
-                    outgoing.ownerUserId = senderId
-                    modelContext.insert(outgoing)
-
-                    // Create incoming (receiver) mirror record for backend readiness
-                    let mirror = Friendship(
-                        userId: result.id,
-                        friendId: senderId,
-                        friendName: authManager.currentUser?.displayName ?? L10n.text("user", languageManager.currentLanguage),
-                        friendEmail: authManager.currentUser?.email ?? "",
-                        status: .pending
-                    )
-                    mirror.ownerUserId = result.id
-                    modelContext.insert(mirror)
+                    let senderId = me.id.uuidString
 
                     // An unsaved request would vanish at the next launch, so a failed save is a
-                    // failed request: take the two records back out and say so.
+                    // failed request; the repository keeps neither record then.
                     do {
-                        try modelContext.save()
+                        try friendships.sendRequest(
+                            from: FriendRequestParty(id: senderId, name: me.displayName, email: me.email),
+                            to: FriendRequestParty(id: result.id, name: result.displayName, email: result.email)
+                        )
                     } catch {
-                        addFriendLogger.error("Failed to save friend request: \(error.localizedDescription, privacy: .public)")
-                        modelContext.delete(outgoing)
-                        modelContext.delete(mirror)
                         onComplete(false, L10n.text("friend_request_failed", languageManager.currentLanguage))
                         return
                     }

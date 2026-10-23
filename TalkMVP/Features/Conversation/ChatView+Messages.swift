@@ -90,7 +90,9 @@ extension ChatView {
                 message: message,
                 avatarSymbolName: chatRoom.profileImage,
                 onAvatarTap: { openFriendProfile() },
-                isTranscribing: viewModel.transcribingMessageIDs.contains(message.id)
+                isTranscribing: viewModel.transcribingMessageIDs.contains(message.id),
+                senderStanding: message.isFromCurrentUser ? nil : senderStandings.map { $0[message.sender] ?? .stranger },
+                onAddFriend: { try sendFriendRequest(toSender: message.sender) }
             )
                 .id(message.id)
                 .scaleEffect(poppingMessageIds.contains(message.id) ? 1.18 : 1.0)

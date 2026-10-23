@@ -168,15 +168,17 @@ struct FriendRow: View {
         }
     }
 
+    private var friendships: FriendshipRepositoryProtocol {
+        LocalFriendshipRepository(modelContext: modelContext)
+    }
+
     private func toggleFavorite() {
-        friendship.isFavorite.toggle()
-        try? modelContext.save()
+        try? friendships.setFavorite(!friendship.isFavorite, of: friendship)
         onDataChanged()
     }
 
     private func toggleNotifications() {
-        friendship.notificationsEnabled.toggle()
-        try? modelContext.save()
+        try? friendships.setNotificationsEnabled(!friendship.notificationsEnabled, of: friendship)
         onDataChanged()
     }
 }
@@ -184,7 +186,7 @@ struct FriendRow: View {
 // MARK: - Received Friend Request Row
 struct ReceivedRequestRow: View {
     let friendship: Friendship
-    let modelContext: ModelContext
+    let repository: FriendshipRepositoryProtocol
     let onDataChanged: () -> Void
     var onAccepted: ((Friendship) -> Void)?
     @State private var isAccepting = false
@@ -220,8 +222,7 @@ struct ReceivedRequestRow: View {
 
     private func acceptFriendRequest() {
         isAccepting = true
-        friendship.status = .accepted
-        try? modelContext.save()
+        try? repository.setStatus(.accepted, of: friendship)
         onDataChanged()
         onAccepted?(friendship)
         isAccepting = false

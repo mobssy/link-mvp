@@ -71,6 +71,9 @@ struct ChatView: View {
     @State var addFriendEmail = ""
     @State var showingFriendProfile = false
     @State var profileFriendship: Friendship?
+    /// How the user stands with each sender in this conversation, by name: one fetch for
+    /// every bubble. Nil until loaded.
+    @State var senderStandings: [String: FriendStanding]?
 
     // MARK: - Search & Summary
     @State var searchText: String = ""
@@ -272,6 +275,7 @@ struct ChatView: View {
         .onAppear {
             setupViewModelIfNeeded()
             checkIfFriend()
+            loadSenderStandings()
             markMessagesAsRead()
         }
         .sheet(isPresented: $showingDocumentPicker) {

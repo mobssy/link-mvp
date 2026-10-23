@@ -2696,3 +2696,89 @@ struct PasswordHasherTests {
         #expect(!store.verifyPassword("secret1", for: id))
     }
 }
+
+// MARK: - FriendshipRepository
+
+@Suite("FriendshipRepository")
+@MainActor
+struct FriendshipRepositoryTests {
+    private let context: ModelContext
+    private let repository: LocalFriendshipRepository
+    private let me = FriendRequestParty(id: "me", name: "Jordan", email: "jordan@example.com")
+
+    init() throws {
+        let container = try ModelContainer(
+            for: Message.self, ChatRoom.self, User.self, Friendship.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        context = ModelContext(container)
+        repository = LocalFriendshipRepository(modelContext: context)
+    }
+
+    @Test("A request is saved for both sides, each owned by its own person")
+    func sendRequestSavesBothSides() throws {
+        try repository.sendRequest(from: me, to: FriendRequestParty(id: "sam", name: "Sam", email: "sam@example.com"))
+
+        let all = try context.fetch(FetchDescriptor<Friendship>())
+        #expect(all.count == 2)
+        let outgoing = try #require(all.first { $0.ownerUserId == "me" })
+        let mirror = try #require(all.first { $0.ownerUserId == "sam" })
+        #expect(outgoing.friendId == "sam" && outgoing.friendName == "Sam" && outgoing.status == .pending)
+        #expect(mirror.friendId == "me" && mirror.friendName == "Jordan" && mirror.friendEmail == "jordan@example.com")
+    }
+
+    @Test("The user's list has what they own and requests sent to them, nobody else's")
+    func friendshipsInvolvingTheUser() throws {
+        try repository.addFriendships([
+            Friendship(userId: "me", friendId: "a", friendName: "A", friendEmail: "", status: .accepted),
+            Friendship(userId: "b", friendId: "me", friendName: "B", friendEmail: "", status: .pending),
+            Friendship(userId: "c", friendId: "d", friendName: "D", friendEmail: "", status: .accepted)
+        ])
+
+        let names = Set(try repository.friendships(involving: "me").map(\.friendName))
+
+        #expect(names == ["A", "B"])
+    }
+
+    @Test("Statuses by name come from the user's own records, newest first")
+    func statusesByName() throws {
+        let blocked = Friendship(userId: "me", friendId: "a", friendName: "Ana", friendEmail: "", status: .blocked)
+        blocked.createdAt = Date(timeIntervalSince1970: 0)
+        try repository.addFriendships([
+            blocked,
+            Friendship(userId: "me", friendId: "a2", friendName: "Ana", friendEmail: "", status: .accepted),
+            Friendship(userId: "me", friendId: "b", friendName: "Ben", friendEmail: "", status: .pending),
+            Friendship(userId: "other", friendId: "c", friendName: "Cy", friendEmail: "", status: .accepted)
+        ])
+
+        let statuses = try repository.statusesByName(ownedBy: "me")
+
+        #expect(statuses == ["Ana": .accepted, "Ben": .pending])
+    }
+
+    @Test("Status, favorite and notification changes are saved; delete removes")
+    func updatesAndDelete() throws {
+        try repository.addFriendships([Friendship(userId: "me", friendId: "a", friendName: "A", friendEmail: "", status: .accepted)])
+        let friendship = try #require(try repository.friendship(ownedBy: "me", friendId: "a"))
+
+        try repository.setStatus(.blocked, of: friendship)
+        try repository.setFavorite(true, of: friendship)
+        try repository.setNotificationsEnabled(false, of: friendship)
+        let reloaded = try #require(try repository.friendships(withFriendId: "a").first)
+        #expect(reloaded.status == .blocked && reloaded.isFavorite && !reloaded.notificationsEnabled)
+
+        try repository.delete([reloaded])
+        #expect(try repository.friendship(ownedBy: "me", friendId: "a") == nil)
+    }
+
+    @Test("Hidden and blocked people get the same offer to add them as strangers", arguments: [
+        (FriendshipStatus?.none, FriendStanding.stranger),
+        (.hidden, .stranger),
+        (.blocked, .stranger),
+        (.pending, .requested),
+        (.accepted, .friend)
+    ])
+    func standing(status: FriendshipStatus?, standing: FriendStanding) {
+        #expect(FriendStanding(status) == standing)
+    }
+}

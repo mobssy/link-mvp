@@ -26,7 +26,7 @@ struct BlockedFriendsView: View {
                     )
                 } else {
                     ForEach(blockedFriends, id: \.id) { friendship in
-                        BlockedFriendRow(friendship: friendship, modelContext: modelContext)
+                        BlockedFriendRow(friendship: friendship, repository: LocalFriendshipRepository(modelContext: modelContext))
                     }
                 }
             }
@@ -46,7 +46,7 @@ struct BlockedFriendsView: View {
 // MARK: - Blocked Friend Row
 struct BlockedFriendRow: View {
     let friendship: Friendship
-    let modelContext: ModelContext
+    let repository: FriendshipRepositoryProtocol
     @State private var showingUnblockAlert = false
     @EnvironmentObject private var languageManager: LanguageManager
 
@@ -86,8 +86,7 @@ struct BlockedFriendRow: View {
     }
 
     private func unblockFriend() {
-        friendship.status = .accepted
-        try? modelContext.save()
+        try? repository.setStatus(.accepted, of: friendship)
     }
 }
 
@@ -111,7 +110,7 @@ struct ManageFriendsView: View {
                         )
                     } else {
                         ForEach(hiddenFriends, id: \.id) { friendship in
-                            HiddenFriendRow(friendship: friendship, modelContext: modelContext)
+                            HiddenFriendRow(friendship: friendship, repository: LocalFriendshipRepository(modelContext: modelContext))
                         }
                     }
                 }
@@ -125,7 +124,7 @@ struct ManageFriendsView: View {
                         )
                     } else {
                         ForEach(blockedFriends, id: \.id) { friendship in
-                            BlockedFriendRow(friendship: friendship, modelContext: modelContext)
+                            BlockedFriendRow(friendship: friendship, repository: LocalFriendshipRepository(modelContext: modelContext))
                         }
                     }
                 }
@@ -146,7 +145,7 @@ struct ManageFriendsView: View {
 // MARK: - Hidden Friend Row
 struct HiddenFriendRow: View {
     let friendship: Friendship
-    let modelContext: ModelContext
+    let repository: FriendshipRepositoryProtocol
     @State private var showingUnhideAlert = false
     @EnvironmentObject private var languageManager: LanguageManager
 
@@ -186,7 +185,6 @@ struct HiddenFriendRow: View {
     }
 
     private func unhideFriend() {
-        friendship.status = .accepted
-        try? modelContext.save()
+        try? repository.setStatus(.accepted, of: friendship)
     }
 }

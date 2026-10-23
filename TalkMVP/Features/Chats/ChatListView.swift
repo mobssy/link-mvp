@@ -264,11 +264,10 @@ struct ChatScreen: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var authManager: AuthManager
     @EnvironmentObject private var languageManager: LanguageManager
-    @State private var friendState: FriendState = .unknown
+    /// Nil until it is known, or when no one is signed in.
+    @State private var friendStanding: FriendStanding?
     @State private var showingAlert = false
     @State private var alertMessage = ""
-
-    private enum FriendState { case unknown, notFriend, pending, isFriend }
 
     var body: some View {
         ChatView(chatRoom: room)
@@ -287,90 +286,55 @@ struct ChatScreen: View {
 
     @ViewBuilder
     private var friendToolbarItem: some View {
-        switch friendState {
-        case .notFriend:
+        switch friendStanding {
+        case .stranger:
             Button {
                 addFriend()
             } label: {
                 Label(localizedText("add_friend"), systemImage: "person.badge.plus")
             }
-        case .pending:
+        case .requested:
             Label(localizedText("request_pending"), systemImage: "clock")
                 .foregroundColor(.secondary)
-        case .isFriend:
+        case .friend:
             Label(localizedText("friend"), systemImage: "checkmark.seal.fill")
                 .foregroundColor(.green)
-        default:
+        case nil:
             EmptyView()
         }
     }
 
+    private var friendships: FriendshipRepositoryProtocol {
+        LocalFriendshipRepository(modelContext: modelContext)
+    }
+
     private func loadFriendState() {
         guard let currentUserId = authManager.currentUser?.id.uuidString else {
-            friendState = .unknown
+            friendStanding = nil
             return
         }
-        let name = room.name
-        let descriptor = FetchDescriptor<Friendship>(predicate: #Predicate<Friendship> { f in
-            f.ownerUserId == currentUserId && f.friendName == name
-        })
-        do {
-            let results = try modelContext.fetch(descriptor)
-            if let existing = results.first {
-                switch existing.status {
-                case .accepted:
-                    friendState = .isFriend
-                case .pending:
-                    friendState = .pending
-                case .blocked:
-                    friendState = .notFriend
-                default:
-                    friendState = .notFriend
-                }
-            } else {
-                friendState = .notFriend
-            }
-        } catch {
-            chatListLogger.error("Failed to load friend state: \(error.localizedDescription, privacy: .public)")
-            friendState = .unknown
-        }
+        friendStanding = (try? friendships.statusesByName(ownedBy: currentUserId))
+            .map { FriendStanding($0[room.name]) }
     }
 
     private func addFriend() {
-        guard friendState == .notFriend, let currentUserId = authManager.currentUser?.id.uuidString else { return }
-        // Outgoing record for current user
-        let outgoing = Friendship(
-            userId: currentUserId,
-            friendId: UUID().uuidString,
-            friendName: room.name,
-            friendEmail: "",
-            status: .pending
-        )
-        modelContext.insert(outgoing)
-
-        // Mirror record for receiver (backend readiness)
-        let mirror = Friendship(
-            userId: outgoing.friendId,
-            friendId: currentUserId,
-            friendName: authManager.currentUser?.displayName ?? localizedText("user"),
-            friendEmail: authManager.currentUser?.email ?? "",
-            status: .pending
-        )
-        modelContext.insert(mirror)
-
+        guard friendStanding == .stranger, let me = authManager.currentUser else { return }
+        let senderName = me.displayName
         do {
-            try modelContext.save()
-            friendState = .pending
-            alertMessage = localizedText("friend_request_sent")
-            showingAlert = true
-            // Local notification to simulate receiver-side alert
-            let manager = NotificationManager()
-            let senderName = authManager.currentUser?.displayName ?? localizedText("user")
-            let senderEmail = authManager.currentUser?.email ?? ""
-            Task { await manager.scheduleFriendRequestNotification(from: senderName, email: senderEmail) }
+            try friendships.sendRequest(
+                from: FriendRequestParty(id: me.id.uuidString, name: senderName, email: me.email),
+                to: FriendRequestParty(id: UUID().uuidString, name: room.name, email: "")
+            )
         } catch {
-            chatListLogger.error("Failed to save friend request: \(error.localizedDescription, privacy: .public)")
+            return
         }
+        friendStanding = .requested
+        alertMessage = localizedText("friend_request_sent")
+        showingAlert = true
+        // Local notification to simulate receiver-side alert
+        let manager = NotificationManager()
+        let senderEmail = me.email
+        Task { await manager.scheduleFriendRequestNotification(from: senderName, email: senderEmail) }
     }
 
     private func localizedText(_ key: String) -> String {

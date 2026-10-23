@@ -133,7 +133,7 @@ struct FriendsView: View {
                         ForEach(receivedRequests, id: \.id) { friendship in
                             ReceivedRequestRow(
                                 friendship: friendship,
-                                modelContext: modelContext,
+                                repository: friendshipRepository,
                                 onDataChanged: loadFriendships,
                                 onAccepted: { accepted in
                                     insertNewFriendID(accepted.id.uuidString)
@@ -222,19 +222,13 @@ struct FriendsView: View {
                             FriendRow(friendship: friendship, onDataChanged: loadFriendships)
                                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                     Button {
-                                        let mutable = friendship
-                                        mutable.status = .hidden
-                                        try? modelContext.save()
-                                        loadFriendships()
+                                        setStatus(.hidden, of: friendship)
                                     } label: {
                                         Label(L10n.text("hide", languageManager.currentLanguage), systemImage: "eye.slash")
                                     }.tint(.gray)
 
                                     Button(role: .destructive) {
-                                        let mutable = friendship
-                                        mutable.status = .blocked
-                                        try? modelContext.save()
-                                        loadFriendships()
+                                        setStatus(.blocked, of: friendship)
                                     } label: {
                                         Label(L10n.text("block", languageManager.currentLanguage), systemImage: "person.fill.xmark")
                                     }
@@ -380,49 +374,51 @@ struct FriendsView: View {
             ("손흥민", "son7@example.com")
         ]
 
-        var createdIDs: [String] = []
-        for s in samples {
-            let friendship = Friendship(
+        let created = samples.map { s in
+            Friendship(
                 userId: currentUserId,
                 friendId: UUID().uuidString,
                 friendName: s.0,
                 friendEmail: s.1,
                 status: .accepted
             )
-            friendship.ownerUserId = currentUserId
-            modelContext.insert(friendship)
-            createdIDs.append(friendship.id.uuidString)
         }
-        try? modelContext.save()
+        guard (try? friendshipRepository.addFriendships(created)) != nil else { return }
 
-        newFriendIDsStorage = createdIDs.joined(separator: ",")
+        newFriendIDsStorage = created.map(\.id.uuidString).joined(separator: ",")
         hasSeededNewFriends = true
         loadFriendships()
     }
 
+    private var friendshipRepository: FriendshipRepositoryProtocol {
+        LocalFriendshipRepository(modelContext: modelContext)
+    }
+
     private func loadFriendships() {
-        let fetchDescriptor = FetchDescriptor<Friendship>()
-        friendships = (try? modelContext.fetch(fetchDescriptor)) ?? []
+        guard let currentUserId = authManager.currentUser?.id.uuidString else {
+            friendships = []
+            return
+        }
+        friendships = (try? friendshipRepository.friendships(involving: currentUserId)) ?? []
         friendsLogger.info("Loaded \(self.friendships.count) friendships (accepted: \(self.allAccepted.count), pending: \(self.pendingRequests.count), received: \(self.receivedRequests.count))")
         NotificationCenter.default.post(name: .friendsBadgeUpdated, object: nil, userInfo: ["count": newFriendsCount])
     }
 
+    private func setStatus(_ status: FriendshipStatus, of friendship: Friendship) {
+        try? friendshipRepository.setStatus(status, of: friendship)
+        loadFriendships()
+    }
+
     private func deleteFriend(offsets: IndexSet) {
         withAnimation {
-            for index in offsets {
-                modelContext.delete(regularFriends[index])
-            }
-            try? modelContext.save()
+            try? friendshipRepository.delete(offsets.map { regularFriends[$0] })
             loadFriendships()
         }
     }
 
     private func deletePendingRequest(offsets: IndexSet) {
         withAnimation {
-            for index in offsets {
-                modelContext.delete(pendingRequests[index])
-            }
-            try? modelContext.save()
+            try? friendshipRepository.delete(offsets.map { pendingRequests[$0] })
             loadFriendships()
         }
     }

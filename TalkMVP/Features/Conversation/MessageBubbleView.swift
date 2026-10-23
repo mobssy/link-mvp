@@ -20,10 +20,12 @@ struct MessageBubbleView: View {
     var onAvatarTap: (() -> Void)?
     /// A voice message whose words are still being written down.
     var isTranscribing = false
-    @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var authManager: AuthManager
+    /// How the reader stands with the sender, worked out once for the whole conversation
+    /// rather than fetched by every bubble. Nil shows nothing, as for the reader's own messages.
+    var senderStanding: FriendStanding?
+    /// Sends the sender a friend request; throws if it couldn't be saved.
+    var onAddFriend: (() throws -> Void)?
 
-    @State private var friendState: FriendState = .unknown
     @State private var showingAlert = false
     @State private var alertMessage = ""
     @State private var showingFullScreenImage = false
@@ -31,8 +33,6 @@ struct MessageBubbleView: View {
     @State private var audioPlayer: AVAudioPlayer?
     @State private var isPlayingAudio = false
     @State private var attachmentPreviewURL: URL?
-
-    private enum FriendState { case unknown, notFriend, pending, isFriend }
 
     @EnvironmentObject private var languageManager: LanguageManager
     @AppStorage("inAppHighContrast") private var highContrast = false
@@ -50,9 +50,6 @@ struct MessageBubbleView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 2)
-        .onAppear {
-            if !message.isFromCurrentUser { loadFriendState() }
-        }
         .alert(localizedText("alert"), isPresented: $showingAlert) {
             Button(localizedText("ok")) {}
         } message: {
@@ -88,13 +85,13 @@ struct MessageBubbleView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
 
-                    switch friendState {
-                    case .notFriend:
+                    switch senderStanding {
+                    case .stranger:
                         Button(localizedText("add_friend")) { addFriend() }
                             .font(.caption2)
                             .buttonStyle(.bordered)
                             .tint(.appPrimaryText)
-                    case .pending:
+                    case .requested:
                         Text(localizedText("request_pending"))
                             .font(.caption2)
                             .foregroundColor(.secondary)
@@ -167,10 +164,10 @@ struct MessageBubbleView: View {
         .onTapGesture { onAvatarTap?() }
         .contextMenu {
             if !message.isFromCurrentUser {
-                switch friendState {
-                case .notFriend:
+                switch senderStanding {
+                case .stranger:
                     Button(localizedText("add_friend")) { addFriend() }
-                case .pending:
+                case .requested:
                     Label(localizedText("request_pending"), systemImage: "clock")
                 default:
                     EmptyView()
@@ -407,76 +404,13 @@ struct MessageBubbleView: View {
         return text
     }
 
-    private func loadFriendState() {
-        guard let currentUserId = authManager.currentUser?.id.uuidString else {
-            friendState = .unknown
-            return
-        }
-        // Skip for own messages
-        guard !message.isFromCurrentUser else {
-            friendState = .unknown
-            return
-        }
-        // Fetch friendship by current user and sender name
-        let senderName = message.sender
-        let descriptor = FetchDescriptor<Friendship>(predicate: #Predicate<Friendship> { f in
-            f.userId == currentUserId && f.friendName == senderName
-        })
-        do {
-            let results = try modelContext.fetch(descriptor)
-            if let existing = results.first {
-                switch existing.status {
-                case .accepted:
-                    friendState = .isFriend
-                case .pending:
-                    friendState = .pending
-                case .blocked, .hidden:
-                    friendState = .notFriend
-                }
-            } else {
-                friendState = .notFriend
-            }
-        } catch {
-            bubbleLogger.error("Failed to load friendship state: \(error.localizedDescription, privacy: .public)")
-            friendState = .unknown
-        }
-    }
-
     private func addFriend() {
-        guard friendState == .notFriend, let currentUserId = authManager.currentUser?.id.uuidString else { return }
-        // Outgoing request (current user perspective)
-        let outgoing = Friendship(
-            userId: currentUserId,
-            friendId: UUID().uuidString,
-            friendName: message.sender,
-            friendEmail: "",
-            status: .pending
-        )
-        modelContext.insert(outgoing)
-
-        // Mirror incoming request (receiver perspective) for backend readiness
-        let mirror = Friendship(
-            userId: outgoing.friendId,
-            friendId: currentUserId,
-            friendName: authManager.currentUser?.displayName ?? localizedText("user"),
-            friendEmail: authManager.currentUser?.email ?? "",
-            status: .pending
-        )
-        modelContext.insert(mirror)
-
         do {
-            try modelContext.save()
-            friendState = .pending
+            try onAddFriend?()
             alertMessage = localizedText("friend_request_sent")
             showingAlert = true
-
-            // Fire a local notification to simulate receiver-side alert
-            let manager = NotificationManager()
-            let senderName = authManager.currentUser?.displayName ?? localizedText("user")
-            let senderEmail = authManager.currentUser?.email ?? ""
-            Task { await manager.scheduleFriendRequestNotification(from: senderName, email: senderEmail) }
         } catch {
-            bubbleLogger.error("Failed to save friend request: \(error.localizedDescription, privacy: .public)")
+            // The repository has logged it; the button stays for another try.
         }
     }
 }

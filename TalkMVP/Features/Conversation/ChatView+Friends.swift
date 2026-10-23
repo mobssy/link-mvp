@@ -10,34 +10,55 @@ import os
 private let friendsLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ChatView.Friends")
 
 extension ChatView {
-    // Bug fix: widened predicate fetches all statuses, then classifies in memory
-    // so isFriend, friendRequestSent, isBlocked, and profileFriendship are all set in one pass.
+    var friendships: FriendshipRepositoryProtocol {
+        LocalFriendshipRepository(modelContext: modelContext)
+    }
+
+    // One fetch of every record for the other person, classified in memory, so isFriend,
+    // friendRequestSent, isBlocked and profileFriendship are all set in one pass.
     func checkIfFriend() {
         guard let otherUserId = chatRoom.otherUserId else {
             isFriend = true
             return
         }
 
-        let descriptor = FetchDescriptor<Friendship>(
-            predicate: #Predicate { friendship in
-                friendship.friendId == otherUserId
-            }
-        )
-
         do {
-            let friendships = try modelContext.fetch(descriptor)
-            let accepted = friendships.first(where: { $0.status == .accepted })
-            let pending  = friendships.first(where: { $0.status == .pending })
-            let blocked  = friendships.first(where: { $0.status == .blocked })
+            let records = try friendships.friendships(withFriendId: otherUserId)
+            let accepted = records.first(where: { $0.status == .accepted })
+            let pending  = records.first(where: { $0.status == .pending })
+            let blocked  = records.first(where: { $0.status == .blocked })
 
             isFriend = accepted != nil
             profileFriendship = accepted          // Bug fix: populate for FriendProfileView sheet
             friendRequestSent = pending != nil && accepted == nil
             isBlocked = blocked != nil && accepted == nil
         } catch {
-            friendsLogger.error("Failed to check friendship: \(error.localizedDescription, privacy: .public)")
             isFriend = false
         }
+    }
+
+    /// Works out how the user stands with every sender at once; the bubbles read the result.
+    func loadSenderStandings() {
+        guard let currentUserId = getCurrentUserId(),
+              let statuses = try? friendships.statusesByName(ownedBy: currentUserId)
+        else { return }
+        senderStandings = statuses.mapValues { FriendStanding($0) }
+    }
+
+    /// Sends a friend request to the person who wrote a message, from its bubble.
+    func sendFriendRequest(toSender name: String) throws {
+        guard let me = currentUser() else { return }
+        try friendships.sendRequest(
+            from: FriendRequestParty(id: me.id.uuidString, name: me.displayName, email: me.email),
+            to: FriendRequestParty(id: UUID().uuidString, name: name, email: "")
+        )
+        senderStandings?[name] = .requested
+
+        // Fire a local notification to simulate receiver-side alert
+        let manager = NotificationManager()
+        let senderName = me.displayName
+        let senderEmail = me.email
+        Task { await manager.scheduleFriendRequestNotification(from: senderName, email: senderEmail) }
     }
 
     func markMessagesAsRead() {
@@ -54,65 +75,46 @@ extension ChatView {
         }
     }
 
-    // Bug fix: single User fetch gives both currentUserId and displayName,
-    // replacing the previous double-fetch pattern.
     func addFriendToChatRoom() {
         guard let otherUserId = chatRoom.otherUserId,
               let otherUserEmail = chatRoom.otherUserEmail else {
             friendsLogger.warning("Missing user information for friend request")
             return
         }
-
-        let userDescriptor = FetchDescriptor<User>(
-            predicate: #Predicate { $0.isCurrentUser == true }
-        )
-        guard let currentUser = try? modelContext.fetch(userDescriptor).first else {
+        guard let me = currentUser() else {
             friendsLogger.warning("Current user not found for friend request")
             return
         }
-        let currentUserId = currentUser.id.uuidString
-
-        let outgoing = Friendship(
-            userId: currentUserId,
-            friendId: otherUserId,
-            friendName: chatRoom.name,
-            friendEmail: otherUserEmail,
-            status: .pending
-        )
-        outgoing.ownerUserId = currentUserId
-        modelContext.insert(outgoing)
-
-        let mirror = Friendship(
-            userId: otherUserId,
-            friendId: currentUserId,
-            friendName: currentUser.displayName,
-            friendEmail: currentUser.email,
-            status: .pending
-        )
-        mirror.ownerUserId = otherUserId
-        modelContext.insert(mirror)
 
         do {
-            try modelContext.save()
+            try friendships.sendRequest(
+                from: FriendRequestParty(id: me.id.uuidString, name: me.displayName, email: me.email),
+                to: FriendRequestParty(id: otherUserId, name: chatRoom.name, email: otherUserEmail)
+            )
             // Bug fix: set friendRequestSent instead of isFriend — status is still .pending
             friendRequestSent = true
+            senderStandings?[chatRoom.name] = .requested
             NotificationCenter.default.post(name: .friendshipPendingCreated, object: nil, userInfo: ["friendId": otherUserId])
         } catch {
-            friendsLogger.error("Failed to send friend request: \(error.localizedDescription, privacy: .public)")
             box.viewModel?.errorMessage = localizedText("friend_request_failed")
         }
     }
 
-    func getCurrentUserId() -> String? {
+    /// The signed-in user, from the one record flagged as current.
+    func currentUser() -> User? {
         let descriptor = FetchDescriptor<User>(
             predicate: #Predicate { $0.isCurrentUser == true }
         )
         do {
-            return try modelContext.fetch(descriptor).first?.id.uuidString
+            return try modelContext.fetch(descriptor).first
         } catch {
             friendsLogger.error("Failed to get current user: \(error.localizedDescription, privacy: .public)")
             return nil
         }
+    }
+
+    func getCurrentUserId() -> String? {
+        currentUser()?.id.uuidString
     }
 
     func toggleChatNotifications() {
@@ -125,57 +127,27 @@ extension ChatView {
     }
 
     func blockUser() {
-        guard let otherUserId = chatRoom.otherUserId,
-              let currentUserId = getCurrentUserId() else {
-            friendsLogger.warning("Missing user information for blocking")
-            return
-        }
-
-        let descriptor = FetchDescriptor<Friendship>(
-            predicate: #Predicate { friendship in
-                friendship.ownerUserId == currentUserId && friendship.friendId == otherUserId
-            }
-        )
-
-        do {
-            let friendships = try modelContext.fetch(descriptor)
-            if let friendship = friendships.first {
-                friendship.status = .blocked
-                try modelContext.save()
-                isBlocked = true
-                isFriend = false
-                NotificationCenter.default.post(name: .friendshipStatusChanged, object: nil, userInfo: ["friendId": otherUserId])
-            }
-        } catch {
-            friendsLogger.error("Failed to block user: \(error.localizedDescription, privacy: .public)")
-            box.viewModel?.errorMessage = localizedText("block_failed")
-        }
+        setOtherUserStatus(.blocked)
     }
 
     func unblockUser() {
+        setOtherUserStatus(.accepted)
+    }
+
+    private func setOtherUserStatus(_ status: FriendshipStatus) {
         guard let otherUserId = chatRoom.otherUserId,
               let currentUserId = getCurrentUserId() else {
-            friendsLogger.warning("Missing user information for unblocking")
+            friendsLogger.warning("Missing user information for blocking or unblocking")
             return
         }
 
-        let descriptor = FetchDescriptor<Friendship>(
-            predicate: #Predicate { friendship in
-                friendship.ownerUserId == currentUserId && friendship.friendId == otherUserId
-            }
-        )
-
         do {
-            let friendships = try modelContext.fetch(descriptor)
-            if let friendship = friendships.first {
-                friendship.status = .accepted
-                try modelContext.save()
-                isBlocked = false
-                isFriend = true
-                NotificationCenter.default.post(name: .friendshipStatusChanged, object: nil, userInfo: ["friendId": otherUserId])
-            }
+            guard let friendship = try friendships.friendship(ownedBy: currentUserId, friendId: otherUserId) else { return }
+            try friendships.setStatus(status, of: friendship)
+            isBlocked = status == .blocked
+            isFriend = status == .accepted
+            NotificationCenter.default.post(name: .friendshipStatusChanged, object: nil, userInfo: ["friendId": otherUserId])
         } catch {
-            friendsLogger.error("Failed to unblock user: \(error.localizedDescription, privacy: .public)")
             box.viewModel?.errorMessage = localizedText("block_failed")
         }
     }
