@@ -2467,3 +2467,79 @@ struct BrandTextColorTests {
         #expect(contrastRatio(.onAppPrimary, .appPrimary) >= 7)
     }
 }
+
+// MARK: - App Lock
+
+@Suite("App Lock")
+@MainActor
+struct AppLockTests {
+
+    /// Stands in for Face ID and the passcode prompt. Only these main-actor tests touch it.
+    private final class FakeAuthenticator: DeviceOwnerAuthenticating, @unchecked Sendable {
+        var available = true
+        var succeeds = false
+        private(set) var prompts = 0
+
+        func canAuthenticate() -> Bool { available }
+
+        func authenticate(reason: String, fallbackTitle: String) async throws {
+            prompts += 1
+            if !succeeds { throw CancellationError() }
+        }
+    }
+
+    private func makeDefaults(lockEnabled: Bool) -> UserDefaults {
+        let defaults = UserDefaults(suiteName: "AppLockTests-\(UUID().uuidString)")!
+        defaults.set(lockEnabled, forKey: AppLockManager.enabledKey)
+        return defaults
+    }
+
+    @Test("A cancelled or failed check keeps the app locked and the lock on")
+    func failedCheckStaysLocked() async {
+        let device = FakeAuthenticator()
+        let defaults = makeDefaults(lockEnabled: true)
+        let lock = AppLockManager(authenticator: device, defaults: defaults)
+        lock.updateLockStateOnLaunch()
+
+        await lock.authenticate()
+
+        #expect(lock.isLocked)
+        #expect(lock.errorMessage != nil)
+        #expect(defaults.bool(forKey: AppLockManager.enabledKey), "failing must not turn App Lock off")
+    }
+
+    @Test("A successful check unlocks the app")
+    func successfulCheckUnlocks() async {
+        let device = FakeAuthenticator()
+        device.succeeds = true
+        let lock = AppLockManager(authenticator: device, defaults: makeDefaults(lockEnabled: true))
+        lock.updateLockStateOnLaunch()
+        #expect(lock.isLocked)
+
+        await lock.authenticate()
+
+        #expect(!lock.isLocked)
+        #expect(lock.errorMessage == nil)
+        #expect(device.prompts == 1)
+    }
+
+    @Test("Without a device passcode the setting is turned off instead of locking the owner out")
+    func noPasscodeTurnsTheSettingOff() {
+        let device = FakeAuthenticator()
+        device.available = false
+        let defaults = makeDefaults(lockEnabled: true)
+        let lock = AppLockManager(authenticator: device, defaults: defaults)
+
+        lock.updateLockStateOnLaunch()
+
+        #expect(!lock.isLocked)
+        #expect(!defaults.bool(forKey: AppLockManager.enabledKey))
+    }
+
+    @Test("Leaving the app locks it only when App Lock is on", arguments: [true, false])
+    func backgroundLocksWhenEnabled(enabled: Bool) {
+        let lock = AppLockManager(authenticator: FakeAuthenticator(), defaults: makeDefaults(lockEnabled: enabled))
+        lock.handleScenePhase(.background)
+        #expect(lock.isLocked == enabled)
+    }
+}

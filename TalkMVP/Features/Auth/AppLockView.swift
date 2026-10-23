@@ -27,7 +27,7 @@ struct AppLockView: View {
                 }
 
                 Button(action: {
-                    appLock.authenticate()
+                    Task { await appLock.authenticate() }
                 }) {
                     HStack {
                         Image(systemName: "faceid")
@@ -40,31 +40,17 @@ struct AppLockView: View {
                     .cornerRadius(12)
                 }
                 .padding(.horizontal)
-
-                if appLock.errorMessage != nil {
-                    Button(role: .destructive) {
-                        appLock.disableLock()
-                    } label: {
-                        Text(languageManager.currentLanguage == .korean ? "앱 잠금 비활성화" : "Disable App Lock")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.red.opacity(0.1))
-                            .foregroundColor(.red)
-                            .cornerRadius(12)
-                    }
-                    .padding(.horizontal)
-                }
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active && appLock.isLocked {
                 // 포그라운드 복귀 시 자동 인증 시도
-                appLock.authenticate(reason: localizedText("unlock_reason"))
+                Task { await appLock.authenticate(reason: localizedText("unlock_reason")) }
             }
         }
         .onAppear {
             if appLock.isLocked {
-                appLock.authenticate(reason: localizedText("unlock_reason"))
+                Task { await appLock.authenticate(reason: localizedText("unlock_reason")) }
             }
         }
         .accessibilityElement(children: .contain)
@@ -81,7 +67,7 @@ struct AppLockView: View {
         case "app_lock_screen":
             return languageManager.currentLanguage == .korean ? "앱 잠금 화면" : "App Lock Screen"
         case "auth_hint":
-            return languageManager.currentLanguage == .korean ? "Face ID 또는 Touch ID로 인증하세요" : "Authenticate with Face ID or Touch ID"
+            return languageManager.currentLanguage == .korean ? "Face ID, Touch ID 또는 기기 암호로 인증하세요" : "Authenticate with Face ID, Touch ID or your passcode"
         case "unlock_reason":
             return languageManager.currentLanguage == .korean ? "앱을 잠금 해제하려면 인증이 필요합니다." : "Authentication is required to unlock the app."
         default:

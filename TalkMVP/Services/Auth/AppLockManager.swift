@@ -3,58 +3,64 @@ import Combine
 import LocalAuthentication
 import Foundation
 
+/// What App Lock needs from the device: whether the owner can be checked at all, and the check.
+nonisolated protocol DeviceOwnerAuthenticating: Sendable {
+    func canAuthenticate() -> Bool
+    func authenticate(reason: String, fallbackTitle: String) async throws
+}
+
+/// Face ID or Touch ID first, then the device passcode. The owner can always get in this way, so
+/// the lock screen never needs a way around the lock.
+nonisolated struct LocalDeviceOwnerAuthenticator: DeviceOwnerAuthenticating {
+    private let policy = LAPolicy.deviceOwnerAuthentication
+
+    func canAuthenticate() -> Bool {
+        LAContext().canEvaluatePolicy(policy, error: nil)
+    }
+
+    func authenticate(reason: String, fallbackTitle: String) async throws {
+        let context = LAContext()
+        context.localizedFallbackTitle = fallbackTitle
+        _ = try await context.evaluatePolicy(policy, localizedReason: reason)
+    }
+}
+
 @MainActor
 class AppLockManager: ObservableObject {
+    /// The setting SecuritySettingsView turns on and off.
+    static let enabledKey = "appLockEnabled"
 
-    @AppStorage("appLockEnabled") private var appLockEnabled = false
-    @AppStorage("appLockMethod") private var appLockMethod: String = "biometrics"
     @Published var isLocked: Bool = false
     @Published var errorMessage: String?
 
-    // Check if device can perform authentication based on current settings
-    func canAuthenticate() -> Bool {
-        let context = LAContext()
-        var error: NSError?
+    private let authenticator: DeviceOwnerAuthenticating
+    private let defaults: UserDefaults
+    private var isAuthenticating = false
 
-        // Determine policy similar to authenticate()
-        let hasFaceIDUsageDescription = Bundle.main.object(forInfoDictionaryKey: "NSFaceIDUsageDescription") != nil
-        let preferredMethod = appLockMethod
-        let biometricsAvailable = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
-
-        let policy: LAPolicy
-        if preferredMethod == "biometrics" {
-            if biometricsAvailable && hasFaceIDUsageDescription {
-                policy = .deviceOwnerAuthenticationWithBiometrics
-            } else {
-                policy = .deviceOwnerAuthentication
-            }
-        } else {
-            policy = .deviceOwnerAuthentication
-        }
-
-        return context.canEvaluatePolicy(policy, error: &error)
+    init(authenticator: DeviceOwnerAuthenticating = LocalDeviceOwnerAuthenticator(), defaults: UserDefaults = .standard) {
+        self.authenticator = authenticator
+        self.defaults = defaults
     }
 
-    // Emergency disable to avoid being locked out
-    func disableLock() {
-        appLockEnabled = false
-        isLocked = false
-        errorMessage = nil
+    private var isLockEnabled: Bool {
+        defaults.bool(forKey: Self.enabledKey)
     }
 
     // 앱 시작 시 현재 설정을 반영하여 잠금 여부 결정
     func updateLockStateOnLaunch() {
-        if appLockEnabled && !canAuthenticate() {
-            // Fallback: disable to prevent permanent lockout on unsupported devices
-            disableLock()
+        if isLockEnabled && !authenticator.canAuthenticate() {
+            // No passcode on the device any more, so there is nothing to check the owner
+            // against: turn the setting off rather than lock the owner out for good.
+            defaults.set(false, forKey: Self.enabledKey)
+            isLocked = false
         } else {
-            isLocked = appLockEnabled
+            isLocked = isLockEnabled
         }
     }
 
     // ScenePhase 변화에 따라 잠금 처리 (활성화될 때 잠금 요구)
     func handleScenePhase(_ phase: ScenePhase) {
-        if appLockEnabled {
+        if isLockEnabled {
             switch phase {
             case .inactive, .background:
                 // App is leaving the foreground: require authentication next time
@@ -70,81 +76,56 @@ class AppLockManager: ObservableObject {
         }
     }
 
-    // 인증 시도 (Face ID/Touch ID 또는 기기 암호)
-    func authenticate(reason: String? = nil) {
+    // 인증 시도 (Face ID/Touch ID, 안 되면 기기 암호)
+    func authenticate(reason: String? = nil) async {
+        // The lock screen asks on appear and again on returning to the foreground; one prompt at a time.
+        guard !isAuthenticating else { return }
+        isAuthenticating = true
+        defer { isAuthenticating = false }
+
         let currentLanguage: String = {
-            if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") { return saved }
-            if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first }
+            if let saved = defaults.string(forKey: "selectedLanguage") { return saved }
+            if let langs = defaults.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first }
             return "en"
         }()
         let reasonText: String
         let fallbackTitle: String
-        let authFailed: String
         let unavailable: String
         if currentLanguage.hasPrefix("ja") {
             reasonText = reason ?? "アプリのロックを解除するには認証が必要です。"
             fallbackTitle = "パスコードを使用"
-            authFailed = "認証に失敗しました。"
             unavailable = "このデバイスでは認証を使用できません。"
         } else if currentLanguage.hasPrefix("zh") {
             reasonText = reason ?? "解锁应用需要进行身份验证。"
             fallbackTitle = "使用密码"
-            authFailed = "认证失败。"
             unavailable = "此设备上无法使用身份验证。"
         } else if currentLanguage.hasPrefix("es") {
             reasonText = reason ?? "Se requiere autenticación para desbloquear la app."
             fallbackTitle = "Usar código"
-            authFailed = "La autenticación falló."
             unavailable = "La autenticación no está disponible en este dispositivo."
         } else if currentLanguage.hasPrefix("ko") {
             reasonText = reason ?? "앱을 잠금 해제하려면 인증이 필요합니다."
             fallbackTitle = "암호 사용"
-            authFailed = "인증에 실패했습니다."
             unavailable = "이 기기에서는 인증을 사용할 수 없습니다."
         } else {
             reasonText = reason ?? "Authentication is required to unlock the app."
             fallbackTitle = "Use Passcode"
-            authFailed = "Authentication failed."
             unavailable = "Authentication is unavailable on this device."
         }
 
-        let context = LAContext()
-        context.localizedFallbackTitle = fallbackTitle
-        var authError: NSError?
-
-        // Determine preferred authentication policy based on user setting
-        let preferredMethod = appLockMethod // "biometrics" or "passcode"
-        let hasFaceIDUsageDescription = Bundle.main.object(forInfoDictionaryKey: "NSFaceIDUsageDescription") != nil
-        let biometricsAvailable = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &authError)
-
-        let policy: LAPolicy
-        if preferredMethod == "biometrics" {
-            if biometricsAvailable && hasFaceIDUsageDescription {
-                policy = .deviceOwnerAuthenticationWithBiometrics
-            } else {
-                // Fallback to device passcode if biometrics not available/allowed
-                policy = .deviceOwnerAuthentication
-            }
-        } else { // "passcode"
-            policy = .deviceOwnerAuthentication
+        guard authenticator.canAuthenticate() else {
+            isLocked = true
+            errorMessage = unavailable
+            return
         }
-
-        if context.canEvaluatePolicy(policy, error: &authError) {
-            context.evaluatePolicy(policy, localizedReason: reasonText) { success, error in
-                Task { @MainActor in
-                    if success {
-                        self.isLocked = false
-                        self.errorMessage = nil
-                    } else {
-                        self.isLocked = true
-                        self.errorMessage = (error as NSError?)?.localizedDescription ?? authFailed
-                    }
-                }
-            }
-        } else {
-            // 어떤 정책도 사용할 수 없는 경우
-            self.isLocked = true
-            self.errorMessage = authError?.localizedDescription ?? unavailable
+        do {
+            try await authenticator.authenticate(reason: reasonText, fallbackTitle: fallbackTitle)
+            isLocked = false
+            errorMessage = nil
+        } catch {
+            // Cancelling or failing leaves the app locked; the only way in is to try again.
+            isLocked = true
+            errorMessage = error.localizedDescription
         }
     }
 }
