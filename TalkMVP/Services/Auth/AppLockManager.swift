@@ -26,12 +26,13 @@ nonisolated struct LocalDeviceOwnerAuthenticator: DeviceOwnerAuthenticating {
 }
 
 @MainActor
-class AppLockManager: ObservableObject {
+@Observable
+class AppLockManager {
     /// The setting SecuritySettingsView turns on and off.
     static let enabledKey = "appLockEnabled"
 
-    @Published var isLocked: Bool = false
-    @Published var errorMessage: String?
+    var isLocked: Bool = false
+    var errorMessage: String?
 
     private let authenticator: DeviceOwnerAuthenticating
     private let defaults: UserDefaults

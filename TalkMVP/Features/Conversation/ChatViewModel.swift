@@ -15,25 +15,26 @@ import os
 private let vmLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ChatViewModel")
 
 @MainActor
-class ChatViewModel: ObservableObject {
-    @Published var messages: [Message] = []
-    @Published var newMessageText: String = ""
-    @Published var otherUserTyping = false
-    @Published var isOnline = true
-    @Published var replyingToMessage: Message?
-    @Published var errorMessage: String?
+@Observable
+class ChatViewModel {
+    var messages: [Message] = []
+    var newMessageText: String = ""
+    var otherUserTyping = false
+    var isOnline = true
+    var replyingToMessage: Message?
+    var errorMessage: String?
     /// Replies the user can pick instead of typing; empty unless the other side spoke last.
-    @Published private(set) var replySuggestions: [String] = []
+    private(set) var replySuggestions: [String] = []
     /// Voice messages being written down right now. The first one in a language can take a
     /// while, since the speech model is downloaded then.
-    @Published private(set) var transcribingMessageIDs: Set<UUID> = []
+    private(set) var transcribingMessageIDs: Set<UUID> = []
     /// Words related to the current search, looked up on device; empty when searching by meaning is off.
-    @Published private(set) var relatedSearchTerms: [String] = []
-    @Published private(set) var isExpandingSearch = false
+    private(set) var relatedSearchTerms: [String] = []
+    private(set) var isExpandingSearch = false
 
     // MARK: - Pagination
     private static let pageSize = 50
-    @Published private(set) var hasMoreMessages = true
+    private(set) var hasMoreMessages = true
     private var isLoadingMore = false
 
     // Dependencies injected via constructor (Dependency Inversion Principle)
@@ -48,11 +49,11 @@ class ChatViewModel: ObservableObject {
     /// Bumped by every search, so a lookup that returns after a newer one started is ignored.
     private var searchGeneration = 0
     private let replySuggestionsEnabled: () -> Bool
-    private var suggestionTask: Task<Void, Never>?
+    @ObservationIgnored private var suggestionTask: Task<Void, Never>?
     private var chatRoom: ChatRoom
     private var chatService: ChatServiceProtocol?
-    private var cancellables = Set<AnyCancellable>()
-    private var onlineStatusTask: Task<Void, Never>?
+    @ObservationIgnored private var cancellables = Set<AnyCancellable>()
+    @ObservationIgnored private var onlineStatusTask: Task<Void, Never>?
 
     private func localizedVM(ko: String, en: String, ja: String, zh: String, es: String) -> String {
         let lang = LanguageManager.currentLanguageCode
@@ -319,7 +320,6 @@ class ChatViewModel: ObservableObject {
             await delivery.value
             guard messages.contains(where: { $0.id == message.id }) else { return } // not delivered
             await workOut(message)
-            objectWillChange.send()
             do {
                 try await messageRepository.updateMessage(message)
             } catch {
@@ -443,7 +443,6 @@ class ChatViewModel: ObservableObject {
             for msg in unread {
                 try? await messageRepository.updateMessage(msg)
             }
-            objectWillChange.send()
         }
     }
 
@@ -490,7 +489,6 @@ class ChatViewModel: ObservableObject {
         Task {
             do {
                 try await messageRepository.updateMessage(message)
-                objectWillChange.send()
 
                 chatService?.editMessage(message, in: chatRoom)
             } catch {

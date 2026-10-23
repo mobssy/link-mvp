@@ -14,8 +14,8 @@ private let profileEditLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?
 
 struct ProfileEditView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var languageManager: LanguageManager
-    @ObservedObject var authManager: AuthManager
+    @Environment(LanguageManager.self) private var languageManager
+    var authManager: AuthManager
 
     @State private var displayName: String
     @State private var statusMessage: String
@@ -211,5 +211,5 @@ struct ProfileEditView: View {
     let container = try! ModelContainer(for: User.self)
     let context = ModelContext(container)
     return ProfileEditView(authManager: AuthManager(modelContext: context))
-        .environmentObject(LanguageManager())
+        .environment(LanguageManager())
 }

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SecuritySettingsView: View {
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
     @AppStorage("appLockEnabled") private var appLockEnabled = false
 
     var body: some View {

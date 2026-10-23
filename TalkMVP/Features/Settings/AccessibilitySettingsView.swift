@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AccessibilitySettingsView: View {
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
     @AppStorage("inAppBoldText") private var boldText = false
     @AppStorage("inAppReduceMotion") private var reduceMotion = false
     @AppStorage("inAppHighContrast") private var highContrast = false
@@ -203,6 +203,6 @@ struct AccessibilitySettingsView: View {
 #Preview {
     NavigationStack {
         AccessibilitySettingsView()
-            .environmentObject(LanguageManager())
+            .environment(LanguageManager())
     }
 }

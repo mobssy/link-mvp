@@ -5,7 +5,7 @@ import os
 private let helpLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "HelpView")
 
 struct HelpView: View {
-    @EnvironmentObject var languageManager: LanguageManager
+    @Environment(LanguageManager.self) var languageManager
     @Environment(\.dismiss) private var dismiss
     @State private var showingSupportSheet = false
     @State private var showingMailComposer = false
@@ -254,7 +254,7 @@ struct HelpView: View {
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showingSupportSheet) {
             FeedbackView()
-                .environmentObject(languageManager)
+                .environment(languageManager)
         }
     }
 
@@ -387,7 +387,7 @@ struct FAQCategoryView: View {
 
 // MARK: - Feedback View
 struct FeedbackView: View {
-    @EnvironmentObject var languageManager: LanguageManager
+    @Environment(LanguageManager.self) var languageManager
     @Environment(\.dismiss) private var dismiss
     @State private var feedbackText = ""
     @State private var showingConfirmation = false
@@ -457,6 +457,6 @@ struct FeedbackView: View {
 #Preview {
     NavigationStack {
         HelpView()
-            .environmentObject(LanguageManager())
+            .environment(LanguageManager())
     }
 }

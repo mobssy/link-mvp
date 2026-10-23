@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct AppLockView: View {
-    @EnvironmentObject var appLock: AppLockManager
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(AppLockManager.self) var appLock
+    @Environment(LanguageManager.self) private var languageManager
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -78,6 +78,6 @@ struct AppLockView: View {
 
 #Preview {
     AppLockView()
-        .environmentObject(AppLockManager())
-        .environmentObject(LanguageManager())
+        .environment(AppLockManager())
+        .environment(LanguageManager())
 }

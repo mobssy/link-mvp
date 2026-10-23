@@ -10,8 +10,9 @@ import Foundation
 import Combine
 
 @MainActor
-class LanguageManager: ObservableObject {
-    @Published var currentLanguage: Language = .korean
+@Observable
+class LanguageManager {
+    var currentLanguage: Language = .korean
 
     enum Language: String, CaseIterable {
         case korean = "ko"

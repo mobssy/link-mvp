@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct ContactsSettingsView: View {
-    @EnvironmentObject private var languageManager: LanguageManager
-    @StateObject private var service = ContactsSyncService()
+    @Environment(LanguageManager.self) private var languageManager
+    @State private var service = ContactsSyncService()
     @AppStorage("contactsSyncEnabled") private var contactsSyncEnabled = false
     @State private var isSyncing = false
     @State private var status: String = ""

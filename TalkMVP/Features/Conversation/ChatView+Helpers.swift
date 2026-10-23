@@ -14,9 +14,9 @@ extension ChatView {
     func setupViewModelIfNeeded() {
         chatService.modelContext = modelContext
 
-        if box.viewModel == nil {
+        if viewModel == nil {
             let vm = ChatViewModel(modelContext: modelContext, chatRoom: chatRoom, chatService: chatService)
-            box.install(vm)
+            viewModel = vm
             vm.startOnlineStatusPolling()
         } else {
             Task {

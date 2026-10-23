@@ -9,8 +9,8 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @EnvironmentObject private var authManager: AuthManager
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(AuthManager.self) private var authManager
+    @Environment(LanguageManager.self) private var languageManager
     @State private var selectedTab = 0
     @State private var showTestModeAlert = false
     @AppStorage("contactsOnboardingShown") private var contactsOnboardingShown = false
@@ -32,7 +32,7 @@ struct ContentView: View {
                 contactsOnboardingShown = true
             }) {
                 OnboardingContactsView()
-                    .environmentObject(languageManager)
+                    .environment(languageManager)
             }
             .onChange(of: authManager.isAuthenticated) { _, isAuthenticated in
                 if isAuthenticated {
@@ -72,8 +72,8 @@ struct ContentView: View {
 }
 
 struct AuthenticatedTabsView: View {
-    @EnvironmentObject private var authManager: AuthManager
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(AuthManager.self) private var authManager
+    @Environment(LanguageManager.self) private var languageManager
     @Binding var selectedTab: Int
     let showTestModeIndicator: Bool
     @Query var chatRooms: [ChatRoom]
@@ -123,7 +123,7 @@ private extension View {
 }
 
 private struct FriendsTab: View {
-    @EnvironmentObject private var authManager: AuthManager
+    @Environment(AuthManager.self) private var authManager
     var body: some View { FriendsView(authManager: authManager) }
 }
 
@@ -132,7 +132,7 @@ private struct ChatTab: View {
 }
 
 private struct SettingsTab: View {
-    @EnvironmentObject private var authManager: AuthManager
+    @Environment(AuthManager.self) private var authManager
     var body: some View { SettingsView(authManager: authManager) }
 }
 
@@ -147,7 +147,7 @@ struct UnauthenticatedView: View {
 }
 
 struct TestModeButtonView: View {
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
     @Binding var showTestModeAlert: Bool
 
     var body: some View {
@@ -243,8 +243,8 @@ fileprivate extension LanguageManager {
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)
     ) {
         ContentView()
-            .environmentObject(AuthManager(modelContext: container.mainContext))
-            .environmentObject(LanguageManager())
+            .environment(AuthManager(modelContext: container.mainContext))
+            .environment(LanguageManager())
             .modelContainer(container)
     } else {
         Text("Preview unavailable")

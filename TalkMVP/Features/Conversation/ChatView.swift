@@ -14,36 +14,19 @@ import UniformTypeIdentifiers
 import LinkPresentation
 import UIKit
 
-// Wraps ChatViewModel as @StateObject so ChatView re-renders on every @Published change.
-// Direct @StateObject for an optional is not supported in SwiftUI — this box bridges the gap.
-@MainActor
-final class ChatViewModelContainer: ObservableObject {
-    @Published private(set) var viewModel: ChatViewModel?
-    private var cancellable: AnyCancellable?
-
-    func install(_ vm: ChatViewModel) {
-        viewModel = vm
-        // Forward the viewModel's objectWillChange into this container so
-        // any @Published mutation in ChatViewModel triggers a ChatView redraw.
-        cancellable = vm.objectWillChange
-            .sink { [weak self] _ in self?.objectWillChange.send() }
-    }
-}
-
 struct ChatView: View {
     @Environment(\.modelContext) var modelContext
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     @Environment(\.openURL) private var openURL
-    @EnvironmentObject var languageManager: LanguageManager
+    @Environment(LanguageManager.self) var languageManager
 
     let chatRoom: ChatRoom
 
     // MARK: - View Model
-    // box is internal (not private) so ChatView extensions in other files can call box.install()
-    @StateObject var box = ChatViewModelContainer()
-    var viewModel: ChatViewModel? { box.viewModel }
-    @StateObject var chatService: ChatService
+    // Internal (not private) so the ChatView extensions in other files can install it.
+    @State var viewModel: ChatViewModel?
+    @State var chatService: ChatService
 
     // MARK: - Input
     @FocusState var isTextFieldFocused: Bool
@@ -94,10 +77,10 @@ struct ChatView: View {
     @State var poppingMessageIds: Set<UUID> = []
 
     // MARK: - Voice Recording
-    @StateObject var voiceService = VoiceMessageService()
+    @State var voiceService = VoiceMessageService()
 
     // MARK: - Location
-    @StateObject var locationManager = LocationManager()
+    @State var locationManager = LocationManager()
     @State var pendingLocationSend = false
 
     // MARK: - Moderation
@@ -139,7 +122,7 @@ struct ChatView: View {
 
     init(chatRoom: ChatRoom, chatService: ChatService? = nil) {
         self.chatRoom = chatRoom
-        self._chatService = StateObject(wrappedValue: chatService ?? ChatService(modelContext: Self.initServiceContext))
+        self._chatService = State(initialValue: chatService ?? ChatService(modelContext: Self.initServiceContext))
     }
 
     // MARK: - Summary Sheet
@@ -340,13 +323,13 @@ struct ChatView: View {
             .alert(
                 localizedText("error_title"),
                 isPresented: Binding(
-                    get: { box.viewModel?.errorMessage != nil },
-                    set: { if !$0 { box.viewModel?.errorMessage = nil } }
+                    get: { viewModel?.errorMessage != nil },
+                    set: { if !$0 { viewModel?.errorMessage = nil } }
                 )
             ) {
-                Button(localizedText("ok")) { box.viewModel?.errorMessage = nil }
+                Button(localizedText("ok")) { viewModel?.errorMessage = nil }
             } message: {
-                Text(box.viewModel?.errorMessage ?? "")
+                Text(viewModel?.errorMessage ?? "")
             }
             .dynamicTypeSize(dynamicTypeSize.isAccessibilitySize ? .accessibility3 : dynamicTypeSize)
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: localizedText("search_conversation"))
@@ -389,7 +372,7 @@ struct ChatView: View {
                     FriendProfileView(friendship: friendship)
                 } else {
                     MiniProfileSheet(name: chatRoom.name, symbol: chatRoom.profileImage)
-                        .environmentObject(languageManager)
+                        .environment(languageManager)
                 }
             }
             .sheet(isPresented: $showingPhotosPicker) {
@@ -403,11 +386,11 @@ struct ChatView: View {
                     onSend: sendPendingAttachment,
                     onCancel: cancelPendingAttachment
                 )
-                .environmentObject(languageManager)
+                .environment(languageManager)
             }
             .sheet(isPresented: $showingBackgroundSettings) {
                 ChatRoomBackgroundSettings(chatRoom: chatRoom)
-                    .environmentObject(languageManager)
+                    .environment(languageManager)
             }
             .sheet(isPresented: $showingBookmarks) {
                 BookmarkedMessagesSheet(
@@ -415,14 +398,14 @@ struct ChatView: View {
                     chatRoomName: chatRoom.name,
                     onDismiss: { showingBookmarks = false }
                 )
-                .environmentObject(languageManager)
+                .environment(languageManager)
             }
             .sheet(isPresented: $showingDisappearingPicker) {
                 DisappearingMessagePickerSheet(
                     chatRoom: chatRoom,
                     onDismiss: { showingDisappearingPicker = false }
                 )
-                .environmentObject(languageManager)
+                .environment(languageManager)
             }
             .sheet(isPresented: $showingSchedulePicker) {
                 ScheduledSendSheet(
@@ -435,7 +418,7 @@ struct ChatView: View {
                     },
                     onCancel: { showingSchedulePicker = false }
                 )
-                .environmentObject(languageManager)
+                .environment(languageManager)
             }
             .onChange(of: locationManager.currentLocation) { _, location in
                 guard pendingLocationSend, let location else { return }
@@ -458,7 +441,7 @@ struct ChatView: View {
 
     @ViewBuilder
     private var onlineStatusTitleView: some View {
-        if let vm = box.viewModel {
+        if let vm = viewModel {
             VStack(spacing: 1) {
                 Text(chatRoom.name)
                     .font(.headline)

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct TermsPoliciesView: View {
-    @EnvironmentObject var languageManager: LanguageManager
+    @Environment(LanguageManager.self) var languageManager
     @State private var selectedSegment = 0
 
     private enum Segment: Int, CaseIterable {
@@ -91,6 +91,6 @@ struct TermsPoliciesView: View {
 #Preview {
     NavigationStack {
         TermsPoliciesView()
-            .environmentObject(LanguageManager())
+            .environment(LanguageManager())
     }
 }

@@ -11,7 +11,7 @@ struct BookmarkedMessagesSheet: View {
     let messages: [Message]
     let chatRoomName: String
     let onDismiss: () -> Void
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     private func loc(ko: String, en: String, ja: String, zh: String, es: String) -> String {
         languageManager.localize(ko: ko, en: en, ja: ja, zh: zh, es: es)
@@ -74,7 +74,7 @@ struct BookmarkedMessagesSheet: View {
 struct DisappearingMessagePickerSheet: View {
     let chatRoom: ChatRoom
     let onDismiss: () -> Void
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     private func loc(ko: String, en: String, ja: String, zh: String, es: String) -> String {
         languageManager.localize(ko: ko, en: en, ja: ja, zh: zh, es: es)
@@ -137,7 +137,7 @@ struct ScheduledSendSheet: View {
     @Binding var scheduledDate: Date
     let onConfirm: (Date) -> Void
     let onCancel: () -> Void
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     private func loc(ko: String, en: String, ja: String, zh: String, es: String) -> String {
         languageManager.localize(ko: ko, en: en, ja: ja, zh: zh, es: es)

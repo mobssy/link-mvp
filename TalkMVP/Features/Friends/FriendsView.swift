@@ -16,9 +16,9 @@ private let friendsLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "T
 // MARK: - Friends View
 struct FriendsView: View {
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var languageManager: LanguageManager
-    @ObservedObject var authManager: AuthManager
-    @StateObject private var notificationManager = NotificationManager()
+    @Environment(LanguageManager.self) private var languageManager
+    var authManager: AuthManager
+    @State private var notificationManager = NotificationManager()
     @AppStorage("themeMode") private var themeMode: String = "system"
 
     @AppStorage("newFriendIDs") private var newFriendIDsStorage: String = ""

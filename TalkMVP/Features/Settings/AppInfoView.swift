@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AppInfoView: View {
-    @EnvironmentObject var languageManager: LanguageManager
+    @Environment(LanguageManager.self) var languageManager
 
     private var appName: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? ""
@@ -58,5 +58,5 @@ struct AppInfoView: View {
 
 #Preview {
     AppInfoView()
-        .environmentObject(LanguageManager())
+        .environment(LanguageManager())
 }

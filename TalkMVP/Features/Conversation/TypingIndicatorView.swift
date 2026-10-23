@@ -9,7 +9,7 @@ import SwiftUI
 
 struct TypingIndicatorView: View {
     let senderName: String
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
     @State private var animationAmount = 0.5
 
     var body: some View {
@@ -64,5 +64,5 @@ struct TypingIndicatorView: View {
         Spacer()
     }
     .padding()
-    .environmentObject(LanguageManager())
+    .environment(LanguageManager())
 }

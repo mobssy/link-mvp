@@ -87,7 +87,7 @@ struct PhotoPickerView: UIViewControllerRepresentable {
 // MARK: - Reaction Picker View
 
 struct ReactionPickerView: View {
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     let message: Message?
     let onReactionSelected: (String) -> Void
@@ -165,7 +165,7 @@ struct LinkPreviewView: UIViewRepresentable {
 // MARK: - Translated Text View
 
 struct TranslatedTextView: View {
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     let text: String
     let autoDetect: Bool
@@ -218,7 +218,7 @@ struct TranslatedTextView: View {
 // MARK: - Mini Profile Sheet
 
 struct MiniProfileSheet: View {
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
     @Environment(\.dismiss) private var dismiss
 
     let name: String
@@ -262,7 +262,7 @@ struct AttachmentPreviewView: View {
     let onSend: () -> Void
     let onCancel: () -> Void
 
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
     @State private var captionText: String = ""
     @FocusState private var isCaptionFocused: Bool
 
@@ -453,10 +453,11 @@ struct SummaryParagraphCard: View {
 // MARK: - Location Manager
 
 @MainActor
-class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
+@Observable
+class LocationManager: NSObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
-    @Published var currentLocation: CLLocation?
-    @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
+    var currentLocation: CLLocation?
+    var authorizationStatus: CLAuthorizationStatus = .notDetermined
 
     override init() {
         super.init()

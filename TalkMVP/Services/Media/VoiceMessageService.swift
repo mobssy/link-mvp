@@ -45,9 +45,10 @@ nonisolated struct SharedAudioSession: AudioSessionSwitching {
 }
 
 @MainActor
-final class VoiceMessageService: NSObject, ObservableObject, AVAudioRecorderDelegate {
-    @Published var isRecording = false
-    @Published var recordingDuration: TimeInterval = 0
+@Observable
+final class VoiceMessageService: NSObject, AVAudioRecorderDelegate {
+    var isRecording = false
+    var recordingDuration: TimeInterval = 0
 
     private let audioSession: any AudioSessionSwitching
     private let requestPermission: @Sendable () async -> Bool

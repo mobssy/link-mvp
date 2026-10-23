@@ -34,7 +34,7 @@ struct MessageBubbleView: View {
     @State private var isPlayingAudio = false
     @State private var attachmentPreviewURL: URL?
 
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
     @AppStorage("inAppHighContrast") private var highContrast = false
 
     var body: some View {
@@ -59,7 +59,7 @@ struct MessageBubbleView: View {
         .sheet(isPresented: $showingFullScreenImage) {
             if let uiImage = fullScreenImage {
                 FullScreenImageView(image: uiImage)
-                    .environmentObject(languageManager)
+                    .environment(languageManager)
             }
         }
     }
@@ -418,7 +418,7 @@ struct MessageBubbleView: View {
 struct FullScreenImageView: View {
     let image: UIImage
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     var body: some View {
         ZStack(alignment: .topTrailing) {

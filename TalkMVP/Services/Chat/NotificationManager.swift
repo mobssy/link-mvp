@@ -46,7 +46,7 @@ extension UNUserNotificationCenter: NotificationScheduling {
 }
 
 @MainActor
-class NotificationManager: ObservableObject {
+class NotificationManager {
     private let center: NotificationScheduling
     private let defaults: UserDefaults
 

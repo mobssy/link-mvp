@@ -9,8 +9,8 @@ import SwiftUI
 import SwiftData
 
 struct ConnectionStatusView: View {
-    @ObservedObject var chatService: ChatService
-    @EnvironmentObject private var languageManager: LanguageManager
+    var chatService: ChatService
+    @Environment(LanguageManager.self) private var languageManager
     @State private var isVisible = false
     @State private var isPulsing = false
 
@@ -107,7 +107,7 @@ struct ConnectionStatusView: View {
 #Preview {
     if let container = try? ModelContainer(for: Message.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true)) {
         ConnectionStatusView(chatService: ChatService(modelContext: ModelContext(container)))
-            .environmentObject(LanguageManager())
+            .environment(LanguageManager())
     } else {
         Text("Preview unavailable")
     }

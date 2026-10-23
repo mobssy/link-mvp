@@ -12,8 +12,8 @@ import UIKit
 /// The sign-in / sign-up screen. `footer` is laid out after the form, inside the same
 /// scroll view, so whatever the caller adds (the test mode button) can never cover it.
 struct AuthView<Footer: View>: View {
-    @EnvironmentObject private var authManager: AuthManager
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(AuthManager.self) private var authManager
+    @Environment(LanguageManager.self) private var languageManager
     @Environment(\.colorScheme) private var colorScheme
     @State private var isSignUp = false
     @State private var username = ""
@@ -277,8 +277,8 @@ struct CustomTextField: View {
 #Preview {
     if let container = try? ModelContainer(for: User.self) {
         AuthView()
-            .environmentObject(AuthManager(modelContext: ModelContext(container)))
-            .environmentObject(LanguageManager())
+            .environment(AuthManager(modelContext: ModelContext(container)))
+            .environment(LanguageManager())
     } else {
         Text("Preview unavailable")
     }

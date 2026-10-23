@@ -17,10 +17,11 @@ private let authLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Talk
 /// flagged `isCurrentUser`; every sign-in path goes through `activate(_:)` and every
 /// sign-out path through `endSession()`, so the flag and `currentUser` never disagree.
 @MainActor
-class AuthManager: ObservableObject {
-    @Published private(set) var currentUser: User?
-    @Published private(set) var isLoading = false
-    @Published var errorMessage: String?
+@Observable
+class AuthManager {
+    private(set) var currentUser: User?
+    private(set) var isLoading = false
+    var errorMessage: String?
 
     var isAuthenticated: Bool { currentUser != nil }
 
@@ -397,7 +398,6 @@ class AuthManager: ObservableObject {
         user.statusMessage = statusMessage
         user.profileImageData = profileImageData
         user.lastActiveAt = Date()
-        objectWillChange.send()
 
         try? modelContext.save()
     }

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct TranslationSettingsView: View {
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
     @AppStorage("translationEnabled") private var translationEnabled = false
     @AppStorage("translationAutoDetect") private var translationAutoDetect = true
     @AppStorage("translationTargetLanguage") private var translationTargetLanguage = "auto"

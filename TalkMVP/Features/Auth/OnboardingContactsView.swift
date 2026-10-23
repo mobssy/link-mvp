@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct OnboardingContactsView: View {
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var service = ContactsSyncService()
+    @State private var service = ContactsSyncService()
     @State private var isRequesting = false
     @State private var status: String = ""
 

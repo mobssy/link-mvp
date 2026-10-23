@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct LanguageSettingsView: View {
-    @EnvironmentObject var languageManager: LanguageManager
+    @Environment(LanguageManager.self) var languageManager
     @Environment(\.dismiss) private var dismiss
     @State private var showingRestartAlert = false
     @State private var pendingLanguage: LanguageManager.Language?
@@ -160,7 +160,7 @@ struct LanguageRow: View {
     let language: LanguageManager.Language
     let isSelected: Bool
     let action: () -> Void
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     var body: some View {
         Button(action: action) {
@@ -209,5 +209,5 @@ struct LanguageRow: View {
 
 #Preview {
     LanguageSettingsView()
-        .environmentObject(LanguageManager())
+        .environment(LanguageManager())
 }

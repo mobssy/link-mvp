@@ -96,7 +96,7 @@ extension ChatView {
             senderStandings?[chatRoom.name] = .requested
             NotificationCenter.default.post(name: .friendshipPendingCreated, object: nil, userInfo: ["friendId": otherUserId])
         } catch {
-            box.viewModel?.errorMessage = localizedText("friend_request_failed")
+            viewModel?.errorMessage = localizedText("friend_request_failed")
         }
     }
 
@@ -148,7 +148,7 @@ extension ChatView {
             isFriend = status == .accepted
             NotificationCenter.default.post(name: .friendshipStatusChanged, object: nil, userInfo: ["friendId": otherUserId])
         } catch {
-            box.viewModel?.errorMessage = localizedText("block_failed")
+            viewModel?.errorMessage = localizedText("block_failed")
         }
     }
 

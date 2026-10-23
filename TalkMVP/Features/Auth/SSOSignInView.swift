@@ -7,8 +7,8 @@ import SwiftUI
 import AuthenticationServices
 
 struct SSOSignInView: View {
-    @EnvironmentObject private var authManager: AuthManager
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(AuthManager.self) private var authManager
+    @Environment(LanguageManager.self) private var languageManager
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {

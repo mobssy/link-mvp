@@ -13,7 +13,7 @@ struct BlockedFriendsView: View {
     let blockedFriends: [Friendship]
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     var body: some View {
         NavigationStack {
@@ -48,7 +48,7 @@ struct BlockedFriendRow: View {
     let friendship: Friendship
     let repository: FriendshipRepositoryProtocol
     @State private var showingUnblockAlert = false
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     var body: some View {
         HStack {
@@ -96,7 +96,7 @@ struct ManageFriendsView: View {
     let blockedFriends: [Friendship]
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     var body: some View {
         NavigationStack {
@@ -147,7 +147,7 @@ struct HiddenFriendRow: View {
     let friendship: Friendship
     let repository: FriendshipRepositoryProtocol
     @State private var showingUnhideAlert = false
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     var body: some View {
         HStack {

@@ -13,12 +13,12 @@ private let addFriendLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? 
 
 // MARK: - Add Friend View
 struct AddFriendView: View {
-    @ObservedObject var authManager: AuthManager
-    @ObservedObject var notificationManager: NotificationManager
+    var authManager: AuthManager
+    var notificationManager: NotificationManager
     let onFriendAdded: () -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     @State private var friendEmail = ""
     @State private var showingAlert = false
@@ -153,8 +153,8 @@ struct AddFriendView: View {
 // MARK: - User Search Result Row
 struct UserSearchResultRow: View {
     let result: UserSearchResult
-    @ObservedObject var authManager: AuthManager
-    @EnvironmentObject private var languageManager: LanguageManager
+    var authManager: AuthManager
+    @Environment(LanguageManager.self) private var languageManager
     let notificationManager: NotificationManager
     let friendships: FriendshipRepositoryProtocol
     let onComplete: (Bool, String) -> Void

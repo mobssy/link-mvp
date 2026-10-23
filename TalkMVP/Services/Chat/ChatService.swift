@@ -14,13 +14,14 @@ import os
 private let chatServiceLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ChatService")
 
 @MainActor
-class ChatService: ObservableObject, ChatServiceProtocol {
-    @Published var connectionStatus: ConnectionStatus = .disconnected
+@Observable
+class ChatService: ChatServiceProtocol {
+    var connectionStatus: ConnectionStatus = .disconnected
 
     private var notificationsEnabled: Bool { NotificationPreferences.isEnabled() }
 
-    private var heartbeatTimer: Timer?
-    private var randomMessageTimer: Timer?
+    @ObservationIgnored private var heartbeatTimer: Timer?
+    @ObservationIgnored private var randomMessageTimer: Timer?
     /// Rooms on screen, which simulated messages leave alone.
     private let openRooms: OpenChatRooms
     /// Simulated handshake time before the connection reports `.connected`.

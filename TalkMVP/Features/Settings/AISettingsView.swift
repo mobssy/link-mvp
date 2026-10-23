@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AISettingsView: View {
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
     @AppStorage(AIFeatureSettings.summary.key) private var aiSummaryEnabled = AIFeatureSettings.summary.defaultValue
     @AppStorage(AIFeatureSettings.search.key) private var aiSearchEnabled = AIFeatureSettings.search.defaultValue
     @AppStorage(AIFeatureSettings.meetingNotes.key) private var aiAutoMeetingNotesEnabled = AIFeatureSettings.meetingNotes.defaultValue

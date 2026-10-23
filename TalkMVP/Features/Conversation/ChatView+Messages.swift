@@ -181,7 +181,7 @@ extension ChatView {
                 )
                 .frame(maxWidth: .infinity, alignment: message.isFromCurrentUser ? .trailing : .leading)
                 .padding(.horizontal, 2)
-                .environmentObject(languageManager)
+                .environment(languageManager)
             }
         }
     }

@@ -41,9 +41,7 @@ final class DummyMatchingBackend: ContactsMatchingBackend {
    }
 }
 
-final class ContactsSyncService: ObservableObject {
-   let objectWillChange = ObservableObjectPublisher()
-
+final class ContactsSyncService {
    enum AccessStatus { case notDetermined, authorized, denied }
 
    private let store = CNContactStore()

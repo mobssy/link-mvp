@@ -167,7 +167,7 @@ struct CompoundAlertModifier: ViewModifier {
     let onEditSave: (Message, String) -> Void
     let onBlock: () -> Void
 
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     private var language: Language {
         switch languageManager.currentLanguage {

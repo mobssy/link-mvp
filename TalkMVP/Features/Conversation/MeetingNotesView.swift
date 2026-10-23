@@ -10,7 +10,7 @@ import SwiftUI
 struct MeetingNotesView: View {
     let notes: MeetingNotes?
     let isLoading: Bool
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     var body: some View {
         if isLoading {

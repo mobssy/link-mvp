@@ -42,13 +42,13 @@ fileprivate func chatListLocalized(_ key: String, using manager: LanguageManager
 
 struct ChatListView: View {
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
     @Query(sort: \ChatRoom.timestamp, order: .reverse) private var chatRooms: [ChatRoom]
     @State private var searchText = ""
     /// The open conversation. Kept as an id so a room deleted while open simply resolves
     /// to nothing instead of leaving a dangling model in the detail column.
     @State private var selectedRoomID: UUID?
-    @StateObject private var chatService: ChatService
+    @State private var chatService: ChatService
 
     // Shared in-memory context used only during init — replaced by the environment's
     // shared context in onAppear before any real I/O happens.
@@ -62,7 +62,7 @@ struct ChatListView: View {
     }()
 
     init() {
-        self._chatService = StateObject(wrappedValue: ChatService(modelContext: Self.initServiceContext))
+        self._chatService = State(initialValue: ChatService(modelContext: Self.initServiceContext))
     }
 
     var filteredChatRooms: [ChatRoom] {
@@ -186,7 +186,7 @@ struct ChatListView: View {
 
 struct ChatRoomRow: View {
     let room: ChatRoom
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     var body: some View {
         HStack(spacing: 12) {
@@ -262,8 +262,8 @@ struct ChatRoomRow: View {
 struct ChatScreen: View {
     let room: ChatRoom
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var authManager: AuthManager
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(AuthManager.self) private var authManager
+    @Environment(LanguageManager.self) private var languageManager
     /// Nil until it is known, or when no one is signed in.
     @State private var friendStanding: FriendStanding?
     @State private var showingAlert = false

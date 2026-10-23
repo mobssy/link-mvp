@@ -10,8 +10,8 @@ import SwiftData
 
 // MARK: - My Profile Row
 struct MyProfileRow: View {
-    @ObservedObject var authManager: AuthManager
-    @EnvironmentObject private var languageManager: LanguageManager
+    var authManager: AuthManager
+    @Environment(LanguageManager.self) private var languageManager
     @State private var showingProfileEdit = false
 
     var body: some View {
@@ -54,7 +54,7 @@ struct MyProfileRow: View {
         .buttonStyle(PlainButtonStyle())
         .sheet(isPresented: $showingProfileEdit) {
             ProfileEditView(authManager: authManager)
-                .environmentObject(languageManager)
+                .environment(languageManager)
         }
     }
 
@@ -93,7 +93,7 @@ struct FriendRow: View {
     let onDataChanged: () -> Void
     var onOpened: (() -> Void)?
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
     @State private var showingProfileView = false
 
     var body: some View {
@@ -190,7 +190,7 @@ struct ReceivedRequestRow: View {
     let onDataChanged: () -> Void
     var onAccepted: ((Friendship) -> Void)?
     @State private var isAccepting = false
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     var body: some View {
         HStack {
@@ -232,7 +232,7 @@ struct ReceivedRequestRow: View {
 // MARK: - Pending Friend Request Row
 struct PendingRequestRow: View {
     let friendship: Friendship
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     var body: some View {
         HStack {

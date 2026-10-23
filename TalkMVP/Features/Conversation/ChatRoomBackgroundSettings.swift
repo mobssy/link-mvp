@@ -15,7 +15,7 @@ private let backgroundLogger = Logger(subsystem: Bundle.main.bundleIdentifier ??
 struct ChatRoomBackgroundSettings: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
     @AppStorage("inAppHighContrast") private var highContrast = false
 
     let chatRoom: ChatRoom
@@ -475,7 +475,7 @@ extension Color {
 
     return NavigationStack {
         ChatRoomBackgroundSettings(chatRoom: chatRoom)
-            .environmentObject(LanguageManager())
+            .environment(LanguageManager())
             .modelContainer(container)
     }
 }

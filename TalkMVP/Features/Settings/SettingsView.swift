@@ -12,8 +12,8 @@ import os
 private let settingsLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "SettingsView")
 
 struct SettingsView: View {
-    @ObservedObject var authManager: AuthManager
-    @EnvironmentObject private var languageManager: LanguageManager
+    var authManager: AuthManager
+    @Environment(LanguageManager.self) private var languageManager
     @Environment(\.modelContext) private var modelContext
     @AppStorage("themeMode") private var themeMode: String = "system"
 
@@ -24,7 +24,7 @@ struct SettingsView: View {
     @State private var showingProfileEdit = false
 
     // Notifications
-    @StateObject private var notificationManager = NotificationManager()
+    @State private var notificationManager = NotificationManager()
     @AppStorage(NotificationPreferences.enabledKey) private var notificationsEnabled = true
 
     var body: some View {
@@ -47,7 +47,7 @@ struct SettingsView: View {
                         )
                         Divider().padding(.leading, 52)
                         NavigationLink {
-                            ThemeSettingsView().environmentObject(languageManager)
+                            ThemeSettingsView().environment(languageManager)
                         } label: {
                             SettingsLinkRow(
                                 systemImage: "paintpalette.fill",
@@ -57,7 +57,7 @@ struct SettingsView: View {
                         }
                         Divider().padding(.leading, 52)
                         NavigationLink {
-                            LanguageSettingsView().environmentObject(languageManager)
+                            LanguageSettingsView().environment(languageManager)
                         } label: {
                             SettingsLinkRow(
                                 systemImage: "globe",
@@ -67,7 +67,7 @@ struct SettingsView: View {
                         }
                         Divider().padding(.leading, 52)
                         NavigationLink {
-                            SecuritySettingsView().environmentObject(languageManager)
+                            SecuritySettingsView().environment(languageManager)
                         } label: {
                             SettingsLinkRow(
                                 systemImage: "lock.fill",
@@ -77,7 +77,7 @@ struct SettingsView: View {
                         }
                         Divider().padding(.leading, 52)
                         NavigationLink {
-                            AISettingsView().environmentObject(languageManager)
+                            AISettingsView().environment(languageManager)
                         } label: {
                             SettingsLinkRow(
                                 systemImage: "sparkles",
@@ -87,7 +87,7 @@ struct SettingsView: View {
                         }
                         Divider().padding(.leading, 52)
                         NavigationLink {
-                            TranslationSettingsView().environmentObject(languageManager)
+                            TranslationSettingsView().environment(languageManager)
                         } label: {
                             SettingsLinkRow(
                                 systemImage: "character.bubble",
@@ -97,7 +97,7 @@ struct SettingsView: View {
                         }
                         Divider().padding(.leading, 52)
                         NavigationLink {
-                            ContactsSettingsView().environmentObject(languageManager)
+                            ContactsSettingsView().environment(languageManager)
                         } label: {
                             SettingsLinkRow(
                                 systemImage: "person.crop.circle.badge.plus",
@@ -107,7 +107,7 @@ struct SettingsView: View {
                         }
                         Divider().padding(.leading, 52)
                         NavigationLink {
-                            AccessibilitySettingsView().environmentObject(languageManager)
+                            AccessibilitySettingsView().environment(languageManager)
                         } label: {
                             SettingsLinkRow(
                                 systemImage: "accessibility",
@@ -119,7 +119,7 @@ struct SettingsView: View {
 
                     SettingsSectionCard(title: languageManager.localize(ko: "정보", en: "Info", ja: "情報", zh: "信息", es: "Info")) {
                         NavigationLink {
-                            HelpView().environmentObject(languageManager)
+                            HelpView().environment(languageManager)
                         } label: {
                             SettingsLinkRow(
                                 systemImage: "questionmark.circle.fill",
@@ -129,7 +129,7 @@ struct SettingsView: View {
                         }
                         Divider().padding(.leading, 52)
                         NavigationLink {
-                            AppInfoView().environmentObject(languageManager)
+                            AppInfoView().environment(languageManager)
                         } label: {
                             SettingsLinkRow(
                                 systemImage: "info.circle.fill",
@@ -139,7 +139,7 @@ struct SettingsView: View {
                         }
                         Divider().padding(.leading, 52)
                         NavigationLink {
-                            TermsPoliciesView().environmentObject(languageManager)
+                            TermsPoliciesView().environment(languageManager)
                         } label: {
                             SettingsLinkRow(
                                 systemImage: "doc.text.fill",
@@ -184,7 +184,7 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showingProfileEdit) {
                 ProfileEditView(authManager: authManager)
-                    .environmentObject(languageManager)
+                    .environment(languageManager)
             }
             // Alerts for destructive actions
             .alert(localizedText("delete_account"), isPresented: $showingDeleteAlert) {

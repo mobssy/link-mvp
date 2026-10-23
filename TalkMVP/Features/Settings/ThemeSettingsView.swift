@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ThemeSettingsView: View {
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
     @AppStorage("themeMode") private var themeMode: String = "system" // "system", "light", "dark"
 
     var body: some View {
@@ -38,6 +38,6 @@ struct ThemeSettingsView: View {
 #Preview {
     NavigationStack {
         ThemeSettingsView()
-            .environmentObject(LanguageManager())
+            .environment(LanguageManager())
     }
 }

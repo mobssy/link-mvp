@@ -13,7 +13,7 @@ struct FriendProfileView: View {
     let friendship: Friendship
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
     @State private var showingChatView = false
     @State private var showingBlockAlert = false
     @State private var showingUnblockAlert = false
@@ -402,7 +402,7 @@ struct FriendProfileView: View {
 // 상태 배지 컴포넌트
 struct StatusBadge: View {
     let status: FriendshipStatus
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(LanguageManager.self) private var languageManager
 
     var body: some View {
         HStack(spacing: 6) {
@@ -493,8 +493,8 @@ struct ProfileInfoCard: View {
 struct ChatViewContainer: View {
     let friendship: Friendship
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var authManager: AuthManager
-    @EnvironmentObject private var languageManager: LanguageManager
+    @Environment(AuthManager.self) private var authManager
+    @Environment(LanguageManager.self) private var languageManager
     @State private var room: ChatRoom?
     @State private var failedToOpen = false
 

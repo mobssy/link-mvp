@@ -14,9 +14,9 @@ private let appLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkM
 
 @main
 struct LinkMVPApp: App {
-    @StateObject private var appLock = AppLockManager()
-    @StateObject private var authManager: AuthManager
-    @StateObject private var languageManager = LanguageManager()
+    @State private var appLock = AppLockManager()
+    @State private var authManager: AuthManager
+    @State private var languageManager = LanguageManager()
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("themeMode") private var themeMode: String = "system"
     @AppStorage("inAppBoldText") private var boldText = false
@@ -28,7 +28,7 @@ struct LinkMVPApp: App {
         // injects into the view hierarchy, so models AuthManager hands out (currentUser)
         // can be edited and saved from any view.
         let context = sharedModelContainer.mainContext
-        _authManager = StateObject(wrappedValue: AuthManager(modelContext: context))
+        _authManager = State(initialValue: AuthManager(modelContext: context))
         // Siri and Shortcuts actions read and write the same store as the app's screens.
         let container = sharedModelContainer
         AppDependencyManager.shared.add(dependency: container)
@@ -78,17 +78,17 @@ struct LinkMVPApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(authManager)
-                .environmentObject(appLock)
-                .environmentObject(languageManager)
+                .environment(authManager)
+                .environment(appLock)
+                .environment(languageManager)
                 .tint(.appPrimaryText)
                 .preferredColorScheme(themeMode == "light" ? .light : (themeMode == "dark" ? .dark : nil))
                 .fontWeight(boldText ? .bold : .regular)
                 .dynamicTypeSize(dynamicTypeSizeForStep(textSizeStep))
                 .fullScreenCover(isPresented: Binding(get: { appLock.isLocked }, set: { _ in })) {
                     AppLockView()
-                        .environmentObject(appLock)
-                        .environmentObject(languageManager)
+                        .environment(appLock)
+                        .environment(languageManager)
                 }
                 .task {
                     appLock.updateLockStateOnLaunch()
