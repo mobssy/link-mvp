@@ -28,6 +28,7 @@ class AuthManager: ObservableObject {
     /// Stand-in for a server round trip on sign-up / sign-in. Tests pass `.zero`.
     private let simulatedLatency: Duration
     private let attachmentFiles: AttachmentFileStoring
+    private let passwordStore: PasswordStoring
 
     // MARK: - Lightweight localization for non-View layer
     private func loc(_ key: String, _ param: String = "") -> String {
@@ -50,12 +51,12 @@ class AuthManager: ObservableObject {
             if isZh { return "注册时发生错误: " }
             if isEs { return "Se produjo un error durante el registro: " }
             return "An error occurred during sign up: "
-        case "signin_not_found":
-            if isKo { return "존재하지 않는 사용자입니다." }
-            if isJa { return "ユーザーが見つかりません。" }
-            if isZh { return "用户不存在。" }
-            if isEs { return "Usuario no encontrado." }
-            return "User not found."
+        case "signin_failed":
+            if isKo { return "아이디 또는 비밀번호가 올바르지 않습니다." }
+            if isJa { return "ユーザー名またはパスワードが正しくありません。" }
+            if isZh { return "用户名或密码不正确。" }
+            if isEs { return "El usuario o la contraseña no son correctos." }
+            return "The username or password is incorrect."
         case "signin_error_prefix":
             if isKo { return "로그인 중 오류가 발생했습니다: " }
             if isJa { return "ログイン中にエラーが発生しました: " }
@@ -76,11 +77,13 @@ class AuthManager: ObservableObject {
     init(
         modelContext: ModelContext,
         simulatedLatency: Duration = .seconds(1),
-        attachmentFiles: AttachmentFileStoring = DiskAttachmentFileStore()
+        attachmentFiles: AttachmentFileStoring = DiskAttachmentFileStore(),
+        passwordStore: PasswordStoring = KeychainPasswordStore()
     ) {
         self.modelContext = modelContext
         self.simulatedLatency = simulatedLatency
         self.attachmentFiles = attachmentFiles
+        self.passwordStore = passwordStore
         restoreSession()
     }
 
@@ -138,6 +141,12 @@ class AuthManager: ObservableObject {
                 email: email,
                 statusMessage: defaultStatus
             )
+            // The password goes to the Keychain as a salted hash before the account exists, so
+            // there is never an account that signs in without one. Hashing is slow on purpose,
+            // so it runs off the main actor.
+            let store = passwordStore
+            let accountID = newUser.id
+            try await Task.detached { try store.setPassword(password, for: accountID) }.value
             modelContext.insert(newUser)
             try activate(newUser)
 
@@ -163,8 +172,17 @@ class AuthManager: ObservableObject {
         )
 
         do {
+            // One message for an unknown account and a wrong password, so the form doesn't
+            // tell anyone which usernames exist.
             guard let user = try modelContext.fetch(descriptor).first else {
-                errorMessage = loc("signin_not_found")
+                errorMessage = loc("signin_failed")
+                return
+            }
+            let store = passwordStore
+            let accountID = user.id
+            let verified = await Task.detached { store.verifyPassword(password, for: accountID) }.value
+            guard verified else {
+                errorMessage = loc("signin_failed")
                 return
             }
             try activate(user)
@@ -393,6 +411,7 @@ class AuthManager: ObservableObject {
             return
         }
         attachmentFiles.removeFiles(keeping: [])
+        passwordStore.removeAllPasswords()
 
         // 알림 정리
         let center = UNUserNotificationCenter.current()

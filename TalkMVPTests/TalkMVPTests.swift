@@ -747,13 +747,15 @@ struct AuthManagerTests {
     }
 
     private let attachmentFiles: DiskAttachmentFileStore
+    /// Shared by every manager a test makes, like the Keychain is across launches.
+    private let passwords = InMemoryPasswordStore()
 
     init() throws {
         attachmentFiles = DiskAttachmentFileStore(documentsDirectory: try makeTemporaryDocuments())
     }
 
     private func makeManager(_ context: ModelContext) -> AuthManager {
-        AuthManager(modelContext: context, simulatedLatency: .zero, attachmentFiles: attachmentFiles)
+        AuthManager(modelContext: context, simulatedLatency: .zero, attachmentFiles: attachmentFiles, passwordStore: passwords)
     }
 
     private func currentUsers(in context: ModelContext) throws -> [User] {
@@ -821,6 +823,47 @@ struct AuthManagerTests {
         #expect(manager.isAuthenticated == false)
     }
 
+    @Test("A wrong password is rejected with the same message as an unknown account")
+    func signInWrongPasswordFails() async throws {
+        let context = try makeContext()
+        let manager = makeManager(context)
+        await manager.signUp(username: "jordan", displayName: "Jordan", email: "jordan@example.com", password: "secret1")
+        manager.signOut()
+
+        await manager.signIn(username: "jordan", password: "not-it")
+        let wrongPassword = manager.errorMessage
+        #expect(manager.isAuthenticated == false)
+
+        await manager.signIn(username: "nobody", password: "not-it")
+        #expect(wrongPassword != nil)
+        #expect(manager.errorMessage == wrongPassword)
+    }
+
+    @Test("An account signs in again with the password it signed up with")
+    func signInWithSignUpPassword() async throws {
+        let context = try makeContext()
+        let manager = makeManager(context)
+        await manager.signUp(username: "jordan", displayName: "Jordan", email: "jordan@example.com", password: "secret1")
+        manager.signOut()
+
+        await manager.signIn(username: "jordan@example.com", password: "secret1")
+
+        #expect(manager.isAuthenticated)
+        #expect(manager.errorMessage == nil)
+    }
+
+    @Test("An account with no stored password can't be signed into")
+    func signInWithoutStoredPasswordFails() async throws {
+        let context = try makeContext()
+        context.insert(User(username: "legacy", displayName: "Legacy", email: "legacy@example.com"))
+        try context.save()
+        let manager = makeManager(context)
+
+        await manager.signIn(username: "legacy", password: "")
+
+        #expect(manager.isAuthenticated == false)
+    }
+
     @Test("Signing in moves the current-user flag to the new account")
     func signInSwitchesCurrentUser() async throws {
         let context = try makeContext()
@@ -829,6 +872,7 @@ struct AuthManagerTests {
         context.insert(first)
         context.insert(second)
         try context.save()
+        try passwords.setPassword("secret1", for: second.id)
         let manager = makeManager(context)
 
         await manager.signIn(username: "second@example.com", password: "secret1")
@@ -2541,5 +2585,73 @@ struct AppLockTests {
         let lock = AppLockManager(authenticator: FakeAuthenticator(), defaults: makeDefaults(lockEnabled: enabled))
         lock.handleScenePhase(.background)
         #expect(lock.isLocked == enabled)
+    }
+}
+
+// MARK: - Passwords
+
+@Suite("Password hashing")
+struct PasswordHasherTests {
+    private let hasher = PasswordHasher(iterations: 1_000)
+
+    @Test("The right password matches its hash and others don't")
+    func verifies() {
+        let stored = hasher.hash("correct horse")
+        #expect(hasher.verify("correct horse", against: stored))
+        #expect(!hasher.verify("correct hors", against: stored))
+        #expect(!hasher.verify("", against: stored))
+    }
+
+    @Test("The same password gets a new salt, and so a new hash, each time")
+    func saltsDiffer() {
+        let first = hasher.hash("secret1")
+        let second = hasher.hash("secret1")
+        #expect(first.salt != second.salt)
+        #expect(first.hash != second.hash)
+        #expect(first.salt.count == 16 && first.hash.count == 32)
+    }
+
+    @Test("A hash keeps the work factor it was made with")
+    func keepsIterations() {
+        let stored = PasswordHasher(iterations: 2_000).hash("secret1")
+        #expect(stored.iterations == 2_000)
+        #expect(hasher.verify("secret1", against: stored), "checking uses the stored count, not the hasher's own")
+    }
+
+    @Test("Byte comparison", arguments: [
+        (Data([1, 2, 3]), Data([1, 2, 3]), true),
+        (Data([1, 2, 3]), Data([1, 2, 4]), false),
+        (Data([1, 2, 3]), Data([1, 2]), false)
+    ])
+    func constantTimeEqual(lhs: Data, rhs: Data, equal: Bool) {
+        #expect(PasswordHasher.constantTimeEqual(lhs, rhs) == equal)
+    }
+
+    @Test("The Keychain store keeps a hash per account and forgets them all on wipe")
+    func keychainStore() throws {
+        let store = KeychainPasswordStore(service: "TalkMVPTests-\(UUID().uuidString)", hasher: hasher)
+        defer { store.removeAllPasswords() }
+        let jordan = UUID(), sam = UUID()
+        try store.setPassword("secret1", for: jordan)
+        try store.setPassword("other22", for: sam)
+        try store.setPassword("changed", for: jordan)
+
+        #expect(store.verifyPassword("changed", for: jordan), "setting again replaces the old hash")
+        #expect(!store.verifyPassword("secret1", for: jordan))
+        #expect(store.verifyPassword("other22", for: sam))
+        #expect(!store.verifyPassword("other22", for: UUID()))
+
+        store.removeAllPasswords()
+        #expect(!store.verifyPassword("other22", for: sam))
+    }
+
+    @Test("The store forgets every password when the data is wiped")
+    func storeRemovesAll() throws {
+        let store = InMemoryPasswordStore(hasher: hasher)
+        let id = UUID()
+        try store.setPassword("secret1", for: id)
+        #expect(store.verifyPassword("secret1", for: id))
+        store.removeAllPasswords()
+        #expect(!store.verifyPassword("secret1", for: id))
     }
 }
