@@ -66,21 +66,19 @@ struct ConnectionStatusView: View {
             // Update pulsing based on status
             isPulsing = (newStatus == .connecting || newStatus == .reconnecting)
 
-            if newStatus == .connected {
-                // Show "연결됨" briefly, then hide after 3 seconds
-                withAnimation(.spring()) {
-                    isVisible = true
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                    withAnimation {
-                        isVisible = false
-                    }
-                }
-            } else {
-                // For disconnected/connecting/reconnecting, keep the banner visible
-                withAnimation(.spring()) {
-                    isVisible = true
-                }
+            // Show the new status; for disconnected/connecting/reconnecting it stays up
+            withAnimation(.spring()) {
+                isVisible = true
+            }
+        }
+        .task(id: chatService.connectionStatus) {
+            // Show "연결됨" briefly, then hide after 3 seconds. A newer status cancels this, so
+            // a quick drop and reconnect can't hide the banner it brought back.
+            guard chatService.connectionStatus == .connected else { return }
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            withAnimation {
+                isVisible = false
             }
         }
     }

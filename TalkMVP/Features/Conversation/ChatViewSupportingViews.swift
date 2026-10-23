@@ -150,13 +150,14 @@ struct LinkPreviewView: UIViewRepresentable {
     func updateUIView(_ uiView: LPLinkView, context: Context) {}
 
     final class Coordinator {
-        private var provider: LPMetadataProvider?
+        private var fetch: Task<Void, Never>?
+
+        deinit { fetch?.cancel() }
 
         func fetch(url: URL, into view: LPLinkView) {
-            provider = LPMetadataProvider()
-            provider?.startFetchingMetadata(for: url) { metadata, error in
-                guard let metadata, error == nil else { return }
-                DispatchQueue.main.async { view.metadata = metadata }
+            fetch = Task {
+                guard let metadata = try? await LPMetadataProvider().startFetchingMetadata(for: url) else { return }
+                view.metadata = metadata
             }
         }
     }
@@ -479,20 +480,18 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        // CLLocationManager calls back on the thread that made it, the main one here.
         guard let location = locations.last else { return }
-        DispatchQueue.main.async {
-            self.currentLocation = location
-        }
+        currentLocation = location
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         supportingViewsLogger.error("위치 정보 가져오기 실패: \(error.localizedDescription, privacy: .public)")
     }
 
-    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        DispatchQueue.main.async {
-            self.authorizationStatus = status
-        }
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let status = manager.authorizationStatus
+        authorizationStatus = status
 
         switch status {
         case .authorizedWhenInUse, .authorizedAlways:

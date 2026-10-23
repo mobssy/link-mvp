@@ -339,7 +339,8 @@ class ChatViewModel {
 
     private func simulateTypingIndicator() {
         otherUserTyping = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + Double.random(in: 1.5...3.0)) { [weak self] in
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Double.random(in: 1.5...3.0)))
             self?.otherUserTyping = false
         }
     }

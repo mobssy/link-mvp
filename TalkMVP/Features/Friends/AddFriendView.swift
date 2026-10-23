@@ -98,8 +98,9 @@ struct AddFriendView: View {
         .alert(L10n.text("alert", languageManager.currentLanguage), isPresented: $showingAlert) {
             Button(L10n.text("ok", languageManager.currentLanguage)) {
                 if lastActionWasSuccess {
-                    // Give time for data to propagate
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    // Let the alert finish going away before the sheet does
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(100))
                         dismiss()
                     }
                 }
@@ -107,11 +108,10 @@ struct AddFriendView: View {
         } message: {
             Text(alertMessage)
         }
-        .onAppear {
-            // Auto-focus keyboard when view appears
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                isTextFieldFocused = true
-            }
+        .task {
+            // Auto-focus keyboard once the sheet has settled
+            try? await Task.sleep(for: .milliseconds(500))
+            isTextFieldFocused = true
         }
     }
 

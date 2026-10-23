@@ -22,6 +22,8 @@ class ChatService: ChatServiceProtocol {
 
     @ObservationIgnored private var heartbeatTimer: Timer?
     @ObservationIgnored private var randomMessageTimer: Timer?
+    /// The pending handshake or reconnect; disconnecting cancels it so it can't connect afterwards.
+    @ObservationIgnored private var connectionTask: Task<Void, Never>?
     /// Rooms on screen, which simulated messages leave alone.
     private let openRooms: OpenChatRooms
     /// Simulated handshake time before the connection reports `.connected`.
@@ -102,6 +104,7 @@ class ChatService: ChatServiceProtocol {
         // owning view goes away; stop them so the run loop doesn't keep firing.
         heartbeatTimer?.invalidate()
         randomMessageTimer?.invalidate()
+        connectionTask?.cancel()
     }
 
     private func ensureNotificationSetup() {
@@ -124,8 +127,10 @@ class ChatService: ChatServiceProtocol {
     func startConnection() {
         ensureNotificationSetup()
         connectionStatus = .connecting
-        DispatchQueue.main.asyncAfter(deadline: .now() + connectDelay) { [weak self] in
-            guard let self else { return }
+        connectionTask?.cancel()
+        connectionTask = Task { [weak self, connectDelay] in
+            try? await Task.sleep(for: .seconds(connectDelay))
+            guard let self, !Task.isCancelled else { return }
             self.connectionStatus = .connected
             self.startHeartbeat()
             self.startRandomMessageSimulation()
@@ -133,6 +138,8 @@ class ChatService: ChatServiceProtocol {
     }
 
     func disconnect() {
+        connectionTask?.cancel()
+        connectionTask = nil
         connectionStatus = .disconnected
         heartbeatTimer?.invalidate()
         heartbeatTimer = nil
@@ -143,8 +150,10 @@ class ChatService: ChatServiceProtocol {
     func reconnect() {
         disconnect()
         connectionStatus = .reconnecting
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            self?.startConnection()
+        connectionTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1.5))
+            guard let self, !Task.isCancelled else { return }
+            self.startConnection()
         }
     }
 

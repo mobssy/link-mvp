@@ -1080,6 +1080,21 @@ struct ChatServiceTests {
         #expect(service.connectionStatus == .disconnected)
     }
 
+    @Test("Disconnecting during the handshake stops it from connecting afterwards")
+    func disconnectCancelsPendingConnection() async throws {
+        let container = try ModelContainer(
+            for: Message.self, ChatRoom.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let service = ChatService(modelContext: ModelContext(container), connectDelay: 0.1)
+        service.startConnection()
+
+        service.disconnect()
+        try await Task.sleep(for: .milliseconds(300))
+
+        #expect(service.connectionStatus == .disconnected)
+    }
+
     @Test("Simulated messages leave the rooms on screen alone")
     func simulatedMessagesSkipOpenRooms() {
         let open = ChatRoom(name: "Open")

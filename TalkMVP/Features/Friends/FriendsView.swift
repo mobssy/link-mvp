@@ -45,7 +45,6 @@ struct FriendsView: View {
     @State private var searchText = ""
     @State private var friendships: [Friendship] = []
     @State private var showNewFriendsSection: Bool = true
-    @State private var notificationObserver: NSObjectProtocol?
 
     var allAccepted: [Friendship] {
         guard let currentUserId = authManager.currentUser?.id.uuidString else { return [] }
@@ -300,23 +299,13 @@ struct FriendsView: View {
         .onAppear {
             loadFriendships()
             attemptSeedAfterLoad()
-
-            if notificationObserver == nil {
-                notificationObserver = NotificationCenter.default.addObserver(
-                    forName: .friendshipPendingCreated,
-                    object: nil,
-                    queue: .main
-                ) { _ in
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        loadFriendships()
-                    }
-                }
-            }
         }
-        .onDisappear {
-            if let observer = notificationObserver {
-                NotificationCenter.default.removeObserver(observer)
-                notificationObserver = nil
+        .task {
+            // A request sent from elsewhere (a chat, a bubble) shows up here; the loop ends on its
+            // own when the view goes away.
+            for await _ in NotificationCenter.default.notifications(named: .friendshipPendingCreated) {
+                try? await Task.sleep(for: .milliseconds(200))
+                loadFriendships()
             }
         }
         .onChange(of: newFriendsCount) { _, newValue in

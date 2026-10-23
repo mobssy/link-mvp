@@ -365,15 +365,12 @@ struct ChatRoomBackgroundSettings: View {
     private func loadImage(from item: PhotosPickerItem?) {
         guard let item = item else { return }
 
-        item.loadTransferable(type: Data.self) { result in
-            switch result {
-            case .success(let data):
-                if let data = data, let image = UIImage(data: data) {
-                    DispatchQueue.main.async {
-                        self.previewImage = image
-                    }
+        Task {
+            do {
+                if let data = try await item.loadTransferable(type: Data.self), let image = UIImage(data: data) {
+                    previewImage = image
                 }
-            case .failure(let error):
+            } catch {
                 backgroundLogger.error("Failed to load image: \(error.localizedDescription, privacy: .public)")
             }
         }
