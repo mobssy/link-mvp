@@ -2817,6 +2817,19 @@ struct FriendshipRepositoryTests {
         #expect(try repository.friendship(ownedBy: "me", named: "Ben") == nil)
     }
 
+    @Test("The records for a person are only the user's own, not another account's")
+    func friendshipsForAPersonAreScopedToTheOwner() throws {
+        try repository.addFriendships([
+            Friendship(userId: "me", friendId: "a", friendName: "Ana", friendEmail: "", status: .pending),
+            Friendship(userId: "other", friendId: "a", friendName: "Ana", friendEmail: "", status: .accepted),
+            Friendship(userId: "other", friendId: "a", friendName: "Ana", friendEmail: "", status: .blocked)
+        ])
+
+        let mine = try repository.friendships(ownedBy: "me", friendId: "a")
+        #expect(mine.map(\.status) == [.pending])
+        #expect(try repository.friendships(ownedBy: "nobody", friendId: "a").isEmpty)
+    }
+
     @Test("Status, favorite and notification changes are saved; delete removes")
     func updatesAndDelete() throws {
         try repository.addFriendships([Friendship(userId: "me", friendId: "a", friendName: "A", friendEmail: "", status: .accepted)])
@@ -2825,7 +2838,7 @@ struct FriendshipRepositoryTests {
         try repository.setStatus(.blocked, of: friendship)
         try repository.setFavorite(true, of: friendship)
         try repository.setNotificationsEnabled(false, of: friendship)
-        let reloaded = try #require(try repository.friendships(withFriendId: "a").first)
+        let reloaded = try #require(try repository.friendships(ownedBy: "me", friendId: "a").first)
         #expect(reloaded.status == .blocked && reloaded.isFavorite && !reloaded.notificationsEnabled)
 
         try repository.delete([reloaded])

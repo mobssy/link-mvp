@@ -29,8 +29,8 @@ protocol FriendshipRepositoryProtocol {
     /// people at once, such as a conversation's bubbles or the chat list's rows.
     func statusesByName(ownedBy userId: String) throws -> [String: FriendshipStatus]
 
-    /// Every record that has `friendId` as the person on the other side.
-    func friendships(withFriendId friendId: String) throws -> [Friendship]
+    /// Every one of the user's own records for `friendId`, whatever its status.
+    func friendships(ownedBy userId: String, friendId: String) throws -> [Friendship]
 
     /// The user's own record for `friendId`, if there is one.
     func friendship(ownedBy userId: String, friendId: String) throws -> Friendship?
@@ -76,8 +76,10 @@ final class LocalFriendshipRepository: FriendshipRepositoryProtocol {
         return Dictionary(owned.map { ($0.friendName, $0.status) }, uniquingKeysWith: { _, newer in newer })
     }
 
-    func friendships(withFriendId friendId: String) throws -> [Friendship] {
-        try fetch(FetchDescriptor<Friendship>(predicate: #Predicate { $0.friendId == friendId }))
+    func friendships(ownedBy userId: String, friendId: String) throws -> [Friendship] {
+        try fetch(FetchDescriptor<Friendship>(predicate: #Predicate { f in
+            f.ownerUserId == userId && f.friendId == friendId
+        }))
     }
 
     func friendship(ownedBy userId: String, friendId: String) throws -> Friendship? {

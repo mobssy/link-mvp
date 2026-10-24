@@ -14,16 +14,24 @@ extension ChatView {
         LocalFriendshipRepository(modelContext: modelContext)
     }
 
-    // One fetch of every record for the other person, classified in memory, so isFriend,
-    // friendRequestSent, isBlocked and profileFriendship are all set in one pass.
+    // One fetch of the user's own records for the other person, classified in memory, so
+    // isFriend, friendRequestSent, isBlocked and profileFriendship are all set in one pass.
+    // Another account on the device may have records for the same person; those don't count.
     func checkIfFriend() {
         guard let otherUserId = chatRoom.otherUserId else {
             isFriend = true
             return
         }
+        guard let currentUserId = getCurrentUserId() else {
+            isFriend = false
+            profileFriendship = nil
+            friendRequestSent = false
+            isBlocked = false
+            return
+        }
 
         do {
-            let records = try friendships.friendships(withFriendId: otherUserId)
+            let records = try friendships.friendships(ownedBy: currentUserId, friendId: otherUserId)
             let accepted = records.first(where: { $0.status == .accepted })
             let pending  = records.first(where: { $0.status == .pending })
             let blocked  = records.first(where: { $0.status == .blocked })
