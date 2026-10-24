@@ -204,11 +204,12 @@ class ChatService: ChatServiceProtocol {
         ]
 
         let randomMessage = randomMessages.randomElement() ?? "안녕하세요!"
+        let sender = randomChatRoom.otherSideSender()
 
         let message = Message(
             text: randomMessage,
             isFromCurrentUser: false,
-            sender: randomChatRoom.name,
+            sender: sender,
             chatRoomId: randomChatRoom.id.uuidString
         )
 
@@ -236,6 +237,7 @@ class ChatService: ChatServiceProtocol {
                 if self.notificationsEnabled {
                     let content = UNMutableNotificationContent()
                     content.title = randomChatRoom.name
+                    if sender != randomChatRoom.name { content.subtitle = sender }
                     content.body = randomMessage
                     content.sound = .default
                     content.badge = NSNumber(value: totalUnread)

@@ -161,12 +161,12 @@ struct ChatListView: View {
 
     private func createSampleDataIfNeeded() {
         if chatRooms.isEmpty {
-            let sampleRooms = [
-                ChatRoom(name: localizedText("friend")),
-                ChatRoom(name: localizedText("family_group")),
-                ChatRoom(name: localizedText("work_colleagues")),
-                ChatRoom(name: localizedText("study_group"))
-            ]
+            let sampleRooms = ["friend", "family_group", "work_colleagues", "study_group"].map { key in
+                let members = TestData.groupMembers[key] ?? []
+                let room = ChatRoom(name: localizedText(key), profileImage: members.isEmpty ? "person.circle.fill" : "person.3.circle.fill")
+                room.memberNames = members
+                return room
+            }
 
             for room in sampleRooms {
                 room.lastMessage = localizedText("hello_message")

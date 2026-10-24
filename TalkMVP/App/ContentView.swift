@@ -200,6 +200,14 @@ enum TestData {
         ("유재석", "youquiz@example.com"),
         ("조세호", "cabbage@example.com")
     ]
+
+    /// Who is in each sample group chat, by the group's localization key. They are test-mode
+    /// friends, so their messages carry a name the chat already knows.
+    static let groupMembers: [String: [String]] = [
+        "family_group": ["강호동", "한소희"],
+        "work_colleagues": ["유재석", "조세호"],
+        "study_group": ["권지용", "한소희"]
+    ]
 }
 
 // MARK: - Shared Localization

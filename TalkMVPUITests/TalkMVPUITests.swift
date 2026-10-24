@@ -177,10 +177,14 @@ final class TalkMVPUITests: XCTestCase {
         input.typeText("hi\n")
 
         // A button, so VoiceOver, Switch Control and keyboards can reach it, not just a tap.
-        let avatar = app.buttons["Profile of Family Group"].firstMatch
+        // In a group chat a member answers, so the avatar is theirs, not the group's.
+        let avatar = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Profile of '")).firstMatch
         XCTAssertTrue(avatar.waitForExistence(timeout: 60), "the other side's bubble shows its avatar as a button")
+        let member = String(avatar.label.dropFirst("Profile of ".count))
+        XCTAssertNotEqual(member, "Family Group")
         avatar.tap()
         XCTAssertTrue(app.buttons["Close"].waitForExistence(timeout: 5), "the profile opens")
+        XCTAssertTrue(app.staticTexts[member].exists, "it is the member's profile")
     }
 
     @MainActor

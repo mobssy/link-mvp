@@ -33,6 +33,8 @@ final class AutoResponseService: AutoResponding {
     /// Tried in order; the first reply written is sent.
     private let writers: [any ReplyWriting]
     private let pacing: Pacing
+    /// Picks which member of a group chat answers.
+    private let pickMember: ([String]) -> String?
     /// How many recent messages the writers see.
     private let historyLimit = 12
 
@@ -40,12 +42,14 @@ final class AutoResponseService: AutoResponding {
         messageRepository: MessageRepositoryProtocol,
         chatRoomRepository: ChatRoomRepositoryProtocol,
         writers: [any ReplyWriting] = [OnDeviceReplyWriter(), CannedReplyWriter()],
-        pacing: Pacing = .natural
+        pacing: Pacing = .natural,
+        pickMember: @escaping ([String]) -> String? = { $0.randomElement() }
     ) {
         self.messageRepository = messageRepository
         self.chatRoomRepository = chatRoomRepository
         self.writers = writers
         self.pacing = pacing
+        self.pickMember = pickMember
     }
 
     func generateResponse(
@@ -61,7 +65,8 @@ final class AutoResponseService: AutoResponding {
         // "Typing…" covers the time the reply actually takes to write.
         onTypingChange(true)
         let typingStarted = ContinuousClock.now
-        let text = await reply(to: conversation, as: chatRoom.name)
+        let sender = chatRoom.otherSideSender(pickingFrom: pickMember)
+        let text = await reply(to: conversation, as: sender)
         let typingLeft = Duration.seconds(Double.random(in: pacing.minimumTyping)) - (ContinuousClock.now - typingStarted)
         do {
             if typingLeft > .zero { try await Task.sleep(for: typingLeft) }
@@ -74,7 +79,7 @@ final class AutoResponseService: AutoResponding {
         let response = Message(
             text: text,
             isFromCurrentUser: false,
-            sender: chatRoom.name,
+            sender: sender,
             chatRoomId: chatRoom.id.uuidString
         )
         if chatRoom.disappearingDuration > 0 {

@@ -152,7 +152,14 @@ extension ChatView {
         }
     }
 
-    func openFriendProfile() {
+    /// Opens the profile of whoever wrote a message: in a group chat the member, otherwise the
+    /// person the chat is with.
+    func openProfile(of sender: String) {
+        if chatRoom.memberNames.contains(sender) {
+            profileMember = (sender, getCurrentUserId().flatMap { try? friendships.friendship(ownedBy: $0, named: sender) })
+        } else {
+            profileMember = nil
+        }
         showingFriendProfile = true
     }
 }

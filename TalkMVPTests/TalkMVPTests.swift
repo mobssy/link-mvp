@@ -1617,11 +1617,13 @@ private struct FixedReplyWriter: ReplyWriting {
     func reply(to conversation: [SummaryMessage], as partner: String) async -> String? { text }
 }
 
-/// Remembers the chat it was shown.
+/// Remembers the chat it was shown and who it was asked to write as.
 private actor RecordingReplyWriter: ReplyWriting {
     private(set) var seen: [SummaryMessage] = []
+    private(set) var partner: String?
     func reply(to conversation: [SummaryMessage], as partner: String) async -> String? {
         seen = conversation
+        self.partner = partner
         return "ok"
     }
 }
@@ -1642,12 +1644,13 @@ struct AutoReplyTests {
         try context.save()
     }
 
-    private func service(_ writers: [any ReplyWriting]) -> AutoResponseService {
+    private func service(_ writers: [any ReplyWriting], pickMember: @escaping ([String]) -> String? = { $0.first }) -> AutoResponseService {
         AutoResponseService(
             messageRepository: LocalMessageRepository(modelContext: context),
             chatRoomRepository: LocalChatRoomRepository(modelContext: context),
             writers: writers,
-            pacing: .immediate
+            pacing: .immediate,
+            pickMember: pickMember
         )
     }
 
@@ -1674,6 +1677,29 @@ struct AutoReplyTests {
         #expect(room.lastMessage == "Sounds good!")
         let saved = try await LocalMessageRepository(modelContext: context).fetchMessages(for: room.id.uuidString, limit: 10, before: nil)
         #expect(saved.map(\.text) == ["Dinner at 7?", "Sounds good!"])
+    }
+
+    @Test("In a group chat a member answers, not the group")
+    func groupReplyComesFromAMember() async throws {
+        room.memberNames = ["Jisoo", "Minho"]
+        try say("Dinner at 7?", minutesAgo: 1)
+        let writer = RecordingReplyWriter()
+        var shown: Message?
+
+        try await service([writer], pickMember: { $0.last }).generateResponse(for: room, onTypingChange: { _ in }, onMessage: { shown = $0 })
+
+        #expect(shown?.sender == "Minho")
+        #expect(await writer.partner == "Minho")
+    }
+
+    @Test("The other side of a chat is a member in a group and the room's name otherwise")
+    func otherSideSender() {
+        let oneToOne = ChatRoom(name: "Mina")
+        #expect(oneToOne.otherSideSender() == "Mina")
+        let group = ChatRoom(name: "Family")
+        group.memberNames = ["Jisoo", "Minho"]
+        #expect(group.memberNames.contains(group.otherSideSender()))
+        #expect(group.otherSideSender(pickingFrom: { $0.first }) == "Jisoo")
     }
 
     @Test("Writers see the chat so far, oldest first")
@@ -2769,6 +2795,20 @@ struct FriendshipRepositoryTests {
         let statuses = try repository.statusesByName(ownedBy: "me")
 
         #expect(statuses == ["Ana": .accepted, "Ben": .pending])
+    }
+
+    @Test("A friendship is found by name among the user's own records, newest first")
+    func friendshipByName() throws {
+        let old = Friendship(userId: "me", friendId: "a", friendName: "Ana", friendEmail: "", status: .blocked)
+        old.createdAt = Date(timeIntervalSince1970: 0)
+        try repository.addFriendships([
+            old,
+            Friendship(userId: "me", friendId: "a2", friendName: "Ana", friendEmail: "", status: .accepted),
+            Friendship(userId: "other", friendId: "b", friendName: "Ben", friendEmail: "", status: .accepted)
+        ])
+
+        #expect(try repository.friendship(ownedBy: "me", named: "Ana")?.friendId == "a2")
+        #expect(try repository.friendship(ownedBy: "me", named: "Ben") == nil)
     }
 
     @Test("Status, favorite and notification changes are saved; delete removes")

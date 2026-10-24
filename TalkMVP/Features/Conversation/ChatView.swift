@@ -54,6 +54,8 @@ struct ChatView: View {
     @State var addFriendEmail = ""
     @State var showingFriendProfile = false
     @State var profileFriendship: Friendship?
+    /// The group member whose profile is open, with their friendship if they are a friend.
+    @State var profileMember: (name: String, friendship: Friendship?)?
     /// How the user stands with each sender in this conversation, by name: one fetch for
     /// every bubble. Nil until loaded.
     @State var senderStandings: [String: FriendStanding]?
@@ -368,7 +370,14 @@ struct ChatView: View {
                 .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingFriendProfile) {
-                if let friendship = profileFriendship {
+                if let profileMember {
+                    if let friendship = profileMember.friendship {
+                        FriendProfileView(friendship: friendship)
+                    } else {
+                        MiniProfileSheet(name: profileMember.name, symbol: "person.circle.fill")
+                            .environment(languageManager)
+                    }
+                } else if let friendship = profileFriendship {
                     FriendProfileView(friendship: friendship)
                 } else {
                     MiniProfileSheet(name: chatRoom.name, symbol: chatRoom.profileImage)

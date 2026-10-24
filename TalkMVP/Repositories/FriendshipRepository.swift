@@ -35,6 +35,10 @@ protocol FriendshipRepositoryProtocol {
     /// The user's own record for `friendId`, if there is one.
     func friendship(ownedBy userId: String, friendId: String) throws -> Friendship?
 
+    /// The user's newest record for the person called `name`: a group chat knows its members
+    /// only by name.
+    func friendship(ownedBy userId: String, named name: String) throws -> Friendship?
+
     /// Saves the sender's pending request and the receiver's mirror of it together. If saving
     /// fails neither is kept, so a request never half exists.
     func sendRequest(from sender: FriendRequestParty, to receiver: FriendRequestParty) throws
@@ -80,6 +84,15 @@ final class LocalFriendshipRepository: FriendshipRepositoryProtocol {
         var descriptor = FetchDescriptor<Friendship>(predicate: #Predicate { f in
             f.ownerUserId == userId && f.friendId == friendId
         })
+        descriptor.fetchLimit = 1
+        return try fetch(descriptor).first
+    }
+
+    func friendship(ownedBy userId: String, named name: String) throws -> Friendship? {
+        var descriptor = FetchDescriptor<Friendship>(
+            predicate: #Predicate { $0.ownerUserId == userId && $0.friendName == name },
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
         descriptor.fetchLimit = 1
         return try fetch(descriptor).first
     }

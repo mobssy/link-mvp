@@ -62,6 +62,10 @@ class ChatRoom {
     var workEndMinute: Int
     var timeZoneIdentifier: String
 
+    /// The other people in a group chat, by name. Empty in a one-to-one chat, where the other
+    /// person goes by the room's name.
+    var memberNames: [String] = []
+
     init(name: String, profileImage: String = "person.circle.fill") {
           self.id = UUID()
           self.name = name
@@ -82,4 +86,12 @@ class ChatRoom {
           self.timeZoneIdentifier = TimeZone.current.identifier
           self.emergencyAllowedRoles = ["admin", "oncall"]  // 직접 문자열 사용
       }
+}
+
+extension ChatRoom {
+    /// Who a message from the other side comes from: one of the members in a group chat, the
+    /// room's name in a one-to-one chat.
+    func otherSideSender(pickingFrom pick: ([String]) -> String? = { $0.randomElement() }) -> String {
+        pick(memberNames) ?? name
+    }
 }
