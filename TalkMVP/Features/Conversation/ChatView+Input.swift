@@ -67,6 +67,7 @@ extension ChatView {
                     Image(systemName: "plus.circle.fill")
                         .foregroundStyle(.appPrimaryText)
                         .font(.system(size: 28))
+                        .minimumHitTarget(visibleSize: 28)
                 }
                 .accessibilityLabel(localizedText("attach_file"))
 
@@ -92,6 +93,7 @@ extension ChatView {
                         Image(systemName: "clock.fill")
                             .foregroundStyle(.appPrimaryText)
                             .font(.system(size: 22))
+                            .minimumHitTarget(visibleSize: 22)
                     }
                     .accessibilityLabel(languageManager.localize(ko: "예약 발송", en: "Schedule send", ja: "予約送信", zh: "定时发送", es: "Envío programado"))
                     .transition(.scale.combined(with: .opacity))
@@ -104,6 +106,7 @@ extension ChatView {
                             .frame(width: 32, height: 32)
                             .background(Color.appPrimary)
                             .clipShape(Circle())
+                            .minimumHitTarget(visibleSize: 32)
                     }
                     .accessibilityLabel(localizedText("send_message"))
                     .transition(.scale.combined(with: .opacity))
@@ -154,7 +157,20 @@ extension ChatView {
             .clipShape(Circle())
             .scaleEffect(voiceService.isRecording ? 1.1 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: voiceService.isRecording)
-            .accessibilityLabel(languageManager.localize(ko: "음성 메시지 녹음 (길게 누르기)", en: "Hold to record voice message", ja: "長押しで録音", zh: "长按录音", es: "Mantén para grabar"))
+            .minimumHitTarget(visibleSize: 32)
+            .accessibilityLabel(voiceService.isRecording
+                ? languageManager.localize(ko: "녹음 멈추고 보내기", en: "Stop and send voice message", ja: "録音を停止して送信", zh: "停止录音并发送", es: "Detener y enviar mensaje de voz")
+                : languageManager.localize(ko: "음성 메시지 녹음 (길게 누르기)", en: "Hold to record voice message", ja: "長押しで録音", zh: "长按录音", es: "Mantén para grabar"))
+            .accessibilityAddTraits(.isButton)
+            // VoiceOver and Switch Control can't hold a finger down: activating starts the
+            // recording, and activating again stops it and sends it.
+            .accessibilityAction {
+                if voiceService.isRecording {
+                    finishRecording(viewModel: viewModel)
+                } else {
+                    Task { _ = await voiceService.startRecording() }
+                }
+            }
             .simultaneousGesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { _ in
@@ -167,13 +183,18 @@ extension ChatView {
                             voiceService.cancelRecording()
                             return
                         }
-                        if let (data, duration) = voiceService.stopRecording(), duration > 0.5 {
-                            viewModel.sendVoiceMessage(audioData: data, duration: duration)
-                        } else {
-                            voiceService.cancelRecording()
-                        }
+                        finishRecording(viewModel: viewModel)
                     }
             )
+    }
+
+    /// Sends what was recorded, unless it was too short to be a message.
+    private func finishRecording(viewModel: ChatViewModel) {
+        if let (data, duration) = voiceService.stopRecording(), duration > 0.5 {
+            viewModel.sendVoiceMessage(audioData: data, duration: duration)
+        } else {
+            voiceService.cancelRecording()
+        }
     }
 
     private func formatRecordingDuration(_ seconds: TimeInterval) -> String {

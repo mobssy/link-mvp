@@ -162,6 +162,7 @@ struct MessageBubbleView: View {
             }
         }
         .buttonStyle(.plain)
+        .minimumHitTarget(visibleSize: 36)
         .contextMenu {
             if !message.isFromCurrentUser {
                 switch senderStanding {
