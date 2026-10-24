@@ -66,7 +66,11 @@ class ChatRoom {
     /// person goes by the room's name.
     var memberNames: [String] = []
 
-    init(name: String, profileImage: String = "person.circle.fill") {
+    /// The SF Symbols a room shows: one person, or a group.
+    static let personSymbol = "person.circle.fill"
+    static let groupSymbol = "person.2.circle.fill"
+
+    init(name: String, profileImage: String = ChatRoom.personSymbol) {
           self.id = UUID()
           self.name = name
           self.lastMessage = ""

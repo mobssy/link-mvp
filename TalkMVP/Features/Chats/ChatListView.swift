@@ -136,7 +136,7 @@ struct ChatListView: View {
     }
 
     private func addGroupChatRoom() {
-        let groupRoom = ChatRoom(name: localizedText("new_group"), profileImage: "person.3.circle.fill")
+        let groupRoom = ChatRoom(name: localizedText("new_group"), profileImage: ChatRoom.groupSymbol)
         modelContext.insert(groupRoom)
         do { try modelContext.save() } catch { chatListLogger.error("Failed to save group chat room: \(error.localizedDescription, privacy: .public)") }
     }
@@ -163,7 +163,7 @@ struct ChatListView: View {
         if chatRooms.isEmpty {
             let sampleRooms = ["friend", "family_group", "work_colleagues", "study_group"].map { key in
                 let members = TestData.groupMembers[key] ?? []
-                let room = ChatRoom(name: localizedText(key), profileImage: members.isEmpty ? "person.circle.fill" : "person.3.circle.fill")
+                let room = ChatRoom(name: localizedText(key), profileImage: members.isEmpty ? ChatRoom.personSymbol : ChatRoom.groupSymbol)
                 room.memberNames = members
                 return room
             }

@@ -374,7 +374,7 @@ struct ChatView: View {
                     if let friendship = profileMember.friendship {
                         FriendProfileView(friendship: friendship)
                     } else {
-                        MiniProfileSheet(name: profileMember.name, symbol: "person.circle.fill")
+                        MiniProfileSheet(name: profileMember.name, symbol: ChatRoom.personSymbol)
                             .environment(languageManager)
                     }
                 } else if let friendship = profileFriendship {

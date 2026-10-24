@@ -1702,6 +1702,12 @@ struct AutoReplyTests {
         #expect(group.otherSideSender(pickingFrom: { $0.first }) == "Jisoo")
     }
 
+    @Test("A room's person and group icons exist in SF Symbols")
+    func roomSymbolsExist() {
+        #expect(UIImage(systemName: ChatRoom.personSymbol) != nil)
+        #expect(UIImage(systemName: ChatRoom.groupSymbol) != nil)
+    }
+
     @Test("Writers see the chat so far, oldest first")
     func writersSeeTheChatInOrder() async throws {
         try say("first", minutesAgo: 3)

@@ -88,7 +88,7 @@ extension ChatView {
         ForEach(filteredMessages(viewModel: viewModel), id: \.id) { message in
             MessageBubbleView(
                 message: message,
-                avatarSymbolName: chatRoom.memberNames.isEmpty ? chatRoom.profileImage : "person.circle.fill",
+                avatarSymbolName: chatRoom.memberNames.isEmpty ? chatRoom.profileImage : ChatRoom.personSymbol,
                 onAvatarTap: { openProfile(of: message.sender) },
                 isTranscribing: viewModel.transcribingMessageIDs.contains(message.id),
                 senderStanding: message.isFromCurrentUser ? nil : senderStandings.map { $0[message.sender] ?? .stranger },
