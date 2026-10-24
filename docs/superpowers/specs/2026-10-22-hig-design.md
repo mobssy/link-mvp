@@ -1,6 +1,6 @@
 # HIG pass (stage 3 of the app-wide cleanup)
 
-Date: 2026-10-22. Status: approved in chat.
+Date: 2026-10-22. Status: done.
 
 ## Context
 
@@ -45,3 +45,24 @@ The two Add Friend buttons in a conversation's toolbar, sheets opened over sheet
 ## Verification
 
 For each item: a warning-free build, the unit and UI tests on iOS 27, and before/after screenshots of the affected screens at the default size and Accessibility XL, light and dark. At the end: the full suite on iOS 26.5 too.
+
+## Outcome
+
+| Item | Commit | Notes |
+|---|---|---|
+| 3-1 | 7f2d84e | The in-app size is applied to the window scenes' trait overrides: a `.dynamicTypeSize` on the root view never reached sheets. At accessibility sizes the chat title is replaced by the system, so it isn't capped. |
+| 3-2 | 2105c9d | `prefersReducedMotion` and `prefersHighContrast` in the environment combine the system setting with the app's switch; views read those instead of the system values. |
+| 3-3 | 72ed67f | Photos had the VoiceOver label "Unable to load image"; they now describe the photo when there is a description. |
+| 3-4 | d5e0463 | The send, microphone, attach and schedule buttons and the bubble avatar get 44 points. iOS already accepts taps up to 8 points outside the send button, so no UI test can tell the difference; the content shape makes it a guarantee. The microphone also became usable with VoiceOver: activate to start, again to send. |
+| 3-5 | 955590d | As planned, plus the help answer that named "Language Settings". |
+
+Found along the way and fixed separately, while retaking the README screenshots:
+
+- Replies in a group chat came from the group itself ("Family Group" said "Sounds good!", and meeting notes made "Work Colleagues" a task owner). Sample groups now have members, and a member answers (b8a9dcc).
+- Reply suggestions stayed under a search's results (44a410c).
+- Group chats used an SF Symbol that doesn't exist, so they had no icon (efa5213).
+
+Verification: the full suite passed on iOS 27 after each item. On iOS 26.5, all 197 unit tests and every UI test but one passed; the avatar test failed once because the keyboard didn't take focus while another simulator was capturing screenshots, and passed when run again on its own.
+
+Left for stage 4: a translation repeats the original right under the bubble that already shows it ("Show original" is on by default), and group chats still show the one-to-one "Add Friend" button in the toolbar.
+
