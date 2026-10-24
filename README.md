@@ -9,8 +9,6 @@
 ![iOS | iPadOS](https://img.shields.io/badge/iOS%20%7C%20iPadOS-26+-000000?style=flat-square&logo=apple&logoColor=white)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red?style=flat-square)
 
-English · [한국어](README.ko.md)
-
 ![L!NK: reply suggestions, inline translation across three languages, and meeting notes](docs/screenshots/main.png)
 
 </div>

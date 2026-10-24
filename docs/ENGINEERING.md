@@ -1,6 +1,6 @@
 # Engineering notes
 
-[English](ENGINEERING.md) · [한국어](ENGINEERING.ko.md) · [README](../README.md)
+[README](../README.md)
 
 ## What took iteration
 
