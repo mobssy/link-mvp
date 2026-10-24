@@ -38,7 +38,7 @@ struct SettingsView: View {
                         action: { showingProfileEdit = true }
                     )
 
-                    SettingsSectionCard(title: localizedText("settings")) {
+                    SettingsSectionCard {
                         SettingsToggleRow(
                             systemImage: "bell.fill",
                             tint: .green,
@@ -62,7 +62,7 @@ struct SettingsView: View {
                             SettingsLinkRow(
                                 systemImage: "globe",
                                 tint: .blue,
-                                title: localizedText("language_settings")
+                                title: localizedText("language")
                             )
                         }
                         Divider().padding(.leading, 52)
@@ -148,7 +148,7 @@ struct SettingsView: View {
                             )
                         }
                     }
-                    SettingsSectionCard(title: "") {
+                    SettingsSectionCard {
                         VStack(spacing: 0) {
                             Button(localizedText("delete_account"), role: .destructive) {
                                 let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
@@ -231,7 +231,7 @@ struct SettingsView: View {
         case "cancel": return languageManager.localize(ko: "취소", en: "Cancel", ja: "キャンセル", zh: "取消", es: "Cancelar")
 
         // Language
-        case "language_settings": return languageManager.localize(ko: "언어 설정", en: "Language Settings", ja: "言語設定", zh: "语言设置", es: "Configuración de idioma")
+        case "language": return languageManager.localize(ko: "언어", en: "Language", ja: "言語", zh: "语言", es: "Idioma")
 
         // Security / App Lock
         case "app_lock": return languageManager.localize(ko: "앱 잠금", en: "App Lock", ja: "アプリロック", zh: "应用锁定", es: "Bloqueo de aplicación")

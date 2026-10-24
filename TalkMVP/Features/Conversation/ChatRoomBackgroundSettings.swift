@@ -175,7 +175,7 @@ struct ChatRoomBackgroundSettings: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    .stroke(Color(.separator), lineWidth: 1)
             )
         }
     }
@@ -262,13 +262,13 @@ struct ChatRoomBackgroundSettings: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: "info.circle.fill")
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.tint)
                 Text(languageManager.localize(ko: "시스템 기본 배경을 사용합니다", en: "Using system default background", ja: "システムのデフォルト背景を使用します", zh: "使用系统默认背景", es: "Usando el fondo predeterminado del sistema"))
                     .font(.subheadline)
                     .foregroundStyle(Color.secondary)
             }
             .padding()
-            .background(Color.blue.opacity(0.1))
+            .background(Color.accentColor.opacity(0.1))
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }

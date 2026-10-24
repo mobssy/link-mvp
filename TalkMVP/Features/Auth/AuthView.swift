@@ -256,7 +256,7 @@ struct CustomTextField: View {
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .foregroundStyle(.gray)
+                .foregroundStyle(Color.secondary)
                 .frame(width: 20)
 
             if isSecure {
@@ -269,7 +269,7 @@ struct CustomTextField: View {
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
+        .background(Color(.tertiarySystemFill))
         .clipShape(.rect(cornerRadius: 12))
     }
 }

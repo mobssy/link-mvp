@@ -27,7 +27,7 @@ struct ContactsSettingsView: View {
                 Button(action: { Task { await requestAndSyncNow() } }) {
                     HStack(spacing: 12) {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(.tint)
                         Text(isSyncing ? loc("syncing") : loc("sync_now"))
                     }
                 }

@@ -188,7 +188,7 @@ struct FriendsView: View {
                         VStack(spacing: 20) {
                             Image(systemName: "person.2")
                                 .font(.system(size: 60))
-                                .foregroundStyle(.gray)
+                                .foregroundStyle(Color.secondary)
 
                             Text(L10n.text("no_friends_yet", languageManager.currentLanguage))
                                 .font(.title2)

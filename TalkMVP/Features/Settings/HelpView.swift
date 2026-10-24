@@ -131,7 +131,7 @@ struct HelpView: View {
 
         // Account & Settings
         case "faq_change_language_q": return languageManager.localize(ko: "언어를 변경하려면?", en: "How do I change the language?", ja: "言語を変更するには？", zh: "如何更改语言？", es: "¿Cómo cambio el idioma?")
-        case "faq_change_language_a": return languageManager.localize(ko: "설정 → 언어 설정에서 한국어/English를 선택하세요.", en: "Settings → Language Settings → Select your preferred language.", ja: "設定 → 言語設定でお好みの言語を選択してください。", zh: "设置 → 语言设置 → 选择您偏好的语言。", es: "Ajustes → Configuración de idioma → Selecciona tu idioma preferido.")
+        case "faq_change_language_a": return languageManager.localize(ko: "설정 → 언어에서 원하는 언어를 고르세요.", en: "Settings → Language, then pick your language.", ja: "設定 → 言語でお好みの言語を選んでください。", zh: "设置 → 语言，然后选择您偏好的语言。", es: "Ajustes → Idioma y elige tu idioma.")
         case "faq_change_theme_q": return languageManager.localize(ko: "테마를 변경하려면?", en: "How do I change the theme?", ja: "テーマを変更するには？", zh: "如何更改主题？", es: "¿Cómo cambio el tema?")
         case "faq_change_theme_a": return languageManager.localize(ko: "설정 → 테마에서 라이트/다크/시스템 모드를 선택하세요.", en: "Settings → Theme → Select Light/Dark/System mode.", ja: "設定 → テーマでライト/ダーク/システムモードを選択してください。", zh: "设置 → 主题 → 选择亮色/暗色/系统模式。", es: "Ajustes → Tema → Selecciona modo Claro/Oscuro/Sistema.")
         case "faq_forgot_password_q": return languageManager.localize(ko: "비밀번호를 잊었어요", en: "I forgot my password", ja: "パスワードを忘れました", zh: "我忘记了密码", es: "Olvidé mi contraseña")

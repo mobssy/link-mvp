@@ -36,7 +36,7 @@ struct TranslationSettingsView: View {
                 Toggle(isOn: $translationShowOriginal) {
                     HStack(spacing: 12) {
                         Image(systemName: "doc.text.magnifyingglass")
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(Color.secondary)
                         Text(localizedText("translation_show_original"))
                     }
                 }

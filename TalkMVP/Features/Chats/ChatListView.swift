@@ -24,7 +24,7 @@ fileprivate func chatListLocalized(_ key: String, using manager: LanguageManager
     case "study_group":        return manager.localize(ko: "스터디 그룹", en: "Study Group", ja: "スタディグループ", zh: "学习小组", es: "Grupo de estudio")
     case "hello_message":      return manager.localize(ko: "안녕하세요!", en: "Hello!", ja: "こんにちは！", zh: "你好！", es: "¡Hola!")
     case "start_conversation": return manager.localize(ko: "메시지를 시작해보세요", en: "Start a conversation", ja: "会話を始めましょう", zh: "开始对话", es: "Inicia una conversación")
-    case "chat":               return manager.localize(ko: "채팅", en: "Chat", ja: "チャット", zh: "聊天", es: "Chat")
+    case "chats":              return manager.localize(ko: "채팅", en: "Chats", ja: "チャット", zh: "聊天", es: "Chats")
     case "search":             return manager.localize(ko: "검색", en: "Search", ja: "検索", zh: "搜索", es: "Buscar")
     case "friend":             return manager.localize(ko: "친구", en: "Friend", ja: "友達", zh: "朋友", es: "Amigo")
     case "new_chat_button":    return manager.localize(ko: "새 채팅 만들기", en: "Create new chat", ja: "新しいチャットを作成", zh: "创建新聊天", es: "Crear nuevo chat")
@@ -92,7 +92,7 @@ struct ChatListView: View {
             // The selected row is filled with the tint and its text turns white; the
             // regular brand color is too light for that (and hides the row's avatar).
             .tint(.appPrimaryStrong)
-            .navigationTitle(localizedText("chat"))
+            .navigationTitle(localizedText("chats"))
             .searchable(text: $searchText, prompt: localizedText("search"))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

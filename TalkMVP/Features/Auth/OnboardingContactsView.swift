@@ -38,7 +38,7 @@ struct OnboardingContactsView: View {
                     Text(loc("not_now"))
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.gray.opacity(0.1))
+                        .background(Color(.tertiarySystemFill))
                         .foregroundStyle(Color.primary)
                         .clipShape(.rect(cornerRadius: 12))
                 }

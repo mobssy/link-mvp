@@ -238,7 +238,7 @@ struct PendingRequestRow: View {
         HStack {
             Image(systemName: "person.circle.fill")
                 .font(.system(size: 40))
-                .foregroundStyle(.gray)
+                .foregroundStyle(Color.secondary)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(friendship.friendName)

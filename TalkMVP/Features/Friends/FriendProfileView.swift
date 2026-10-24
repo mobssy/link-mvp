@@ -20,7 +20,7 @@ struct FriendProfileView: View {
     @State private var showingReportConfirm = false
     @AppStorage("lastActivityEnabled") private var lastActivityEnabled = true
     @State private var lastActiveText: String?
-    @State private var lastActiveIconColor: Color = .gray
+    @State private var lastActiveIconColor: Color = .secondary
 
     var body: some View {
         NavigationStack {
@@ -67,20 +67,15 @@ struct FriendProfileView: View {
                             icon: "calendar"
                         )
 
-                        if lastActivityEnabled && friendship.status == .accepted {
+                        // Shown only when there's something to show, never as "No Info".
+                        if lastActivityEnabled && friendship.status == .accepted, let lastActiveText {
                             ProfileInfoCard(
                                 title: localizedText("last_active"),
-                                value: lastActiveText ?? localizedText("no_info"),
+                                value: lastActiveText,
                                 icon: "circle.fill",
                                 iconColor: lastActiveIconColor
                             )
                         }
-
-                        ProfileInfoCard(
-                            title: localizedText("mutual_friends"),
-                            value: languageManager.localize(ko: "0명", en: "0", ja: "0人", zh: "0人", es: "0"),
-                            icon: "person.2"
-                        )
                     }
 
                     // 액션 버튼들
@@ -102,45 +97,34 @@ struct FriendProfileView: View {
                         // 상태별 액션 버튼
                         switch friendship.status {
                         case .accepted:
-                            Button(action: {
+                            // Blocking is rare and asks first, so it stays a plain button rather
+                            // than a second large one competing with Start Chat.
+                            Button(localizedText("block"), systemImage: "hand.raised", role: .destructive) {
                                 showingBlockAlert = true
-                            }) {
-                                Label(localizedText("block"), systemImage: "hand.raised")
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(.red.opacity(0.1))
-                                    .foregroundStyle(.red)
-                                    .clipShape(.rect(cornerRadius: 12))
                             }
+                            .padding(.top, 8)
                         case .blocked:
-                            Button(action: {
+                            Button {
                                 showingUnblockAlert = true
-                            }) {
+                            } label: {
                                 Label(localizedText("unblock"), systemImage: "hand.raised.slash")
                                     .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(.orange.opacity(0.1))
-                                    .foregroundStyle(.orange)
-                                    .clipShape(.rect(cornerRadius: 12))
                             }
+                            .buttonStyle(.bordered)
+                            .controlSize(.large)
                         case .hidden:
-                            Button(action: {
+                            Button {
                                 unhideFriend()
-                            }) {
+                            } label: {
                                 Label(localizedText("unhide"), systemImage: "eye")
                                     .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(.gray.opacity(0.1))
-                                    .foregroundStyle(.gray)
-                                    .clipShape(.rect(cornerRadius: 12))
                             }
+                            .buttonStyle(.bordered)
+                            .controlSize(.large)
                         case .pending:
                             Text(localizedText("request_pending"))
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(.gray.opacity(0.1))
-                                .foregroundStyle(.gray)
-                                .clipShape(.rect(cornerRadius: 12))
+                                .foregroundStyle(Color.secondary)
+                                .padding(.top, 8)
                         }
                     }
                     .padding(.horizontal)
@@ -267,11 +251,10 @@ struct FriendProfileView: View {
                 lastActiveIconColor = .green
             } else {
                 lastActiveText = formatRelative(date)
-                lastActiveIconColor = .gray
+                lastActiveIconColor = .secondary
             }
         } else {
             lastActiveText = nil
-            lastActiveIconColor = .gray
         }
     }
 
@@ -342,10 +325,6 @@ struct FriendProfileView: View {
             return languageManager.localize(ko: "가입일", en: "Joined", ja: "参加日", zh: "加入日期", es: "Fecha de registro")
         case "last_active":
             return languageManager.localize(ko: "마지막 활동", en: "Last Active", ja: "最終アクティブ", zh: "最后活跃", es: "Última actividad")
-        case "mutual_friends":
-            return languageManager.localize(ko: "공통 친구", en: "Mutual Friends", ja: "共通の友だち", zh: "共同好友", es: "Amigos en común")
-        case "no_info":
-            return languageManager.localize(ko: "정보 없음", en: "No Info", ja: "情報なし", zh: "无信息", es: "Sin información")
         case "start_chat":
             return languageManager.localize(ko: "채팅하기", en: "Start Chat", ja: "チャットを始める", zh: "开始聊天", es: "Iniciar chat")
         case "block":
@@ -440,7 +419,7 @@ struct StatusBadge: View {
         case .blocked:
             return .red
         case .hidden:
-            return .gray
+            return .secondary
         }
     }
 }

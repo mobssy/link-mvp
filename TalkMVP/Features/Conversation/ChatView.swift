@@ -448,7 +448,7 @@ struct ChatView: View {
 
                 HStack(spacing: 4) {
                     Circle()
-                        .fill(vm.isOnline ? Color.green : Color.gray)
+                        .fill(vm.isOnline ? Color.green : Color.secondary)
                         .frame(width: 8, height: 8)
                     Text(vm.isOnline
                         ? languageManager.localize(ko: "온라인", en: "Online", ja: "オンライン", zh: "在线", es: "En línea")

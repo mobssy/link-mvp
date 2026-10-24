@@ -5,7 +5,8 @@ struct SettingsSectionCard<Content: View>: View {
     let title: String
     let content: Content
 
-    init(title: String, @ViewBuilder content: () -> Content) {
+    /// Leave out the title for a group that needs no heading, like the first one in Settings.
+    init(title: String = "", @ViewBuilder content: () -> Content) {
         self.title = title
         self.content = content()
     }
@@ -116,11 +117,11 @@ struct ProfileCardView: View {
                 } else {
                     ZStack {
                         Circle()
-                            .fill(Color.blue)
+                            .fill(Color.appPrimary)
                             .frame(width: 48, height: 48)
                         Image(systemName: "person.fill")
                             .font(.system(size: 24, weight: .medium))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.onAppPrimary)
                     }
                 }
                 VStack(alignment: .leading, spacing: 2) {
