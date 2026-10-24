@@ -11,8 +11,9 @@ extension ChatView {
     @ViewBuilder
     func messageInputView(viewModel: ChatViewModel) -> some View {
         VStack(spacing: 0) {
-            // Hidden once the user starts typing their own reply.
-            if inputText.isEmpty, !viewModel.replySuggestions.isEmpty, !voiceService.isRecording {
+            // Hidden once the user starts typing their own reply, and during a search, whose
+            // results may not include the message the suggestions answer.
+            if inputText.isEmpty, searchText.isEmpty, !viewModel.replySuggestions.isEmpty, !voiceService.isRecording {
                 replySuggestionsBar(viewModel: viewModel)
             }
 

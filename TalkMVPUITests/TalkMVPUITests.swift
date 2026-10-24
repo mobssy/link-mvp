@@ -188,6 +188,30 @@ final class TalkMVPUITests: XCTestCase {
     }
 
     @MainActor
+    func testReplySuggestionsHideWhileSearching() throws {
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        signInWithTestMode()
+
+        tab("Chats").tap()
+        app.staticTexts["Family Group"].firstMatch.tap()
+        let input = app.textFields.firstMatch
+        XCTAssertTrue(input.waitForExistence(timeout: 10))
+        input.tap()
+        input.typeText("Dinner at 7?\n")
+
+        let suggestions = app.descendants(matching: .any)["Suggested replies"].firstMatch
+        guard suggestions.waitForExistence(timeout: 90) else {
+            throw XCTSkip("No reply suggestions: they need Apple Intelligence")
+        }
+        // The results may not include the message the suggestions answer.
+        let search = app.searchFields.firstMatch
+        search.tap()
+        search.typeText("dinner")
+        XCTAssertTrue(suggestions.waitForNonExistence(timeout: 5), "searching hides the suggestions")
+    }
+
+    @MainActor
     func testWideWindowShowsChatListBesideConversation() throws {
         // A regular-width window (iPad, iPhone Duo's inner display) keeps the chat list on
         // screen next to the open conversation; compact windows push instead, which the
