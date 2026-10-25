@@ -61,6 +61,19 @@ final class TalkMVPUITests: XCTestCase {
         XCTAssertFalse(tab("Chats").exists)
     }
 
+    /// Opens 강호동's profile from the Friends tab and starts the chat from it.
+    private func startChatWithKang() {
+        tab("Friends").tap()
+        // The row is one button whose label combines the name and status; tapping it
+        // hits the middle of the row, which must open the profile too.
+        let friend = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "강호동")).firstMatch
+        XCTAssertTrue(friend.waitForExistence(timeout: 5))
+        friend.tap()
+        let startChat = app.buttons["Start Chat"]
+        XCTAssertTrue(startChat.waitForExistence(timeout: 5))
+        startChat.tap()
+    }
+
     @MainActor
     func testStartingChatFromFriendProfileSavesTheRoom() throws {
         XCUIDevice.shared.orientation = .portrait
@@ -69,30 +82,45 @@ final class TalkMVPUITests: XCTestCase {
 
         // Twice, to check the second time reuses the first room instead of adding another.
         for _ in 0..<2 {
-            tab("Friends").tap()
-            // The row is one button whose label combines the name and status; tapping it
-            // hits the middle of the row, which must open the profile too.
-            let friend = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "강호동")).firstMatch
-            XCTAssertTrue(friend.waitForExistence(timeout: 5))
-            friend.tap()
-            let startChat = app.buttons["Start Chat"]
-            XCTAssertTrue(startChat.waitForExistence(timeout: 5))
-            startChat.tap()
-            XCTAssertTrue(app.textViews.firstMatch.waitForExistence(timeout: 10) || app.textFields.firstMatch.waitForExistence(timeout: 1),
-                          "the conversation opens")
+            startChatWithKang()
 
-            // Close the chat sheet, then the profile sheet.
-            for _ in 0..<2 {
-                app.swipeDown(velocity: .fast)
-            }
-            XCTAssertTrue(tab("Friends").waitForExistence(timeout: 5))
+            // The chat opens in the Chats tab, not in a sheet over the profile.
+            XCTAssertTrue(app.navigationBars.staticTexts["강호동"].waitForExistence(timeout: 10), "the conversation opens")
+            XCTAssertTrue(tab("Chats").isSelected)
+            XCTAssertFalse(app.buttons["Close"].exists, "the profile is gone")
+
+            // Back to the chat list, as a person would before going to Friends again.
+            app.navigationBars.buttons.firstMatch.tap()
+            XCTAssertTrue(app.navigationBars["Chats"].waitForExistence(timeout: 5))
         }
 
         // The conversation is a real room in the chat list, listed once.
-        tab("Chats").tap()
         let rooms = app.staticTexts.matching(NSPredicate(format: "label == %@", "강호동"))
         XCTAssertTrue(rooms.firstMatch.waitForExistence(timeout: 5))
         XCTAssertEqual(rooms.count, 1)
+    }
+
+    @MainActor
+    func testStartChatInsideThatChatOnlyClosesTheProfile() throws {
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        signInWithTestMode()
+        startChatWithKang()
+
+        let input = app.textFields.firstMatch
+        XCTAssertTrue(input.waitForExistence(timeout: 10))
+        input.tap()
+        input.typeText("hi\n")
+        let avatar = app.buttons["Profile of 강호동"].firstMatch
+        XCTAssertTrue(avatar.waitForExistence(timeout: 60), "강호동 answers")
+        avatar.tap()
+
+        let startChat = app.buttons["Start Chat"]
+        XCTAssertTrue(startChat.waitForExistence(timeout: 5))
+        startChat.tap()
+        XCTAssertTrue(startChat.waitForNonExistence(timeout: 5), "the profile closes")
+        XCTAssertTrue(app.navigationBars.staticTexts["강호동"].exists, "the same chat is still open")
+        XCTAssertTrue(input.exists)
     }
 
     @MainActor

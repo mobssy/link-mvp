@@ -11,7 +11,7 @@ import SwiftData
 struct ContentView: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(LanguageManager.self) private var languageManager
-    @State private var selectedTab = 0
+    @State private var router = AppRouter()
     @State private var showTestModeAlert = false
     @AppStorage("contactsOnboardingShown") private var contactsOnboardingShown = false
     @State private var showContactsOnboarding = false
@@ -21,6 +21,7 @@ struct ContentView: View {
 
     var body: some View {
         mainContent()
+            .environment(router)
             .alert(languageManager.localizedText("test_mode_title"), isPresented: $showTestModeAlert) {
                 Button(languageManager.localizedText("cancel"), role: .cancel) { }
                 Button(languageManager.localizedText("start_test")) { enterTestMode() }
@@ -42,7 +43,7 @@ struct ContentView: View {
                 } else {
                     // Signed out or account deleted: next session starts fresh on the first tab.
                     isTestMode = false
-                    selectedTab = 0
+                    router.selectedTab = .friends
                 }
             }
     }
@@ -50,10 +51,7 @@ struct ContentView: View {
     @ViewBuilder
     private func mainContent() -> some View {
         if authManager.isAuthenticated {
-            AuthenticatedTabsView(
-                selectedTab: $selectedTab,
-                showTestModeIndicator: isTestMode
-            )
+            AuthenticatedTabsView(showTestModeIndicator: isTestMode)
         } else {
             UnauthenticatedView(
                 showTestModeAlert: $showTestModeAlert
@@ -74,31 +72,31 @@ struct ContentView: View {
 struct AuthenticatedTabsView: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(LanguageManager.self) private var languageManager
-    @Binding var selectedTab: Int
+    @Environment(AppRouter.self) private var router
     let showTestModeIndicator: Bool
     @Query var chatRooms: [ChatRoom]
     private var totalUnread: Int { chatRooms.map { $0.unreadCount }.reduce(0, +) }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: Bindable(router).selectedTab) {
             FriendsTab()
                 .tabItem {
                     Label(languageManager.localizedText("friends"), systemImage: "person.fill")
                 }
-                .tag(0)
+                .tag(AppTab.friends)
 
             ChatTab()
                 .tabItem {
                     Label(languageManager.localizedText("chat"), systemImage: "message.fill")
                 }
                 .badge(totalUnread)
-                .tag(1)
+                .tag(AppTab.chats)
 
             SettingsTab()
                 .tabItem {
                     Label(languageManager.localizedText("settings"), systemImage: "gearshape.fill")
                 }
-                .tag(2)
+                .tag(AppTab.settings)
         }
         .tint(.appPrimaryText)
         .bottomAccessory(isShown: showTestModeIndicator) {

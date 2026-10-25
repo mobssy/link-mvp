@@ -378,7 +378,7 @@ struct ChatView: View {
                         .environment(languageManager)
                     }
                 } else if let friendship = profileFriendship {
-                    FriendProfileView(friendship: friendship)
+                    FriendProfileView(friendship: friendship, isInChatWithThisPerson: true)
                 } else {
                     MiniProfileSheet(
                         name: chatRoom.name,

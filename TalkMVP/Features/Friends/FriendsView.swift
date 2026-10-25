@@ -19,7 +19,6 @@ struct FriendsView: View {
     @Environment(LanguageManager.self) private var languageManager
     var authManager: AuthManager
     @State private var notificationManager = NotificationManager()
-    @AppStorage("themeMode") private var themeMode: String = "system"
 
     @AppStorage("newFriendIDs") private var newFriendIDsStorage: String = ""
     @AppStorage("hasSeededNewFriends") private var hasSeededNewFriends: Bool = false
@@ -30,12 +29,11 @@ struct FriendsView: View {
     }
 
     enum ActiveSheet: Identifiable {
-        case addFriend, blockedList, settings, manageHiddenBlocked
+        case addFriend, blockedList, manageHiddenBlocked
         var id: Int {
             switch self {
             case .addFriend: return 1
             case .blockedList: return 2
-            case .settings: return 3
             case .manageHiddenBlocked: return 4
             }
         }
@@ -257,11 +255,6 @@ struct FriendsView: View {
                         } label: {
                             Label(L10n.text("manage_hidden_blocked", languageManager.currentLanguage), systemImage: "eye.slash")
                         }
-                        Button {
-                            activeSheet = .settings
-                        } label: {
-                            Label(L10n.text("settings", languageManager.currentLanguage), systemImage: "gearshape")
-                        }
                     } label: {
                         // A "more" button, not a gear: the Settings tab already shows the gear.
                         Image(systemName: "ellipsis")
@@ -287,10 +280,6 @@ struct FriendsView: View {
                 )
             case .blockedList:
                 BlockedFriendsView(blockedFriends: blockedFriends)
-            case .settings:
-                SettingsView(authManager: authManager)
-                    .environment(\.modelContext, modelContext)
-                    .preferredColorScheme(themeMode == "light" ? .light : (themeMode == "dark" ? .dark : nil))
             case .manageHiddenBlocked:
                 ManageFriendsView(hiddenFriends: hiddenFriends, blockedFriends: blockedFriends)
                     .environment(\.modelContext, modelContext)

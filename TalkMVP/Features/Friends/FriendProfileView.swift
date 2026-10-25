@@ -11,10 +11,14 @@ import UIKit
 
 struct FriendProfileView: View {
     let friendship: Friendship
+    /// Opened from the chat with this same person: Start Chat goes back to it.
+    var isInChatWithThisPerson = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(LanguageManager.self) private var languageManager
-    @State private var showingChatView = false
+    @Environment(AuthManager.self) private var authManager
+    @Environment(AppRouter.self) private var router
+    @State private var showingChatOpenFailed = false
     @State private var showingBlockAlert = false
     @State private var showingUnblockAlert = false
     @State private var showingReportConfirm = false
@@ -82,9 +86,7 @@ struct FriendProfileView: View {
                     VStack(spacing: 12) {
                         if friendship.status == .accepted {
                             // 채팅하기 버튼
-                            Button(action: {
-                                showingChatView = true
-                            }) {
+                            Button(action: startChat) {
                                 Label(localizedText("start_chat"), systemImage: "bubble.left.and.bubble.right.fill")
                                     .frame(maxWidth: .infinity)
                                     .padding()
@@ -146,12 +148,6 @@ struct FriendProfileView: View {
                             shareProfile()
                         }
 
-                        if friendship.status == .accepted {
-                            Button(localizedText("view_conversation")) {
-                                showingChatView = true
-                            }
-                        }
-
                         Divider()
 
                         Button(localizedText("report"), role: .destructive) {
@@ -164,8 +160,8 @@ struct FriendProfileView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingChatView) {
-            ChatViewContainer(friendship: friendship)
+        .alert(languageManager.localize(ko: "채팅을 열 수 없습니다", en: "Couldn't open the chat", ja: "チャットを開けません", zh: "无法打开聊天", es: "No se pudo abrir el chat"), isPresented: $showingChatOpenFailed) {
+            Button(localizedText("close"), role: .cancel) {}
         }
         .alert(localizedText("block_friend"), isPresented: $showingBlockAlert) {
             Button(localizedText("cancel"), role: .cancel) { }
@@ -306,6 +302,34 @@ struct FriendProfileView: View {
         }
     }
 
+    /// Opens the one-to-one room with this friend in the Chats tab, the same saved room every
+    /// time, rather than presenting the chat in a sheet over this one.
+    private func startChat() {
+        guard !isInChatWithThisPerson else {
+            dismiss()
+            return
+        }
+        guard let currentUserId = authManager.currentUser?.id.uuidString else {
+            showingChatOpenFailed = true
+            return
+        }
+        let repository: ChatRoomRepositoryProtocol = LocalChatRoomRepository(modelContext: modelContext)
+        Task {
+            do {
+                let room = try await repository.directChatRoom(
+                    withUserId: friendship.otherUserId(currentUserId: currentUserId),
+                    name: friendship.friendName,
+                    email: friendship.friendEmail
+                )
+                // Close first: a sheet presented from the Friends tab would stay over Chats.
+                dismiss()
+                router.openChat(room.id)
+            } catch {
+                showingChatOpenFailed = true
+            }
+        }
+    }
+
     private func shareProfile() {
         let profileText = "\(friendship.friendName) (\(friendship.friendEmail))"
         let activityVC = UIActivityViewController(activityItems: [profileText], applicationActivities: nil)
@@ -341,8 +365,6 @@ struct FriendProfileView: View {
             return languageManager.localize(ko: "닫기", en: "Close", ja: "閉じる", zh: "关闭", es: "Cerrar")
         case "share_profile":
             return languageManager.localize(ko: "프로필 공유", en: "Share Profile", ja: "プロフィールを共有", zh: "分享资料", es: "Compartir perfil")
-        case "view_conversation":
-            return languageManager.localize(ko: "대화 내용 보기", en: "View Conversation", ja: "会話を見る", zh: "查看对话", es: "Ver conversación")
         case "report":
             return languageManager.localize(ko: "신고하기", en: "Report", ja: "報告", zh: "举报", es: "Reportar")
         case "block_friend":
@@ -473,4 +495,5 @@ struct ProfileInfoCard: View {
         status: .accepted
     )
     return FriendProfileView(friendship: sampleFriendship)
+        .environment(AppRouter())
 }

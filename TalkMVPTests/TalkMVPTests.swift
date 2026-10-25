@@ -2894,6 +2894,28 @@ struct FriendBannerTests {
     }
 }
 
+@Suite("AppRouter")
+@MainActor
+struct AppRouterTests {
+
+    @Test("The app starts on the Friends tab")
+    func startsOnFriends() {
+        #expect(AppRouter().selectedTab == .friends)
+    }
+
+    @Test("Opening a chat switches to Chats and hands the room over once")
+    func openChatSwitchesToChatsAndHandsTheRoomOnce() {
+        let router = AppRouter()
+        let id = UUID()
+
+        router.openChat(id)
+
+        #expect(router.selectedTab == .chats)
+        #expect(router.takeRoomToOpen() == id)
+        #expect(router.takeRoomToOpen() == nil)
+    }
+}
+
 @Suite("In-app text size")
 struct InAppTextSizeTests {
     private func makeDefaults() -> UserDefaults {

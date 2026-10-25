@@ -37,6 +37,7 @@ fileprivate func chatListLocalized(_ key: String, using manager: LanguageManager
 
 struct ChatListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppRouter.self) private var router
     @Environment(LanguageManager.self) private var languageManager
     @Query(sort: \ChatRoom.timestamp, order: .reverse) private var chatRooms: [ChatRoom]
     @State private var searchText = ""
@@ -121,6 +122,13 @@ struct ChatListView: View {
         .onAppear {
             chatService.modelContext = modelContext
             createSampleDataIfNeeded()
+        }
+        // A room handed over from another tab, such as Start Chat on a friend's profile. Read
+        // on first appearance too: the hand-over can come before this tab was ever shown.
+        .onChange(of: router.roomToOpen, initial: true) {
+            if let roomID = router.takeRoomToOpen() {
+                selectedRoomID = roomID
+            }
         }
     }
 
@@ -284,6 +292,7 @@ struct ChatScreen: View {
     ) {
         ChatListView()
             .modelContainer(container)
+            .environment(AppRouter())
     } else {
         Text("Preview unavailable")
     }
