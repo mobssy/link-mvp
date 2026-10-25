@@ -5,7 +5,6 @@ struct TranslationSettingsView: View {
     @AppStorage("translationEnabled") private var translationEnabled = false
     @AppStorage("translationAutoDetect") private var translationAutoDetect = true
     @AppStorage("translationTargetLanguage") private var translationTargetLanguage = "auto"
-    @AppStorage("translationShowOriginal") private var translationShowOriginal = true
 
     var body: some View {
         Form {
@@ -33,13 +32,6 @@ struct TranslationSettingsView: View {
                     Text("中文(繁體)").tag("zh-Hant")
                 }
                 .pickerStyle(.navigationLink)
-                Toggle(isOn: $translationShowOriginal) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "doc.text.magnifyingglass")
-                            .foregroundStyle(Color.secondary)
-                        Text(localizedText("translation_show_original"))
-                    }
-                }
             }
         }
         .navigationTitle(localizedText("translation"))
@@ -53,7 +45,6 @@ struct TranslationSettingsView: View {
         case "translation_enable": return languageManager.localize(ko: "번역 활성화", en: "Enable Translation", ja: "翻訳を有効にする", zh: "启用翻译", es: "Activar traducción")
         case "translation_auto_detect": return languageManager.localize(ko: "자동 감지", en: "Auto Detect", ja: "自動検出", zh: "自动检测", es: "Detección automática")
         case "translation_target": return languageManager.localize(ko: "대상 언어", en: "Target Language", ja: "ターゲット言語", zh: "目标语言", es: "Idioma de destino")
-        case "translation_show_original": return languageManager.localize(ko: "원문 함께 표시", en: "Show Original", ja: "原文も表示", zh: "同时显示原文", es: "Mostrar original")
         case "auto": return languageManager.localize(ko: "자동", en: "Auto", ja: "自動", zh: "自动", es: "Automático")
         default: return key
         }

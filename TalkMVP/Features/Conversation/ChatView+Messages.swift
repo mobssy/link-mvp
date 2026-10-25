@@ -176,8 +176,7 @@ extension ChatView {
                 TranslatedTextView(
                     text: message.text,
                     autoDetect: translationAutoDetect,
-                    target: effectiveTargetLanguage(for: message.text),
-                    showOriginal: translationShowOriginal
+                    target: effectiveTargetLanguage(for: message.text)
                 )
                 .frame(maxWidth: .infinity, alignment: message.isFromCurrentUser ? .trailing : .leading)
                 .padding(.horizontal, 2)

@@ -172,7 +172,6 @@ struct TranslatedTextView: View {
     let text: String
     let autoDetect: Bool
     let target: String
-    let showOriginal: Bool
 
     /// nil once a try came back empty-handed: no translator on this device could translate it.
     @State private var translated: String?
@@ -190,11 +189,6 @@ struct TranslatedTextView: View {
                     .font(.footnote)
                     .foregroundStyle(Color.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-            }
-            if showOriginal {
-                Text(text)
-                    .font(.footnote)
-                    .foregroundStyle(.tertiaryLabel)
             }
         }
         .onAppear(perform: translate)

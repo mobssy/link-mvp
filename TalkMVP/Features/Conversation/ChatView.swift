@@ -101,7 +101,6 @@ struct ChatView: View {
     @AppStorage("translationEnabled") var translationEnabled = false
     @AppStorage("translationAutoDetect") var translationAutoDetect = true
     @AppStorage("translationTargetLanguage") var translationTargetLanguage = "auto"
-    @AppStorage("translationShowOriginal") var translationShowOriginal = true
 
     // MARK: - Date Formatters (cached, internal so extensions can access via Self.)
     static let timeFormatter: DateFormatter = {
