@@ -13,6 +13,8 @@ struct FriendProfileView: View {
     let friendship: Friendship
     /// Opened from the chat with this same person: Start Chat goes back to it.
     var isInChatWithThisPerson = false
+    /// In a sheet, which needs a way to close; pushed, the Back button does that.
+    var showsCloseButton = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(LanguageManager.self) private var languageManager
@@ -27,136 +29,138 @@ struct FriendProfileView: View {
     @State private var lastActiveIconColor: Color = .secondary
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // 프로필 헤더
-                    VStack(spacing: 16) {
-                        // 프로필 이미지
-                        ZStack {
-                            Circle()
-                                .fill(LinearGradient(
-                                    colors: [Color.appPrimary.opacity(0.3), Color.appPrimary.opacity(0.1)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ))
-                                .frame(width: 120, height: 120)
+        // No stack of its own: pushed from the Friends list, in its detail column, or in a
+        // sheet that brings one.
+        ScrollView {
+            VStack(spacing: 20) {
+                // 프로필 헤더
+                VStack(spacing: 16) {
+                    // 프로필 이미지
+                    ZStack {
+                        Circle()
+                            .fill(LinearGradient(
+                                colors: [Color.appPrimary.opacity(0.3), Color.appPrimary.opacity(0.1)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ))
+                            .frame(width: 120, height: 120)
 
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 60))
-                                .foregroundStyle(.appPrimaryText)
-                        }
-
-                        // 이름과 이메일
-                        VStack(spacing: 8) {
-                            Text(friendship.friendName)
-                                .font(.title2)
-                                .fontWeight(.bold)
-
-                            Text(friendship.friendEmail)
-                                .font(.subheadline)
-                                .foregroundStyle(Color.secondary)
-                        }
-
-                        // 상태 배지
-                        StatusBadge(status: friendship.status)
-                    }
-                    .padding(.vertical, 20)
-
-                    // 프로필 정보
-                    VStack(spacing: 16) {
-                        ProfileInfoCard(
-                            title: localizedText("joined"),
-                            value: formatDate(friendship.createdAt),
-                            icon: "calendar"
-                        )
-
-                        // Shown only when there's something to show, never as "No Info".
-                        if lastActivityEnabled && friendship.status == .accepted, let lastActiveText {
-                            ProfileInfoCard(
-                                title: localizedText("last_active"),
-                                value: lastActiveText,
-                                icon: "circle.fill",
-                                iconColor: lastActiveIconColor
-                            )
-                        }
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 60))
+                            .foregroundStyle(.appPrimaryText)
                     }
 
-                    // 액션 버튼들
-                    VStack(spacing: 12) {
-                        if friendship.status == .accepted {
-                            // 채팅하기 버튼
-                            Button(action: startChat) {
-                                Label(localizedText("start_chat"), systemImage: "bubble.left.and.bubble.right.fill")
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(Color.appPrimary)
-                                    .foregroundStyle(.onAppPrimary)
-                                    .clipShape(.rect(cornerRadius: 12))
-                            }
-                        }
+                    // 이름과 이메일
+                    VStack(spacing: 8) {
+                        Text(friendship.friendName)
+                            .font(.title2)
+                            .fontWeight(.bold)
 
-                        // 상태별 액션 버튼
-                        switch friendship.status {
-                        case .accepted:
-                            // Blocking is rare and asks first, so it stays a plain button rather
-                            // than a second large one competing with Start Chat.
-                            Button(localizedText("block"), systemImage: "hand.raised", role: .destructive) {
-                                showingBlockAlert = true
-                            }
-                            .padding(.top, 8)
-                        case .blocked:
-                            Button {
-                                showingUnblockAlert = true
-                            } label: {
-                                Label(localizedText("unblock"), systemImage: "hand.raised.slash")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.large)
-                        case .hidden:
-                            Button {
-                                unhideFriend()
-                            } label: {
-                                Label(localizedText("unhide"), systemImage: "eye")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.large)
-                        case .pending:
-                            Text(localizedText("request_pending"))
-                                .foregroundStyle(Color.secondary)
-                                .padding(.top, 8)
-                        }
+                        Text(friendship.friendEmail)
+                            .font(.subheadline)
+                            .foregroundStyle(Color.secondary)
                     }
-                    .padding(.horizontal)
+
+                    // 상태 배지
+                    StatusBadge(status: friendship.status)
                 }
-                .padding()
+                .padding(.vertical, 20)
+
+                // 프로필 정보
+                VStack(spacing: 16) {
+                    ProfileInfoCard(
+                        title: localizedText("joined"),
+                        value: formatDate(friendship.createdAt),
+                        icon: "calendar"
+                    )
+
+                    // Shown only when there's something to show, never as "No Info".
+                    if lastActivityEnabled && friendship.status == .accepted, let lastActiveText {
+                        ProfileInfoCard(
+                            title: localizedText("last_active"),
+                            value: lastActiveText,
+                            icon: "circle.fill",
+                            iconColor: lastActiveIconColor
+                        )
+                    }
+                }
+
+                // 액션 버튼들
+                VStack(spacing: 12) {
+                    if friendship.status == .accepted {
+                        // 채팅하기 버튼
+                        Button(action: startChat) {
+                            Label(localizedText("start_chat"), systemImage: "bubble.left.and.bubble.right.fill")
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.appPrimary)
+                                .foregroundStyle(.onAppPrimary)
+                                .clipShape(.rect(cornerRadius: 12))
+                        }
+                    }
+
+                    // 상태별 액션 버튼
+                    switch friendship.status {
+                    case .accepted:
+                        // Blocking is rare and asks first, so it stays a plain button rather
+                        // than a second large one competing with Start Chat.
+                        Button(localizedText("block"), systemImage: "hand.raised", role: .destructive) {
+                            showingBlockAlert = true
+                        }
+                        .padding(.top, 8)
+                    case .blocked:
+                        Button {
+                            showingUnblockAlert = true
+                        } label: {
+                            Label(localizedText("unblock"), systemImage: "hand.raised.slash")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                    case .hidden:
+                        Button {
+                            unhideFriend()
+                        } label: {
+                            Label(localizedText("unhide"), systemImage: "eye")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                    case .pending:
+                        Text(localizedText("request_pending"))
+                            .foregroundStyle(Color.secondary)
+                            .padding(.top, 8)
+                    }
+                }
+                .padding(.horizontal)
             }
-            .navigationTitle(localizedText("profile"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .padding()
+        }
+        .navigationTitle(localizedText("profile"))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if showsCloseButton {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(localizedText("close")) {
                         dismiss()
                     }
                 }
+            }
 
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button(localizedText("share_profile")) {
-                            shareProfile()
-                        }
-
-                        Divider()
-
-                        Button(localizedText("report"), role: .destructive) {
-                            reportUser()
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .accessibilityLabel(languageManager.localize(ko: "더 보기", en: "More options", ja: "その他のオプション", zh: "更多选项", es: "Más opciones"))
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button(localizedText("share_profile")) {
+                        shareProfile()
                     }
+
+                    Divider()
+
+                    Button(localizedText("report"), role: .destructive) {
+                        reportUser()
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .accessibilityLabel(languageManager.localize(ko: "더 보기", en: "More options", ja: "その他のオプション", zh: "更多选项", es: "Más opciones"))
                 }
             }
         }
@@ -494,6 +498,6 @@ struct ProfileInfoCard: View {
         friendEmail: "friend@example.com",
         status: .accepted
     )
-    return FriendProfileView(friendship: sampleFriendship)
+    return NavigationStack { FriendProfileView(friendship: sampleFriendship) }
         .environment(AppRouter())
 }

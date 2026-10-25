@@ -27,8 +27,10 @@ struct SettingsView: View {
     @State private var notificationManager = NotificationManager()
     @AppStorage(NotificationPreferences.enabledKey) private var notificationsEnabled = true
 
+    // A split view like the Chats tab: in a regular-width window (iPad, an open iPhone Duo)
+    // the list stays beside the page it opened; in a compact one it collapses into a push.
     var body: some View {
-        NavigationStack {
+        NavigationSplitView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     ProfileCardView(
@@ -46,9 +48,7 @@ struct SettingsView: View {
                             isOn: $notificationsEnabled
                         )
                         Divider().padding(.leading, 52)
-                        NavigationLink {
-                            ThemeSettingsView().environment(languageManager)
-                        } label: {
+                        NavigationLink(value: SettingsPage.theme) {
                             SettingsLinkRow(
                                 systemImage: "paintpalette.fill",
                                 tint: .orange,
@@ -56,9 +56,7 @@ struct SettingsView: View {
                             )
                         }
                         Divider().padding(.leading, 52)
-                        NavigationLink {
-                            LanguageSettingsView().environment(languageManager)
-                        } label: {
+                        NavigationLink(value: SettingsPage.language) {
                             SettingsLinkRow(
                                 systemImage: "globe",
                                 tint: .blue,
@@ -66,9 +64,7 @@ struct SettingsView: View {
                             )
                         }
                         Divider().padding(.leading, 52)
-                        NavigationLink {
-                            SecuritySettingsView().environment(languageManager)
-                        } label: {
+                        NavigationLink(value: SettingsPage.appLock) {
                             SettingsLinkRow(
                                 systemImage: "lock.fill",
                                 tint: .purple,
@@ -76,9 +72,7 @@ struct SettingsView: View {
                             )
                         }
                         Divider().padding(.leading, 52)
-                        NavigationLink {
-                            AISettingsView().environment(languageManager)
-                        } label: {
+                        NavigationLink(value: SettingsPage.aiFeatures) {
                             SettingsLinkRow(
                                 systemImage: "sparkles",
                                 tint: .pink,
@@ -86,9 +80,7 @@ struct SettingsView: View {
                             )
                         }
                         Divider().padding(.leading, 52)
-                        NavigationLink {
-                            TranslationSettingsView().environment(languageManager)
-                        } label: {
+                        NavigationLink(value: SettingsPage.translation) {
                             SettingsLinkRow(
                                 systemImage: "character.bubble",
                                 tint: .teal,
@@ -96,9 +88,7 @@ struct SettingsView: View {
                             )
                         }
                         Divider().padding(.leading, 52)
-                        NavigationLink {
-                            ContactsSettingsView().environment(languageManager)
-                        } label: {
+                        NavigationLink(value: SettingsPage.contacts) {
                             SettingsLinkRow(
                                 systemImage: "person.crop.circle.badge.plus",
                                 tint: .green,
@@ -106,9 +96,7 @@ struct SettingsView: View {
                             )
                         }
                         Divider().padding(.leading, 52)
-                        NavigationLink {
-                            AccessibilitySettingsView().environment(languageManager)
-                        } label: {
+                        NavigationLink(value: SettingsPage.accessibility) {
                             SettingsLinkRow(
                                 systemImage: "accessibility",
                                 tint: .indigo,
@@ -118,9 +106,7 @@ struct SettingsView: View {
                     }
 
                     SettingsSectionCard(title: languageManager.localize(ko: "정보", en: "Info", ja: "情報", zh: "信息", es: "Info")) {
-                        NavigationLink {
-                            HelpView().environment(languageManager)
-                        } label: {
+                        NavigationLink(value: SettingsPage.help) {
                             SettingsLinkRow(
                                 systemImage: "questionmark.circle.fill",
                                 tint: .blue,
@@ -128,9 +114,7 @@ struct SettingsView: View {
                             )
                         }
                         Divider().padding(.leading, 52)
-                        NavigationLink {
-                            AppInfoView().environment(languageManager)
-                        } label: {
+                        NavigationLink(value: SettingsPage.appInfo) {
                             SettingsLinkRow(
                                 systemImage: "info.circle.fill",
                                 tint: .blue,
@@ -138,9 +122,7 @@ struct SettingsView: View {
                             )
                         }
                         Divider().padding(.leading, 52)
-                        NavigationLink {
-                            TermsPoliciesView().environment(languageManager)
-                        } label: {
+                        NavigationLink(value: SettingsPage.terms) {
                             SettingsLinkRow(
                                 systemImage: "doc.text.fill",
                                 tint: .blue,
@@ -220,6 +202,17 @@ struct SettingsView: View {
             }
             .navigationTitle(localizedText("settings"))
             .navigationBarTitleDisplayMode(.large)
+            // In a split view the page replaces the detail column; collapsed, it is pushed.
+            .navigationDestination(for: SettingsPage.self) { page in
+                destination(for: page)
+                    .environment(languageManager)
+            }
+        } detail: {
+            ContentUnavailableView(
+                languageManager.localize(ko: "설정을 선택하세요", en: "Select a Setting", ja: "設定を選択", zh: "选择一个设置", es: "Selecciona un ajuste"),
+                systemImage: "gearshape",
+                description: Text(languageManager.localize(ko: "왼쪽 목록에서 항목을 고르면 여기에 열립니다.", en: "Pick an item from the list to open it here.", ja: "リストから項目を選ぶとここに表示されます。", zh: "从列表中选择一项，它会在这里打开。", es: "Elige un elemento de la lista para abrirlo aquí."))
+            )
         }
         .preferredColorScheme(themeMode == "light" ? .light : (themeMode == "dark" ? .dark : nil))
     }

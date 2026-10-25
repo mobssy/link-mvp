@@ -40,6 +40,9 @@ struct FriendsView: View {
     }
 
     @State private var activeSheet: ActiveSheet?
+    /// The friend whose profile is open: beside the list in a regular-width window, pushed in
+    /// a compact one.
+    @State private var selectedFriendID: UUID?
     @State private var searchText = ""
     @State private var friendships: [Friendship] = []
     @State private var showNewFriendsSection: Bool = true
@@ -107,9 +110,14 @@ struct FriendsView: View {
         }
     }
 
+    private var selectedFriend: Friendship? {
+        guard let selectedFriendID else { return nil }
+        return allAccepted.first { $0.id == selectedFriendID }
+    }
+
     var body: some View {
-        NavigationStack {
-            List {
+        NavigationSplitView {
+            List(selection: $selectedFriendID) {
                 // My Profile Section
                 Section {
                     MyProfileRow(authManager: authManager)
@@ -118,7 +126,7 @@ struct FriendsView: View {
                 if showNewFriendsSection && newFriendsCount > 0 {
                     Section(header: Text(String(format: L10n.text("new_friends", languageManager.currentLanguage), newFriendsCount))) {
                         ForEach(newFriends, id: \.id) { friendship in
-                            FriendRow(friendship: friendship, onDataChanged: loadFriendships, onOpened: { markFriendAsSeen(friendship) })
+                            FriendRow(friendship: friendship, onDataChanged: loadFriendships)
                         }
                     }
                     .headerProminence(.increased)
@@ -237,6 +245,8 @@ struct FriendsView: View {
                 .headerProminence(.increased)
             }
             .listStyle(.insetGrouped)
+            // As in the chat list: the regular brand color is too light for a selected row.
+            .tint(.appPrimaryStrong)
             .navigationTitle(L10n.text("friends", languageManager.currentLanguage))
             .searchable(text: $searchText, prompt: L10n.text("search_friends_placeholder", languageManager.currentLanguage))
             .toolbar {
@@ -262,6 +272,27 @@ struct FriendsView: View {
                     .accessibilityLabel(LocalizationService.shared.text(for: .moreOptions, language: languageManager.currentLanguage.asLocalizationLanguage))
                 }
             }
+        } detail: {
+            if let friend = selectedFriend {
+                // A new identity per friend, like the chat list's conversations.
+                FriendProfileView(friendship: friend)
+                    .id(friend.id)
+            } else {
+                ContentUnavailableView(
+                    L10n.text("select_friend", languageManager.currentLanguage),
+                    systemImage: "person.2",
+                    description: Text(L10n.text("select_friend_hint", languageManager.currentLanguage))
+                )
+            }
+        }
+        .onChange(of: selectedFriendID) {
+            if let friend = selectedFriend {
+                markFriendAsSeen(friend)
+            }
+        }
+        // Blocked or hidden from the open profile: it leaves the list, and the column empties.
+        .onChange(of: selectedFriend == nil) { _, isGone in
+            if isGone { selectedFriendID = nil }
         }
         .badge(newFriendsCount)
         .sheet(item: $activeSheet, onDismiss: {

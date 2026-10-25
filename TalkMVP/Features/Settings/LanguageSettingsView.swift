@@ -14,65 +14,57 @@ struct LanguageSettingsView: View {
     @State private var pendingLanguage: LanguageManager.Language?
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section(
-                    header: Text(localizedText(key: "language.settings.title")),
-                    footer: Text(localizedText(key: "language.settings.footer"))
-                ) {
-                    ForEach(LanguageManager.Language.allCases, id: \.self) { language in
-                        LanguageRow(
-                            language: language,
-                            isSelected: languageManager.currentLanguage == language
-                        ) {
-                            selectLanguage(language)
-                        }
-                    }
-                }
-
-                // 디버그 정보 섹션 (선택적)
-                if ProcessInfo.processInfo.environment["SHOW_LANGUAGE_DEBUG"] == "1" {
-                    Section(header: Text("Debug Info")) {
-                        let info = languageManager.getLanguageInfo()
-                        ForEach(Array(info.keys.sorted()), id: \.self) { key in
-                            HStack {
-                                Text(key)
-                                    .font(.caption)
-                                Spacer()
-                                Text(info[key] ?? "")
-                                    .font(.caption)
-                                    .foregroundStyle(Color.secondary)
-                            }
-                        }
-                    }
-                }
-            }
-            .navigationTitle(localizedText(key: "language.title"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(localizedText(key: "common.done")) {
-                        dismiss()
-                    }
-                }
-            }
-            .alert(
-                localizedText(key: "language.restart.title"),
-                isPresented: $showingRestartAlert
+        // Always pushed, from Settings: the stack, and its Back button, are the caller's.
+        List {
+            Section(
+                header: Text(localizedText(key: "language.settings.title")),
+                footer: Text(localizedText(key: "language.settings.footer"))
             ) {
-                Button(localizedText(key: "common.cancel"), role: .cancel) {
-                    pendingLanguage = nil
-                }
-                Button(localizedText(key: "language.restart.confirm")) {
-                    if let pendingLanguage = pendingLanguage {
-                        languageManager.setLanguage(pendingLanguage)
-                        // 앱을 다시 시작하도록 알림 또는 다른 처리 로직
-                        dismiss()
+                ForEach(LanguageManager.Language.allCases, id: \.self) { language in
+                    LanguageRow(
+                        language: language,
+                        isSelected: languageManager.currentLanguage == language
+                    ) {
+                        selectLanguage(language)
                     }
                 }
-            } message: {
-                Text(localizedText(key: "language.restart.message"))
             }
+
+            // 디버그 정보 섹션 (선택적)
+            if ProcessInfo.processInfo.environment["SHOW_LANGUAGE_DEBUG"] == "1" {
+                Section(header: Text("Debug Info")) {
+                    let info = languageManager.getLanguageInfo()
+                    ForEach(Array(info.keys.sorted()), id: \.self) { key in
+                        HStack {
+                            Text(key)
+                                .font(.caption)
+                            Spacer()
+                            Text(info[key] ?? "")
+                                .font(.caption)
+                                .foregroundStyle(Color.secondary)
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle(localizedText(key: "language.title"))
+        .navigationBarTitleDisplayMode(.inline)
+        .alert(
+            localizedText(key: "language.restart.title"),
+            isPresented: $showingRestartAlert
+        ) {
+            Button(localizedText(key: "common.cancel"), role: .cancel) {
+                pendingLanguage = nil
+            }
+            Button(localizedText(key: "language.restart.confirm")) {
+                if let pendingLanguage = pendingLanguage {
+                    languageManager.setLanguage(pendingLanguage)
+                    // 앱을 다시 시작하도록 알림 또는 다른 처리 로직
+                    dismiss()
+                }
+            }
+        } message: {
+            Text(localizedText(key: "language.restart.message"))
         }
     }
 

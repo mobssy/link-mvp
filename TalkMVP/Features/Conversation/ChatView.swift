@@ -367,7 +367,7 @@ struct ChatView: View {
             .sheet(isPresented: $showingFriendProfile) {
                 if let profileMember {
                     if let friendship = profileMember.friendship {
-                        FriendProfileView(friendship: friendship)
+                        NavigationStack { FriendProfileView(friendship: friendship, showsCloseButton: true) }
                     } else {
                         MiniProfileSheet(
                             name: profileMember.name,
@@ -378,7 +378,7 @@ struct ChatView: View {
                         .environment(languageManager)
                     }
                 } else if let friendship = profileFriendship {
-                    FriendProfileView(friendship: friendship, isInChatWithThisPerson: true)
+                    NavigationStack { FriendProfileView(friendship: friendship, isInChatWithThisPerson: true, showsCloseButton: true) }
                 } else {
                     MiniProfileSheet(
                         name: chatRoom.name,

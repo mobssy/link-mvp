@@ -89,13 +89,17 @@ final class TalkMVPUITests: XCTestCase {
             XCTAssertTrue(tab("Chats").isSelected)
             XCTAssertFalse(app.buttons["Close"].exists, "the profile is gone")
 
-            // Back to the chat list, as a person would before going to Friends again.
-            app.navigationBars.buttons.firstMatch.tap()
-            XCTAssertTrue(app.navigationBars["Chats"].waitForExistence(timeout: 5))
+            // Back to the chat list, as a person would before going to Friends again. In a
+            // regular-width window the list is already beside the chat.
+            if app.windows.firstMatch.frame.width < 600 {
+                app.navigationBars.buttons.firstMatch.tap()
+                XCTAssertTrue(app.navigationBars["Chats"].waitForExistence(timeout: 5))
+            }
         }
 
-        // The conversation is a real room in the chat list, listed once.
-        let rooms = app.staticTexts.matching(NSPredicate(format: "label == %@", "강호동"))
+        // The conversation is a real room in the chat list, listed once (the open chat's
+        // title, beside the list on iPad, isn't a row).
+        let rooms = app.cells.staticTexts.matching(NSPredicate(format: "label == %@", "강호동"))
         XCTAssertTrue(rooms.firstMatch.waitForExistence(timeout: 5))
         XCTAssertEqual(rooms.count, 1)
     }
@@ -259,8 +263,9 @@ final class TalkMVPUITests: XCTestCase {
         guard suggestions.waitForExistence(timeout: 90) else {
             throw XCTSkip("No reply suggestions: they need Apple Intelligence")
         }
-        // The results may not include the message the suggestions answer.
-        let search = app.searchFields.firstMatch
+        // The results may not include the message the suggestions answer. On iPad the chat
+        // list's search field is on screen too.
+        let search = app.searchFields.matching(NSPredicate(format: "placeholderValue == %@ OR label == %@", "Search conversation", "Search conversation")).firstMatch
         search.tap()
         search.typeText("dinner")
         XCTAssertTrue(suggestions.waitForNonExistence(timeout: 5), "searching hides the suggestions")
@@ -289,6 +294,34 @@ final class TalkMVPUITests: XCTestCase {
         otherRoom.tap()
         XCTAssertTrue(app.navigationBars.staticTexts["Study Group"].waitForExistence(timeout: 5), "picking another room switches the conversation")
         XCTAssertFalse(app.staticTexts["Select a Chat"].exists)
+    }
+
+    @MainActor
+    func testWideWindowShowsFriendsAndSettingsInTwoColumns() throws {
+        // Like the Chats tab: in a regular-width window the list stays beside what it opened.
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        try XCTSkipUnless(app.windows.firstMatch.frame.width >= 600, "needs a regular-width window")
+        signInWithTestMode()
+
+        tab("Friends").tap()
+        XCTAssertTrue(app.staticTexts["Select a Friend"].waitForExistence(timeout: 5), "no profile is open yet")
+        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "강호동")).firstMatch.tap()
+        XCTAssertTrue(app.buttons["Start Chat"].waitForExistence(timeout: 5), "the profile opens beside the list")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "권지용")).firstMatch.isHittable,
+                      "the list stays on screen")
+        // Blocked from the open profile, the friend leaves the list and the column empties.
+        app.buttons["Block"].firstMatch.tap()
+        let confirmBlock = app.alerts.buttons["Block"]
+        XCTAssertTrue(confirmBlock.waitForExistence(timeout: 5))
+        confirmBlock.tap()
+        XCTAssertTrue(app.staticTexts["Select a Friend"].waitForExistence(timeout: 5), "no stale profile is left open")
+
+        tab("Settings").tap()
+        XCTAssertTrue(app.staticTexts["Select a Setting"].waitForExistence(timeout: 5), "no page is open yet")
+        app.buttons["Language"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Language"].waitForExistence(timeout: 5), "the page opens beside the list")
+        XCTAssertTrue(app.buttons["Help"].firstMatch.isHittable, "the list stays on screen")
     }
 
     @MainActor

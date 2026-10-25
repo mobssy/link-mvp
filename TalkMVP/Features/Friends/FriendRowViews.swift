@@ -91,27 +91,25 @@ struct MyProfileRow: View {
 struct FriendRow: View {
     let friendship: Friendship
     let onDataChanged: () -> Void
-    var onOpened: (() -> Void)?
     @Environment(\.modelContext) private var modelContext
     @Environment(LanguageManager.self) private var languageManager
-    @State private var showingProfileView = false
 
+    /// Selects the friend in the Friends list, which opens their profile.
     var body: some View {
-        Button(action: {
-            onOpened?()
-            showingProfileView = true
-        }) {
+        NavigationLink(value: friendship.id) {
             HStack(spacing: 16) {
+                // The lighter brand color, like the chat list's rows: it still shows on the
+                // selected row's fill.
                 Image(systemName: "person.circle.fill")
                     .font(.system(size: 50))
-                    .foregroundStyle(.appPrimaryText)
+                    .foregroundStyle(.appPrimary)
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
+                        // No fixed color, so it turns white on a selected row.
                         Text(friendship.friendName)
                             .font(.title3)
                             .fontWeight(.semibold)
-                            .foregroundStyle(Color.primary)
 
                         if friendship.isFavorite {
                             Image(systemName: "star.fill")
@@ -132,11 +130,7 @@ struct FriendRow: View {
                     .frame(width: 10, height: 10)
             }
             .padding(.vertical, 8)
-            // A plain-style button only hit-tests its drawn content; without this the
-            // empty middle of the row (the Spacer) ignores taps.
-            .contentShape(Rectangle())
         }
-        .buttonStyle(PlainButtonStyle())
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
             Button {
                 toggleFavorite()
@@ -162,9 +156,6 @@ struct FriendRow: View {
                 )
             }
             .tint(friendship.notificationsEnabled ? .gray : .blue)
-        }
-        .sheet(isPresented: $showingProfileView) {
-            FriendProfileView(friendship: friendship)
         }
     }
 

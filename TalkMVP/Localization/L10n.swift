@@ -164,6 +164,22 @@ enum L10n {
             case .chinese: return "'%@'没有匹配结果"
             case .spanish: return "Sin coincidencias para '%@'"
             }
+        case "select_friend":
+            switch language {
+            case .korean: return "친구를 선택하세요"
+            case .english: return "Select a Friend"
+            case .japanese: return "友だちを選択"
+            case .chinese: return "选择一位朋友"
+            case .spanish: return "Selecciona un amigo"
+            }
+        case "select_friend_hint":
+            switch language {
+            case .korean: return "왼쪽 목록에서 친구를 고르면 프로필이 여기에 열립니다."
+            case .english: return "Pick a friend from the list to see their profile here."
+            case .japanese: return "リストから友だちを選ぶとプロフィールがここに表示されます。"
+            case .chinese: return "从列表中选择一位朋友，资料会在这里打开。"
+            case .spanish: return "Elige un amigo de la lista para ver su perfil aquí."
+            }
         case "no_friends_yet":
             switch language {
             case .korean: return "아직 친구가 없습니다"
