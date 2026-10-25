@@ -1,6 +1,6 @@
 # UX and navigation (stage 4 of the app-wide cleanup)
 
-Date: 2026-10-24. Status: approved, in progress.
+Date: 2026-10-24. Status: done.
 
 ## Context
 
@@ -56,3 +56,22 @@ The Chats tab already uses `NavigationSplitView`. Friends and Settings are singl
 - Unit tests (Swift Testing) for the router: switching tab and handing a room to open, and clearing it once read.
 - UI tests: a one-to-one chat with a non-friend shows one Add Friend control; Start Chat from a profile lands in the Chats tab with that room open and no sheet; the iPad (or Duo) shows two columns in Friends and Settings.
 - Full unit and UI suites on iOS 26.5 and iOS 27 before each commit; screenshots of the changed screens on iPhone, iPad and the open Duo.
+
+## Outcome
+
+| Item | Commit | Notes |
+|---|---|---|
+| 4-1 | 7706438 | As planned. |
+| 4-2 | ef8c67c | The third Add Friend was the chat list's `ChatScreen` toolbar button, which also showed in group chats; it went with the others. `ChatRoom.isGroup` (members, the group icon, or an organization room) decides, so a new group with no members gets no banner. |
+| 4-3 | a303074 | As planned, plus `AppRouter` behind `AppRouting`. `ChatViewContainer` is deleted. |
+| 4-4 | 1341501 | Settings kept its cards: rows are `NavigationLink(value:)` with `navigationDestination` on the sidebar, which fills the detail column in a split view. The Language page lost its own stack and its Done button. Selected friend rows use the chat list's colors so the avatar stays visible. |
+
+Verification: each item's full unit and UI suites passed on iOS 27 and iOS 26.5 (205 unit tests at the end), and item 4-4's on an iPad Pro 11-inch (iOS 27) too. Gesture-based reply tests failed a few times while two or three simulators ran at once, and passed every time when run alone. The first full iPad run found two UI tests that assumed a phone (Back button, which search field); they were fixed in 4-4.
+
+Not yet checked: the open and folded iPhone Duo. The simulator boots folded and can only be unfolded by hand, so the wide-window tests skipped there; the iPad covers the same regular-width layout. The README's Duo image is to be retaken as a folded and open pair once the simulator is unfolded.
+
+Small things left as they are:
+
+- In a one-to-one chat whose room knows the other person's account, the banner can show Add Friend for a moment before the friendship is looked up.
+- On a wide screen, a Friends search that hides the open friend also closes their profile.
+- `AppRouting` has one conformer and views use `AppRouter` directly, as SwiftUI's environment needs a concrete type.
