@@ -219,6 +219,11 @@ struct MiniProfileSheet: View {
 
     let name: String
     let symbol: String
+    /// How the user stands with this person; nil for a group, which has no one to add.
+    var standing: FriendStanding?
+    var onAddFriend: (() throws -> Void)?
+
+    @State private var requestSent = false
 
     var body: some View {
         NavigationStack {
@@ -233,6 +238,23 @@ struct MiniProfileSheet: View {
                 Text(LocalizationService.shared.text(for: .profileInfoUnavailable, language: currentLanguage))
                     .font(.footnote)
                     .foregroundStyle(Color.secondary)
+                if standing == .requested || requestSent {
+                    Text(FriendBannerView.requestSentText(languageManager))
+                        .font(.subheadline)
+                        .foregroundStyle(Color.secondary)
+                } else if standing == .stranger, let onAddFriend {
+                    Button(languageManager.localize(ko: "친구 추가", en: "Add Friend", ja: "友だち追加", zh: "添加好友", es: "Agregar amigo"), systemImage: "person.badge.plus") {
+                        do {
+                            try onAddFriend()
+                            requestSent = true
+                        } catch {
+                            // Not sent: the button stays, so it can be tried again.
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.appPrimaryStrong)
+                    .controlSize(.large)
+                }
                 Spacer()
             }
             .padding()

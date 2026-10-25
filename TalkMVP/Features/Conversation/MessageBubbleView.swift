@@ -79,26 +79,12 @@ struct MessageBubbleView: View {
 
     private var messageBubble: some View {
         VStack(alignment: message.isFromCurrentUser ? .trailing : .leading, spacing: 4) {
+            // Adding the sender as a friend is in the context menu, the chat's banner and their
+            // profile, not on every message they sent.
             if !message.isFromCurrentUser {
-                HStack(spacing: 8) {
-                    Text(message.sender)
-                        .font(.caption)
-                        .foregroundStyle(Color.secondary)
-
-                    switch senderStanding {
-                    case .stranger:
-                        Button(localizedText("add_friend")) { addFriend() }
-                            .font(.caption2)
-                            .buttonStyle(.bordered)
-                            .tint(.appPrimaryText)
-                    case .requested:
-                        Text(localizedText("request_pending"))
-                            .font(.caption2)
-                            .foregroundStyle(Color.secondary)
-                    default:
-                        EmptyView()
-                    }
-                }
+                Text(message.sender)
+                    .font(.caption)
+                    .foregroundStyle(Color.secondary)
             }
 
             // 메시지 타입에 따른 콘텐츠

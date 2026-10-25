@@ -98,4 +98,10 @@ extension ChatRoom {
     func otherSideSender(pickingFrom pick: ([String]) -> String? = { $0.randomElement() }) -> String {
         pick(memberNames) ?? name
     }
+
+    /// A chat with more than one other person, including a group nobody has joined yet: it has
+    /// no one person to add as a friend.
+    var isGroup: Bool {
+        !memberNames.isEmpty || profileImage == Self.groupSymbol || isOrganizationRoom
+    }
 }

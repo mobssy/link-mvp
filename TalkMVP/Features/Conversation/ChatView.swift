@@ -178,6 +178,10 @@ struct ChatView: View {
                 .accessibilityLabel(localizedText("connection_status"))
                 .accessibilityIdentifier("connectionStatus")
 
+            FriendBannerView(banner: friendBanner, name: chatRoom.name) {
+                showingAddFriendAlert = true
+            }
+
             mainContentView
         }
         .navigationTitle(chatRoom.name)
@@ -230,14 +234,6 @@ struct ChatView: View {
                             generateMeetingNotes()
                         } label: {
                             Label(languageManager.localize(ko: "회의 노트", en: "Meeting Notes", ja: "会議メモ", zh: "会议记录", es: "Notas de reunión"), systemImage: "note.text")
-                        }
-                    }
-
-                    if !isFriend && !friendRequestSent && chatRoom.otherUserId != nil {
-                        Button {
-                            showingAddFriendAlert = true
-                        } label: {
-                            Label(languageManager.localize(ko: "친구 추가", en: "Add Friend", ja: "友達追加", zh: "添加好友", es: "Agregar amigo"), systemImage: "person.badge.plus")
                         }
                     }
 
@@ -306,7 +302,7 @@ struct ChatView: View {
             .alert(localizedText("add_friend_title"), isPresented: $showingAddFriendAlert) {
                 Button(localizedText("cancel"), role: .cancel) {}
                 Button(localizedText("add")) {
-                    addFriendToChatRoom()
+                    requestFriendship()
                 }
             } message: {
                 Text(String(format: localizedText("add_friend_message"), chatRoom.name))
@@ -373,14 +369,24 @@ struct ChatView: View {
                     if let friendship = profileMember.friendship {
                         FriendProfileView(friendship: friendship)
                     } else {
-                        MiniProfileSheet(name: profileMember.name, symbol: ChatRoom.personSymbol)
-                            .environment(languageManager)
+                        MiniProfileSheet(
+                            name: profileMember.name,
+                            symbol: ChatRoom.personSymbol,
+                            standing: senderStandings?[profileMember.name] ?? .stranger,
+                            onAddFriend: { try sendFriendRequest(toSender: profileMember.name) }
+                        )
+                        .environment(languageManager)
                     }
                 } else if let friendship = profileFriendship {
                     FriendProfileView(friendship: friendship)
                 } else {
-                    MiniProfileSheet(name: chatRoom.name, symbol: chatRoom.profileImage)
-                        .environment(languageManager)
+                    MiniProfileSheet(
+                        name: chatRoom.name,
+                        symbol: chatRoom.profileImage,
+                        standing: chatRoom.isGroup ? nil : oneToOneStanding,
+                        onAddFriend: { try sendFriendRequestToOtherSide() }
+                    )
+                    .environment(languageManager)
                 }
             }
             .sheet(isPresented: $showingPhotosPicker) {

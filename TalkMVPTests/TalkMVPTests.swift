@@ -2859,6 +2859,41 @@ struct FriendshipRepositoryTests {
 
 // MARK: - Text size
 
+@Suite("Friend banner")
+struct FriendBannerTests {
+
+    @Test("A one-to-one chat with someone who isn't a friend offers Add Friend")
+    func strangerInAOneToOneChat() {
+        #expect(FriendBanner(isGroup: false, standing: .stranger, isBlocked: false) == .addFriend)
+    }
+
+    @Test("Once the request is out, the banner says so instead")
+    func requestAlreadySent() {
+        #expect(FriendBanner(isGroup: false, standing: .requested, isBlocked: false) == .requestSent)
+    }
+
+    @Test("No banner for a friend, a group, someone blocked, or before the standing is known")
+    func nothingForFriendsGroupsBlockedOrUnknown() {
+        #expect(FriendBanner(isGroup: false, standing: .friend, isBlocked: false) == .none)
+        #expect(FriendBanner(isGroup: true, standing: .stranger, isBlocked: false) == .none)
+        #expect(FriendBanner(isGroup: false, standing: .stranger, isBlocked: true) == .none)
+        #expect(FriendBanner(isGroup: false, standing: nil, isBlocked: false) == .none)
+    }
+
+    @Test("A room with members, a group icon or an organization is a group, even before anyone joins")
+    func whichRoomsAreGroups() {
+        let withMembers = ChatRoom(name: "Family")
+        withMembers.memberNames = ["Ana"]
+        let organization = ChatRoom(name: "Team")
+        organization.isOrganizationRoom = true
+
+        #expect(withMembers.isGroup)
+        #expect(ChatRoom(name: "New Group", profileImage: ChatRoom.groupSymbol).isGroup)
+        #expect(organization.isGroup)
+        #expect(!ChatRoom(name: "Ana").isGroup)
+    }
+}
+
 @Suite("In-app text size")
 struct InAppTextSizeTests {
     private func makeDefaults() -> UserDefaults {

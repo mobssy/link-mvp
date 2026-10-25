@@ -45,6 +45,38 @@ extension ChatView {
         }
     }
 
+    /// How the user stands with the person a one-to-one chat is with: from their records when
+    /// the room knows who they are, otherwise by name, like the bubbles. Nil until looked up.
+    var oneToOneStanding: FriendStanding? {
+        if chatRoom.otherUserId != nil {
+            return isFriend ? .friend : (friendRequestSent ? .requested : .stranger)
+        }
+        return senderStandings.map { $0[chatRoom.name] ?? .stranger }
+    }
+
+    var friendBanner: FriendBanner {
+        FriendBanner(isGroup: chatRoom.isGroup, standing: oneToOneStanding, isBlocked: isBlocked)
+    }
+
+    /// Sends the friend request the banner offers, after its confirmation.
+    func requestFriendship() {
+        do {
+            try sendFriendRequestToOtherSide()
+        } catch {
+            viewModel?.errorMessage = localizedText("friend_request_failed")
+        }
+    }
+
+    /// A room that knows the other person's account sends the request to it; a sample or
+    /// imported room only knows their name.
+    func sendFriendRequestToOtherSide() throws {
+        if chatRoom.otherUserId != nil {
+            addFriendToChatRoom()
+        } else {
+            try sendFriendRequest(toSender: chatRoom.name)
+        }
+    }
+
     /// Works out how the user stands with every sender at once; the bubbles read the result.
     func loadSenderStandings() {
         guard let currentUserId = getCurrentUserId(),

@@ -188,6 +188,33 @@ final class TalkMVPUITests: XCTestCase {
     }
 
     @MainActor
+    func testOneToOneChatWithAStrangerOffersAddFriendOnce() throws {
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        signInWithTestMode()
+
+        // The sample "Friend" chat is with someone who isn't a friend yet.
+        tab("Chats").tap()
+        app.staticTexts["Friend"].firstMatch.tap()
+        let input = app.textFields.firstMatch
+        XCTAssertTrue(input.waitForExistence(timeout: 10))
+        input.tap()
+        input.typeText("hi\n")
+        let reply = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Profile of '")).firstMatch
+        XCTAssertTrue(reply.waitForExistence(timeout: 60), "the other side answers")
+
+        // One Add Friend for the person, not one per message they sent.
+        let addFriend = app.buttons.matching(NSPredicate(format: "label == 'Add Friend'"))
+        XCTAssertEqual(addFriend.count, 1)
+        addFriend.firstMatch.tap()
+        let confirm = app.alerts.buttons["Add"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.tap()
+        XCTAssertTrue(app.staticTexts["Request Sent"].waitForExistence(timeout: 5))
+        XCTAssertEqual(addFriend.count, 0)
+    }
+
+    @MainActor
     func testReplySuggestionsHideWhileSearching() throws {
         XCUIDevice.shared.orientation = .portrait
         app.launch()

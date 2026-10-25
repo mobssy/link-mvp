@@ -12,7 +12,7 @@ import os
 
 private let chatListLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ChatListView")
 
-// MARK: - Shared localization (fileprivate — used by ChatListView, ChatRoomRow, ChatScreen)
+// MARK: - Shared localization (fileprivate — used by ChatListView and ChatRoomRow)
 fileprivate func chatListLocalized(_ key: String, using manager: LanguageManager) -> String {
     switch key {
     case "new_chat":           return manager.localize(ko: "새 채팅", en: "New Chat", ja: "新しいチャット", zh: "新聊天", es: "Nuevo chat")
@@ -28,12 +28,7 @@ fileprivate func chatListLocalized(_ key: String, using manager: LanguageManager
     case "search":             return manager.localize(ko: "검색", en: "Search", ja: "検索", zh: "搜索", es: "Buscar")
     case "friend":             return manager.localize(ko: "친구", en: "Friend", ja: "友達", zh: "朋友", es: "Amigo")
     case "new_chat_button":    return manager.localize(ko: "새 채팅 만들기", en: "Create new chat", ja: "新しいチャットを作成", zh: "创建新聊天", es: "Crear nuevo chat")
-    case "add_friend":         return manager.localize(ko: "친구 추가", en: "Add Friend", ja: "友達を追加", zh: "添加好友", es: "Agregar amigo")
-    case "request_pending":    return manager.localize(ko: "승인 대기", en: "Pending", ja: "承認待ち", zh: "待审批", es: "Pendiente")
-    case "alert":              return manager.localize(ko: "알림", en: "Alert", ja: "お知らせ", zh: "通知", es: "Alerta")
-    case "ok":                 return manager.localize(ko: "확인", en: "OK", ja: "OK", zh: "确认", es: "Aceptar")
     case "user":               return manager.localize(ko: "사용자", en: "User", ja: "ユーザー", zh: "用户", es: "Usuario")
-    case "friend_request_sent":return manager.localize(ko: "친구 요청을 보냈습니다.", en: "Friend request sent.", ja: "友達リクエストを送りました。", zh: "好友请求已发送。", es: "Solicitud de amistad enviada.")
     case "select_chat":        return manager.localize(ko: "채팅을 선택하세요", en: "Select a Chat", ja: "チャットを選択", zh: "选择一个聊天", es: "Selecciona un chat")
     case "select_chat_hint":   return manager.localize(ko: "왼쪽 목록에서 대화를 고르면 여기에 열립니다.", en: "Pick a conversation from the list to open it here.", ja: "リストから会話を選ぶとここに表示されます。", zh: "从列表中选择一个对话，它会在这里打开。", es: "Elige una conversación de la lista para abrirla aquí.")
     default: return key
@@ -272,86 +267,13 @@ struct ChatRoomRow: View {
     }
 }
 
+/// A conversation as the chat list opens it. Adding the other person as a friend is the
+/// conversation's own banner, so this adds nothing to its toolbar.
 struct ChatScreen: View {
     let room: ChatRoom
-    @Environment(\.modelContext) private var modelContext
-    @Environment(AuthManager.self) private var authManager
-    @Environment(LanguageManager.self) private var languageManager
-    /// Nil until it is known, or when no one is signed in.
-    @State private var friendStanding: FriendStanding?
-    @State private var showingAlert = false
-    @State private var alertMessage = ""
 
     var body: some View {
         ChatView(chatRoom: room)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    friendToolbarItem
-                }
-            }
-            .onAppear { loadFriendState() }
-            .alert(localizedText("alert"), isPresented: $showingAlert) {
-                Button(localizedText("ok")) {}
-            } message: {
-                Text(alertMessage)
-            }
-    }
-
-    @ViewBuilder
-    private var friendToolbarItem: some View {
-        switch friendStanding {
-        case .stranger:
-            Button {
-                addFriend()
-            } label: {
-                Label(localizedText("add_friend"), systemImage: "person.badge.plus")
-            }
-        case .requested:
-            Label(localizedText("request_pending"), systemImage: "clock")
-                .foregroundStyle(Color.secondary)
-        case .friend:
-            Label(localizedText("friend"), systemImage: "checkmark.seal.fill")
-                .foregroundStyle(.green)
-        case nil:
-            EmptyView()
-        }
-    }
-
-    private var friendships: FriendshipRepositoryProtocol {
-        LocalFriendshipRepository(modelContext: modelContext)
-    }
-
-    private func loadFriendState() {
-        guard let currentUserId = authManager.currentUser?.id.uuidString else {
-            friendStanding = nil
-            return
-        }
-        friendStanding = (try? friendships.statusesByName(ownedBy: currentUserId))
-            .map { FriendStanding($0[room.name]) }
-    }
-
-    private func addFriend() {
-        guard friendStanding == .stranger, let me = authManager.currentUser else { return }
-        let senderName = me.displayName
-        do {
-            try friendships.sendRequest(
-                from: FriendRequestParty(id: me.id.uuidString, name: senderName, email: me.email),
-                to: FriendRequestParty(id: UUID().uuidString, name: room.name, email: "")
-            )
-        } catch {
-            return
-        }
-        friendStanding = .requested
-        alertMessage = localizedText("friend_request_sent")
-        showingAlert = true
-        // Local notification to simulate receiver-side alert
-        let manager = NotificationManager()
-        let senderEmail = me.email
-        Task { await manager.scheduleFriendRequestNotification(from: senderName, email: senderEmail) }
-    }
-
-    private func localizedText(_ key: String) -> String {
-        chatListLocalized(key, using: languageManager)
     }
 }
 
