@@ -27,6 +27,17 @@ nonisolated enum ConversationLanguage {
             ?? confidentLanguage(of: texts.suffix(5).map(\.text).joined(separator: "\n"))
     }
 
+    /// The language someone other than the reader writes in: their newest text message or, when
+    /// that is too short to tell, their recent ones together. `sender` nil means anyone but the
+    /// reader. Nil when they have written nothing that can be told with confidence.
+    static func of(sender: String?, in conversation: [SummaryMessage]) -> NLLanguage? {
+        let theirs = conversation.compactMap(\.asText)
+            .filter { !$0.isFromCurrentUser && (sender == nil || $0.sender == sender) }
+            .map(\.text)
+        return theirs.last.flatMap(confidentLanguage(of:))
+            ?? confidentLanguage(of: theirs.suffix(5).joined(separator: "\n"))
+    }
+
     /// The chat's language code, such as "ko", or `fallbackCode` when it can't be told.
     static func code(for conversation: [SummaryMessage], fallbackCode: String) -> String {
         of(conversation)?.rawValue ?? fallbackCode

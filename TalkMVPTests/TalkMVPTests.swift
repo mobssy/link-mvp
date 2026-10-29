@@ -2999,3 +2999,53 @@ struct AccessibilityPreferencesTests {
         #expect(AccessibilityPreferences(systemIncreasesContrast: system, inAppHighContrast: inApp).highContrast == applies)
     }
 }
+
+@Suite("Chat subtitle")
+struct ChatSubtitleTests {
+    private func subtitle(
+        isGroup: Bool = false, members: [String] = [], partner: String? = nil,
+        reader: String = "en", translating: Bool = true
+    ) -> String? {
+        ChatSubtitle.text(
+            isGroup: isGroup, memberNames: members, partnerLanguage: partner,
+            readerLanguage: reader, isTranslating: translating, translatedLabel: "Translated"
+        )
+    }
+
+    @Test("A group shows who is in it, shortened when there are many")
+    func groupMembers() {
+        #expect(subtitle(isGroup: true, members: ["강호동", "한소희"]) == "강호동, 한소희")
+        #expect(subtitle(isGroup: true, members: ["A", "B", "C"]) == "A, B, C")
+        #expect(subtitle(isGroup: true, members: ["A", "B", "C", "D", "E"]) == "A, B +3")
+        #expect(subtitle(isGroup: true, members: []) == nil)
+    }
+
+    @Test("A one-to-one chat shows the other person's language when it isn't the reader's")
+    func partnerLanguage() {
+        #expect(subtitle(partner: "ja") == "Japanese · Translated")
+        #expect(subtitle(partner: "ja", translating: false) == "Japanese")
+        #expect(subtitle(partner: "ja", reader: "ko") == "일본어 · Translated")
+        #expect(subtitle(partner: "en") == nil)
+        #expect(subtitle(partner: nil) == nil)
+    }
+}
+
+@Suite("A sender's language")
+struct SenderLanguageTests {
+    private func message(_ text: String, from sender: String, mine: Bool = false) -> SummaryMessage {
+        SummaryMessage(text: text, sender: mine ? "Me" : sender, isFromCurrentUser: mine, messageType: .text)
+    }
+
+    @Test("Read from what they wrote, not from the reader's messages")
+    func readsTheirMessages() {
+        let chat = [
+            message("こんにちは、今日は一緒に夕ご飯を食べませんか？", from: "Yuki"),
+            message("Sure, where do you want to go tonight?", from: "Me", mine: true),
+            message("¿Vamos al restaurante nuevo esta noche?", from: "Lucía"),
+        ]
+        #expect(ConversationLanguage.of(sender: "Yuki", in: chat) == .japanese)
+        #expect(ConversationLanguage.of(sender: "Lucía", in: chat) == .spanish)
+        #expect(ConversationLanguage.of(sender: nil, in: chat) == .spanish, "anyone but the reader: the latest")
+        #expect(ConversationLanguage.of(sender: "Sam", in: chat) == nil, "nothing from them yet")
+    }
+}

@@ -116,14 +116,6 @@ enum L10n {
             case .chinese: return "管理隐藏/屏蔽"
             case .spanish: return "Gestionar ocultos/bloqueados"
             }
-        case "online":
-            switch language {
-            case .korean: return "온라인"
-            case .english: return "online"
-            case .japanese: return "オンライン"
-            case .chinese: return "在线"
-            case .spanish: return "en línea"
-            }
         case "new_friends":
             switch language {
             case .korean: return "새로운 친구 (%d)"

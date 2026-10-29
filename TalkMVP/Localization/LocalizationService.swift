@@ -23,7 +23,7 @@ enum LocalizationKey: String {
 
     // Chat Related
     case chat, message, messageInputPlaceholder = "message_input_placeholder"
-    case online
+    case translated
     case replyingTo = "replying_to"
     case me
     case conversationSummary = "conversation_summary"
@@ -298,13 +298,13 @@ class LocalizationService: LocalizationServiceProtocol {
             case .chinese: return "输入消息"
             case .spanish: return "Escribe un mensaje"
             }
-        case .online:
+        case .translated:
             switch language {
-            case .korean: return "온라인"
-            case .english: return "Online"
-            case .japanese: return "オンライン"
-            case .chinese: return "在线"
-            case .spanish: return "En línea"
+            case .korean: return "번역됨"
+            case .english: return "Translated"
+            case .japanese: return "翻訳済み"
+            case .chinese: return "已翻译"
+            case .spanish: return "Traducido"
             }
         case .replyingTo:
             switch language {

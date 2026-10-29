@@ -17,7 +17,6 @@ extension ChatView {
         if viewModel == nil {
             let vm = ChatViewModel(modelContext: modelContext, chatRoom: chatRoom, chatService: chatService)
             viewModel = vm
-            vm.startOnlineStatusPolling()
         } else {
             Task {
                 await viewModel?.loadMessages()

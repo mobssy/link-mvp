@@ -12,6 +12,7 @@ import PhotosUI
 import Photos
 import UniformTypeIdentifiers
 import LinkPresentation
+import NaturalLanguage
 import UIKit
 
 struct ChatView: View {
@@ -199,7 +200,7 @@ struct ChatView: View {
         .toolbar(horizontalSizeClass == .compact ? .hidden : .automatic, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                onlineStatusTitleView
+                titleView
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -326,7 +327,6 @@ struct ChatView: View {
             .onAppear { OpenChatRooms.shared.opened(chatRoom.id) }
             .onDisappear {
                 OpenChatRooms.shared.closed(chatRoom.id)
-                viewModel?.stopOnlineStatusPolling()
             }
             .alert(
                 localizedText("error_title"),
@@ -462,34 +462,36 @@ struct ChatView: View {
             }
     }
 
-    // MARK: - Online Status Title
+    // MARK: - Title
 
-    @ViewBuilder
-    private var onlineStatusTitleView: some View {
-        if let vm = viewModel {
-            VStack(spacing: 1) {
-                Text(chatRoom.name)
-                    .font(.headline)
-
-                HStack(spacing: 4) {
-                    Circle()
-                        .fill(vm.isOnline ? Color.green : Color.secondary)
-                        .frame(width: 8, height: 8)
-                    Text(vm.isOnline
-                        ? languageManager.localize(ko: "온라인", en: "Online", ja: "オンライン", zh: "在线", es: "En línea")
-                        : languageManager.localize(ko: "오프라인", en: "Offline", ja: "オフライン", zh: "离线", es: "Sin conexión"))
-                        .font(.caption)
-                        .foregroundStyle(vm.isOnline ? .green : .secondary)
-                }
-                .animation(.easeInOut(duration: 0.4), value: vm.isOnline)
-            }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(chatRoom.name), \(vm.isOnline ? languageManager.localize(ko: "온라인", en: "Online", ja: "オンライン", zh: "在线", es: "En línea") : languageManager.localize(ko: "오프라인", en: "Offline", ja: "オフライン", zh: "离线", es: "Sin conexión"))")
-        } else {
+    /// The name, and under it what the app knows about the chat: a group's members, or the
+    /// language the other person writes in.
+    private var titleView: some View {
+        VStack(spacing: 1) {
             Text(chatRoom.name)
                 .font(.headline)
+            if let chatSubtitle {
+                Text(chatSubtitle)
+                    .font(.caption)
+                    .foregroundStyle(Color.secondary)
+                    .lineLimit(1)
+            }
         }
+        .accessibilityElement(children: .combine)
     }
+
+    private var chatSubtitle: String? {
+        let received = (viewModel?.messages ?? []).suffix(20).map(SummaryMessage.init)
+        return ChatSubtitle.text(
+            isGroup: chatRoom.isGroup,
+            memberNames: chatRoom.memberNames,
+            partnerLanguage: ConversationLanguage.of(sender: nil, in: received)?.rawValue,
+            readerLanguage: appLanguageCode(),
+            isTranslating: translationEnabled,
+            translatedLabel: localizedText("translated")
+        )
+    }
+
 
     // MARK: - Background
 

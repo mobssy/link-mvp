@@ -26,7 +26,6 @@ struct FriendProfileView: View {
     @State private var showingReportConfirm = false
     @AppStorage("lastActivityEnabled") private var lastActivityEnabled = true
     @State private var lastActiveText: String?
-    @State private var lastActiveIconColor: Color = .secondary
 
     var body: some View {
         // No stack of its own: pushed from the Friends list, in its detail column, or in a
@@ -79,8 +78,7 @@ struct FriendProfileView: View {
                         ProfileInfoCard(
                             title: localizedText("last_active"),
                             value: lastActiveText,
-                            icon: "circle.fill",
-                            iconColor: lastActiveIconColor
+                            icon: "clock"
                         )
                     }
                 }
@@ -243,19 +241,8 @@ struct FriendProfileView: View {
             }
         }
 
-        // Update UI state
-        if let date = foundDate {
-            let interval = Date().timeIntervalSince(date)
-            if interval < 5 * 60 { // within 5 minutes
-                lastActiveText = languageManager.localize(ko: "온라인", en: "Online", ja: "オンライン", zh: "在线", es: "En línea")
-                lastActiveIconColor = .green
-            } else {
-                lastActiveText = formatRelative(date)
-                lastActiveIconColor = .secondary
-            }
-        } else {
-            lastActiveText = nil
-        }
+        // When they last wrote, not whether they are online: with no server that can't be known.
+        lastActiveText = foundDate.map(formatRelative)
     }
 
     private func formatRelative(_ date: Date) -> String {

@@ -117,17 +117,9 @@ struct FriendRow: View {
                                 .foregroundStyle(.yellow)
                         }
                     }
-
-                    Text(languageManager.localize(ko: "온라인", en: "online", ja: "オンライン", zh: "在线", es: "en línea"))
-                        .font(.subheadline)
-                        .foregroundStyle(.green)
                 }
 
                 Spacer()
-
-                Circle()
-                    .fill(.green)
-                    .frame(width: 10, height: 10)
             }
             .padding(.vertical, 8)
         }

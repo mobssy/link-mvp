@@ -20,7 +20,6 @@ class ChatViewModel {
     var messages: [Message] = []
     var newMessageText: String = ""
     var otherUserTyping = false
-    var isOnline = true
     var replyingToMessage: Message?
     var errorMessage: String?
     /// Replies the user can pick instead of typing; empty unless the other side spoke last.
@@ -53,7 +52,6 @@ class ChatViewModel {
     private var chatRoom: ChatRoom
     private var chatService: ChatServiceProtocol?
     @ObservationIgnored private var cancellables = Set<AnyCancellable>()
-    @ObservationIgnored private var onlineStatusTask: Task<Void, Never>?
 
     private func localizedVM(ko: String, en: String, ja: String, zh: String, es: String) -> String {
         let lang = LanguageManager.currentLanguageCode
@@ -110,7 +108,6 @@ class ChatViewModel {
 
     deinit {
         cancellables.removeAll()
-        onlineStatusTask?.cancel()
         suggestionTask?.cancel()
     }
 
@@ -454,22 +451,6 @@ class ChatViewModel {
         } catch {
             vmLogger.error("Failed to mark as read: \(error.localizedDescription, privacy: .public)")
         }
-    }
-
-    func startOnlineStatusPolling() {
-        stopOnlineStatusPolling()
-        onlineStatusTask = Task { [weak self] in
-            while !Task.isCancelled {
-                // Simulate realistic presence: 80% chance online, brief offline spikes
-                self?.isOnline = Int.random(in: 1...10) <= 8
-                try? await Task.sleep(for: .seconds(30))
-            }
-        }
-    }
-
-    func stopOnlineStatusPolling() {
-        onlineStatusTask?.cancel()
-        onlineStatusTask = nil
     }
 
     // MARK: - 답장 관련 메서드들
