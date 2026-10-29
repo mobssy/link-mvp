@@ -16,9 +16,6 @@ struct ContentView: View {
     @AppStorage("contactsOnboardingShown") private var contactsOnboardingShown = false
     @State private var showContactsOnboarding = false
 
-    // 테스트 모드 플래그 (재실행 후에도 체험 세션이면 배지를 유지)
-    @AppStorage("testModeActive") private var isTestMode = false
-
     var body: some View {
         mainContent()
             .environment(router)
@@ -42,7 +39,6 @@ struct ContentView: View {
                     }
                 } else {
                     // Signed out or account deleted: next session starts fresh on the first tab.
-                    isTestMode = false
                     router.selectedTab = .friends
                 }
             }
@@ -51,7 +47,7 @@ struct ContentView: View {
     @ViewBuilder
     private func mainContent() -> some View {
         if authManager.isAuthenticated {
-            AuthenticatedTabsView(showTestModeIndicator: isTestMode)
+            AuthenticatedTabsView()
         } else {
             UnauthenticatedView(
                 showTestModeAlert: $showTestModeAlert
@@ -65,7 +61,6 @@ struct ContentView: View {
             statusMessage: languageManager.localize(ko: "테스트 모드로 체험 중입니다", en: "Experiencing in test mode", ja: "テストモードを体験中", zh: "正在体验测试模式", es: "Explorando en modo de prueba"),
             friends: TestData.friends
         )
-        isTestMode = authManager.isAuthenticated
     }
 }
 
@@ -73,7 +68,6 @@ struct AuthenticatedTabsView: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(LanguageManager.self) private var languageManager
     @Environment(AppRouter.self) private var router
-    let showTestModeIndicator: Bool
     @Query var chatRooms: [ChatRoom]
     private var totalUnread: Int { chatRooms.map { $0.unreadCount }.reduce(0, +) }
 
@@ -98,25 +92,8 @@ struct AuthenticatedTabsView: View {
                 }
                 .tag(AppTab.settings)
         }
+        // Test mode puts nothing on these screens; Settings' profile card says it is on.
         .tint(.appPrimaryText)
-        .bottomAccessory(isShown: showTestModeIndicator) {
-            TestModeIndicatorView(languageManager: languageManager)
-        }
-    }
-}
-
-private extension View {
-    /// Puts `content` in the tab view's bottom accessory, just above the tab bar. The tabs'
-    /// content is laid out around the accessory, so it never covers a screen's own bottom
-    /// controls; the overlay it replaces sat on top of the chat input field, and at a fixed
-    /// height that meant nothing on iPad, where the tab bar is at the top.
-    @ViewBuilder
-    func bottomAccessory<Accessory: View>(isShown: Bool, @ViewBuilder content: () -> Accessory) -> some View {
-        if isShown {
-            tabViewBottomAccessory(content: content)
-        } else {
-            self
-        }
     }
 }
 
@@ -149,42 +126,13 @@ struct TestModeButtonView: View {
     @Binding var showTestModeAlert: Bool
 
     var body: some View {
-        Button(action: { showTestModeAlert = true }) {
-            HStack {
-                Image(systemName: "wrench.and.screwdriver")
-                Text(languageManager.localizedText("test_experience"))
-            }
-            .font(.headline)
-            .foregroundStyle(.white)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
-            .background(
-                LinearGradient(
-                    gradient: Gradient(colors: [Color.orange, Color.red]),
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .clipShape(.rect(cornerRadius: 25))
-            .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
+        // A secondary action beside signing in, so it is styled as one.
+        Button(languageManager.localizedText("test_experience"), systemImage: "wrench.and.screwdriver") {
+            showTestModeAlert = true
         }
+        .buttonStyle(.bordered)
+        .controlSize(.large)
         .accessibilityIdentifier("testModeButton")
-    }
-}
-
-struct TestModeIndicatorView: View {
-    let languageManager: LanguageManager
-
-    var body: some View {
-        // The tab view's accessory draws the capsule around this.
-        HStack(spacing: 6) {
-            Image(systemName: "wrench.and.screwdriver")
-            Text(languageManager.localizedText("test_mode"))
-                .fontWeight(.semibold)
-        }
-        .font(.subheadline)
-        .foregroundStyle(.orange)
-        .frame(maxWidth: .infinity)
     }
 }
 
@@ -233,8 +181,6 @@ fileprivate extension LanguageManager {
             )
         case "test_experience":
             return localize(ko: "테스트 모드로 체험하기", en: "Try Test Mode", ja: "テストモードを体験", zh: "体验测试模式", es: "Probar modo de prueba")
-        case "test_mode":
-            return localize(ko: "테스트 모드", en: "Test Mode", ja: "テストモード", zh: "测试模式", es: "Modo de prueba")
         case "cancel":
             return localize(ko: "취소", en: "Cancel", ja: "キャンセル", zh: "取消", es: "Cancelar")
         default:

@@ -45,7 +45,8 @@ final class TalkMVPUITests: XCTestCase {
 
         // Signed out: the sign-in screen offers test mode. Signed in: the tabs replace it.
         signInWithTestMode()
-        XCTAssertTrue(app.staticTexts["Test Mode"].exists)
+        // Test mode doesn't put a bar on every screen; Settings' profile card says it.
+        XCTAssertFalse(app.staticTexts["Test Mode"].exists)
 
         // Sign out from Settings.
         tab("Settings").tap()
