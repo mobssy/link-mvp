@@ -15,6 +15,7 @@ import os
 private let bubbleLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "MessageBubbleView")
 
 struct MessageBubbleView: View {
+    @ScaledMetric(relativeTo: .body) private var playButtonSize: CGFloat = 30
     let message: Message
     /// The code of the sender's language, shown on their avatar, when it isn't the reader's.
     var languageBadge: String?
@@ -244,7 +245,7 @@ struct MessageBubbleView: View {
                         toggleAudioPlayback()
                     } label: {
                         Image(systemName: isPlayingAudio ? "pause.circle.fill" : "play.circle.fill")
-                            .font(.system(size: 30))
+                            .font(.system(size: playButtonSize))
                             .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent : .appPrimaryText)
                     }
                     .accessibilityLabel(isPlayingAudio
@@ -253,7 +254,7 @@ struct MessageBubbleView: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Image(systemName: "waveform")
-                            .font(.system(size: 14))
+                            .font(.subheadline)
                             .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent.opacity(0.8) : .secondary)
                         Text(formatAudioDuration(message.audioDuration))
                             .font(.caption2.monospacedDigit())
@@ -298,7 +299,7 @@ struct MessageBubbleView: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "location.fill")
-                            .font(.system(size: 20))
+                            .font(.title3)
                             .foregroundStyle(message.isFromCurrentUser ? ownBubbleContent : .appPrimaryText)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(languageManager.localize(ko: "현재 위치", en: "Current Location", ja: "現在地", zh: "当前位置", es: "Ubicación actual"))

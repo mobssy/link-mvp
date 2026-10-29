@@ -454,7 +454,7 @@ struct ProfileInfoCard: View {
 
                 Image(systemName: icon)
                     .foregroundStyle(iconColor)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.body.weight(.medium))
             }
 
             // 정보

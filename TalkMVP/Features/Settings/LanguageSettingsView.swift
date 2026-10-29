@@ -173,7 +173,7 @@ struct LanguageRow: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .foregroundStyle(.tint)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.body.weight(.semibold))
                 }
             }
             .contentShape(Rectangle())

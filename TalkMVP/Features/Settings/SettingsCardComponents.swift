@@ -135,7 +135,7 @@ struct ProfileCardView: View {
                 .multilineTextAlignment(.leading)
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.body.weight(.semibold))
                     .foregroundStyle(Color.secondary)
             }
             .padding(16)

@@ -276,6 +276,7 @@ struct MiniProfileSheet: View {
 // MARK: - Attachment Preview View
 
 struct AttachmentPreviewView: View {
+    @ScaledMetric(relativeTo: .body) private var sendButtonSize: CGFloat = 36
     let attachment: PendingAttachment?
     let onSend: () -> Void
     let onCancel: () -> Void
@@ -294,7 +295,7 @@ struct AttachmentPreviewView: View {
                 HStack {
                     Button(action: onCancel) {
                         Image(systemName: "xmark")
-                            .font(.system(size: 22))
+                            .font(.title2)
                             .foregroundStyle(.white)
                             .frame(width: 44, height: 44)
                     }
@@ -412,7 +413,7 @@ struct AttachmentPreviewView: View {
                 // 보내기 버튼
                 Button(action: onSend) {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 36))
+                        .font(.system(size: sendButtonSize))
                         .foregroundStyle(.appPrimaryText)
                 }
                 .frame(width: 44, height: 44)

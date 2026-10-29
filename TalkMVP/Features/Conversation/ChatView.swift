@@ -17,7 +17,6 @@ import UIKit
 
 struct ChatView: View {
     @Environment(\.modelContext) var modelContext
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.prefersReducedMotion) var reduceMotion
     @Environment(\.openURL) private var openURL
@@ -339,7 +338,6 @@ struct ChatView: View {
             } message: {
                 Text(viewModel?.errorMessage ?? "")
             }
-            .dynamicTypeSize(dynamicTypeSize.isAccessibilitySize ? .accessibility3 : dynamicTypeSize)
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: localizedText("search_conversation"))
             .task(id: searchText) { await viewModel?.expandSearch(for: searchText) }
             .sheet(isPresented: $showingSummarySheet) {

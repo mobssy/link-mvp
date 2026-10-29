@@ -45,6 +45,7 @@ struct BlockedFriendsView: View {
 
 // MARK: - Blocked Friend Row
 struct BlockedFriendRow: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var avatarSize: CGFloat = 40
     let friendship: Friendship
     let repository: FriendshipRepositoryProtocol
     @State private var showingUnblockAlert = false
@@ -53,7 +54,7 @@ struct BlockedFriendRow: View {
     var body: some View {
         HStack {
             Image(systemName: "person.circle.fill")
-                .font(.system(size: 40))
+                .font(.system(size: avatarSize))
                 .foregroundStyle(.red)
 
             VStack(alignment: .leading, spacing: 4) {
@@ -144,6 +145,7 @@ struct ManageFriendsView: View {
 
 // MARK: - Hidden Friend Row
 struct HiddenFriendRow: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var avatarSize: CGFloat = 40
     let friendship: Friendship
     let repository: FriendshipRepositoryProtocol
     @State private var showingUnhideAlert = false
@@ -152,7 +154,7 @@ struct HiddenFriendRow: View {
     var body: some View {
         HStack {
             Image(systemName: "person.circle.fill")
-                .font(.system(size: 40))
+                .font(.system(size: avatarSize))
                 .foregroundStyle(Color.secondary)
 
             VStack(alignment: .leading, spacing: 4) {

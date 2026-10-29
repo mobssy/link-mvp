@@ -168,6 +168,7 @@ struct FriendRow: View {
 
 // MARK: - Received Friend Request Row
 struct ReceivedRequestRow: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var avatarSize: CGFloat = 40
     let friendship: Friendship
     let repository: FriendshipRepositoryProtocol
     let onDataChanged: () -> Void
@@ -178,7 +179,7 @@ struct ReceivedRequestRow: View {
     var body: some View {
         HStack {
             Image(systemName: "person.circle.fill")
-                .font(.system(size: 40))
+                .font(.system(size: avatarSize))
                 .foregroundStyle(.orange)
 
             VStack(alignment: .leading, spacing: 4) {
@@ -214,13 +215,14 @@ struct ReceivedRequestRow: View {
 
 // MARK: - Pending Friend Request Row
 struct PendingRequestRow: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var avatarSize: CGFloat = 40
     let friendship: Friendship
     @Environment(LanguageManager.self) private var languageManager
 
     var body: some View {
         HStack {
             Image(systemName: "person.circle.fill")
-                .font(.system(size: 40))
+                .font(.system(size: avatarSize))
                 .foregroundStyle(Color.secondary)
 
             VStack(alignment: .leading, spacing: 4) {

@@ -67,7 +67,7 @@ extension ChatView {
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .foregroundStyle(.appPrimaryText)
-                        .font(.system(size: 28))
+                        .font(.title)
                         .minimumHitTarget(visibleSize: 28)
                 }
                 .accessibilityLabel(localizedText("attach_file"))
@@ -93,7 +93,7 @@ extension ChatView {
                     } label: {
                         Image(systemName: "clock.fill")
                             .foregroundStyle(.appPrimaryText)
-                            .font(.system(size: 22))
+                            .font(.title2)
                             .minimumHitTarget(visibleSize: 22)
                     }
                     .accessibilityLabel(languageManager.localize(ko: "예약 발송", en: "Schedule send", ja: "予約送信", zh: "定时发送", es: "Envío programado"))

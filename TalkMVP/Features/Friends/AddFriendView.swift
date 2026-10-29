@@ -152,6 +152,7 @@ struct AddFriendView: View {
 
 // MARK: - User Search Result Row
 struct UserSearchResultRow: View {
+    @ScaledMetric(relativeTo: .largeTitle) private var avatarSize: CGFloat = 40
     let result: UserSearchResult
     var authManager: AuthManager
     @Environment(LanguageManager.self) private var languageManager
@@ -164,7 +165,7 @@ struct UserSearchResultRow: View {
     var body: some View {
         HStack {
             Image(systemName: "person.circle.fill")
-                .font(.system(size: 40))
+                .font(.system(size: avatarSize))
                 .foregroundStyle(.appPrimaryText)
 
             VStack(alignment: .leading, spacing: 4) {
