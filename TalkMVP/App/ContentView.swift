@@ -147,13 +147,24 @@ enum TestData {
         ("조세호", "cabbage@example.com")
     ]
 
-    /// Who is in each sample group chat, by the group's localization key. They are test-mode
-    /// friends, so their messages carry a name the chat already knows.
+    /// Who is in each sample group chat, by the group's localization key. Most are test-mode
+    /// friends, so their messages carry a name the chat already knows; the study group's are
+    /// people abroad, so one sample chat is written in several languages.
     static let groupMembers: [String: [String]] = [
         "family_group": ["강호동", "한소희"],
         "work_colleagues": ["유재석", "조세호"],
-        "study_group": ["권지용", "한소희"]
+        "study_group": ["佐藤ゆき", "Lucía García"]
     ]
+
+    /// The language a sample member writes in, when it isn't the chat's.
+    static let memberLanguages: [String: String] = [
+        "佐藤ゆき": "ja",
+        "Lucía García": "es"
+    ]
+
+    static func language(of member: String) -> String? {
+        memberLanguages[member]
+    }
 }
 
 // MARK: - Shared Localization

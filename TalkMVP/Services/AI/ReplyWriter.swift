@@ -17,8 +17,17 @@ nonisolated protocol ReplyWriting: Sendable {
     /// - Parameters:
     ///   - conversation: The chat so far, oldest first.
     ///   - partner: The name of the chat, which is who is replying.
+    ///   - language: The language code the partner writes in, such as "ja"; nil answers in the
+    ///     chat's language.
     /// - Returns: The reply, or nil when this writer can't write one.
-    func reply(to conversation: [SummaryMessage], as partner: String) async -> String?
+    func reply(to conversation: [SummaryMessage], as partner: String, language: String?) async -> String?
+}
+
+extension ReplyWriting {
+    /// A reply in the chat's language.
+    func reply(to conversation: [SummaryMessage], as partner: String) async -> String? {
+        await reply(to: conversation, as: partner, language: nil)
+    }
 }
 
 extension SummaryMessage {
@@ -45,12 +54,13 @@ nonisolated struct OnDeviceReplyWriter: ReplyWriting {
     /// The language to answer in when the chat's can't be told, e.g. the app's language code.
     var fallbackLanguage: String = LanguageManager.currentLanguageCode
 
-    func reply(to conversation: [SummaryMessage], as partner: String) async -> String? {
+    func reply(to conversation: [SummaryMessage], as partner: String, language: String?) async -> String? {
         // A message that has disappeared is only a placeholder now.
         let recent = conversation.filter { $0.messageType != .deleted }.suffix(historyLimit)
         guard case .available = SystemLanguageModel.default.availability, recent.contains(where: \.isFromCurrentUser) else { return nil }
 
-        let language = ConversationLanguage.name(for: conversation, fallbackCode: fallbackLanguage)
+        let language = language.flatMap { Locale(identifier: "en").localizedString(forIdentifier: $0) }
+            ?? ConversationLanguage.name(for: conversation, fallbackCode: fallbackLanguage)
         let instructions = """
         You are the other side of a chat called "\(partner)" in a messaging app: the person the user is \
         talking to, or one of the members if it is a group. Write your next message to the user in \(language): \
@@ -106,8 +116,9 @@ nonisolated struct CannedReplyWriter: ReplyWriting {
                "¿En serio? ¡Genial! 🎉", "Avísame cuando tengas tiempo", "¡Que tengas un buen día!"],
     ]
 
-    func reply(to conversation: [SummaryMessage], as partner: String) async -> String? {
-        let code = ConversationLanguage.of(conversation).map { String($0.rawValue.prefix(2)) } ?? String(fallbackLanguage.prefix(2))
+    func reply(to conversation: [SummaryMessage], as partner: String, language: String?) async -> String? {
+        let code = language.map { String($0.prefix(2)) }
+            ?? ConversationLanguage.of(conversation).map { String($0.rawValue.prefix(2)) } ?? String(fallbackLanguage.prefix(2))
         return (Self.replies[code] ?? Self.replies["en"])?.randomElement()
     }
 }

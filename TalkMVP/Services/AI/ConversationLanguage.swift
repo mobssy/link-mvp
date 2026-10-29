@@ -38,6 +38,14 @@ nonisolated enum ConversationLanguage {
             ?? confidentLanguage(of: theirs.suffix(5).joined(separator: "\n"))
     }
 
+    /// Whether two language codes name the same language: Chinese by script, the rest by
+    /// language alone ("en" and "en-US" are the same).
+    static func isSame(_ a: String, _ b: String) -> Bool {
+        let a = a.lowercased(), b = b.lowercased()
+        if a.hasPrefix("zh") || b.hasPrefix("zh") { return a == b }
+        return a.prefix(2) == b.prefix(2)
+    }
+
     /// The chat's language code, such as "ko", or `fallbackCode` when it can't be told.
     static func code(for conversation: [SummaryMessage], fallbackCode: String) -> String {
         of(conversation)?.rawValue ?? fallbackCode

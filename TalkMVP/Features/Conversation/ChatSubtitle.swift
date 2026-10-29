@@ -23,17 +23,10 @@ nonisolated enum ChatSubtitle {
             guard memberNames.count > namedMembers else { return memberNames.joined(separator: ", ") }
             return memberNames.prefix(namedMembers - 1).joined(separator: ", ") + " +\(memberNames.count - (namedMembers - 1))"
         }
-        guard let partnerLanguage, !sameLanguage(partnerLanguage, readerLanguage),
+        guard let partnerLanguage, !ConversationLanguage.isSame(partnerLanguage, readerLanguage),
               let name = Locale(identifier: readerLanguage).localizedString(forIdentifier: partnerLanguage)
         else { return nil }
         let language = name.prefix(1).uppercased() + name.dropFirst()
         return isTranslating ? "\(language) · \(translatedLabel)" : language
-    }
-
-    /// Whether two language codes are the same language: Chinese by script, the rest by language.
-    private static func sameLanguage(_ a: String, _ b: String) -> Bool {
-        let a = a.lowercased(), b = b.lowercased()
-        if a.hasPrefix("zh") || b.hasPrefix("zh") { return a == b }
-        return a.prefix(2) == b.prefix(2)
     }
 }

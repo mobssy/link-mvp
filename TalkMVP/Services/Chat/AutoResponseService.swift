@@ -35,6 +35,8 @@ final class AutoResponseService: AutoResponding {
     private let pacing: Pacing
     /// Picks which member of a group chat answers.
     private let pickMember: ([String]) -> String?
+    /// The language a member writes in, when it isn't the chat's.
+    private let memberLanguage: (String) -> String?
     /// How many recent messages the writers see.
     private let historyLimit = 12
 
@@ -43,13 +45,15 @@ final class AutoResponseService: AutoResponding {
         chatRoomRepository: ChatRoomRepositoryProtocol,
         writers: [any ReplyWriting] = [OnDeviceReplyWriter(), CannedReplyWriter()],
         pacing: Pacing = .natural,
-        pickMember: @escaping ([String]) -> String? = { $0.randomElement() }
+        pickMember: @escaping ([String]) -> String? = { $0.randomElement() },
+        memberLanguage: @escaping (String) -> String? = { _ in nil }
     ) {
         self.messageRepository = messageRepository
         self.chatRoomRepository = chatRoomRepository
         self.writers = writers
         self.pacing = pacing
         self.pickMember = pickMember
+        self.memberLanguage = memberLanguage
     }
 
     func generateResponse(
@@ -66,7 +70,7 @@ final class AutoResponseService: AutoResponding {
         onTypingChange(true)
         let typingStarted = ContinuousClock.now
         let sender = chatRoom.otherSideSender(pickingFrom: pickMember)
-        let text = await reply(to: conversation, as: sender)
+        let text = await reply(to: conversation, as: sender, language: memberLanguage(sender))
         let typingLeft = Duration.seconds(Double.random(in: pacing.minimumTyping)) - (ContinuousClock.now - typingStarted)
         do {
             if typingLeft > .zero { try await Task.sleep(for: typingLeft) }
@@ -92,9 +96,9 @@ final class AutoResponseService: AutoResponding {
         onMessage(response)
     }
 
-    private func reply(to conversation: [SummaryMessage], as partner: String) async -> String {
+    private func reply(to conversation: [SummaryMessage], as partner: String, language: String?) async -> String {
         for writer in writers {
-            if let text = await writer.reply(to: conversation, as: partner) { return text }
+            if let text = await writer.reply(to: conversation, as: partner, language: language) { return text }
         }
         return "👍"
     }

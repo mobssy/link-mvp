@@ -77,7 +77,9 @@ class ChatViewModel {
     ) {
         self.messageRepository = messageRepository
         self.chatRoomRepository = chatRoomRepository
-        self.autoResponder = autoResponder ?? AutoResponseService(messageRepository: messageRepository, chatRoomRepository: chatRoomRepository)
+        self.autoResponder = autoResponder ?? AutoResponseService(
+            messageRepository: messageRepository, chatRoomRepository: chatRoomRepository, memberLanguage: TestData.language(of:)
+        )
         self.replySuggester = replySuggester
         self.replySuggestionsEnabled = replySuggestionsEnabled
         self.voiceTranscriber = voiceTranscriber

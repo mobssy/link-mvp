@@ -85,10 +85,11 @@ extension ChatView {
 
     @ViewBuilder
     func messagesList(viewModel: ChatViewModel) -> some View {
+        let badges = languageBadges(in: viewModel.messages)
         ForEach(filteredMessages(viewModel: viewModel), id: \.id) { message in
             MessageBubbleView(
                 message: message,
-                avatarSymbolName: chatRoom.memberNames.isEmpty ? chatRoom.profileImage : ChatRoom.personSymbol,
+                languageBadge: message.isFromCurrentUser ? nil : badges[message.sender],
                 onAvatarTap: { openProfile(of: message.sender) },
                 isTranscribing: viewModel.transcribingMessageIDs.contains(message.id),
                 senderStanding: message.isFromCurrentUser ? nil : senderStandings.map { $0[message.sender] ?? .stranger },
@@ -183,6 +184,18 @@ extension ChatView {
                 .environment(languageManager)
             }
         }
+    }
+
+    /// Each sender's language badge, read once for the whole chat from their own messages.
+    func languageBadges(in messages: [Message]) -> [String: String] {
+        let conversation = messages.suffix(100).map(SummaryMessage.init)
+        let reader = appLanguageCode()
+        var badges: [String: String] = [:]
+        for sender in Set(conversation.filter { !$0.isFromCurrentUser }.map(\.sender)) {
+            let language = ConversationLanguage.of(sender: sender, in: conversation)?.rawValue
+            badges[sender] = SenderAvatar.languageBadge(senderLanguage: language, readerLanguage: reader)
+        }
+        return badges
     }
 
     func containsHangul(_ text: String) -> Bool {

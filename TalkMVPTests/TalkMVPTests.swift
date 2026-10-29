@@ -1640,16 +1640,18 @@ struct PhotoDescriptionTests {
 
 private struct FixedReplyWriter: ReplyWriting {
     let text: String?
-    func reply(to conversation: [SummaryMessage], as partner: String) async -> String? { text }
+    func reply(to conversation: [SummaryMessage], as partner: String, language: String?) async -> String? { text }
 }
 
 /// Remembers the chat it was shown and who it was asked to write as.
 private actor RecordingReplyWriter: ReplyWriting {
     private(set) var seen: [SummaryMessage] = []
     private(set) var partner: String?
-    func reply(to conversation: [SummaryMessage], as partner: String) async -> String? {
+    private(set) var language: String?
+    func reply(to conversation: [SummaryMessage], as partner: String, language: String?) async -> String? {
         seen = conversation
         self.partner = partner
+        self.language = language
         return "ok"
     }
 }
@@ -1670,13 +1672,17 @@ struct AutoReplyTests {
         try context.save()
     }
 
-    private func service(_ writers: [any ReplyWriting], pickMember: @escaping ([String]) -> String? = { $0.first }) -> AutoResponseService {
+    private func service(
+        _ writers: [any ReplyWriting], pickMember: @escaping ([String]) -> String? = { $0.first },
+        memberLanguage: @escaping (String) -> String? = { _ in nil }
+    ) -> AutoResponseService {
         AutoResponseService(
             messageRepository: LocalMessageRepository(modelContext: context),
             chatRoomRepository: LocalChatRoomRepository(modelContext: context),
             writers: writers,
             pacing: .immediate,
-            pickMember: pickMember
+            pickMember: pickMember,
+            memberLanguage: memberLanguage
         )
     }
 
@@ -1716,6 +1722,32 @@ struct AutoReplyTests {
 
         #expect(shown?.sender == "Minho")
         #expect(await writer.partner == "Minho")
+    }
+
+    @Test("A member who writes another language answers in it")
+    func memberAnswersInTheirLanguage() async throws {
+        room.memberNames = ["佐藤ゆき", "Minho"]
+        try say("Dinner at 7?", minutesAgo: 1)
+        let writer = RecordingReplyWriter()
+
+        try await service([writer], pickMember: { $0.first }, memberLanguage: { $0 == "佐藤ゆき" ? "ja" : nil })
+            .generateResponse(for: room, onTypingChange: { _ in }, onMessage: { _ in })
+
+        #expect(await writer.partner == "佐藤ゆき")
+        #expect(await writer.language == "ja")
+    }
+
+    @Test("Stock replies are in the language they are asked for")
+    func cannedReplyInAskedLanguage() async throws {
+        let chat = [SummaryMessage(text: "Dinner at 7 tonight?", sender: "Me", isFromCurrentUser: true, messageType: .text)]
+        let reply = try #require(await CannedReplyWriter(fallbackLanguage: "en").reply(to: chat, as: "Yuki", language: "ja"))
+        #expect(CannedReplyWriter.replies["ja"]?.contains(reply) == true)
+    }
+
+    @Test("The sample study group's members write Japanese and Spanish")
+    func sampleGroupIsMultilingual() throws {
+        let members = try #require(TestData.groupMembers["study_group"])
+        #expect(Set(members.compactMap(TestData.language(of:))) == ["ja", "es"])
     }
 
     @Test("The other side of a chat is a member in a group and the room's name otherwise")
@@ -3047,5 +3079,30 @@ struct SenderLanguageTests {
         #expect(ConversationLanguage.of(sender: "Lucía", in: chat) == .spanish)
         #expect(ConversationLanguage.of(sender: nil, in: chat) == .spanish, "anyone but the reader: the latest")
         #expect(ConversationLanguage.of(sender: "Sam", in: chat) == nil, "nothing from them yet")
+    }
+}
+
+@Suite("Sender avatar")
+struct SenderAvatarTests {
+    @Test("The initial is the name's first letter, capitalized")
+    func initial() {
+        #expect(SenderAvatar(name: "강호동").initial == "강")
+        #expect(SenderAvatar(name: "lucía").initial == "L")
+        #expect(SenderAvatar(name: " ").initial == "?")
+    }
+
+    @Test("The color comes from the name: the same every time, and not the same for everyone")
+    func color() {
+        let names = ["강호동", "한소희", "佐藤ゆき", "Lucía García", "권지용", "Mina"]
+        #expect(names.allSatisfy { SenderAvatar(name: $0).colorIndex == SenderAvatar(name: $0).colorIndex })
+        #expect(names.allSatisfy { (0..<SenderAvatar.paletteCount).contains(SenderAvatar(name: $0).colorIndex) })
+        #expect(Set(names.map { SenderAvatar(name: $0).colorIndex }).count > 1)
+    }
+
+    @Test("A language badge shows only for a language that isn't the reader's", arguments: [
+        ("ja", "en", "JA"), ("es", "ko", "ES"), ("zh-Hans", "en", "ZH"), ("en", "en", nil), ("en", "en-US", nil), (nil, "en", nil),
+    ] as [(String?, String, String?)])
+    func languageBadge(sender: String?, reader: String, badge: String?) {
+        #expect(SenderAvatar.languageBadge(senderLanguage: sender, readerLanguage: reader) == badge)
     }
 }

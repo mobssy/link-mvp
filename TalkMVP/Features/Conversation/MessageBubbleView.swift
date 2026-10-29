@@ -16,7 +16,8 @@ private let bubbleLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Ta
 
 struct MessageBubbleView: View {
     let message: Message
-    var avatarSymbolName: String?
+    /// The code of the sender's language, shown on their avatar, when it isn't the reader's.
+    var languageBadge: String?
     var onAvatarTap: (() -> Void)?
     /// A voice message whose words are still being written down.
     var isTranscribing = false
@@ -132,20 +133,7 @@ struct MessageBubbleView: View {
 
     private var avatarView: some View {
         Button { onAvatarTap?() } label: {
-            if let symbol = avatarSymbolName {
-                Image(systemName: symbol)
-                    .font(.system(size: 28))
-                    .foregroundStyle(.appPrimaryText)
-                    .frame(width: 36, height: 36)
-            } else {
-                ZStack {
-                    Circle()
-                        .fill(Color.appPrimary.opacity(0.15))
-                    Image(systemName: "person.fill")
-                        .foregroundStyle(.appPrimaryText)
-                }
-                .frame(width: 36, height: 36)
-            }
+            SenderAvatarView(avatar: SenderAvatar(name: message.sender), languageBadge: languageBadge)
         }
         .buttonStyle(.plain)
         .minimumHitTarget(visibleSize: 36)
