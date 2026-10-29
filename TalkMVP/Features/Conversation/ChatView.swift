@@ -143,7 +143,14 @@ struct ChatView: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    ForEach(summaryParagraphs, id: \.self) { paragraph in
+                    // The sheet's title names it; the first line says when it was written and
+                    // how much it read, marked as the on-device model's work.
+                    if summaryParagraphs.count > 1, let heading = summaryParagraphs.first {
+                        Label(heading, systemImage: "apple.intelligence")
+                            .font(.footnote)
+                            .foregroundStyle(Color.secondary)
+                    }
+                    ForEach(summaryParagraphs.count > 1 ? Array(summaryParagraphs.dropFirst()) : summaryParagraphs, id: \.self) { paragraph in
                         SummaryParagraphCard(text: paragraph)
                     }
                 }

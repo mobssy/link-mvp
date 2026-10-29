@@ -181,7 +181,7 @@ actor AIService {
         onProgress: (@Sendable (SummaryProgress) -> Void)? = nil
     ) async -> String {
         let last = Array(messages.suffix(limit))
-        let labels = summaryLabels(for: targetLanguage)
+        let labels = Self.summaryLabels(for: targetLanguage)
         guard !last.isEmpty else { return labels.noMessages }
 
         let textMessages = last.compactMap(\.asText)
@@ -198,7 +198,7 @@ actor AIService {
             participants: participantList, messageCount: last.count, dateStr: dateStr, onProgress: onProgress
         ) { return aiResult }
 
-        return generateFallbackSummary(
+        return Self.fallbackSummary(
             messages: last, textMessages: textMessages, labels: labels,
             participantList: participantList, fromMe: fromMe, fromOther: fromOther, dateStr: dateStr
         )
@@ -247,11 +247,17 @@ actor AIService {
                 overview: draft.overview, keyTopics: draft.keyTopics, decisions: draft.decisions,
                 keyTopicsHeader: labels.keyTopics, decisionsHeader: labels.decisions
             ) else { return nil }
-            return "✨ **\(labels.header)**\n\(dateStr) · \(String(format: labels.coverage, messageCount))\n\n\(body)"
+            return "\(Self.summaryHeading(date: dateStr, coverage: String(format: labels.coverage, messageCount)))\n\n\(body)"
         } catch {
             aiLogger.notice("Summary generation failed: \(error.localizedDescription, privacy: .public)")
             return nil
         }
+    }
+
+    /// A summary's first paragraph: when it was made and how much it covers. The sheet showing it
+    /// already has the title, so the summary doesn't repeat it.
+    nonisolated static func summaryHeading(date: String, coverage: String) -> String {
+        "\(date) · \(coverage)"
     }
 
     /// When the summary was made, written the way the app's language writes dates; the device's
@@ -299,13 +305,13 @@ actor AIService {
         }
     }
 
-    private func generateFallbackSummary(
+    /// A summary put together without the model: counts, keywords and the last few messages.
+    nonisolated static func fallbackSummary(
         messages: [SummaryMessage], textMessages: [SummaryMessage], labels: SummaryLabels,
         participantList: String, fromMe: Int, fromOther: Int, dateStr: String
     ) -> String {
         var parts: [String] = []
 
-        parts.append("📊 **\(labels.header)**")
         parts.append(dateStr)
         parts.append("")
 
@@ -316,9 +322,9 @@ actor AIService {
         let imageCount = messages.filter { $0.messageType == .image }.count
         let fileCount  = messages.filter { $0.messageType == .file }.count
         let audioCount = messages.filter { $0.messageType == .audio }.count
-        if imageCount > 0 { parts.append("• 🖼️ \(labels.image): \(imageCount)") }
-        if fileCount  > 0 { parts.append("• 📄 \(labels.file): \(fileCount)") }
-        if audioCount > 0 { parts.append("• 🎤 \(labels.audio): \(audioCount)") }
+        if imageCount > 0 { parts.append("• \(labels.image): \(imageCount)") }
+        if fileCount  > 0 { parts.append("• \(labels.file): \(fileCount)") }
+        if audioCount > 0 { parts.append("• \(labels.audio): \(audioCount)") }
 
         let keywords = extractKeywords(from: textMessages.map { $0.text }.joined(separator: " "), limit: 6)
         if !keywords.isEmpty {
@@ -341,7 +347,7 @@ actor AIService {
         return parts.joined(separator: "\n")
     }
 
-    private func extractKeywords(from text: String, limit: Int) -> [String] {
+    nonisolated private static func extractKeywords(from text: String, limit: Int) -> [String] {
         let tagger = NLTagger(tagSchemes: [.lexicalClass])
         tagger.string = text
         var wordFreq: [String: Int] = [:]
@@ -357,20 +363,20 @@ actor AIService {
         return wordFreq.sorted { $0.value > $1.value }.prefix(limit).map { $0.key }
     }
 
-    private struct SummaryLabels {
-        let me, image, file, audio, header: String
+    nonisolated struct SummaryLabels {
+        let me, image, file, audio: String
         let noMessages, statsHeader, participants, totalMessages: String
         let other, keywordsHeader, recentHeader, keyTopics, decisions: String
         /// How many messages the summary covers, with a %d for the count.
         let coverage: String
     }
 
-    private func summaryLabels(for language: String) -> SummaryLabels {
+    nonisolated static func summaryLabels(for language: String) -> SummaryLabels {
         switch language.lowercased() {
         case "ko":
             return SummaryLabels(
                 me: "나", image: "이미지", file: "파일", audio: "음성 메시지",
-                header: "대화 요약", noMessages: "요약할 메시지가 없습니다.",
+                noMessages: "요약할 메시지가 없습니다.",
                 statsHeader: "대화 통계", participants: "참여자", totalMessages: "총 메시지",
                 other: "상대방", keywordsHeader: "주요 키워드", recentHeader: "최근 대화",
                 keyTopics: "주요 내용", decisions: "결정 사항", coverage: "메시지 %d개"
@@ -378,7 +384,7 @@ actor AIService {
         case "ja":
             return SummaryLabels(
                 me: "自分", image: "画像", file: "ファイル", audio: "音声メッセージ",
-                header: "会話まとめ", noMessages: "要約するメッセージがありません。",
+                noMessages: "要約するメッセージがありません。",
                 statsHeader: "会話統計", participants: "参加者", totalMessages: "合計メッセージ",
                 other: "相手", keywordsHeader: "キーワード", recentHeader: "最近の会話",
                 keyTopics: "主なトピック", decisions: "決定事項", coverage: "%d件のメッセージ"
@@ -386,7 +392,7 @@ actor AIService {
         case "zh-hans":
             return SummaryLabels(
                 me: "我", image: "图片", file: "文件", audio: "语音消息",
-                header: "对话摘要", noMessages: "没有可摘要的消息。",
+                noMessages: "没有可摘要的消息。",
                 statsHeader: "对话统计", participants: "参与者", totalMessages: "消息总数",
                 other: "对方", keywordsHeader: "关键词", recentHeader: "最近对话",
                 keyTopics: "主要话题", decisions: "决定事项", coverage: "%d 条消息"
@@ -394,7 +400,7 @@ actor AIService {
         case "es":
             return SummaryLabels(
                 me: "Yo", image: "Imagen", file: "Archivo", audio: "Mensaje de voz",
-                header: "Resumen de conversación", noMessages: "No hay mensajes para resumir.",
+                noMessages: "No hay mensajes para resumir.",
                 statsHeader: "Estadísticas", participants: "Participantes", totalMessages: "Total de mensajes",
                 other: "Otro", keywordsHeader: "Palabras clave", recentHeader: "Mensajes recientes",
                 keyTopics: "Temas principales", decisions: "Decisiones", coverage: "%d mensajes"
@@ -404,7 +410,7 @@ actor AIService {
                 // "You", not "Me": the model takes the label for a name, and "Me will send the
                 // slides" isn't English. The other languages' labels work as subjects.
                 me: "You", image: "Image", file: "File", audio: "Voice message",
-                header: "Conversation Summary", noMessages: "No messages to summarize.",
+                noMessages: "No messages to summarize.",
                 statsHeader: "Statistics", participants: "Participants", totalMessages: "Total messages",
                 other: "Other", keywordsHeader: "Keywords", recentHeader: "Recent messages",
                 keyTopics: "Key Topics", decisions: "Decisions", coverage: "%d messages"

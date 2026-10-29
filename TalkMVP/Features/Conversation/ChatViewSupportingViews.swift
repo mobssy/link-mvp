@@ -434,10 +434,6 @@ struct AttachmentPreviewView: View {
 struct SummaryParagraphCard: View {
     let text: String
 
-    private var isHeader: Bool {
-        text.hasPrefix("📊") || text.hasPrefix("📝") || text.hasPrefix("🧠")
-    }
-
     private var renderedText: Text {
         // Inline-only parsing keeps line breaks; full Markdown folds a section's bullet lines
         // into one line ("Key Topics: • Weather • Well-being • Weekend plans").
@@ -448,22 +444,14 @@ struct SummaryParagraphCard: View {
     }
 
     var body: some View {
-        if isHeader {
-            renderedText
-                .font(.title3.bold())
-                .foregroundStyle(Color.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, 4)
-        } else {
-            renderedText
-                .font(.body)
-                .foregroundStyle(Color.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(14)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color(UIColor.secondarySystemBackground))
-                )
-        }
+        renderedText
+            .font(.body)
+            .foregroundStyle(Color.primary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color(UIColor.secondarySystemBackground))
+            )
     }
 }

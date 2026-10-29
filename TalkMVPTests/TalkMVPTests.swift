@@ -1399,7 +1399,7 @@ struct ChatIntentActionsTests {
     @Test("Siri gets the summary as plain text, without the app's heading")
     func summaryIsPlainText() async throws {
         try signIn()
-        let formatted = "✨ **Summary**\nOct 14 · 3 messages\n\nDinner plans.\n\n**Decisions**\n• Saturday at 7"
+        let formatted = "Oct 14 · 3 messages\n\nDinner plans.\n\n**Decisions**\n• Saturday at 7"
 
         let summary = try await actions(summary: formatted).summary(of: room.id, language: "en")
 
@@ -1446,6 +1446,31 @@ struct ConversationChunkerTests {
 
         #expect(parts.flatMap { $0 }.count == 3)
         #expect(parts.allSatisfy { part in part.reduce(0) { $0 + ConversationChunker.estimatedTokens(in: $1) } <= 100 })
+    }
+
+    @Test("A summary opens with its date and how much it covers, not a second title")
+    func summaryHeading() {
+        let heading = AIService.summaryHeading(date: "Oct 29", coverage: "12 messages")
+        #expect(heading == "Oct 29 · 12 messages")
+    }
+
+    @Test("A summary written without the model opens with its date, and uses no emoji")
+    func fallbackSummaryHasNoTitleOrEmoji() {
+        let labels = AIService.summaryLabels(for: "en")
+        let messages = [
+            SummaryMessage(text: "Dinner on Saturday?", sender: "Sam", isFromCurrentUser: false, messageType: .text),
+            SummaryMessage(text: "📷", sender: "Me", isFromCurrentUser: true, messageType: .image),
+            SummaryMessage(text: "", sender: "Sam", isFromCurrentUser: false, messageType: .audio),
+        ]
+        let summary = AIService.fallbackSummary(
+            messages: messages, textMessages: messages.compactMap(\.asText), labels: labels,
+            participantList: "Me, Sam", fromMe: 1, fromOther: 2, dateStr: "Oct 29"
+        )
+
+        #expect(summary.components(separatedBy: "\n\n").first == "Oct 29")
+        #expect(!summary.contains("Conversation Summary"))
+        #expect(summary.unicodeScalars.allSatisfy { !$0.properties.isEmojiPresentation })
+        #expect(summary.contains("• Image: 1"))
     }
 
     @Test("A summary is an overview, then a bold header over bullet lines for each section that has any")
