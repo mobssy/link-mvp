@@ -1056,9 +1056,10 @@ struct ChatServiceTests {
             let service = ChatService(modelContext: ModelContext(container), connectDelay: 0)
             weakService = service
             service.startConnection()
-            // Let the simulated handshake finish so the repeating timers are scheduled.
-            try await Task.sleep(for: .milliseconds(200))
-            #expect(service.connectionStatus == .connected)
+            // Let the simulated handshake finish so the repeating timers are scheduled. Waited
+            // for rather than given a fixed time: other tests running at once can hold up the
+            // main actor it finishes on.
+            #expect(await eventually { service.connectionStatus == .connected })
         }
 
         // The repeating timers must not keep the service (and its message simulation) alive.
