@@ -36,6 +36,8 @@ struct ChatView: View {
 
     // MARK: - Message Actions
     @State var reactionToMessage: Message?
+    /// What each translated message's translation says once shown, for reading it out.
+    @State var translatedTexts: [UUID: String] = [:]
     @State var showingReactionPicker = false
     @State var editingMessage: Message?
     @State var showingEditAlert = false

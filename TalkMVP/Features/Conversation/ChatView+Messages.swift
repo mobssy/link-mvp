@@ -90,6 +90,8 @@ extension ChatView {
             MessageBubbleView(
                 message: message,
                 languageBadge: message.isFromCurrentUser ? nil : badges[message.sender],
+                translation: translation(for: message),
+                onTranslated: { translatedTexts[message.id] = $0 },
                 onAvatarTap: { openProfile(of: message.sender) },
                 isTranscribing: viewModel.transcribingMessageIDs.contains(message.id),
                 senderStanding: message.isFromCurrentUser ? nil : senderStandings.map { $0[message.sender] ?? .stranger },
@@ -173,17 +175,13 @@ extension ChatView {
                     .frame(maxWidth: .infinity, alignment: message.isFromCurrentUser ? Alignment.trailing : Alignment.leading)
                     .padding(.horizontal, 2)
             }
-            if !message.isFromCurrentUser && message.messageType == .text && shouldShowTranslation(for: message.text) {
-                TranslatedTextView(
-                    text: message.text,
-                    autoDetect: translationAutoDetect,
-                    target: effectiveTargetLanguage(for: message.text)
-                )
-                .frame(maxWidth: .infinity, alignment: message.isFromCurrentUser ? .trailing : .leading)
-                .padding(.horizontal, 2)
-                .environment(languageManager)
-            }
         }
+    }
+
+    /// How a received text message in another language is translated, or nil when it isn't.
+    func translation(for message: Message) -> MessageTranslation? {
+        guard !message.isFromCurrentUser, message.messageType == .text, shouldShowTranslation(for: message.text) else { return nil }
+        return MessageTranslation(autoDetect: translationAutoDetect, target: effectiveTargetLanguage(for: message.text))
     }
 
     /// Each sender's language badge, read once for the whole chat from their own messages.

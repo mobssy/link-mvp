@@ -19,6 +19,10 @@ struct MessageBubbleView: View {
     let message: Message
     /// The code of the sender's language, shown on their avatar, when it isn't the reader's.
     var languageBadge: String?
+    /// How to translate a received text message, shown under it in the bubble; nil for none.
+    var translation: MessageTranslation?
+    /// Hears the translation once it is shown, so the message can be read out with it.
+    var onTranslated: ((String) -> Void)?
     var onAvatarTap: (() -> Void)?
     /// A voice message whose words are still being written down.
     var isTranscribing = false
@@ -157,8 +161,24 @@ struct MessageBubbleView: View {
     private var messageContent: some View {
         switch message.messageType {
         case .text:
-            Text(message.text)
-                .multilineTextAlignment(message.isFromCurrentUser ? .trailing : .leading)
+            if let translation, !message.isFromCurrentUser {
+                // A grid, so the divider spans the wider of the two texts without widening the
+                // bubble to the screen's edge.
+                Grid(alignment: .leading, verticalSpacing: 8) {
+                    // A grid cell keeps text to one line unless told to grow downward.
+                    Text(message.text)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Divider()
+                        .gridCellUnsizedAxes(.horizontal)
+                    TranslatedTextView(
+                        text: message.text, autoDetect: translation.autoDetect, target: translation.target,
+                        onResult: onTranslated
+                    )
+                }
+            } else {
+                Text(message.text)
+                    .multilineTextAlignment(message.isFromCurrentUser ? .trailing : .leading)
+            }
 
         case .image:
             if let imageData = message.imageData,

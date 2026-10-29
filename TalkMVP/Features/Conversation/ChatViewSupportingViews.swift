@@ -166,30 +166,40 @@ struct LinkPreviewView: UIViewRepresentable {
 
 // MARK: - Translated Text View
 
+/// How a received message is translated: into which language, and whether its own language is
+/// detected or assumed.
+nonisolated struct MessageTranslation: Equatable {
+    let autoDetect: Bool
+    let target: String
+}
+
+/// A message's translation, as the lower half of its bubble: a small "Translated" label, then the
+/// translation at the message's own text size.
 struct TranslatedTextView: View {
     @Environment(LanguageManager.self) private var languageManager
 
     let text: String
     let autoDetect: Bool
     let target: String
+    /// Hears what was shown once translating is done: the translation, or that there is none.
+    var onResult: ((String) -> Void)?
 
     /// nil once a try came back empty-handed: no translator on this device could translate it.
     @State private var translated: String?
     @State private var isLoading = true
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
-                Image(systemName: "globe")
-                    .font(.caption)
-                    .foregroundStyle(Color.secondary)
-                Text(isLoading
-                     ? LocalizationService.shared.text(for: .translatingEllipsis, language: currentLanguage)
-                     : translated ?? LocalizationService.shared.text(for: .translationUnavailable, language: currentLanguage))
-                    .font(.footnote)
-                    .foregroundStyle(Color.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+        VStack(alignment: .leading, spacing: 2) {
+            Label(LocalizationService.shared.text(for: .translated, language: currentLanguage), systemImage: "translate")
+                .font(.caption)
+                .foregroundStyle(Color.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            // Only a real translation reads as the message; waiting and failing stay quiet.
+            Text(isLoading
+                 ? LocalizationService.shared.text(for: .translatingEllipsis, language: currentLanguage)
+                 : translated ?? LocalizationService.shared.text(for: .translationUnavailable, language: currentLanguage))
+                .foregroundStyle(!isLoading && translated != nil ? Color.primary : Color.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .onAppear(perform: translate)
         .onChange(of: text) { _, _ in translate() }
@@ -206,6 +216,7 @@ struct TranslatedTextView: View {
             await MainActor.run {
                 self.translated = result
                 self.isLoading = false
+                onResult?(result ?? LocalizationService.shared.text(for: .translationUnavailable, language: currentLanguage))
             }
         }
     }

@@ -47,7 +47,10 @@ extension ChatView {
         let contentLabel: String
         switch message.messageType {
         case .text:
-            contentLabel = message.text
+            // The translation is part of the message, so it is read with it.
+            contentLabel = translatedTexts[message.id].map {
+                "\(message.text). \(svc.text(for: .translated, language: lang)): \($0)"
+            } ?? message.text
         case .image:
             contentLabel = [svc.text(for: .photoMessage, language: lang), message.imageDescription]
                 .compactMap { $0 }

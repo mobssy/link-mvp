@@ -267,6 +267,33 @@ final class TalkMVPUITests: XCTestCase {
     }
 
     @MainActor
+    func testATranslationIsPartOfItsMessage() throws {
+        XCUIDevice.shared.orientation = .portrait
+        app.launchArguments += ["-translationEnabled", "YES"]
+        app.launch()
+        signInWithTestMode()
+
+        // Written in Korean, so the answer comes back in Korean and the English reader gets
+        // it translated.
+        tab("Chats").tap()
+        app.staticTexts["Friend"].firstMatch.tap()
+        let input = app.textFields.firstMatch
+        XCTAssertTrue(input.waitForExistence(timeout: 10))
+        input.tap()
+        input.typeText("안녕하세요, 오늘 저녁 같이 먹을래요?\n")
+
+        let reply = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Profile of '")).firstMatch
+        XCTAssertTrue(reply.waitForExistence(timeout: 90), "the other side answers")
+
+        // The translation is read with its message, not as a separate line after it. Both the
+        // answer and its translation come from the on-device model, so each gets its own wait.
+        let translated = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH 'message_' AND label CONTAINS 'Translated'"))
+            .firstMatch
+        XCTAssertTrue(translated.waitForExistence(timeout: 60), "the answer carries its translation")
+    }
+
+    @MainActor
     func testReplySuggestionsHideWhileSearching() throws {
         XCUIDevice.shared.orientation = .portrait
         app.launch()
