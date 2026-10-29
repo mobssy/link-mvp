@@ -1,6 +1,6 @@
 # Portfolio review fixes (stage 5 of the app-wide cleanup)
 
-Date: 2026-10-29. Status: approved, in progress.
+Date: 2026-10-29. Status: 5-1 to 5-7 done; 5-8 waits on the user.
 
 ## Context
 
@@ -71,3 +71,25 @@ Goals: the conversation is the loudest thing on a chat screen; a translation rea
 - Unit tests (Swift Testing) for the logic: the chat subtitle, the avatar initial and color, the sender language badge, the summary's first paragraph, the reply language for a group member.
 - UI tests: an open chat on iPhone has no tab bar; the received bubble contains its translation; signing in no longer shows the "Test Mode" bar.
 - Full unit and UI suites on iOS 27 and iOS 26.5 before each commit; screenshots of the changed screens.
+
+## Outcome
+
+| Item | Commit | Notes |
+|---|---|---|
+| 5-1 | 21a863d | As planned. The stored test mode flag only fed the bar and is gone. |
+| 5-2 | 8306151 | As planned. The Start Chat UI test now checks the selected tab once the list is back. |
+| 5-4 | bcb7095 | The summary's first paragraph is "<date> · <n messages>", shown as a caption with `apple.intelligence`. The fallback summary lost its emoji bullets too. |
+| 5-5 | 0a7fd87 | Friend rows also said "online" with a green dot for everyone, and a profile said "Online" for five minutes after a message; both went with the chat title's random status. The profile shows when they last wrote. |
+| 5-6 | c2d55ef | The study group's members are 佐藤ゆき (Japanese) and Lucía García (Spanish). Reply writers take an optional language. |
+| 5-7 | b254189 | Small icons use the nearest text style, or `@ScaledMetric` where none matches (row avatars at 40 pt, the send and play buttons). |
+| 5-3 | 0253fd1 | Built last. A grid keeps the divider from widening the bubble; its texts are told to wrap, which the AX5 screenshot showed they didn't. VoiceOver used to skip translations entirely; the message's label now includes it. |
+
+Also: cea1126 makes a ChatService test wait for the connection instead of 200 ms; the new summary test held up the main actor and broke it in full runs.
+
+Verification: each item's unit and UI suites ran on iOS 27 and 26.5 (207 unit tests at the end, plus the new UI tests), the Siri test on iOS 27 alone, and the UI suite on an iPad Pro 11-inch (iOS 27) at the end. With two simulators running at once, gesture tests (swipe and hold to reply), the meeting notes test and the Siri test sometimes failed waiting on the on-device model or a gesture; each passed when run alone. The swipe-to-reply test on iOS 26.5 also failed alone at times (once in three, then again in the last run), so it is flaky there beyond load. The translation test now waits for the answer and its translation separately, as each comes from the on-device model. From the end of this stage the user asked for testing on iOS 27 only. Three simulators at once ran the Mac out of resources. Screenshots on iOS 27: the group chat, a one-to-one chat, the summary sheet, sign-in, Friends, and the chat at the largest text size.
+
+Small things left as they are:
+
+- At the largest text sizes "Translated" breaks with a hyphen beside its symbol.
+- The chat subtitle and language badges read the recent messages again each time the chat redraws; cheap at these sizes, but not cached.
+- Not yet checked on the open iPhone Duo.
