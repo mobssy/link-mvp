@@ -87,15 +87,16 @@ final class TalkMVPUITests: XCTestCase {
 
             // The chat opens in the Chats tab, not in a sheet over the profile.
             XCTAssertTrue(app.navigationBars.staticTexts["강호동"].waitForExistence(timeout: 10), "the conversation opens")
-            XCTAssertTrue(tab("Chats").isSelected)
             XCTAssertFalse(app.buttons["Close"].exists, "the profile is gone")
 
             // Back to the chat list, as a person would before going to Friends again. In a
-            // regular-width window the list is already beside the chat.
+            // regular-width window the list is already beside the chat. On a phone the tab bar
+            // hides in a chat, so the tab is checked once the list is back.
             if app.windows.firstMatch.frame.width < 600 {
                 app.navigationBars.buttons.firstMatch.tap()
                 XCTAssertTrue(app.navigationBars["Chats"].waitForExistence(timeout: 5))
             }
+            XCTAssertTrue(tab("Chats").isSelected)
         }
 
         // The conversation is a real room in the chat list, listed once (the open chat's
@@ -245,6 +246,24 @@ final class TalkMVPUITests: XCTestCase {
         confirm.tap()
         XCTAssertTrue(app.staticTexts["Request Sent"].waitForExistence(timeout: 5))
         XCTAssertEqual(addFriend.count, 0)
+    }
+
+    @MainActor
+    func testOpenChatOnAPhoneHasNoTabBar() throws {
+        // As in Messages: on a phone an open conversation has the screen to itself, so its
+        // bottom edge is the input field, not the input field over the tab bar.
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        try XCTSkipIf(app.windows.firstMatch.frame.width >= 600, "a regular-width window keeps its tabs")
+        signInWithTestMode()
+
+        tab("Chats").tap()
+        app.staticTexts["Friend"].firstMatch.tap()
+        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(tab("Friends").waitForNonExistence(timeout: 5), "the tab bar hides in a chat")
+
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(tab("Friends").waitForExistence(timeout: 5), "and comes back with the chat list")
     }
 
     @MainActor

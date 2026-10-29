@@ -17,6 +17,7 @@ import UIKit
 struct ChatView: View {
     @Environment(\.modelContext) var modelContext
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.prefersReducedMotion) var reduceMotion
     @Environment(\.openURL) private var openURL
     @Environment(LanguageManager.self) var languageManager
@@ -186,6 +187,9 @@ struct ChatView: View {
         }
         .navigationTitle(chatRoom.name)
         .navigationBarTitleDisplayMode(.inline)
+        // As in Messages, a conversation on a phone has the screen to itself: its bottom edge
+        // is the input field. Wide windows keep the tabs beside the chat list.
+        .toolbar(horizontalSizeClass == .compact ? .hidden : .automatic, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
                 onlineStatusTitleView
