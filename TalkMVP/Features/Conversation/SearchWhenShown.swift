@@ -29,8 +29,9 @@ struct SearchWhenShown: ViewModifier {
         .onChange(of: isShown) { _, shown in
             if !shown { text = "" }
         }
-        .onChange(of: isFocused) { _, focused in
-            if !focused && text.isEmpty { isShown = false }
+        .onChange(of: isFocused) { wasFocused, focused in
+            // Only once it had the keyboard: a field that never got it isn't being left.
+            if wasFocused && !focused && text.isEmpty { isShown = false }
         }
     }
 }

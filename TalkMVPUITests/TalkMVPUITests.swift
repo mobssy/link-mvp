@@ -393,6 +393,7 @@ final class TalkMVPUITests: XCTestCase {
         app.buttons["Search"].firstMatch.tap()
         let search = app.searchFields.matching(NSPredicate(format: "placeholderValue == %@ OR label == %@", "Search conversation", "Search conversation")).firstMatch
         XCTAssertTrue(search.waitForExistence(timeout: 5))
+        search.tap()
         search.typeText("dinner")
         XCTAssertTrue(suggestions.waitForNonExistence(timeout: 5), "searching hides the suggestions")
     }

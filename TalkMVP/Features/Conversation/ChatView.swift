@@ -207,6 +207,9 @@ struct ChatView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button {
+                        // The message field lets go first, or the two fight over the keyboard
+                        // and the search field never gets it.
+                        isTextFieldFocused = false
                         isSearchShown = true
                     } label: {
                         Label(languageManager.localize(ko: "검색", en: "Search", ja: "検索", zh: "搜索", es: "Buscar"), systemImage: "magnifyingglass")
