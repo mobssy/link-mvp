@@ -1,6 +1,6 @@
 # Design pass (stage 6 of the app-wide cleanup)
 
-Date: 2026-10-29. Status: approved, in progress.
+Date: 2026-10-29. Status: done.
 
 ## Context
 
@@ -69,3 +69,23 @@ A group's own profile was a sheet saying "Profile information is unavailable".
 - Unit tests (Swift Testing) for: the sample chats (reader's lines in each app language, unread counts, members as in `TestData`), the Korean friends' language, the group avatar's initials.
 - UI tests: opening a chat shows no connection banner; the chat list's previews aren't "Hello!"; search opens from the menu; the group title opens the member list.
 - Unit and UI suites on iOS 27 (iPhone 18 Pro) before each commit, and the UI suite on iPad (iOS 27) at the end; screenshots of the changed screens.
+
+## Outcome
+
+| Item | Commit | Notes |
+|---|---|---|
+| A | 2d69cff | Ruling: no offline banner either; with no server, going offline stops nothing. |
+| B | 075c9d3 | `SampleChats` builds the rooms. The one-to-one sample is 김민지 instead of a room called "Friend" ("Friend isn't your friend"). The Korean friends answer in Korean. The random messages' notifications went with them. |
+| C | 2941289 | `GroupAvatar` (first two members). Requests not yet accepted, blocked and hidden friends show their face in gray. |
+| D, E | 0ce4001, 9a4fd9a, 64d62d7 | Search is the menu's first item and opens focused. On iPad the field takes the title bar's place with no Close button, so leaving it empty closes it (9a4fd9a); the message field lets go of the keyboard first, or search closed at once while typing. The mini profile lost its "unavailable" line too. |
+| F, G | 01ea7da | Ruling: Auto Detect is gone from Translation settings, as it changed nothing visible (the Translation framework detects either way). Spanish was missing from "Translate Into" and is added. |
+
+Tests: the swipe-to-reply UI test failed in most full runs. On iOS 27 the action allows a full swipe, so Reply had already slid away (f766ac5); `swipeRight()` started on the empty side of the row (a1d407b); and on iPad the reply started after more than a second (5d97f64). With the three fixes it passed the last full run and every run alone. The search fixes (9a4fd9a, 64d62d7) came from the iPad run and the reply suggestions test.
+
+Verification: unit and UI suites on iOS 27 (iPhone 18 Pro) for each item; the last full run passed all 232 tests (two wide-window tests skipped). On the iPad Pro 11-inch (iOS 27) the UI suite passed except tests that later passed alone or were fixed above. Screenshots in light mode: Friends, a friend's profile, the chat list, the study group, its member sheet, the chat menu, search, the 김민지 chat, Settings, Translation and Accessibility settings.
+
+Small things left as they are:
+
+- Opening or closing search rebuilds the conversation, so its translations show "Translating..." and are made again.
+- The signed-in user's card in Friends keeps its green dot.
+- Seed messages are only added to an empty chat list; an existing install keeps its old "Hello!" rooms until it is reset.
