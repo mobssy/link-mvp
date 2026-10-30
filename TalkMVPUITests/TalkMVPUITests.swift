@@ -371,6 +371,34 @@ final class TalkMVPUITests: XCTestCase {
     }
 
     @MainActor
+    func testTranslationTurnsOffForOneChat() throws {
+        XCUIDevice.shared.orientation = .portrait
+        app.launchArguments += ["-translationEnabled", "YES"]
+        app.launch()
+        signInWithTestMode()
+
+        // 김민지 writes in Korean, so her messages come translated.
+        tab("Chats").tap()
+        app.staticTexts["김민지"].firstMatch.tap()
+        let translated = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH 'message_' AND label CONTAINS 'Translated'"))
+        XCTAssertTrue(translated.firstMatch.waitForExistence(timeout: 60), "translated to begin with")
+
+        app.buttons["More options"].firstMatch.tap()
+        app.buttons["Translate Messages"].firstMatch.tap()
+        XCTAssertTrue(translated.firstMatch.waitForNonExistence(timeout: 5), "this chat shows the originals")
+        XCTAssertTrue(app.staticTexts["Korean · Original"].waitForExistence(timeout: 5), "and says so under its name")
+
+        // Kept for the chat: still off after leaving and coming back.
+        if app.windows.firstMatch.frame.width < 600 {
+            app.navigationBars.buttons.firstMatch.tap()
+        }
+        app.staticTexts["김민지"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["Korean · Original"].waitForExistence(timeout: 5))
+        XCTAssertFalse(translated.firstMatch.exists)
+    }
+
+    @MainActor
     func testReplySuggestionsHideWhileSearching() throws {
         XCUIDevice.shared.orientation = .portrait
         app.launch()

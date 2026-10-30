@@ -15,4 +15,9 @@ nonisolated enum TranslationPreferences {
     static func isEnabled(in defaults: UserDefaults = .standard) -> Bool {
         defaults.object(forKey: enabledKey) as? Bool ?? enabledByDefault
     }
+
+    /// Whether a chat translates: its own choice, or the app's setting when it hasn't made one.
+    static func isOn(inChat choice: Bool?, appSetting: Bool) -> Bool {
+        choice ?? appSetting
+    }
 }

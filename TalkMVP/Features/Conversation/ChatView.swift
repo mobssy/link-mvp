@@ -215,6 +215,10 @@ struct ChatView: View {
                         Label(languageManager.localize(ko: "검색", en: "Search", ja: "検索", zh: "搜索", es: "Buscar"), systemImage: "magnifyingglass")
                     }
 
+                    Toggle(isOn: translationHereBinding) {
+                        Label(languageManager.localize(ko: "메시지 번역", en: "Translate Messages", ja: "メッセージを翻訳", zh: "翻译消息", es: "Traducir mensajes"), systemImage: "translate")
+                    }
+
                     Button {
                         showingBackgroundSettings = true
                     } label: {
@@ -500,8 +504,9 @@ struct ChatView: View {
             memberNames: chatRoom.memberNames,
             partnerLanguage: ConversationLanguage.of(sender: nil, in: received)?.rawValue,
             readerLanguage: appLanguageCode(),
-            isTranslating: translationEnabled,
-            translatedLabel: localizedText("translated")
+            isTranslating: isTranslatingHere,
+            translatedLabel: localizedText("translated"),
+            originalLabel: localizedText("original")
         )
     }
 

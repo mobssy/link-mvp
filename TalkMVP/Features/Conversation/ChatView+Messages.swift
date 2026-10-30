@@ -5,7 +5,11 @@
 
 import SwiftUI
 import NaturalLanguage
+import SwiftData
 import UIKit
+import os
+
+private let messagesLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TalkMVP", category: "ChatView.Messages")
 
 extension ChatView {
     @ViewBuilder
@@ -178,6 +182,24 @@ extension ChatView {
         }
     }
 
+    /// Whether this chat translates: its own choice, or the app's setting.
+    var isTranslatingHere: Bool {
+        TranslationPreferences.isOn(inChat: chatRoom.translatesMessages, appSetting: translationEnabled)
+    }
+
+    /// Turns translation on or off for this chat alone, from its menu.
+    var translationHereBinding: Binding<Bool> {
+        Binding(
+            get: { isTranslatingHere },
+            set: { on in
+                chatRoom.translatesMessages = on
+                do { try modelContext.save() } catch {
+                    messagesLogger.error("Failed to save the chat's translation choice: \(error.localizedDescription, privacy: .public)")
+                }
+            }
+        )
+    }
+
     /// How a received text message in another language is translated, or nil when it isn't.
     func translation(for message: Message) -> MessageTranslation? {
         guard !message.isFromCurrentUser, message.messageType == .text, shouldShowTranslation(for: message.text) else { return nil }
@@ -234,7 +256,7 @@ extension ChatView {
     }
 
     func shouldShowTranslation(for text: String) -> Bool {
-        guard translationEnabled else { return false }
+        guard isTranslatingHere else { return false }
 
         let source = detectLanguageCode(for: text) ?? ""
         let target = effectiveTargetLanguage(for: text).lowercased()

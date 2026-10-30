@@ -66,6 +66,10 @@ class ChatRoom {
     /// person goes by the room's name.
     var memberNames: [String] = []
 
+    /// Whether this chat translates messages, when it was turned on or off for this chat alone;
+    /// nil follows the app's Translation setting.
+    var translatesMessages: Bool? = nil
+
     /// The SF Symbols a room shows: one person, or a group.
     static let personSymbol = "person.circle.fill"
     static let groupSymbol = "person.2.circle.fill"

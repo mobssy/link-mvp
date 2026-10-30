@@ -24,6 +24,7 @@ enum LocalizationKey: String {
     // Chat Related
     case chat, message, messageInputPlaceholder = "message_input_placeholder"
     case translated
+    case original
     case replyingTo = "replying_to"
     case me
     case conversationSummary = "conversation_summary"
@@ -295,6 +296,14 @@ class LocalizationService: LocalizationServiceProtocol {
             case .japanese: return "メッセージを入力"
             case .chinese: return "输入消息"
             case .spanish: return "Escribe un mensaje"
+            }
+        case .original:
+            switch language {
+            case .korean: return "원문"
+            case .english: return "Original"
+            case .japanese: return "原文"
+            case .chinese: return "原文"
+            case .spanish: return "Original"
             }
         case .translated:
             switch language {

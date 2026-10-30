@@ -12,11 +12,12 @@ nonisolated enum ChatSubtitle {
     static let namedMembers = 3
 
     /// A group's members ("강호동, 한소희", or "A, B +3" when there are more than three), or the
-    /// other person's language when it isn't the reader's ("Japanese · Translated"). Nil when
+    /// other person's language when it isn't the reader's, and whether it is translated
+    /// ("Japanese · Translated", "Japanese · Original"). Nil when
     /// there is nothing to say.
     static func text(
         isGroup: Bool, memberNames: [String], partnerLanguage: String?,
-        readerLanguage: String, isTranslating: Bool, translatedLabel: String
+        readerLanguage: String, isTranslating: Bool, translatedLabel: String, originalLabel: String
     ) -> String? {
         if isGroup {
             guard !memberNames.isEmpty else { return nil }
@@ -27,6 +28,6 @@ nonisolated enum ChatSubtitle {
               let name = Locale(identifier: readerLanguage).localizedString(forIdentifier: partnerLanguage)
         else { return nil }
         let language = name.prefix(1).uppercased() + name.dropFirst()
-        return isTranslating ? "\(language) · \(translatedLabel)" : language
+        return "\(language) · \(isTranslating ? translatedLabel : originalLabel)"
     }
 }

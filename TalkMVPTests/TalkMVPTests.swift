@@ -2952,7 +2952,7 @@ struct ChatSubtitleTests {
     ) -> String? {
         ChatSubtitle.text(
             isGroup: isGroup, memberNames: members, partnerLanguage: partner,
-            readerLanguage: reader, isTranslating: translating, translatedLabel: "Translated"
+            readerLanguage: reader, isTranslating: translating, translatedLabel: "Translated", originalLabel: "Original"
         )
     }
 
@@ -2967,7 +2967,7 @@ struct ChatSubtitleTests {
     @Test("A one-to-one chat shows the other person's language when it isn't the reader's")
     func partnerLanguage() {
         #expect(subtitle(partner: "ja") == "Japanese · Translated")
-        #expect(subtitle(partner: "ja", translating: false) == "Japanese")
+        #expect(subtitle(partner: "ja", translating: false) == "Japanese · Original")
         #expect(subtitle(partner: "ja", reader: "ko") == "일본어 · Translated")
         #expect(subtitle(partner: "en") == nil)
         #expect(subtitle(partner: nil) == nil)
@@ -3080,5 +3080,17 @@ struct TranslationPreferencesTests {
         #expect(TranslationPreferences.isEnabled(in: defaults))
         defaults.set(false, forKey: TranslationPreferences.enabledKey)
         #expect(!TranslationPreferences.isEnabled(in: defaults))
+    }
+
+    @Test("A chat follows the app's setting until it makes its own choice", arguments: [
+        (nil, true, true), (nil, false, false), (false, true, false), (true, false, true),
+    ] as [(Bool?, Bool, Bool)])
+    func chatChoice(choice: Bool?, appSetting: Bool, translates: Bool) {
+        #expect(TranslationPreferences.isOn(inChat: choice, appSetting: appSetting) == translates)
+    }
+
+    @Test("A new chat has no choice of its own")
+    func newChatFollowsTheApp() {
+        #expect(ChatRoom(name: "Mina").translatesMessages == nil)
     }
 }
