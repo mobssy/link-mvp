@@ -54,6 +54,10 @@ extension ChatView {
                 .padding(.horizontal, 12)
             }
             .scrollDismissesKeyboard(.interactively)
+            // A translation arriving makes a bubble taller after the chat has scrolled to the
+            // newest message; anchored at the bottom, that message stays in view instead of
+            // sliding under the message field.
+            .defaultScrollAnchor(.bottom, for: .sizeChanges)
             .accessibilityLabel(localizedText("message_list"))
             .accessibilityHint(localizedText("scroll_messages_hint"))
             .accessibilityIdentifier("messagesScrollView")
