@@ -48,7 +48,7 @@ struct SettingsView: View {
                         action: { showingProfileEdit = true }
                     )
 
-                    SettingsSectionCard {
+                    SettingsSectionCard(title: languageManager.localize(ko: "일반", en: "General", ja: "一般", zh: "通用", es: "General")) {
                         SettingsToggleRow(
                             systemImage: "bell.fill",
                             tint: .green,
@@ -140,7 +140,7 @@ struct SettingsView: View {
                     }
                     // One group like the others, signing out first; deleting the account asks to
                     // be confirmed, so it needs no card of its own.
-                    SettingsSectionCard {
+                    SettingsSectionCard(title: languageManager.localize(ko: "계정", en: "Account", ja: "アカウント", zh: "账户", es: "Cuenta")) {
                         Button {
                             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                             showingLogoutAlert = true
