@@ -184,10 +184,6 @@ struct ChatView: View {
 
     private var baseScaffold: some View {
         VStack(spacing: 0) {
-            ConnectionStatusView(chatService: chatService)
-                .accessibilityLabel(localizedText("connection_status"))
-                .accessibilityIdentifier("connectionStatus")
-
             FriendBannerView(banner: friendBanner, name: chatRoom.name) {
                 showingAddFriendAlert = true
             }

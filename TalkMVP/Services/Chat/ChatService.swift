@@ -16,95 +16,36 @@ private let chatServiceLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?
 @MainActor
 @Observable
 class ChatService: ChatServiceProtocol {
-    var connectionStatus: ConnectionStatus = .disconnected
-
     private var notificationsEnabled: Bool { NotificationPreferences.isEnabled() }
 
-    @ObservationIgnored private var heartbeatTimer: Timer?
     @ObservationIgnored private var randomMessageTimer: Timer?
-    /// The pending handshake or reconnect; disconnecting cancels it so it can't connect afterwards.
-    @ObservationIgnored private var connectionTask: Task<Void, Never>?
     /// Rooms on screen, which simulated messages leave alone.
     private let openRooms: OpenChatRooms
-    /// Simulated handshake time before the connection reports `.connected`.
-    private let connectDelay: TimeInterval
-    private var hasStartedConnection = false
+    private var hasStarted = false
     private var hasRequestedNotificationAuth = false
     var modelContext: ModelContext {
+        // There is no server to connect to: once the view hands over its context, the service
+        // asks for notification permission and starts the simulated incoming messages.
         didSet {
-            if !hasStartedConnection {
-                startConnection()
-                hasStartedConnection = true
-            }
-        }
-    }
-
-    enum ConnectionStatus {
-        case disconnected
-        case connecting
-        case connected
-        case reconnecting
-
-        var displayText: String {
-            let currentLanguage: String = {
-                if let saved = UserDefaults.standard.string(forKey: "selectedLanguage") { return saved }
-                if let langs = UserDefaults.standard.array(forKey: "AppleLanguages") as? [String], let first = langs.first { return first }
-                return "en"
-            }()
-            if currentLanguage.hasPrefix("ja") {
-                switch self {
-                case .disconnected: return "切断されました"
-                case .connecting: return "接続中..."
-                case .connected: return "接続済み"
-                case .reconnecting: return "再接続中..."
-                }
-            } else if currentLanguage.hasPrefix("zh") {
-                switch self {
-                case .disconnected: return "已断开连接"
-                case .connecting: return "连接中..."
-                case .connected: return "已连接"
-                case .reconnecting: return "重新连接中..."
-                }
-            } else if currentLanguage.hasPrefix("es") {
-                switch self {
-                case .disconnected: return "Desconectado"
-                case .connecting: return "Conectando..."
-                case .connected: return "Conectado"
-                case .reconnecting: return "Reconectando..."
-                }
-            } else if currentLanguage.hasPrefix("ko") {
-                switch self {
-                case .disconnected: return "연결 끊김"
-                case .connecting: return "연결 중..."
-                case .connected: return "연결됨"
-                case .reconnecting: return "재연결 중..."
-                }
-            } else {
-                switch self {
-                case .disconnected: return "Disconnected"
-                case .connecting: return "Connecting..."
-                case .connected: return "Connected"
-                case .reconnecting: return "Reconnecting..."
-                }
-            }
+            guard !hasStarted else { return }
+            hasStarted = true
+            ensureNotificationSetup()
+            startRandomMessageSimulation()
         }
     }
 
     /// - Parameter openRooms: The app's own list when nil; a default argument can't read it, since
     ///   default arguments aren't evaluated on the main actor.
-    init(modelContext: ModelContext, connectDelay: TimeInterval = 2.0, openRooms: OpenChatRooms? = nil) {
+    init(modelContext: ModelContext, openRooms: OpenChatRooms? = nil) {
         self.modelContext = modelContext
-        self.connectDelay = connectDelay
         self.openRooms = openRooms ?? .shared
-        // Connection will start when a proper modelContext is attached by the view.
+        // Starts when the view attaches its own modelContext.
     }
 
     deinit {
         // The timers hold this service only weakly, so deinit does run once the
         // owning view goes away; stop them so the run loop doesn't keep firing.
-        heartbeatTimer?.invalidate()
         randomMessageTimer?.invalidate()
-        connectionTask?.cancel()
     }
 
     private func ensureNotificationSetup() {
@@ -121,46 +62,6 @@ class ChatService: ChatServiceProtocol {
             if let error = error {
                 chatServiceLogger.error("Failed to set badge count: \(error.localizedDescription, privacy: .public)")
             }
-        }
-    }
-
-    func startConnection() {
-        ensureNotificationSetup()
-        connectionStatus = .connecting
-        connectionTask?.cancel()
-        connectionTask = Task { [weak self, connectDelay] in
-            try? await Task.sleep(for: .seconds(connectDelay))
-            guard let self, !Task.isCancelled else { return }
-            self.connectionStatus = .connected
-            self.startHeartbeat()
-            self.startRandomMessageSimulation()
-        }
-    }
-
-    func disconnect() {
-        connectionTask?.cancel()
-        connectionTask = nil
-        connectionStatus = .disconnected
-        heartbeatTimer?.invalidate()
-        heartbeatTimer = nil
-        randomMessageTimer?.invalidate()
-        randomMessageTimer = nil
-    }
-
-    func reconnect() {
-        disconnect()
-        connectionStatus = .reconnecting
-        connectionTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(1.5))
-            guard let self, !Task.isCancelled else { return }
-            self.startConnection()
-        }
-    }
-
-    private func startHeartbeat() {
-        heartbeatTimer?.invalidate()
-        heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { _ in
-            // 실제 앱에서는 서버로 heartbeat 전송
         }
     }
 

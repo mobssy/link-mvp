@@ -1044,8 +1044,8 @@ struct AuthManagerTests {
 @Suite("ChatService")
 struct ChatServiceTests {
 
-    @Test("A connected service is released once its owner lets go of it")
-    func connectedServiceIsReleased() async throws {
+    @Test("A service is released once its owner lets go of it")
+    func serviceIsReleased() throws {
         let container = try ModelContainer(
             for: Message.self, ChatRoom.self,
             configurations: ModelConfiguration(isStoredInMemoryOnly: true)
@@ -1053,47 +1053,14 @@ struct ChatServiceTests {
         weak var weakService: ChatService?
 
         do {
-            let service = ChatService(modelContext: ModelContext(container), connectDelay: 0)
+            let service = ChatService(modelContext: ModelContext(container))
             weakService = service
-            service.startConnection()
-            // Let the simulated handshake finish so the repeating timers are scheduled. Waited
-            // for rather than given a fixed time: other tests running at once can hold up the
-            // main actor it finishes on.
-            #expect(await eventually { service.connectionStatus == .connected })
+            // Attaching the view's context starts the repeating timer.
+            service.modelContext = ModelContext(container)
         }
 
-        // The repeating timers must not keep the service (and its message simulation) alive.
+        // The repeating timer must not keep the service (and its message simulation) alive.
         #expect(weakService == nil)
-    }
-
-    @Test("Disconnecting reports the disconnected state")
-    func disconnectUpdatesStatus() async throws {
-        let container = try ModelContainer(
-            for: Message.self, ChatRoom.self,
-            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-        )
-        let service = ChatService(modelContext: ModelContext(container), connectDelay: 0)
-        service.startConnection()
-        try await Task.sleep(for: .milliseconds(200))
-
-        service.disconnect()
-
-        #expect(service.connectionStatus == .disconnected)
-    }
-
-    @Test("Disconnecting during the handshake stops it from connecting afterwards")
-    func disconnectCancelsPendingConnection() async throws {
-        let container = try ModelContainer(
-            for: Message.self, ChatRoom.self,
-            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-        )
-        let service = ChatService(modelContext: ModelContext(container), connectDelay: 0.1)
-        service.startConnection()
-
-        service.disconnect()
-        try await Task.sleep(for: .milliseconds(300))
-
-        #expect(service.connectionStatus == .disconnected)
     }
 
     @Test("Simulated messages leave the rooms on screen alone")

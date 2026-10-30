@@ -50,7 +50,6 @@ enum LocalizationKey: String {
     // Accessibility
     case chatScreen = "chat_screen", chatScreenHint = "chat_screen_hint"
     case messageList = "message_list", scrollMessagesHint = "scroll_messages_hint"
-    case connectionStatus = "connection_status"
     case typingIndicator = "typing_indicator"
 
     // Message Actions
@@ -481,14 +480,6 @@ class LocalizationService: LocalizationServiceProtocol {
             case .japanese: return "上下にスクロールしてメッセージを確認できます"
             case .chinese: return "上下滚动查看消息"
             case .spanish: return "Desplázate hacia arriba y abajo para revisar mensajes"
-            }
-        case .connectionStatus:
-            switch language {
-            case .korean: return "연결 상태"
-            case .english: return "Connection Status"
-            case .japanese: return "接続状態"
-            case .chinese: return "连接状态"
-            case .spanish: return "Estado de conexión"
             }
         case .typingIndicator:
             switch language {

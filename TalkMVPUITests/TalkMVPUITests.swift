@@ -249,6 +249,20 @@ final class TalkMVPUITests: XCTestCase {
     }
 
     @MainActor
+    func testOpeningAChatShowsNoConnectionBanner() throws {
+        // There is no server, so there is no connection to show being made.
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        signInWithTestMode()
+
+        tab("Chats").tap()
+        app.staticTexts["Family Group"].firstMatch.tap()
+        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.descendants(matching: .any)["connectionStatus"].exists)
+        XCTAssertFalse(app.staticTexts["Connecting..."].exists)
+    }
+
+    @MainActor
     func testOpenChatOnAPhoneHasNoTabBar() throws {
         // As in Messages: on a phone an open conversation has the screen to itself, so its
         // bottom edge is the input field, not the input field over the tab bar.
