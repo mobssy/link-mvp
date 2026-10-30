@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Combine
 import SwiftData
 import UIKit
 import SwiftUI
@@ -51,7 +50,6 @@ class ChatViewModel {
     @ObservationIgnored private var suggestionTask: Task<Void, Never>?
     private var chatRoom: ChatRoom
     private var chatService: ChatServiceProtocol?
-    @ObservationIgnored private var cancellables = Set<AnyCancellable>()
 
     private func localizedVM(ko: String, en: String, ja: String, zh: String, es: String) -> String {
         let lang = LanguageManager.currentLanguageCode
@@ -92,7 +90,6 @@ class ChatViewModel {
         Task {
             await loadMessages()
         }
-        setupNotificationObservers()
         Task {
             await markAsRead()
         }
@@ -109,7 +106,6 @@ class ChatViewModel {
     }
 
     deinit {
-        cancellables.removeAll()
         suggestionTask?.cancel()
     }
 
@@ -149,22 +145,6 @@ class ChatViewModel {
         } catch {
             vmLogger.error("Failed to load more messages: \(error.localizedDescription, privacy: .public)")
         }
-    }
-
-    private func setupNotificationObservers() {
-        NotificationCenter.default.publisher(for: .newMessageReceived)
-            .sink { [weak self] notification in
-                guard let self = self,
-                      let message = notification.userInfo?["message"] as? Message,
-                      message.chatRoomId == self.chatRoom.id.uuidString else { return }
-
-                Task { @MainActor in
-                    self.messages.append(message)
-                    self.simulateTypingIndicator()
-                    self.refreshReplySuggestions()
-                }
-            }
-            .store(in: &cancellables)
     }
 
     // MARK: - Sending
@@ -334,14 +314,6 @@ class ChatViewModel {
         guard chatRoom.disappearingDuration > 0 else { return }
         message.isDisappearing = true
         message.disappearAfterSeconds = chatRoom.disappearingDuration
-    }
-
-    private func simulateTypingIndicator() {
-        otherUserTyping = true
-        Task { [weak self] in
-            try? await Task.sleep(for: .seconds(Double.random(in: 1.5...3.0)))
-            self?.otherUserTyping = false
-        }
     }
 
     private func sendAutoResponse() {

@@ -22,11 +22,9 @@ fileprivate func chatListLocalized(_ key: String, using manager: LanguageManager
     case "family_group":       return manager.localize(ko: "가족 단톡방", en: "Family Group", ja: "家族グループ", zh: "家庭群组", es: "Grupo familiar")
     case "work_colleagues":    return manager.localize(ko: "회사 동료", en: "Work Colleagues", ja: "職場の同僚", zh: "工作同事", es: "Colegas de trabajo")
     case "study_group":        return manager.localize(ko: "스터디 그룹", en: "Study Group", ja: "スタディグループ", zh: "学习小组", es: "Grupo de estudio")
-    case "hello_message":      return manager.localize(ko: "안녕하세요!", en: "Hello!", ja: "こんにちは！", zh: "你好！", es: "¡Hola!")
     case "start_conversation": return manager.localize(ko: "메시지를 시작해보세요", en: "Start a conversation", ja: "会話を始めましょう", zh: "开始对话", es: "Inicia una conversación")
     case "chats":              return manager.localize(ko: "채팅", en: "Chats", ja: "チャット", zh: "聊天", es: "Chats")
     case "search":             return manager.localize(ko: "검색", en: "Search", ja: "検索", zh: "搜索", es: "Buscar")
-    case "friend":             return manager.localize(ko: "친구", en: "Friend", ja: "友達", zh: "朋友", es: "Amigo")
     case "new_chat_button":    return manager.localize(ko: "새 채팅 만들기", en: "Create new chat", ja: "新しいチャットを作成", zh: "创建新聊天", es: "Crear nuevo chat")
     case "user":               return manager.localize(ko: "사용자", en: "User", ja: "ユーザー", zh: "用户", es: "Usuario")
     case "select_chat":        return manager.localize(ko: "채팅을 선택하세요", en: "Select a Chat", ja: "チャットを選択", zh: "选择一个聊天", es: "Selecciona un chat")
@@ -162,24 +160,34 @@ struct ChatListView: View {
         }
     }
 
+    /// Starts an empty chat list with the sample chats: short conversations whose previews,
+    /// times and unread counts come from their messages.
     private func createSampleDataIfNeeded() {
-        if chatRooms.isEmpty {
-            let sampleRooms = ["friend", "family_group", "work_colleagues", "study_group"].map { key in
-                let members = TestData.groupMembers[key] ?? []
-                let room = ChatRoom(name: localizedText(key), profileImage: members.isEmpty ? ChatRoom.personSymbol : ChatRoom.groupSymbol)
-                room.memberNames = members
-                return room
+        guard chatRooms.isEmpty else { return }
+        let now = Date()
+        for sample in SampleChats.rooms(readerLanguage: LanguageManager.currentLanguageCode) {
+            let room = ChatRoom(
+                name: sample.personName ?? localizedText(sample.key),
+                profileImage: sample.members.isEmpty ? ChatRoom.personSymbol : ChatRoom.groupSymbol
+            )
+            room.memberNames = sample.members
+            let lastSent = now.addingTimeInterval(-Double(sample.minutesAgo * 60))
+            for (index, line) in sample.lines.enumerated() {
+                let minutesBefore = (sample.lines.count - 1 - index) * SampleChats.minutesBetweenLines
+                let message = line.speaker.name.map {
+                    Message(text: line.text, isFromCurrentUser: false, sender: $0, chatRoomId: room.id.uuidString)
+                } ?? Message(text: line.text, isFromCurrentUser: true, chatRoomId: room.id.uuidString)
+                message.timestamp = lastSent.addingTimeInterval(-Double(minutesBefore * 60))
+                // The reader's messages have been seen once someone answered them.
+                message.isRead = line.speaker == .reader && index < sample.lines.count - 1
+                modelContext.insert(message)
             }
-
-            for room in sampleRooms {
-                room.lastMessage = localizedText("hello_message")
-                room.timestamp = Calendar.current.date(byAdding: .hour, value: -Int.random(in: 1...24), to: Date()) ?? Date()
-                room.unreadCount = Int.random(in: 0...5)
-                modelContext.insert(room)
-            }
-
-            do { try modelContext.save() } catch { chatListLogger.error("Failed to save sample data: \(error.localizedDescription, privacy: .public)") }
+            room.lastMessage = sample.lastMessage
+            room.timestamp = lastSent
+            room.unreadCount = sample.unreadCount
+            modelContext.insert(room)
         }
+        do { try modelContext.save() } catch { chatListLogger.error("Failed to save sample data: \(error.localizedDescription, privacy: .public)") }
     }
 
     private func localizedText(_ key: String) -> String {

@@ -227,9 +227,9 @@ final class TalkMVPUITests: XCTestCase {
         app.launch()
         signInWithTestMode()
 
-        // The sample "Friend" chat is with someone who isn't a friend yet.
+        // The sample chat with 김민지 is with someone who isn't a friend yet.
         tab("Chats").tap()
-        app.staticTexts["Friend"].firstMatch.tap()
+        app.staticTexts["김민지"].firstMatch.tap()
         let input = app.textFields.firstMatch
         XCTAssertTrue(input.waitForExistence(timeout: 10))
         input.tap()
@@ -272,7 +272,7 @@ final class TalkMVPUITests: XCTestCase {
         signInWithTestMode()
 
         tab("Chats").tap()
-        app.staticTexts["Friend"].firstMatch.tap()
+        app.staticTexts["김민지"].firstMatch.tap()
         XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 10))
         XCTAssertTrue(tab("Friends").waitForNonExistence(timeout: 5), "the tab bar hides in a chat")
 
@@ -290,7 +290,7 @@ final class TalkMVPUITests: XCTestCase {
         // Written in Korean, so the answer comes back in Korean and the English reader gets
         // it translated.
         tab("Chats").tap()
-        app.staticTexts["Friend"].firstMatch.tap()
+        app.staticTexts["김민지"].firstMatch.tap()
         let input = app.textFields.firstMatch
         XCTAssertTrue(input.waitForExistence(timeout: 10))
         input.tap()
@@ -399,8 +399,11 @@ final class TalkMVPUITests: XCTestCase {
         // A task with a date: the notes have something in them with or without Apple Intelligence.
         input.typeText("I'll bring the cake on Saturday at 6 PM.\n")
         // Wait for the other side's answer, so nothing else redraws the chat while the notes open.
+        // The sample chat already has messages; the answer is the one after the user's.
         let messages = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'message_'"))
-        let answered = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count >= 2"), object: messages)
+        let sent = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count >= 5"), object: messages)
+        XCTAssertEqual(XCTWaiter.wait(for: [sent], timeout: 10), .completed, "the message is sent")
+        let answered = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count >= 6"), object: messages)
         XCTAssertEqual(XCTWaiter.wait(for: [answered], timeout: 90), .completed, "the other side answers")
 
         app.buttons["More options"].firstMatch.tap()

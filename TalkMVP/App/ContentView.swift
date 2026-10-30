@@ -156,8 +156,10 @@ enum TestData {
         "study_group": ["佐藤ゆき", "Lucía García"]
     ]
 
-    /// The language a sample member writes in, when it isn't the chat's.
+    /// The language each sample person writes in, whatever language the chat is in: they answer
+    /// in theirs, and the reader sees it translated.
     static let memberLanguages: [String: String] = [
+        "강호동": "ko", "한소희": "ko", "유재석": "ko", "조세호": "ko", "권지용": "ko", "김민지": "ko",
         "佐藤ゆき": "ja",
         "Lucía García": "es"
     ]

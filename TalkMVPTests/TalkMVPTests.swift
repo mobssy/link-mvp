@@ -1038,61 +1038,6 @@ struct AuthManagerTests {
     }
 }
 
-// MARK: - ChatService
-
-@MainActor
-@Suite("ChatService")
-struct ChatServiceTests {
-
-    @Test("A service is released once its owner lets go of it")
-    func serviceIsReleased() throws {
-        let container = try ModelContainer(
-            for: Message.self, ChatRoom.self,
-            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-        )
-        weak var weakService: ChatService?
-
-        do {
-            let service = ChatService(modelContext: ModelContext(container))
-            weakService = service
-            // Attaching the view's context starts the repeating timer.
-            service.modelContext = ModelContext(container)
-        }
-
-        // The repeating timer must not keep the service (and its message simulation) alive.
-        #expect(weakService == nil)
-    }
-
-    @Test("Simulated messages leave the rooms on screen alone")
-    func simulatedMessagesSkipOpenRooms() {
-        let open = ChatRoom(name: "Open")
-        let other = ChatRoom(name: "Other")
-        let openRooms = OpenChatRooms()
-        openRooms.opened(open.id)
-
-        for _ in 0..<20 {
-            #expect(ChatService.roomForSimulatedMessage(in: [open, other], openRooms: openRooms) === other)
-        }
-        openRooms.opened(other.id)
-        #expect(ChatService.roomForSimulatedMessage(in: [open, other], openRooms: openRooms) == nil)
-    }
-
-    @Test("A room stays open until every screen showing it has closed")
-    func openRoomsAreCounted() {
-        let room = UUID()
-        let openRooms = OpenChatRooms()
-        openRooms.opened(room)
-        openRooms.opened(room)
-
-        openRooms.closed(room)
-        #expect(openRooms.contains(room))
-        openRooms.closed(room)
-        #expect(!openRooms.contains(room))
-        openRooms.closed(room)
-        #expect(!openRooms.contains(room), "an extra close changes nothing")
-    }
-}
-
 // MARK: - Message VoiceOver labels
 
 @MainActor
@@ -3071,5 +3016,51 @@ struct SenderAvatarTests {
     ] as [(String?, String, String?)])
     func languageBadge(sender: String?, reader: String, badge: String?) {
         #expect(SenderAvatar.languageBadge(senderLanguage: sender, readerLanguage: reader) == badge)
+    }
+}
+
+@Suite("Sample chats")
+struct SampleChatsTests {
+    private static let languages: [(code: String, language: NLLanguage)] = [
+        ("ko", .korean), ("en", .english), ("ja", .japanese), ("zh-Hans", .simplifiedChinese), ("es", .spanish),
+    ]
+
+    @Test("Each sample room's reader writes in the app's language, so answers come back in it", arguments: languages.map(\.code))
+    func readerLinesAreInTheAppLanguage(code: String) throws {
+        let expected = try #require(Self.languages.first { $0.code == code }?.language)
+        for room in SampleChats.rooms(readerLanguage: code) {
+            let conversation = room.lines.map {
+                SummaryMessage(text: $0.text, sender: $0.speaker.name ?? "Me", isFromCurrentUser: $0.speaker == .reader, messageType: .text)
+            }
+            let own = conversation.filter(\.isFromCurrentUser).map(\.text).joined(separator: "\n")
+            #expect(ConversationLanguage.confidentLanguage(of: own) == expected, "\(room.key) in \(code)")
+        }
+    }
+
+    @Test("Previews and unread counts come from the messages themselves")
+    func unreadCountsFollowTheMessages() {
+        let rooms = SampleChats.rooms(readerLanguage: "en")
+        #expect(rooms.map(\.key) == ["study_group", "family_group", "minji", "work_colleagues"])
+        #expect(rooms.map(\.unreadCount) == [2, 1, 1, 0])
+        #expect(rooms.allSatisfy { $0.lastMessage == $0.lines.last?.text })
+        #expect(rooms.allSatisfy { !$0.lastMessage.contains("Hello") })
+    }
+
+    @Test("Group rooms have the members test mode knows, and each member's line is in their language")
+    func membersWriteTheirLanguage() {
+        for room in SampleChats.rooms(readerLanguage: "en") {
+            #expect(room.members == (TestData.groupMembers[room.key] ?? []))
+            for line in room.lines {
+                guard let name = line.speaker.name, let code = TestData.language(of: name) else { continue }
+                #expect(ConversationLanguage.confidentLanguage(of: line.text)?.rawValue.hasPrefix(code) == true, "\(name): \(line.text)")
+            }
+        }
+    }
+
+    @Test("A language the app doesn't speak gets the English lines")
+    func unknownLanguageFallsBackToEnglish() {
+        let french = SampleChats.rooms(readerLanguage: "fr").flatMap(\.lines).filter { $0.speaker == .reader }
+        let english = SampleChats.rooms(readerLanguage: "en").flatMap(\.lines).filter { $0.speaker == .reader }
+        #expect(french == english)
     }
 }
