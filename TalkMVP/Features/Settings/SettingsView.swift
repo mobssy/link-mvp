@@ -130,8 +130,8 @@ struct SettingsView: View {
                             )
                         }
                     }
-                    // Rows like the others, signing out first and deleting the account apart at the
-                    // very bottom, so it is never the first red line under a thumb.
+                    // One group like the others, signing out first; deleting the account asks to
+                    // be confirmed, so it needs no card of its own.
                     SettingsSectionCard {
                         Button {
                             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
@@ -140,8 +140,7 @@ struct SettingsView: View {
                             SettingsActionRow(systemImage: "rectangle.portrait.and.arrow.right", title: localizedText("logout"))
                         }
                         .buttonStyle(.plain)
-                    }
-                    SettingsSectionCard {
+                        Divider().padding(.leading, 52)
                         Button(role: .destructive) {
                             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                             showingDeleteAlert = true
@@ -150,7 +149,6 @@ struct SettingsView: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    .padding(.top, 8)
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 16)
