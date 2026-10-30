@@ -68,7 +68,6 @@ enum LocalizationKey: String {
     case translationUnavailable = "translation_unavailable"
 
     // Profile
-    case profileInfoUnavailable = "profile_info_unavailable"
 
     // Captions
     case addCaption = "add_caption"
@@ -591,14 +590,6 @@ class LocalizationService: LocalizationServiceProtocol {
             }
 
         // Profile
-        case .profileInfoUnavailable:
-            switch language {
-            case .korean: return "프로필 정보를 불러올 수 없습니다"
-            case .english: return "Profile information is unavailable"
-            case .japanese: return "プロフィール情報を取得できません"
-            case .chinese: return "无法加载个人资料"
-            case .spanish: return "Información de perfil no disponible"
-            }
 
         // Captions
         case .addCaption:

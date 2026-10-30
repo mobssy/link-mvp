@@ -194,7 +194,21 @@ extension ChatView {
 
     /// Opens the profile of whoever wrote a message: in a group chat the member, otherwise the
     /// person the chat is with.
+    /// The chat's title: a one-to-one chat opens the person's profile, a group its members.
+    func openTitle() {
+        if chatRoom.isGroup {
+            showingGroupInfo = true
+        } else {
+            openProfile(of: chatRoom.name)
+        }
+    }
+
     func openProfile(of sender: String) {
+        // A group has no profile of its own: a message carrying its name opens its members.
+        if chatRoom.isGroup && !chatRoom.memberNames.contains(sender) {
+            showingGroupInfo = true
+            return
+        }
         if chatRoom.memberNames.contains(sender) {
             profileMember = (sender, getCurrentUserId().flatMap { try? friendships.friendship(ownedBy: $0, named: sender) })
         } else {

@@ -65,6 +65,9 @@ struct ChatView: View {
 
     // MARK: - Search & Summary
     @State var searchText: String = ""
+    /// Whether the search field is on screen; it shows only when Search is chosen.
+    @State var isSearchShown = false
+    @State var showingGroupInfo = false
     @State var showingSummarySheet = false
     @State var showingMeetingNotes = false
     /// The summary and meeting notes, as the two sheets show them.
@@ -197,10 +200,18 @@ struct ChatView: View {
         .toolbar(horizontalSizeClass == .compact ? .hidden : .automatic, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                titleView
+                // As in Messages, the name at the top opens what the chat is about.
+                Button(action: openTitle) { titleView }
+                    .buttonStyle(.plain)
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
+                    Button {
+                        isSearchShown = true
+                    } label: {
+                        Label(languageManager.localize(ko: "검색", en: "Search", ja: "検索", zh: "搜索", es: "Buscar"), systemImage: "magnifyingglass")
+                    }
+
                     Button {
                         showingBackgroundSettings = true
                     } label: {
@@ -331,7 +342,7 @@ struct ChatView: View {
             } message: {
                 Text(viewModel?.errorMessage ?? "")
             }
-            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: localizedText("search_conversation"))
+            .modifier(SearchWhenShown(text: $searchText, isShown: $isSearchShown, prompt: localizedText("search_conversation")))
             .task(id: searchText) { await viewModel?.expandSearch(for: searchText) }
             .sheet(isPresented: $showingSummarySheet) {
                 NavigationStack {
@@ -373,7 +384,6 @@ struct ChatView: View {
                     } else {
                         MiniProfileSheet(
                             name: profileMember.name,
-                            symbol: ChatRoom.personSymbol,
                             standing: senderStandings?[profileMember.name] ?? .stranger,
                             onAddFriend: { try sendFriendRequest(toSender: profileMember.name) }
                         )
@@ -384,12 +394,21 @@ struct ChatView: View {
                 } else {
                     MiniProfileSheet(
                         name: chatRoom.name,
-                        symbol: chatRoom.profileImage,
-                        standing: chatRoom.isGroup ? nil : oneToOneStanding,
+                        standing: oneToOneStanding,
                         onAddFriend: { try sendFriendRequestToOtherSide() }
                     )
                     .environment(languageManager)
                 }
+            }
+            .sheet(isPresented: $showingGroupInfo) {
+                GroupInfoSheet(
+                    name: chatRoom.name,
+                    members: chatRoom.memberNames,
+                    languageBadges: languageBadges(in: viewModel?.messages ?? []),
+                    standings: senderStandings ?? [:],
+                    onAddFriend: { try sendFriendRequest(toSender: $0) }
+                )
+                .environment(languageManager)
             }
             .sheet(isPresented: $showingPhotosPicker) {
                 PhotoPickerView { selectedItems in

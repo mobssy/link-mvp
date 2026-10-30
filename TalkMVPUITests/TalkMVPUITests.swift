@@ -263,6 +263,45 @@ final class TalkMVPUITests: XCTestCase {
     }
 
     @MainActor
+    func testSearchOpensFromTheChatMenu() throws {
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        signInWithTestMode()
+
+        tab("Chats").tap()
+        app.staticTexts["Family Group"].firstMatch.tap()
+        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 10))
+        let search = app.searchFields.matching(NSPredicate(format: "placeholderValue == %@ OR label == %@", "Search conversation", "Search conversation")).firstMatch
+        XCTAssertFalse(search.exists, "the conversation has the screen until search is asked for")
+
+        app.buttons["More options"].firstMatch.tap()
+        app.buttons["Search"].firstMatch.tap()
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        search.typeText("Saturday")
+        // iOS 26 and later close search with an X in place of Cancel.
+        app.buttons["Close"].firstMatch.tap()
+        XCTAssertTrue(search.waitForNonExistence(timeout: 5), "closing puts it away")
+    }
+
+    @MainActor
+    func testGroupTitleShowsItsMembers() throws {
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        signInWithTestMode()
+
+        tab("Chats").tap()
+        app.staticTexts["Family Group"].firstMatch.tap()
+        XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 10))
+
+        app.navigationBars.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Family Group")).firstMatch.tap()
+        let members = app.descendants(matching: .any)["groupMembers"]
+        XCTAssertTrue(members.waitForExistence(timeout: 5), "the title opens the group's details")
+        XCTAssertTrue(members.staticTexts["강호동"].exists)
+        XCTAssertTrue(members.staticTexts["한소희"].exists)
+        XCTAssertFalse(app.staticTexts["Profile information is unavailable"].exists)
+    }
+
+    @MainActor
     func testOpenChatOnAPhoneHasNoTabBar() throws {
         // As in Messages: on a phone an open conversation has the screen to itself, so its
         // bottom edge is the input field, not the input field over the tab bar.
@@ -326,8 +365,10 @@ final class TalkMVPUITests: XCTestCase {
         }
         // The results may not include the message the suggestions answer. On iPad the chat
         // list's search field is on screen too.
+        app.buttons["More options"].firstMatch.tap()
+        app.buttons["Search"].firstMatch.tap()
         let search = app.searchFields.matching(NSPredicate(format: "placeholderValue == %@ OR label == %@", "Search conversation", "Search conversation")).firstMatch
-        search.tap()
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
         search.typeText("dinner")
         XCTAssertTrue(suggestions.waitForNonExistence(timeout: 5), "searching hides the suggestions")
     }

@@ -229,8 +229,7 @@ struct MiniProfileSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let name: String
-    let symbol: String
-    /// How the user stands with this person; nil for a group, which has no one to add.
+    /// How the user stands with this person.
     var standing: FriendStanding?
     var onAddFriend: (() throws -> Void)?
 
@@ -239,22 +238,12 @@ struct MiniProfileSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
-                Group {
-                    if standing != nil {
-                        SenderAvatarView(name: name, size: 80)
-                    } else {
-                        Image(systemName: symbol)
-                            .font(.system(size: 64))
-                            .foregroundStyle(.appPrimaryText)
-                    }
-                }
-                .padding(.top, 20)
+                SenderAvatarView(name: name, size: 80)
+                    .padding(.top, 20)
+                    .accessibilityHidden(true)
                 Text(name)
                     .font(.title2)
                     .fontWeight(.semibold)
-                Text(LocalizationService.shared.text(for: .profileInfoUnavailable, language: currentLanguage))
-                    .font(.footnote)
-                    .foregroundStyle(Color.secondary)
                 if standing == .requested || requestSent {
                     Text(FriendBannerView.requestSentText(languageManager))
                         .font(.subheadline)
