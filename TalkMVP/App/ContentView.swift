@@ -178,6 +178,21 @@ enum TestData {
     static func language(of member: String) -> String? {
         memberLanguages[member]
     }
+
+    /// Test mode's status message as it may have been saved: in the language the app had when
+    /// test mode started, in either wording the app has used.
+    static let testModeStatuses: Set<String> = [
+        "테스트 모드로 체험 중입니다", "Experiencing in test mode",
+        "テストモードを体験中", "テストモードで体験中です",
+        "正在体验测试模式", "正在以测试模式体验",
+        "Explorando en modo de prueba", "Experimentando en modo de prueba",
+    ]
+
+    /// A status message to show: test mode's in the app's current language (`testModeStatus`),
+    /// anything the user wrote as written.
+    static func statusMessage(_ raw: String, testModeStatus: String) -> String {
+        testModeStatuses.contains(raw.trimmingCharacters(in: .whitespacesAndNewlines)) ? testModeStatus : raw
+    }
 }
 
 // MARK: - Shared Localization

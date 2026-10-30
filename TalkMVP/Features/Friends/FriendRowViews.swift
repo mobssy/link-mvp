@@ -72,16 +72,13 @@ struct MyProfileRow: View {
         if raw.isEmpty {
             return L10n.text("status_message", languageManager.currentLanguage)
         }
-        if raw == "테스트 모드로 체험 중입니다" || raw == "Experiencing in test mode" {
-            return languageManager.localize(
-                ko: "테스트 모드로 체험 중입니다",
-                en: "Experiencing in test mode",
-                ja: "テストモードで体験中です",
-                zh: "正在以测试模式体验",
-                es: "Experimentando en modo de prueba"
-            )
-        }
-        return raw
+        return TestData.statusMessage(raw, testModeStatus: languageManager.localize(
+            ko: "테스트 모드로 체험 중입니다",
+            en: "Experiencing in test mode",
+            ja: "テストモードで体験中です",
+            zh: "正在以测试模式体验",
+            es: "Experimentando en modo de prueba"
+        ))
     }
 }
 

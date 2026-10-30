@@ -27,6 +27,14 @@ struct SettingsView: View {
     @State private var notificationManager = NotificationManager()
     @AppStorage(NotificationPreferences.enabledKey) private var notificationsEnabled = true
 
+    /// The status under the name; test mode's in the app's current language, not the one it
+    /// started in.
+    private var profileStatus: String {
+        let testModeStatus = languageManager.localize(ko: "테스트 모드로 체험 중입니다", en: "Experiencing in test mode", ja: "テストモードで体験中です", zh: "正在以测试模式体验", es: "Experimentando en modo de prueba")
+        guard let raw = authManager.currentUser?.statusMessage else { return testModeStatus }
+        return TestData.statusMessage(raw, testModeStatus: testModeStatus)
+    }
+
     // A split view like the Chats tab: in a regular-width window (iPad, an open iPhone Duo)
     // the list stays beside the page it opened; in a compact one it collapses into a push.
     var body: some View {
@@ -35,7 +43,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     ProfileCardView(
                         title: profileDisplayName().capitalized,
-                        subtitle: authManager.currentUser?.statusMessage ?? languageManager.localize(ko: "테스트 모드로 체험 중입니다", en: "Experiencing in test mode", ja: "テストモードで体験中です", zh: "正在以测试模式体验", es: "Experimentando en modo de prueba"),
+                        subtitle: profileStatus,
                         imageData: authManager.currentUser?.profileImageData,
                         action: { showingProfileEdit = true }
                     )

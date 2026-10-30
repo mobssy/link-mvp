@@ -3094,3 +3094,18 @@ struct TranslationPreferencesTests {
         #expect(ChatRoom(name: "Mina").translatesMessages == nil)
     }
 }
+
+@Suite("Test mode status")
+struct TestModeStatusTests {
+    @Test("Test mode's status shows in the app's language, whatever language it was saved in", arguments: [
+        "테스트 모드로 체험 중입니다", "Experiencing in test mode", "テストモードを体験中", "正在体验测试模式", "Explorando en modo de prueba",
+    ])
+    func testModeStatusFollowsTheApp(saved: String) {
+        #expect(TestData.statusMessage(saved, testModeStatus: "Experiencing in test mode") == "Experiencing in test mode")
+    }
+
+    @Test("A status the user wrote stays as written")
+    func ownStatusStays() {
+        #expect(TestData.statusMessage("At the gym 💪", testModeStatus: "Experiencing in test mode") == "At the gym 💪")
+    }
+}
