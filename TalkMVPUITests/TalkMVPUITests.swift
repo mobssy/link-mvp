@@ -192,8 +192,9 @@ final class TalkMVPUITests: XCTestCase {
             let bubble = message.staticTexts["swipe me"]
             let start = bubble.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5))
             start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 140, dy: 0)))
-            if !app.buttons["Cancel"].waitForExistence(timeout: 1) {
-                let reply = app.buttons["Reply"]
+            let cancel = app.buttons["Cancel"]
+            let reply = app.buttons["Reply"]
+            if !cancel.waitForExistence(timeout: 1) {
                 XCTAssertTrue(reply.waitForExistence(timeout: 3), "swiping a message reveals Reply")
                 reply.tap()
             }
@@ -286,9 +287,20 @@ final class TalkMVPUITests: XCTestCase {
         app.buttons["Search"].firstMatch.tap()
         XCTAssertTrue(search.waitForExistence(timeout: 5))
         search.typeText("Saturday")
-        // iOS 26 and later close search with an X in place of Cancel.
-        app.buttons["Close"].firstMatch.tap()
+        // iPhone closes search with an X; on iPad the field takes the title's place with no
+        // Close, and leaving it empty puts it away.
+        let close = app.buttons["Close"].firstMatch
+        if close.exists {
+            close.tap()
+        } else {
+            app.buttons["Clear text"].firstMatch.tap()
+            // Clearing may already end the editing, and the keyboard goes with it.
+            sleep(1)
+            let hide = app.keyboards.buttons["Hide keyboard"]
+            if hide.exists && hide.isHittable { hide.tap() }
+        }
         XCTAssertTrue(search.waitForNonExistence(timeout: 5), "closing puts it away")
+        XCTAssertTrue(app.buttons["More options"].firstMatch.waitForExistence(timeout: 5), "the title and its menu are back")
     }
 
     @MainActor

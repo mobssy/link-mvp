@@ -6,7 +6,8 @@
 import SwiftUI
 
 /// Puts a search field under the title only while `isShown`, so the conversation has the screen
-/// the rest of the time. Cancelling hides it again and clears the search.
+/// the rest of the time. Closing it, or leaving it empty (on iPad, where the field takes the
+/// title's place and has no Close button), hides it again and clears the search.
 struct SearchWhenShown: ViewModifier {
     @Binding var text: String
     @Binding var isShown: Bool
@@ -27,6 +28,9 @@ struct SearchWhenShown: ViewModifier {
         }
         .onChange(of: isShown) { _, shown in
             if !shown { text = "" }
+        }
+        .onChange(of: isFocused) { _, focused in
+            if !focused && text.isEmpty { isShown = false }
         }
     }
 }
