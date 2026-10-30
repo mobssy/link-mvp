@@ -70,6 +70,7 @@ struct AuthenticatedTabsView: View {
     @Environment(AppRouter.self) private var router
     @Query var chatRooms: [ChatRoom]
     @State private var notificationManager = NotificationManager()
+    @Environment(\.scenePhase) private var scenePhase
     private var totalUnread: Int { chatRooms.map { $0.unreadCount }.reduce(0, +) }
 
     var body: some View {
@@ -98,6 +99,11 @@ struct AuthenticatedTabsView: View {
         // The app icon shows the same unread count as the Chats tab (none with notifications off).
         .onChange(of: totalUnread, initial: true) { _, count in
             notificationManager.updateBadgeCount(count)
+        }
+        // Again on the way to the Home Screen, where the badge shows: a count set before
+        // notifications were allowed didn't take.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background { notificationManager.updateBadgeCount(totalUnread) }
         }
     }
 }
