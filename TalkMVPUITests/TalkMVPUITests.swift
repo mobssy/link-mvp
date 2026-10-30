@@ -194,8 +194,12 @@ final class TalkMVPUITests: XCTestCase {
             start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 140, dy: 0)))
             let cancel = app.buttons["Cancel"]
             let reply = app.buttons["Reply"]
-            if !cancel.waitForExistence(timeout: 1) {
-                XCTAssertTrue(reply.waitForExistence(timeout: 3), "swiping a message reveals Reply")
+            let deadline = Date().addingTimeInterval(3)
+            while !cancel.exists && !(reply.exists && reply.isHittable) && Date() < deadline {
+                usleep(200_000)
+            }
+            if !cancel.exists {
+                XCTAssertTrue(reply.exists && reply.isHittable, "swiping a message reveals Reply or starts the reply")
                 reply.tap()
             }
         } else {
