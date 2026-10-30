@@ -130,8 +130,8 @@ struct SettingsView: View {
                             )
                         }
                     }
-                    // Signing out first; deleting the account apart at the very bottom, so it is
-                    // never the first red line under a thumb.
+                    // Signing out first; deleting the account apart at the very bottom, in the same
+                    // size, so it is never the first red line under a thumb.
                     SettingsSectionCard {
                         Button(localizedText("logout")) {
                             let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
@@ -150,8 +150,8 @@ struct SettingsView: View {
                             showingDeleteAlert = true
                         }
                         .frame(maxWidth: .infinity)
-                        .font(.subheadline)
-                        .padding(.vertical, 8)
+                        .font(.headline)
+                        .padding(.vertical, 12)
                     }
                     .padding(.top, 24)
                 }
