@@ -62,6 +62,22 @@ final class TalkMVPUITests: XCTestCase {
         XCTAssertFalse(tab("Chats").exists)
     }
 
+    /// Sends `text` in the open chat and waits until the other side's answer is in and the
+    /// translations have filled in, so nothing moves under a gesture that follows.
+    private func sendAndWaitForTheAnswer(_ text: String) {
+        let messages = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'message_'"))
+        let before = messages.count
+        let input = app.textFields.firstMatch
+        XCTAssertTrue(input.waitForExistence(timeout: 10))
+        input.tap()
+        input.typeText(text + "\n")
+        let answered = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count >= %d", before + 2), object: messages)
+        XCTAssertEqual(XCTWaiter.wait(for: [answered], timeout: 90), .completed, "the other side answers")
+        let translating = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Translating'")).firstMatch
+        _ = translating.waitForNonExistence(timeout: 60)
+        sleep(1)
+    }
+
     /// Opens 강호동's profile from the Friends tab and starts the chat from it.
     private func startChatWithKang() {
         tab("Friends").tap()
@@ -140,16 +156,15 @@ final class TalkMVPUITests: XCTestCase {
         XCTAssertTrue(firstRoom.waitForExistence(timeout: 5))
         firstRoom.tap()
 
-        let input = app.textFields.firstMatch
-        XCTAssertTrue(input.waitForExistence(timeout: 10))
-        input.tap()
-        input.typeText("hold me\n")
+        sendAndWaitForTheAnswer("hold me")
 
         let message = app.descendants(matching: .any)
             .matching(NSPredicate(format: "identifier BEGINSWITH 'message_' AND label CONTAINS 'hold me'"))
             .firstMatch
         XCTAssertTrue(message.waitForExistence(timeout: 5))
-        message.press(forDuration: 1.2)
+        // On the bubble: the row spans the screen, and its middle is the empty side of the
+        // user's own message.
+        message.staticTexts["hold me"].press(forDuration: 1.2)
 
         let reply = app.buttons["Reply"]
         XCTAssertTrue(reply.waitForExistence(timeout: 3), "holding a message opens its menu")
@@ -168,10 +183,7 @@ final class TalkMVPUITests: XCTestCase {
         XCTAssertTrue(firstRoom.waitForExistence(timeout: 5))
         firstRoom.tap()
 
-        let input = app.textFields.firstMatch
-        XCTAssertTrue(input.waitForExistence(timeout: 10))
-        input.tap()
-        input.typeText("swipe me\n")
+        sendAndWaitForTheAnswer("swipe me")
 
         // Messages live in a ScrollView rather than a List; swiping one must still
         // reveal its actions.
@@ -190,8 +202,10 @@ final class TalkMVPUITests: XCTestCase {
             // full swipe, so the reply may already have started and Reply slid away; only a
             // shorter swipe needs it tapped.
             let bubble = message.staticTexts["swipe me"]
-            let start = bubble.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5))
-            start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 140, dy: 0)))
+            // From its left edge and not too far: the user's own bubble sits against the right
+            // edge, and a drag that ran off the screen was sometimes dropped.
+            let start = bubble.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
+            start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 90, dy: 0)))
             let cancel = app.buttons["Cancel"]
             let reply = app.buttons["Reply"]
             let deadline = Date().addingTimeInterval(3)
