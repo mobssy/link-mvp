@@ -2,7 +2,7 @@ import SwiftUI
 
 struct TranslationSettingsView: View {
     @Environment(LanguageManager.self) private var languageManager
-    @AppStorage("translationEnabled") private var translationEnabled = false
+    @AppStorage(TranslationPreferences.enabledKey) private var translationEnabled = TranslationPreferences.enabledByDefault
     @AppStorage("translationTargetLanguage") private var translationTargetLanguage = "auto"
 
     var body: some View {

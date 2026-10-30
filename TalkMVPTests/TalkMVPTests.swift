@@ -3071,3 +3071,14 @@ struct SampleChatsTests {
         #expect(french == english)
     }
 }
+
+@Suite("Translation preferences")
+struct TranslationPreferencesTests {
+    @Test("Translation is on until someone turns it off")
+    func onByDefault() throws {
+        let defaults = try #require(UserDefaults(suiteName: "TranslationPreferencesTests.\(UUID().uuidString)"))
+        #expect(TranslationPreferences.isEnabled(in: defaults))
+        defaults.set(false, forKey: TranslationPreferences.enabledKey)
+        #expect(!TranslationPreferences.isEnabled(in: defaults))
+    }
+}

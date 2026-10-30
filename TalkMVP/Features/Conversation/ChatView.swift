@@ -104,7 +104,7 @@ struct ChatView: View {
     @AppStorage(AIFeatureSettings.meetingNotes.key) var aiAutoMeetingNotesEnabled = AIFeatureSettings.meetingNotes.defaultValue
 
     // MARK: - Translation Settings
-    @AppStorage("translationEnabled") var translationEnabled = false
+    @AppStorage(TranslationPreferences.enabledKey) var translationEnabled = TranslationPreferences.enabledByDefault
     @AppStorage("translationAutoDetect") var translationAutoDetect = true
     @AppStorage("translationTargetLanguage") var translationTargetLanguage = "auto"
 
