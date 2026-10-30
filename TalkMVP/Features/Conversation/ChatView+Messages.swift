@@ -117,9 +117,8 @@ extension ChatView {
                 .accessibilityIdentifier("message_\(message.id)")
                 .accessibilityLabel(accessibilityLabelForMessage(message))
                 .accessibilityHint(localizedText("message_action_hint"))
-                .onLongPressGesture {
-                    showReactionPicker(for: message)
-                }
+                // Holding a message opens its menu, which has Add Reaction. A second long-press
+                // gesture for the reactions raced the menu, so a hold opened either one.
                 .swipeToReply(localizedText("reply")) {
                     replyingToMessage = message
                     isTextFieldFocused = true
