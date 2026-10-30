@@ -127,12 +127,13 @@ struct AccessibilitySettingsView: View {
             } header: {
                 Text(languageManager.localize(ko: "앱 내 설정", en: "In-App Settings", ja: "アプリ内設定", zh: "应用内设置", es: "Configuración en la aplicación"))
             } footer: {
+                // The iOS features themselves are set in iOS; the app follows them without a row each.
                 Text(languageManager.localize(
-                    ko: "이 설정은 앱 내에서 즉시 적용됩니다. 시스템 손쉬운 사용 설정도 자동으로 반영됩니다.",
-                    en: "These settings apply immediately. System Accessibility settings are also automatically respected.",
-                    ja: "これらの設定はすぐに適用されます。システムのアクセシビリティ設定も自動的に反映されます。",
-                    zh: "这些设置立即生效。系统辅助功能设置也会自动应用。",
-                    es: "Estos ajustes se aplican de inmediato. La configuración de Accesibilidad del sistema también se respeta automáticamente."
+                    ko: "바로 적용됩니다. 앱은 VoiceOver, 큰 글자, 동작 줄이기 같은 iOS 손쉬운 사용 설정도 그대로 따릅니다.",
+                    en: "These apply right away. The app also follows your iOS accessibility settings, such as VoiceOver, larger text and Reduce Motion.",
+                    ja: "すぐに適用されます。アプリはVoiceOver、文字の拡大、視差効果を減らすなど、iOSのアクセシビリティ設定にも従います。",
+                    zh: "设置会立即生效。应用也会遵循你的 iOS 辅助功能设置，例如旁白、更大字体和减弱动态效果。",
+                    es: "Se aplican al instante. La app también sigue tus ajustes de accesibilidad de iOS, como VoiceOver, el texto más grande y Reducir movimiento."
                 ))
             }
 
@@ -141,36 +142,6 @@ struct AccessibilitySettingsView: View {
                 previewBubbles
             } header: {
                 Text(languageManager.localize(ko: "미리보기", en: "Preview", ja: "プレビュー", zh: "预览", es: "Vista previa"))
-            }
-
-            // MARK: - System Settings Guide Section
-            Section {
-                HStack {
-                    Label("VoiceOver", systemImage: "speaker.wave.2.bubble")
-                    Spacer()
-                    Text(languageManager.localize(ko: "설정 → 손쉬운 사용", en: "Settings → Accessibility", ja: "設定 → アクセシビリティ", zh: "设置 → 辅助功能", es: "Ajustes → Accesibilidad"))
-                        .font(.caption)
-                        .foregroundStyle(Color.secondary)
-                        .multilineTextAlignment(.trailing)
-                }
-                HStack {
-                    Label(languageManager.localize(ko: "스위치 제어", en: "Switch Control", ja: "スイッチコントロール", zh: "开关控制", es: "Control por botón"), systemImage: "accessibility")
-                    Spacer()
-                    Text(languageManager.localize(ko: "설정 → 손쉬운 사용", en: "Settings → Accessibility", ja: "設定 → アクセシビリティ", zh: "设置 → 辅助功能", es: "Ajustes → Accesibilidad"))
-                        .font(.caption)
-                        .foregroundStyle(Color.secondary)
-                        .multilineTextAlignment(.trailing)
-                }
-            } header: {
-                Text(languageManager.localize(ko: "시스템 기능 안내", en: "System Accessibility Features", ja: "システム機能のご案内", zh: "系统辅助功能说明", es: "Funciones de accesibilidad del sistema"))
-            } footer: {
-                Text(languageManager.localize(
-                    ko: "위 기능들은 iOS 설정에서 변경할 수 있으며, 앱에 자동으로 적용됩니다.",
-                    en: "These features are managed in iOS Settings and automatically apply to this app.",
-                    ja: "これらの機能はiOS設定で変更でき、アプリに自動的に適用されます。",
-                    zh: "这些功能可在iOS设置中更改，并自动应用于应用程序。",
-                    es: "Estas funciones se gestionan en los Ajustes de iOS y se aplican automáticamente a esta aplicación."
-                ))
             }
         }
         .navigationTitle(languageManager.localize(ko: "손쉬운 사용", en: "Accessibility", ja: "アクセシビリティ", zh: "辅助功能", es: "Accesibilidad"))

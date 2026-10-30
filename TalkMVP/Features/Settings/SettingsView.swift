@@ -130,36 +130,30 @@ struct SettingsView: View {
                             )
                         }
                     }
+                    // Signing out first; deleting the account apart at the very bottom, so it is
+                    // never the first red line under a thumb.
                     SettingsSectionCard {
-                        VStack(spacing: 0) {
-                            Button(localizedText("delete_account"), role: .destructive) {
-                                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                                impactFeedback.impactOccurred()
-                                showingDeleteAlert = true
-                            }
-                            .frame(maxWidth: .infinity)
-                            .font(.headline)
-                            .padding(.vertical, 12)
-
-                            // The card's own 16-point inset sits above the first button and below the
-                            // last; the same space around the line keeps the two buttons evenly spaced.
-                            Divider()
-                                .frame(height: 0.5)
-                                .overlay(Color(UIColor.separator))
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 16)
-
-                            Button(localizedText("logout")) {
-                                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                                impactFeedback.impactOccurred()
-                                showingLogoutAlert = true
-                            }
-                            .foregroundStyle(.red)
-                            .frame(maxWidth: .infinity)
-                            .font(.headline)
-                            .padding(.vertical, 12)
+                        Button(localizedText("logout")) {
+                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                            impactFeedback.impactOccurred()
+                            showingLogoutAlert = true
                         }
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity)
+                        .font(.headline)
+                        .padding(.vertical, 12)
                     }
+                    SettingsSectionCard {
+                        Button(localizedText("delete_account"), role: .destructive) {
+                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                            impactFeedback.impactOccurred()
+                            showingDeleteAlert = true
+                        }
+                        .frame(maxWidth: .infinity)
+                        .font(.subheadline)
+                        .padding(.vertical, 8)
+                    }
+                    .padding(.top, 24)
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 16)
