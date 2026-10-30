@@ -185,10 +185,15 @@ final class TalkMVPUITests: XCTestCase {
         // depends on the element's size and the Xcode version, and fell short on this short
         // bubble after Xcode 27.1.
         if #available(iOS 27, *) {
+            // The action allows a full swipe, and swipeRight() sometimes goes that far: the reply
+            // has then started and Reply has already slid away, so only a shorter swipe needs it
+            // tapped.
             message.swipeRight()
-            let reply = app.buttons["Reply"]
-            XCTAssertTrue(reply.waitForExistence(timeout: 3), "swiping a message reveals Reply")
-            reply.tap()
+            if !app.buttons["Cancel"].waitForExistence(timeout: 1) {
+                let reply = app.buttons["Reply"]
+                XCTAssertTrue(reply.waitForExistence(timeout: 3), "swiping a message reveals Reply")
+                reply.tap()
+            }
         } else {
             let start = message.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5))
             start.press(forDuration: 0, thenDragTo: start.withOffset(CGVector(dx: 100, dy: 0)),
