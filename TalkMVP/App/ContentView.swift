@@ -69,6 +69,7 @@ struct AuthenticatedTabsView: View {
     @Environment(LanguageManager.self) private var languageManager
     @Environment(AppRouter.self) private var router
     @Query var chatRooms: [ChatRoom]
+    @State private var notificationManager = NotificationManager()
     private var totalUnread: Int { chatRooms.map { $0.unreadCount }.reduce(0, +) }
 
     var body: some View {
@@ -94,6 +95,10 @@ struct AuthenticatedTabsView: View {
         }
         // Test mode puts nothing on these screens; Settings' profile card says it is on.
         .tint(.appPrimaryText)
+        // The app icon shows the same unread count as the Chats tab (none with notifications off).
+        .onChange(of: totalUnread, initial: true) { _, count in
+            notificationManager.updateBadgeCount(count)
+        }
     }
 }
 
