@@ -15,7 +15,11 @@ L!NK has no backend: the other side of every chat is simulated, and every AI fea
 - **Suggestions from the right side of the chat.** Suggested replies lost track of who was talking: "Congrats! When do you start?" got the suggestion "Congrats!". The transcript now marks Me and Them. An example answer in the prompt fixed it too, but then turned up word for word in unrelated chats, so it went.
 - **Search by meaning across languages.** "저녁 약속" (dinner plans) should find "dinner tonight". Asked for related phrases, the model invented ones no message contains, so it returns single words. Asked for synonyms and translations together, it stayed in the search's language, so translations get a list of their own. And it translated the search as a whole ("dinner appointment"), so translations are matched word by word. The chat shows which words it added, so no match is a mystery.
 - **Photo descriptions on iOS 27.** Asked in English for a Korean description, the model answered in English and then translated itself, so the request is now written in the language it should answer in. On iOS 26, photos work as before.
-- **No translation beats a made-up one.** When neither Apple Intelligence nor the Translation framework could translate a message, the app fell back on a short phrasebook and on swapping Korean and English words one at a time, and showed the result as the translation. Now the line under the message says it couldn't translate.
+- **No translation beats a made-up one.** When neither Apple Intelligence nor the Translation framework could translate a message, the app fell back on a short phrasebook and on swapping Korean and English words one at a time, and showed the result as the translation. Now the translation half of the bubble says it couldn't translate.
+
+### Saying only what's true
+
+- **No made-up state.** A design review of the screenshots asked what "Online" meant under a group's name. It meant nothing: a random 80% chance every 30 seconds, and every friend row said "online" too. Opening a chat also staged a "Connecting..." banner for a server that doesn't exist, and a canned "Hello!" landed in a random room every half minute. All of it is gone. Under a chat's title is what the app knows (a group's members, or the language the other person writes in), and the sample chats start with real conversations in Korean, Japanese and Spanish.
 
 ### One codebase, iOS 26 and iOS 27
 
@@ -50,12 +54,12 @@ The app target is split by role: screens live in `Features/`, one folder per flo
 link-mvp/
 ├── TalkMVP.xcodeproj/
 ├── TalkMVP/
-│   ├── App/                     # Entry point and the tab shell
+│   ├── App/                     # Entry point, the tab shell, the router and the sample chats
 │   ├── Features/                # Screens, one folder per flow
 │   │   ├── Auth/                # AuthView, SSOSignInView, AppLockView, OnboardingContactsView
 │   │   ├── Chats/               # ChatListView
 │   │   ├── Conversation/        # ChatView (+Friends/Helpers/Input/Media/Messages/Sheets), ChatViewModel,
-│   │   │                        # MessageBubbleView, MeetingNotesView, ChatRoomBackgroundSettings, …
+│   │   │                        # MessageBubbleView, SenderAvatar, GroupInfoSheet, MeetingNotesView, …
 │   │   ├── Friends/             # FriendsView, FriendProfileView, FriendRowViews, AddFriendView, FriendManagementViews
 │   │   └── Settings/            # SettingsView, SettingsCardComponents, ProfileEditView, *SettingsView pages,
 │   │                            # HelpView, AppInfoView, TermsPoliciesView
@@ -63,7 +67,7 @@ link-mvp/
 │   │   ├── AI/                  # AIService, MeetingNotes (+Extractor/Grounding), ReplySuggestions, ReplyWriter,
 │   │   │                        # MessageTranslation, MessageSearch, PhotoDescriber, VoiceTranscriber, …
 │   │   ├── Auth/                # AuthManager, GoogleOAuthService, AppLockManager
-│   │   ├── Chat/                # ChatService (+Protocol), AutoResponseService, OpenChatRooms, NotificationManager,
+│   │   ├── Chat/                # ChatService (+Protocol), AutoResponseService, NotificationManager,
 │   │   │                        # LocalNotificationDelegate
 │   │   ├── Contacts/            # ContactsSyncService, FriendSearchService
 │   │   ├── Location/            # LocationManager
