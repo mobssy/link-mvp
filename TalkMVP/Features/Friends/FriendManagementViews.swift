@@ -53,9 +53,9 @@ struct BlockedFriendRow: View {
 
     var body: some View {
         HStack {
-            Image(systemName: "person.circle.fill")
-                .font(.system(size: avatarSize))
-                .foregroundStyle(.red)
+            // Gray while blocked or hidden.
+            SenderAvatarView(name: friendship.friendName, size: avatarSize)
+                .saturation(0)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(friendship.friendName)
@@ -153,9 +153,8 @@ struct HiddenFriendRow: View {
 
     var body: some View {
         HStack {
-            Image(systemName: "person.circle.fill")
-                .font(.system(size: avatarSize))
-                .foregroundStyle(Color.secondary)
+            SenderAvatarView(name: friendship.friendName, size: avatarSize)
+                .saturation(0)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(friendship.friendName)

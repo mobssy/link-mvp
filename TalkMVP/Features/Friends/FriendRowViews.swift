@@ -26,9 +26,7 @@ struct MyProfileRow: View {
                         .frame(width: 60, height: 60)
                         .clipShape(Circle())
                 } else {
-                    Image(systemName: "person.circle.fill")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.appPrimaryText)
+                    SenderAvatarView(name: localizedDisplayName(), size: 60)
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -98,11 +96,7 @@ struct FriendRow: View {
     var body: some View {
         NavigationLink(value: friendship.id) {
             HStack(spacing: 16) {
-                // The lighter brand color, like the chat list's rows: it still shows on the
-                // selected row's fill.
-                Image(systemName: "person.circle.fill")
-                    .font(.system(size: 50))
-                    .foregroundStyle(.appPrimary)
+                SenderAvatarView(name: friendship.friendName, size: 50)
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
@@ -178,9 +172,7 @@ struct ReceivedRequestRow: View {
 
     var body: some View {
         HStack {
-            Image(systemName: "person.circle.fill")
-                .font(.system(size: avatarSize))
-                .foregroundStyle(.orange)
+            SenderAvatarView(name: friendship.friendName, size: avatarSize)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(friendship.friendName)
@@ -221,9 +213,9 @@ struct PendingRequestRow: View {
 
     var body: some View {
         HStack {
-            Image(systemName: "person.circle.fill")
-                .font(.system(size: avatarSize))
-                .foregroundStyle(Color.secondary)
+            // Gray until they accept.
+            SenderAvatarView(name: friendship.friendName, size: avatarSize)
+                .saturation(0)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(friendship.friendName)

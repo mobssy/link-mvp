@@ -164,9 +164,7 @@ struct UserSearchResultRow: View {
 
     var body: some View {
         HStack {
-            Image(systemName: "person.circle.fill")
-                .font(.system(size: avatarSize))
-                .foregroundStyle(.appPrimaryText)
+            SenderAvatarView(name: result.displayName, size: avatarSize)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(result.displayName)

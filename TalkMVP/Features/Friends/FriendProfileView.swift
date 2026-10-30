@@ -34,20 +34,8 @@ struct FriendProfileView: View {
             VStack(spacing: 20) {
                 // 프로필 헤더
                 VStack(spacing: 16) {
-                    // 프로필 이미지
-                    ZStack {
-                        Circle()
-                            .fill(LinearGradient(
-                                colors: [Color.appPrimary.opacity(0.3), Color.appPrimary.opacity(0.1)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ))
-                            .frame(width: 120, height: 120)
-
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 60))
-                            .foregroundStyle(.appPrimaryText)
-                    }
+                    SenderAvatarView(name: friendship.friendName, size: 120)
+                        .accessibilityHidden(true)
 
                     // 이름과 이메일
                     VStack(spacing: 8) {

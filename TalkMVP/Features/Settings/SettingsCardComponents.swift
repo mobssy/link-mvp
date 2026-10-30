@@ -115,14 +115,7 @@ struct ProfileCardView: View {
                         .frame(width: 48, height: 48)
                         .clipShape(Circle())
                 } else {
-                    ZStack {
-                        Circle()
-                            .fill(Color.appPrimary)
-                            .frame(width: 48, height: 48)
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 24, weight: .medium))
-                            .foregroundStyle(.onAppPrimary)
-                    }
+                    SenderAvatarView(name: title, size: 48)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)

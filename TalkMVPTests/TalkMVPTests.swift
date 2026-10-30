@@ -3011,6 +3011,13 @@ struct SenderAvatarTests {
         #expect(Set(names.map { SenderAvatar(name: $0).colorIndex }).count > 1)
     }
 
+    @Test("A group is drawn as its first two members' faces")
+    func groupFaces() {
+        #expect(GroupAvatar(members: ["강호동", "한소희", "유재석"]).faces.map(\.initial) == ["강", "한"])
+        #expect(GroupAvatar(members: ["佐藤ゆき"]).faces == [SenderAvatar(name: "佐藤ゆき")])
+        #expect(GroupAvatar(members: []).faces.isEmpty)
+    }
+
     @Test("A language badge shows only for a language that isn't the reader's", arguments: [
         ("ja", "en", "JA"), ("es", "ko", "ES"), ("zh-Hans", "en", "ZH"), ("en", "en", nil), ("en", "en-US", nil), (nil, "en", nil),
     ] as [(String?, String, String?)])

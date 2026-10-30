@@ -239,10 +239,16 @@ struct MiniProfileSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
-                Image(systemName: symbol)
-                    .font(.system(size: 64))
-                    .foregroundStyle(.appPrimaryText)
-                    .padding(.top, 20)
+                Group {
+                    if standing != nil {
+                        SenderAvatarView(name: name, size: 80)
+                    } else {
+                        Image(systemName: symbol)
+                            .font(.system(size: 64))
+                            .foregroundStyle(.appPrimaryText)
+                    }
+                }
+                .padding(.top, 20)
                 Text(name)
                     .font(.title2)
                     .fontWeight(.semibold)

@@ -56,14 +56,8 @@ struct ProfileEditView: View {
                                             .frame(width: 100, height: 100)
                                             .clipShape(Circle())
                                     } else {
-                                        ZStack {
-                                            Circle()
-                                                .fill(Color.appPrimary.opacity(0.1))
-                                                .frame(width: 100, height: 100)
-                                            Image(systemName: "person.fill")
-                                                .font(.system(size: 48))
-                                                .foregroundStyle(.appPrimaryText)
-                                        }
+                                        // The face the user has everywhere until they pick a photo.
+                                        SenderAvatarView(name: displayName, size: 100)
                                     }
                                 }
 

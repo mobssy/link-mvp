@@ -208,13 +208,25 @@ struct ChatRoomRow: View {
             : AnyLayout(HStackLayout())
     }
 
-    var body: some View {
-        HStack(spacing: 12) {
-            // 프로필 이미지
+    /// A person's face for a one-to-one room, the members' faces for a group; an organization
+    /// room keeps its own symbol.
+    @ViewBuilder
+    private var roomAvatar: some View {
+        if room.isOrganizationRoom {
             Image(systemName: room.profileImage)
                 .font(.largeTitle)
                 .foregroundStyle(.appPrimary)
                 .frame(width: 50, height: 50)
+        } else if room.isGroup {
+            GroupAvatarView(avatar: GroupAvatar(members: room.memberNames), size: 50)
+        } else {
+            SenderAvatarView(name: room.name, size: 50)
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            roomAvatar
 
             VStack(alignment: .leading, spacing: 4) {
                 nameAndTimeLayout {
