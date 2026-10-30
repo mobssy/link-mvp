@@ -65,6 +65,25 @@ struct SettingsLinkRow: View {
     }
 }
 
+/// A row that does something rather than opening a page, like signing out: the same size as
+/// the other rows, in red, without the chevron.
+struct SettingsActionRow: View {
+    let systemImage: String
+    let title: String
+
+    var body: some View {
+        HStack(spacing: 16) {
+            SettingsIconBadge(systemImage: systemImage, tint: .red)
+            Text(title)
+                .foregroundStyle(.red)
+                .multilineTextAlignment(.leading)
+            Spacer()
+        }
+        .contentShape(Rectangle())
+        .padding(.vertical, 10)
+    }
+}
+
 struct SettingsToggleRow: View {
     let systemImage: String
     let tint: Color

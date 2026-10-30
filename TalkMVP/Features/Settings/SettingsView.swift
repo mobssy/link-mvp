@@ -130,30 +130,27 @@ struct SettingsView: View {
                             )
                         }
                     }
-                    // Signing out first; deleting the account apart at the very bottom, in the same
-                    // size, so it is never the first red line under a thumb.
+                    // Rows like the others, signing out first and deleting the account apart at the
+                    // very bottom, so it is never the first red line under a thumb.
                     SettingsSectionCard {
-                        Button(localizedText("logout")) {
-                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                            impactFeedback.impactOccurred()
+                        Button {
+                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                             showingLogoutAlert = true
+                        } label: {
+                            SettingsActionRow(systemImage: "rectangle.portrait.and.arrow.right", title: localizedText("logout"))
                         }
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity)
-                        .font(.headline)
-                        .padding(.vertical, 12)
+                        .buttonStyle(.plain)
                     }
                     SettingsSectionCard {
-                        Button(localizedText("delete_account"), role: .destructive) {
-                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                            impactFeedback.impactOccurred()
+                        Button(role: .destructive) {
+                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                             showingDeleteAlert = true
+                        } label: {
+                            SettingsActionRow(systemImage: "trash", title: localizedText("delete_account"))
                         }
-                        .frame(maxWidth: .infinity)
-                        .font(.headline)
-                        .padding(.vertical, 12)
+                        .buttonStyle(.plain)
                     }
-                    .padding(.top, 24)
+                    .padding(.top, 8)
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 16)
